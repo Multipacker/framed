@@ -1,3 +1,24 @@
+internal OS_Handle
+os_handle_zero()
+{
+	OS_Handle result = { 0 };
+	return(result);
+}
+
+internal B32
+os_handle_match(OS_Handle a, OS_Handle b)
+{
+	B32 result = memory_match(&a, &b, sizeof(OS_Handle));
+	return(result);
+}
+
+internal B32
+os_handle_is_null(OS_Handle handle)
+{
+	B32 result = os_handle_match(handle, os_handle_zero());
+	return(result);
+}
+
 internal Void *
 os_memory_reserve(U64 size)
 {
@@ -221,4 +242,24 @@ os_file_iterator_end(OS_FileIterator *iterator)
 	{
 		FindClose(w32_iter->handle);
 	}
+}
+
+internal OS_Handle
+os_library_open(Str8 path)
+{
+	OS_Handle result = os_handle_zero();
+}
+
+internal Void
+os_library_close(OS_Handle handle)
+{
+
+}
+
+internal VoidFunction *
+os_library_load_function(OS_Handle handle, Str8 name)
+{
+	VoidFunction *result = 0;
+
+	return(result);
 }

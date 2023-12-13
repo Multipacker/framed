@@ -9,6 +9,16 @@ struct OS_FileIterator
 	U8 data[512];
 };
 
+typedef struct OS_Handle OS_Handle;
+struct OS_Handle
+{
+	U64 u64[1];
+};
+
+internal OS_Handle os_handle_zero();
+internal B32       os_handle_match(OS_Handle a, OS_Handle b);
+internal B32       os_handle_is_null(OS_Handle handle);
+
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);
 internal Void  os_memory_decommit(Void *ptr, U64 size);
@@ -28,5 +38,9 @@ internal B32 os_file_delete_directory(Str8 path);
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
+
+internal OS_Handle     os_library_open(Str8 path);
+internal Void          os_library_close(OS_Handle handle);
+internal VoidFunction *os_library_load_function(OS_Handle handle, Str8 name);
 
 #endif // OS_ESSENTIAL_H

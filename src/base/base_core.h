@@ -187,6 +187,8 @@ typedef double F64;
 
 typedef void Void;
 
+typedef Void VoidFunction(Void);
+
 #define false 0
 #define true  1
 
