@@ -192,6 +192,7 @@ typedef void Void;
 #define internal static
 #define global   static
 #define local    static
+#define thread_local _Thread_local
 
 #define assert(expr) if (!expr) { *(S32 *)0 = 0; }
 
