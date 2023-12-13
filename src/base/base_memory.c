@@ -83,8 +83,8 @@ arena_push(Arena *arena, U64 size)
 			U64 next_commit_pos = u64_min(pos_aligned, arena->cap);
 			U64 commit_size     = next_commit_pos - arena->commit_pos;
 			os_memory_commit(arena->memory + arena->commit_pos, commit_size);
+			ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->commit_pos, commit_size);
 			arena->commit_pos = next_commit_pos;
-			ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->commit_pos - ARENA_COMMIT_BLOCK_SIZE, ARENA_COMMIT_BLOCK_SIZE);
 		}
 
 		ASAN_UNPOISON_MEMORY_REGION(result, size);
