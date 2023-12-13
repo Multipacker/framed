@@ -1,37 +1,41 @@
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 internal Void *
 os_memory_reserve(U64 size)
 {
-	
+	Void *result = VirtualAlloc(0, size, MEM_RESERVE, PAGE_READWRITE);
+	return(result);
 }
 
 internal Void
 os_memory_commit(Void *ptr, U64 size)
 {
-	
+	VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
 }
 
-internal Void 
+internal Void
 os_memory_decommit(Void *ptr, U64 size)
 {
-	
+	VirtualFree(ptr, size, MEM_DECOMMIT);
 }
 
-internal Void  
+internal Void
 os_memory_release(Void *ptr, U64 size)
 {
-	
+	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
-internal B32 
+internal B32
 os_file_read(Arena *arena, Str8 path, Str8 *result)
 {
-	
+
 }
 
-internal B32 
+internal B32
 os_file_write(Str8 path, Str8 data)
 {
-	
+
 }
 
 internal B32 os_file_delete(Str8 path);
