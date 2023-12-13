@@ -2,7 +2,7 @@
 
 #include "base/base_inc.c"
 
-internal int
+int
 main(int argument_count, char *arguments[])
 {
 	return(0);
