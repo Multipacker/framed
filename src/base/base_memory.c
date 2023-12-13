@@ -1,7 +1,7 @@
-#if COMPILER_CL
-
 void __asan_poison_memory_region(void const volatile *addr, size_t size);
 void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+
+#if COMPILER_CL
 
 #	if defined(__SANITIZE_ADDRESS__)
 #		define ASAN_POISON_MEMORY_REGION(addr, size)   __asan_poison_memory_region((addr), (size))
@@ -12,6 +12,13 @@ void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
 #	endif 
 
 #elif COMPILER_CLANG
+
+#	define ASAN_POISON_MEMORY_REGION(addr, size)
+#	define ASAN_UNPOISON_MEMORY_REGION(addr, size)
+
+#else
+
+// NOTE(hampus): No sanitizer for this compiler
 
 #	define ASAN_POISON_MEMORY_REGION(addr, size)
 #	define ASAN_UNPOISON_MEMORY_REGION(addr, size)
