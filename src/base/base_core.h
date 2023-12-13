@@ -194,17 +194,23 @@ typedef void Void;
 #define global   static
 #define local    static
 
-#if COMPILER_CL
-#	define thread_local __declspec( thread )
-#else
+#if COMPILER_CLANG
 #	define thread_local _Thread_local
+#elif COMPILER_CL
+#	define thread_local __declspec( thread )
+#elif COMPILER_GCC
+#	define thread_local __thread
 #endif
 
 #if COMPILER_CLANG
-#define assert(expr) if (!expr) { __builtin_debugtrap(); }
+#	define debug_break() __builtin_debugtrap()
+#elif COMPILER_CL
+#	define debug_break() DebugBreak()
 #else
-#define assert(expr) if (!expr) { *(S32 *)0 = 0; }
+#	define debug_break() *(S32 *)0 = 0;
 #endif
+
+#define assert(expr) if (!expr) { debug_break(); }
 
 #define array_count(array) (sizeof(array) / sizeof((*array)))
 
