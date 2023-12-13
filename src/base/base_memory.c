@@ -1,7 +1,7 @@
 #if COMPILER_CL
 
-void __asan_poison_memory_region(void const volatile *addr, size_t size);
-void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+Void __asan_poison_memory_region(Void const volatile *addr, size_t size);
+Void __asan_unpoison_memory_region(Void const volatile *addr, size_t size);
 
 #	if defined(__SANITIZE_ADDRESS__)
 #		define ASAN_POISON_MEMORY_REGION(addr, size)   __asan_poison_memory_region((addr), (size))

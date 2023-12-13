@@ -8,29 +8,29 @@
 #include <math.h>
 
 #if defined(__clang__)
-#		define COMPILER_CLANG 1
+#	define COMPILER_CLANG 1
 
-#		if defined(_WIN32)
-#			define OS_WINDOWS 1
-#		elif defined(__gnu_linux__)
-#			define OS_LINUX 1
-#		elif defined(__APPLE__) && defined(__MACH__)
-#			define OS_MAC 1
-#		else
-#			error missing OS detection
-#		endif
+#	if defined(_WIN32)
+#		define OS_WINDOWS 1
+#	elif defined(__gnu_linux__)
+#		define OS_LINUX 1
+#	elif defined(__APPLE__) && defined(__MACH__)
+#		define OS_MAC 1
+#	else
+#		error missing OS detection
+#	endif
 
 # 	if defined(__amd64__)
-#		  define ARCH_X64 1
-#		elif defined(__i386__)
-#			define ARCH_X86 1
-#		elif defined(__arm__)
-#			define ARCH_ARM
-#		elif defined(__aarch64__)
-#			define ARCH_ARM64
-#		else
-#			error missing ARCH detection
-#		endif
+#		define ARCH_X64 1
+#	elif defined(__i386__)
+#		define ARCH_X86 1
+#	elif defined(__arm__)
+#		define ARCH_ARM
+#	elif defined(__aarch64__)
+#		define ARCH_ARM64
+#	else
+#		error missing ARCH detection
+#	endif
 
 #elif defined(_MSC_VER)
 #		define COMPILER_CL 1
