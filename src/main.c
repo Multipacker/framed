@@ -7,9 +7,8 @@
 S32
 main(S32 argument_count, CStr arguments[])
 {
-	assert(false);
 	Arena *arena = arena_create();
 	S32 *x = push_array(arena, S32, 1);
-	((U8 *)arena->memory)[10] = 5;
+	((U8 *)arena->memory)[100] = 5; // Should crash here
 	return(0);
 }
