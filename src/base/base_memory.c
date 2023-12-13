@@ -8,7 +8,7 @@ arena_create_reserve(U64 reserve_size)
 	U8 *memory = os_reserve(reserve_size);
 	os_commit(result, ARENA_COMMIT_BLOCK_SIZE);
 
-	Arena *result = (Arena *) memory;
+	Arena *result = (Arena *)memory;
 
 	result->memory     = memory;
 	result->cap        = reserve_size;

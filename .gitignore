@@ -1,3 +1,4 @@
 /build/
 **/*.swp
 /.vscode/
+/src/msvc_compiler_test.c
