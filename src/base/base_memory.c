@@ -1,3 +1,24 @@
+#if COMPILER_CL
+
+void __asan_poison_memory_region(void const volatile *addr, size_t size);
+void __asan_unpoison_memory_region(void const volatile *addr, size_t size);
+
+#	if defined(__SANITIZE_ADDRESS__)
+#		define ASAN_POISON_MEMORY_REGION(addr, size)   __asan_poison_memory_region((addr), (size))
+#		define ASAN_UNPOISON_MEMORY_REGION(addr, size) __asan_unpoison_memory_region((addr), (size))
+#	else
+#		define ASAN_POISON_MEMORY_REGION(addr, size)
+#		define ASAN_UNPOISON_MEMORY_REGION(addr, size)
+#	endif 
+
+#elif COMPILER_CLANG
+
+#	define ASAN_POISON_MEMORY_REGION(addr, size)
+#	define ASAN_UNPOISON_MEMORY_REGION(addr, size)
+
+#endif
+
+
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 thread_local Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 
@@ -20,6 +41,8 @@ arena_create_reserve(U64 reserve_size)
 	// NOTE(simon): This is for the arena itself.
 	result->pos        = sizeof(*result);
 	result->commit_pos = ARENA_COMMIT_BLOCK_SIZE;
+
+	ASAN_POISON_MEMORY_REGION(result->memory + result->pos, result->commit_pos - result->pos);
 
 	return(result);
 }
@@ -54,7 +77,10 @@ arena_push(Arena *arena, U64 size)
 			U64 commit_size     = next_commit_pos - arena->commit_pos;
 			os_memory_commit(arena->memory + arena->commit_pos, commit_size);
 			arena->commit_pos = next_commit_pos;
+			ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->commit_pos - ARENA_COMMIT_BLOCK_SIZE, ARENA_COMMIT_BLOCK_SIZE);
 		}
+
+		ASAN_UNPOISON_MEMORY_REGION(result, size);
 	}
 
 	return result;
@@ -65,7 +91,10 @@ arena_pop_to(Arena *arena, U64 pos)
 {
 	if (pos < arena->pos)
 	{
+		U64 dpos = arena->pos - pos;
 		arena->pos = pos;
+
+		ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->pos, dpos);
 
 		U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
 		U64 next_commit_pos = u64_min(pos_aligned, arena->cap);
