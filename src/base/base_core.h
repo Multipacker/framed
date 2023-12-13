@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 
 #if defined(__clang__)
 #		define COMPILER_CLANG 1
@@ -193,7 +194,7 @@ typedef void Void;
 #define global   static
 #define local    static
 
-#if COMPILER_MSVC
+#if COMPILER_CL
 #	define thread_local __declspec( thread )
 #else
 #	define thread_local _Thread_local

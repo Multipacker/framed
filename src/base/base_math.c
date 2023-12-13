@@ -448,7 +448,7 @@ u16_reverse(U16 x)
 internal U16
 u16_big_to_local_endian(U16 x)
 {
-	return __builtin_bswap16(x);
+	return _byteswap_ushort(x);
 }
 
 internal U32
@@ -529,7 +529,7 @@ u32_reverse(U32 x)
 internal U32
 u32_big_to_local_endian(U32 x)
 {
-	return __builtin_bswap32(x);
+	return _byteswap_ulong(x);
 }
 
 internal U64 u64_min(U64 a, U64 b)
@@ -611,7 +611,7 @@ u64_reverse(U64 x)
 internal U64
 u64_big_to_local_endian(U64 x)
 {
-	return __builtin_bswap64(x);
+	return _byteswap_uint64(x);
 }
 
 internal S8
@@ -659,7 +659,7 @@ s16_abs(S16 x)
 internal S16
 s16_big_to_local_endian(S16 x)
 {
-	U16 swapped = __builtin_bswap16(*(U16 *)&x);
+	U16 swapped = _byteswap_ushort(*(U16 *)&x);
 	return *(S16 *)&swapped;
 }
 
@@ -687,7 +687,7 @@ s32_abs(S32 x)
 internal S32
 s32_big_to_local_endian(S32 x)
 {
-	U32 swapped = __builtin_bswap32(*(U32 *)&x);
+	U32 swapped = _byteswap_ulong(*(U32 *)&x);
 	return *(S32 *)&swapped;
 }
 
@@ -715,7 +715,7 @@ s64_abs(S64 x)
 internal S64
 s64_big_to_local_endian(S64 x)
 {
-	U64 swapped = __builtin_bswap64(*(U64 *)&x);
+	U64 swapped = _byteswap_uint64(*(U64 *)&x);
 	return *(S64 *)&swapped;
 }
 
@@ -787,61 +787,61 @@ f32_abs(F32 x)
 internal F32
 f32_sqrt(F32 x)
 {
-	return __builtin_sqrtf(x);
+	return sqrtf(x);
 }
 
 internal F32
 f32_cbrt(F32 x)
 {
-	return __builtin_cbrtf(x);
+	return cbrtf(x);
 }
 
 internal F32
 f32_sin(F32 x)
 {
-	return __builtin_sinf(x);
+	return sinf(x);
 }
 
 internal F32
 f32_cos(F32 x)
 {
-	return __builtin_cosf(x);
+	return cosf(x);
 }
 
 internal F32
 f32_tan(F32 x)
 {
-	return __builtin_tanf(x);
+	return tanf(x);
 }
 
 internal F32
 f32_arctan(F32 x)
 {
-	return __builtin_atanf(x);
+	return atanf(x);
 }
 
 internal F32
 f32_arctan2(F32 y, F32 x)
 {
-	return __builtin_atan2f(y, x);
+	return atan2f(y, x);
 }
 
 internal F32
 f32_ln(F32 x)
 {
-	return __builtin_logf(x);
+	return logf(x);
 }
 
 internal F32
 f32_log2(F32 x)
 {
-	return __builtin_log2f(x);
+	return log2f(x);
 }
 
 internal F32
 f32_log(F32 x)
 {
-	return __builtin_log10f(x);
+	return log10f(x);
 }
 
 internal F32
@@ -865,31 +865,31 @@ f32_unlerp(F32 a, F32 b, F32 x)
 internal F32
 f32_pow(F32 a, F32 b)
 {
-	return __builtin_powf(a, b);
+	return powf(a, b);
 }
 
 internal F32
 f32_floor(F32 x)
 {
-	return __builtin_floorf(x);
+	return floorf(x);
 }
 
 internal F32
 f32_ceil(F32 x)
 {
-	return __builtin_ceilf(x);
+	return ceilf(x);
 }
 
 internal U32
 f32_round_to_u32(F32 x)
 {
-	return (U32)__builtin_roundf(x);
+	return (U32)roundf(x);
 }
 
 internal S32
 f32_round_to_s32(F32 x)
 {
-	return (S32)__builtin_roundf(x);
+	return (S32)roundf(x);
 }
 
 internal F64
@@ -918,37 +918,37 @@ f64_abs(F64 x)
 internal F64
 f64_sqrt(F64 x)
 {
-	return __builtin_sqrt(x);
+	return sqrt(x);
 }
 
 internal F64
 f64_sin(F64 x)
 {
-	return __builtin_sin(x);
+	return sin(x);
 }
 
 internal F64
 f64_cos(F64 x)
 {
-	return __builtin_cos(x);
+	return cos(x);
 }
 
 internal F64
 f64_tan(F64 x)
 {
-	return __builtin_tan(x);
+	return tan(x);
 }
 
 internal F64
 f64_ln(F64 x)
 {
-	return __builtin_log(x);
+	return log(x);
 }
 
 internal F64
 f64_lg(F64 x)
 {
-	return __builtin_log10(x);
+	return log10(x);
 }
 
 internal F64
@@ -972,17 +972,17 @@ f64_unlerp(F64 a, F64 b, F64 x)
 internal F64
 f64_pow(F64 a, F64 b)
 {
-	return __builtin_pow(a, b);
+	return pow(a, b);
 }
 
 internal F64
 f64_floor(F64 x)
 {
-	return __builtin_floor(x);
+	return floor(x);
 }
 
 internal F64
 f64_ceil(F64 x)
 {
-	return __builtin_ceil(x);
+	return ceil(x);
 }
