@@ -30,10 +30,10 @@ architecture_from_context(Void)
 	return(result);
 }
 
-internal String8
+internal Str8
 string_from_operating_system(OperatingSystem os)
 {
-	String8 result = str8_lit("NullOS");
+	Str8 result = str8_lit("NullOS");
 	switch (os)
 	{
 		case OperatingSystem_Windows:
@@ -55,10 +55,10 @@ string_from_operating_system(OperatingSystem os)
 	return(result);
 }
 
-internal String8
+internal Str8
 string_from_architecture(Architecture arc)
 {
-	String8 result = str8_lit("NullArchitecture");
+	Str8 result = str8_lit("NullArchitecture");
 	switch (arc)
 	{
 		case Architecture_X64:
@@ -85,10 +85,10 @@ string_from_architecture(Architecture arc)
 	return(result);
 }
 
-internal String8
+internal Str8
 string_from_day_of_the_week(DayOfWeek day)
 {
-	String8 result = str8_lit("NullDay");
+	Str8 result = str8_lit("NullDay");
 	switch (day)
 	{
 		case DayOfWeek_Monday:
@@ -130,10 +130,10 @@ string_from_day_of_the_week(DayOfWeek day)
 	return(result);
 }
 
-internal String8
+internal Str8
 string_from_month(Month month)
 {
-	String8 result = str8_lit("NullMonth");
+	Str8 result = str8_lit("NullMonth");
 
 	switch (month)
 	{
