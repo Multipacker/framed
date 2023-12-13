@@ -4,7 +4,7 @@ thread_local Arena thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 internal Arena *
 arena_create_reserve(U64 reserve_size)
 {
-	Arena result    ={ 0 };
+	Arena result    = { 0 };
 	result.memory   = os_reserve(reserve_size);
 	result.capacity = reserve_size;
 	return result;
@@ -45,7 +45,7 @@ arena_push(Arena *arena, U64 size)
 	return result;
 }
 
-internal Void 
+internal Void
 arena_pop_to(Arena *arena, U64 pos)
 {
 	if (pos < arena->pos)
@@ -63,7 +63,7 @@ arena_pop_to(Arena *arena, U64 pos)
 	}
 }
 
-internal Void 
+internal Void
 arena_pop_amount(Arena *arena, U64 amount)
 {
 	arena_pop_to(arena, arena->pos - amount);
@@ -77,7 +77,7 @@ arena_push_zero(Arena *arena, U64 size)
 	return result;
 }
 
-internal Void 
+internal Void
 arena_align(Arena *arena, U64 power)
 {
 	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
@@ -88,7 +88,7 @@ arena_align(Arena *arena, U64 power)
 	}
 }
 
-internal Void 
+internal Void
 arena_align_zero(Arena *arena, U64 power)
 {
 	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
@@ -99,7 +99,7 @@ arena_align_zero(Arena *arena, U64 power)
 	}
 }
 
-internal Arena_Temporary 
+internal Arena_Temporary
 arena_begin_temporary(Arena *arena)
 {
 	Arena_Temporary result;
@@ -109,13 +109,13 @@ arena_begin_temporary(Arena *arena)
 	return result;
 }
 
-internal Void 
+internal Void
 arena_end_temporary(Arena_Temporary temporary)
 {
 	arena_pop_to(temporary.arena, temporary.pos);
 }
 
-internal Void 
+internal Void
 arena_init_scratch(Void)
 {
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
@@ -124,7 +124,7 @@ arena_init_scratch(Void)
 	}
 }
 
-internal Void 
+internal Void
 arena_destroy_scratch(Void)
 {
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
@@ -133,7 +133,7 @@ arena_destroy_scratch(Void)
 	}
 }
 
-internal Arena_Temporary 
+internal Arena_Temporary
 arena_get_scratch(Arena **conflicts, U32 count)
 {
 	Arena *selected = 0;
