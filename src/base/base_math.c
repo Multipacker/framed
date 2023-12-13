@@ -340,13 +340,13 @@ u8_floor_to_power_of_2(U8 value)
 internal U8
 u8_rotate_right(U8 x, U8 amount)
 {
-	return (x >> amount) | (x << (8 - amount));
+	return (U8) ((x >> amount) | (x << (8 - amount)));
 }
 
 internal U8
 u8_rotate_left(U8 x, U8 amount)
 {
-	return (x >> (8 - amount)) | (x << amount);
+	return (U8) ((x >> (8 - amount)) | (x << amount));
 }
 
 internal U8
@@ -363,9 +363,9 @@ u8_ceil_to_power_of_2(U8 x)
 internal U8
 u8_reverse(U8 x)
 {
-	x = ((x >> 1) & 0x55) | ((x & 0x55) << 1);
-	x = ((x >> 2) & 0x33) | ((x & 0x33) << 2);
-	x = ((x >> 4) & 0x0F) | ((x & 0x0F) << 4);
+	x = (U8) (((x >> 1) & 0x55) | ((x & 0x55) << 1));
+	x = (U8) (((x >> 2) & 0x33) | ((x & 0x33) << 2));
+	x = (U8) (((x >> 4) & 0x0F) | ((x & 0x0F) << 4));
 	return x;
 }
 
@@ -414,13 +414,13 @@ u16_floor_to_power_of_2(U16 value)
 internal U16
 u16_rotate_right(U16 x, U16 amount)
 {
-	return (x >> amount) | (x << (16 - amount));
+	return (U16) ((x >> amount) | (x << (16 - amount)));
 }
 
 internal U16
 u16_rotate_left(U16 x, U16 amount)
 {
-	return (x >> (16 - amount)) | (x << amount);
+	return (U16) ((x >> (16 - amount)) | (x << amount));
 }
 
 internal U16
@@ -438,10 +438,10 @@ u16_ceil_to_power_of_2(U16 x)
 internal U16
 u16_reverse(U16 x)
 {
-	x = ((x >> 1) & 0x5555) | ((x & 0x5555) << 1);
-	x = ((x >> 2) & 0x3333) | ((x & 0x3333) << 2);
-	x = ((x >> 4) & 0x0F0F) | ((x & 0x0F0F) << 4);
-	x = ((x >> 8) & 0x00FF) | ((x & 0x00FF) << 8);
+	x = (U16) (((x >> 1) & 0x5555) | ((x & 0x5555) << 1));
+	x = (U16) (((x >> 2) & 0x3333) | ((x & 0x3333) << 2));
+	x = (U16) (((x >> 4) & 0x0F0F) | ((x & 0x0F0F) << 4));
+	x = (U16) (((x >> 8) & 0x00FF) | ((x & 0x00FF) << 8));
 	return x;
 }
 
