@@ -208,6 +208,17 @@ typedef void Void;
 
 #define array_count(array) (sizeof(array) / sizeof((*array)))
 
+#define stringify_(s) #s
+#define stringify(s)  stringify_(s)
+#define glue_(a, b)   a##b
+#define glue(a, b)    glue_(a, b)
+
+#define int_from_ptr(p) (unsigned long long)((char*)p - (char*)0)
+#define ptr_from_int(n) (void*)((char *)0 + (n))
+
+#define member(t, m)        (((t*)0)->m)
+#define member_offset(t, m) int_from_ptr(&member(t, m))
+
 #define KILOBYTES(n) (n*1024LL)
 #define MEGABYTES(n) (1024LL*KILOBYTES(n))
 #define GIGABYTES(n) (1024LL*MEGABYTES(n))
