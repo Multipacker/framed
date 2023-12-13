@@ -17,7 +17,7 @@ struct OS_Handle
 
 internal OS_Handle os_handle_zero();
 internal B32       os_handle_match(OS_Handle a, OS_Handle b);
-internal B32       os_handle_is_null(OS_Handle handle);
+internal B32       os_handle_is_zero(OS_Handle handle);
 
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);

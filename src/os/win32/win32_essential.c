@@ -13,7 +13,7 @@ os_handle_match(OS_Handle a, OS_Handle b)
 }
 
 internal B32
-os_handle_is_null(OS_Handle handle)
+os_handle_is_zero(OS_Handle handle)
 {
 	B32 result = os_handle_match(handle, os_handle_zero());
 	return(result);
@@ -248,18 +248,38 @@ internal OS_Handle
 os_library_open(Str8 path)
 {
 	OS_Handle result = os_handle_zero();
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	HMODULE lib = LoadLibrary(str16_from_str8(scratch.arena, path).data);
+	arena_release_scratch(scratch);
+	if (lib)
+	{
+		result.u64[0] = int_from_ptr(lib);
+	}
+	return(result);
 }
 
 internal Void
 os_library_close(OS_Handle handle)
 {
-
+	if (!os_handle_is_zero(handle))
+	{
+		HMODULE lib = ptr_from_int(handle.u64[0]);
+		FreeLibrary(lib);
+	}
 }
 
 internal VoidFunction *
 os_library_load_function(OS_Handle handle, Str8 name)
 {
 	VoidFunction *result = 0;
+
+	if (!os_handle_is_zero(handle))
+	{
+		HMODULE lib = ptr_from_int(handle.u64[0]);
+		Arena_Temporary scratch = arena_get_scratch(0, 0);
+		result = (VoidFunction *)GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
+		arena_release_scratch(scratch);
+	}
 
 	return(result);
 }
