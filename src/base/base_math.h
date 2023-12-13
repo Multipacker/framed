@@ -192,70 +192,70 @@ union RectU32
 
 // F32
 
-function Vec2F32 v2f32(F32 x, F32 y);
-function Vec2F32 v2f32_add_v2f32(Vec2F32 a, Vec2F32 b);
-function Vec2F32 v2f32_sub_v2f32(Vec2F32 a, Vec2F32 b);
-function Vec2F32 v2f32_mul_f32(Vec2F32 a, F32 t);
-function Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
+internal Vec2F32 v2f32(F32 x, F32 y);
+internal Vec2F32 v2f32_add_v2f32(Vec2F32 a, Vec2F32 b);
+internal Vec2F32 v2f32_sub_v2f32(Vec2F32 a, Vec2F32 b);
+internal Vec2F32 v2f32_mul_f32(Vec2F32 a, F32 t);
+internal Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
 
-function Vec3F32 v3f32(F32 x, F32 y, F32 z);
-function Vec3F32 v3f32_add_v3f32(Vec3F32 a, Vec3F32 b);
-function Vec3F32 v3f32_sub_v3f32(Vec3F32 a, Vec3F32 b);
-function Vec3F32 v3f32_mul_f32(Vec3F32 a, F32 t);
-function Vec3F32 v3f32_div_f32(Vec3F32 a, F32 t);
+internal Vec3F32 v3f32(F32 x, F32 y, F32 z);
+internal Vec3F32 v3f32_add_v3f32(Vec3F32 a, Vec3F32 b);
+internal Vec3F32 v3f32_sub_v3f32(Vec3F32 a, Vec3F32 b);
+internal Vec3F32 v3f32_mul_f32(Vec3F32 a, F32 t);
+internal Vec3F32 v3f32_div_f32(Vec3F32 a, F32 t);
 
-function Vec4F32 v4f32(F32 x, F32 y, F32 z, F32 w);
-function Vec4F32 v4f32_add_v4f32(Vec4F32 a, Vec4F32 b);
-function Vec4F32 v4f32_sub_v4f32(Vec4F32 a, Vec4F32 b);
-function Vec4F32 v4f32_mul_f32(Vec4F32 a, F32 t);
-function Vec4F32 v4f32_div_f32(Vec4F32 a, F32 t);
+internal Vec4F32 v4f32(F32 x, F32 y, F32 z, F32 w);
+internal Vec4F32 v4f32_add_v4f32(Vec4F32 a, Vec4F32 b);
+internal Vec4F32 v4f32_sub_v4f32(Vec4F32 a, Vec4F32 b);
+internal Vec4F32 v4f32_mul_f32(Vec4F32 a, F32 t);
+internal Vec4F32 v4f32_div_f32(Vec4F32 a, F32 t);
 
 // S32
 
-function Vec2S32 v2s32(S32 x, S32 y);
-function Vec2S32 v2s32_add_v2s32(Vec2S32 a, Vec2S32 b);
-function Vec2S32 v2s32_sub_v2s32(Vec2S32 a, Vec2S32 b);
-function Vec2S32 v2s32_mul_s32(Vec2S32 a, S32 t);
-function Vec2S32 v2s32_div_s32(Vec2S32 a, S32 t);
+internal Vec2S32 v2s32(S32 x, S32 y);
+internal Vec2S32 v2s32_add_v2s32(Vec2S32 a, Vec2S32 b);
+internal Vec2S32 v2s32_sub_v2s32(Vec2S32 a, Vec2S32 b);
+internal Vec2S32 v2s32_mul_s32(Vec2S32 a, S32 t);
+internal Vec2S32 v2s32_div_s32(Vec2S32 a, S32 t);
 
-function Vec3S32 v3s32(S32 x, S32 y, S32 z);
-function Vec3S32 v3s32_add_v3s32(Vec3S32 a, Vec3S32 b);
-function Vec3S32 v3s32_sub_v3s32(Vec3S32 a, Vec3S32 b);
-function Vec3S32 v3s32_mul_s32(Vec3S32 a, S32 t);
-function Vec3S32 v3s32_div_s32(Vec3S32 a, S32 t);
+internal Vec3S32 v3s32(S32 x, S32 y, S32 z);
+internal Vec3S32 v3s32_add_v3s32(Vec3S32 a, Vec3S32 b);
+internal Vec3S32 v3s32_sub_v3s32(Vec3S32 a, Vec3S32 b);
+internal Vec3S32 v3s32_mul_s32(Vec3S32 a, S32 t);
+internal Vec3S32 v3s32_div_s32(Vec3S32 a, S32 t);
 
-function Vec4S32 v4s32(S32 x, S32 y, S32 z, S32 w);
-function Vec4S32 v4s32_add_v4s32(Vec4S32 a, Vec4S32 b);
-function Vec4S32 v4s32_sub_v4s32(Vec4S32 a, Vec4S32 b);
-function Vec4S32 v4s32_mul_s32(Vec4S32 a, S32 t);
-function Vec4S32 v4s32_div_s32(Vec4S32 a, S32 t);
+internal Vec4S32 v4s32(S32 x, S32 y, S32 z, S32 w);
+internal Vec4S32 v4s32_add_v4s32(Vec4S32 a, Vec4S32 b);
+internal Vec4S32 v4s32_sub_v4s32(Vec4S32 a, Vec4S32 b);
+internal Vec4S32 v4s32_mul_s32(Vec4S32 a, S32 t);
+internal Vec4S32 v4s32_div_s32(Vec4S32 a, S32 t);
 
 // U32
 
-function Vec2U32 v2u32(U32 x, U32 y);
-function Vec2U32 v2u32_add_v2u32(Vec2U32 a, Vec2U32 b);
-function Vec2U32 v2u32_sub_v2u32(Vec2U32 a, Vec2U32 b);
-function Vec2U32 v2u32_mul_u32(Vec2U32 a, U32 t);
-function Vec2U32 v2u32_div_u32(Vec2U32 a, U32 t);
+internal Vec2U32 v2u32(U32 x, U32 y);
+internal Vec2U32 v2u32_add_v2u32(Vec2U32 a, Vec2U32 b);
+internal Vec2U32 v2u32_sub_v2u32(Vec2U32 a, Vec2U32 b);
+internal Vec2U32 v2u32_mul_u32(Vec2U32 a, U32 t);
+internal Vec2U32 v2u32_div_u32(Vec2U32 a, U32 t);
 
-function Vec3U32 v3u32(U32 x, U32 y, U32 z);
-function Vec3U32 v3u32_add_v3u32(Vec3U32 a, Vec3U32 b);
-function Vec3U32 v3u32_sub_v3u32(Vec3U32 a, Vec3U32 b);
-function Vec3U32 v3u32_mul_u32(Vec3U32 a, U32 t);
-function Vec3U32 v3u32_div_u32(Vec3U32 a, U32 t);
+internal Vec3U32 v3u32(U32 x, U32 y, U32 z);
+internal Vec3U32 v3u32_add_v3u32(Vec3U32 a, Vec3U32 b);
+internal Vec3U32 v3u32_sub_v3u32(Vec3U32 a, Vec3U32 b);
+internal Vec3U32 v3u32_mul_u32(Vec3U32 a, U32 t);
+internal Vec3U32 v3u32_div_u32(Vec3U32 a, U32 t);
 
-function Vec4U32 v4u32(U32 x, U32 y, U32 z, U32 w);
-function Vec4U32 v4u32_add_v4u32(Vec4U32 a, Vec4U32 b);
-function Vec4U32 v4u32_sub_v4u32(Vec4U32 a, Vec4U32 b);
-function Vec4U32 v4u32_mul_u32(Vec4U32 a, U32 t);
-function Vec4U32 v4u32_div_u32(Vec4U32 a, U32 t);
+internal Vec4U32 v4u32(U32 x, U32 y, U32 z, U32 w);
+internal Vec4U32 v4u32_add_v4u32(Vec4U32 a, Vec4U32 b);
+internal Vec4U32 v4u32_sub_v4u32(Vec4U32 a, Vec4U32 b);
+internal Vec4U32 v4u32_mul_u32(Vec4U32 a, U32 t);
+internal Vec4U32 v4u32_div_u32(Vec4U32 a, U32 t);
 
 // Rect
 
-function RectF32 rectf32(Vec2F32 min, Vec2F32 max);
-function RectF32 rectf32_from_rects32(RectS32 rect);
-function RectS32 rects32(Vec2S32 min, Vec2S32 max);
-function RectU32 retu32(Vec2U32 min, Vec2U32 max);
+internal RectF32 rectf32(Vec2F32 min, Vec2F32 max);
+internal RectF32 rectf32_from_rects32(RectS32 rect);
+internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
+internal RectU32 retu32(Vec2U32 min, Vec2U32 max);
 
 global S8  S8_MIN  = 0x80;
 global S16 S16_MIN = 0x8000;
