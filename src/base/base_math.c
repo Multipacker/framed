@@ -328,7 +328,7 @@ u8_round_up_to_power_of_2(U8 value, U8 power)
 	return result;
 }
 
-internal U8 
+internal U8
 u8_floor_to_power_of_2(U8 value)
 {
 	value |= value >> 1;
@@ -337,19 +337,19 @@ u8_floor_to_power_of_2(U8 value)
 	return value ^ (value >> 1);
 }
 
-internal U8 
+internal U8
 u8_rotate_right(U8 x, U8 amount)
 {
 	return (x >> amount) | (x << (8 - amount));
 }
 
-internal U8 
+internal U8
 u8_rotate_left(U8 x, U8 amount)
 {
 	return (x >> (8 - amount)) | (x << amount);
 }
 
-internal U8 
+internal U8
 u8_ceil_to_power_of_2(U8 x)
 {
 	--x;
@@ -360,7 +360,7 @@ u8_ceil_to_power_of_2(U8 x)
 	return x;
 }
 
-internal U8 
+internal U8
 u8_reverse(U8 x)
 {
 	x = ((x >> 1) & 0x55) | ((x & 0x55) << 1);
@@ -369,7 +369,7 @@ u8_reverse(U8 x)
 	return x;
 }
 
-internal U16 
+internal U16
 u16_min(U16 a, U16 b)
 {
 	U16 result = (a < b ? a : b);
@@ -377,7 +377,7 @@ u16_min(U16 a, U16 b)
 
 }
 
-internal U16 
+internal U16
 u16_max(U16 a, U16 b)
 {
 	U16 result = (a > b ? a : b);
@@ -385,7 +385,7 @@ u16_max(U16 a, U16 b)
 
 }
 
-internal U16 
+internal U16
 u16_round_down_to_power_of_2(U16 value, U16 power)
 {
 	U16 result = value & ~(power - 1);
@@ -393,7 +393,7 @@ u16_round_down_to_power_of_2(U16 value, U16 power)
 
 }
 
-internal U16 
+internal U16
 u16_round_up_to_power_of_2(U16 value, U16 power)
 {
 	U16 result = (value + power - 1) & ~(power - 1);
@@ -411,19 +411,19 @@ u16_floor_to_power_of_2(U16 value)
 	return value ^ (value >> 1);
 }
 
-internal U16 
+internal U16
 u16_rotate_right(U16 x, U16 amount)
 {
 	return (x >> amount) | (x << (16 - amount));
 }
 
-internal U16 
+internal U16
 u16_rotate_left(U16 x, U16 amount)
 {
 	return (x >> (16 - amount)) | (x << amount);
 }
 
-internal U16 
+internal U16
 u16_ceil_to_power_of_2(U16 x)
 {
 	--x;
@@ -435,7 +435,7 @@ u16_ceil_to_power_of_2(U16 x)
 	return x;
 }
 
-internal U16 
+internal U16
 u16_reverse(U16 x)
 {
 	x = ((x >> 1) & 0x5555) | ((x & 0x5555) << 1);
@@ -445,27 +445,27 @@ u16_reverse(U16 x)
 	return x;
 }
 
-internal U16 
+internal U16
 u16_big_to_local_endian(U16 x)
 {
 	return __builtin_bswap16(x);
 }
 
-internal U32 
+internal U32
 u32_min(U32 a, U32 b)
 {
 	U32 result = (a < b ? a : b);
 	return result;
 }
 
-internal U32 
+internal U32
 u32_max(U32 a, U32 b)
 {
 	U32 result = (a > b ? a : b);
 	return result;
 }
 
-internal U32 
+internal U32
 u32_round_down_to_power_of_2(U32 value, U32 power)
 {
 	U32 result = value & ~(power - 1);
@@ -479,7 +479,7 @@ u32_round_up_to_power_of_2(U32 value, U32 power)
 	return result;
 }
 
-internal U32 
+internal U32
 u32_floor_to_power_of_2(U32 value)
 {
 	value |= value >> 1;
@@ -490,13 +490,13 @@ u32_floor_to_power_of_2(U32 value)
 	return value ^ (value >> 1);
 }
 
-internal U32 
+internal U32
 u32_rotate_right(U32 x, U32 amount)
 {
 	return (x >> amount) | (x << (32 - amount));
 }
 
-internal U32 
+internal U32
 u32_rotate_left(U32 x, U32 amount)
 {
 	return (x >> (32 - amount)) | (x << amount);
