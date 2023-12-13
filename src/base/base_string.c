@@ -321,7 +321,7 @@ string_decode_utf8(U8 *string, U64 size)
 
 	while (bytes_needed != 0)
 	{
-		U8 byte = *string++;
+		byte = *string++;
 
 		if (!(lower_boundary <= byte && byte <= upper_boundary))
 		{
@@ -348,25 +348,25 @@ string_encode_utf8(U8 *destination, U32 codepoint)
 
 	if (codepoint <= 0x7F)
 	{
-		destination[0] = codepoint;
+		destination[0] = (U8)codepoint;
 		size = 1;
 	}
 	else if (codepoint <= 0x07FF)
 	{
-		destination[0] = 0xC0 | (codepoint >> 6);
+		destination[0] = (U8)(0xC0 | (codepoint >> 6));
 		destination[1] = 0x80 | (codepoint & 0x3F);
 		size = 2;
 	}
 	else if (codepoint <= 0xFFFF)
 	{
-		destination[0] = 0xC0 | (codepoint >> 12);
+		destination[0] = (U8)(0xC0 | (codepoint >> 12));
 		destination[1] = 0x80 | ((codepoint >> 6) & 0x3F);
 		destination[2] = 0x80 | (codepoint & 0x3F);
 		size = 3;
 	}
 	else if (codepoint <= 0x10FFFF)
 	{
-		destination[0] = 0xC0 | (codepoint >> 18);
+		destination[0] = (U8)(0xC0 | (codepoint >> 18));
 		destination[1] = 0x80 | ((codepoint >> 12) & 0x3F);
 		destination[2] = 0x80 | ((codepoint >> 6) & 0x3F);
 		destination[3] = 0x80 | (codepoint & 0x3F);
@@ -375,7 +375,7 @@ string_encode_utf8(U8 *destination, U32 codepoint)
 	else
 	{
 		U32 missing_codepoint = 0xFFFD;
-		destination[0] = 0xC0 | (missing_codepoint >> 12);
+		destination[0] = (U8)(0xC0 | (missing_codepoint >> 12));
 		destination[1] = 0x80 | ((missing_codepoint >> 6) & 0x3F);
 		destination[2] = 0x80 | (missing_codepoint & 0x3F);
 		size = 3;
@@ -425,13 +425,13 @@ string_encode_utf16(U16 *destination, U32 codepoint)
 
 	if (codepoint < 0x10000)
 	{
-		destination[0] = codepoint;
+		destination[0] = (U16)codepoint;
 		size = 1;
 	}
 	else
 	{
 		U32 adjusted_codepoint = codepoint - 0x10000;
-		destination[0] = 0xD800 + (adjusted_codepoint >> 10);
+		destination[0] = (U16)(0xD800 + (adjusted_codepoint >> 10));
 		destination[1] = 0xDC00 + (adjusted_codepoint & 0x03FF);
 		size = 2;
 	}
@@ -506,8 +506,8 @@ str16_from_str8(Arena *arena, Str8 string)
 	while (ptr < opl)
 	{
 		StringDecode decode = string_decode_utf8(ptr, (U64)(opl - ptr));
-		U32 encode_size = string_encode_utf16(destination_ptr, decode.codepoint);
-		*destination_ptr = encode_size;
+		U32 encode_size = (U32)string_encode_utf16(destination_ptr, decode.codepoint);
+		*destination_ptr = (U16)encode_size;
 		ptr += decode.size;
 	}
 
