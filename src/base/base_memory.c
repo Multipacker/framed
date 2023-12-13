@@ -1,30 +1,4 @@
-#if COMPILER_CL
-
-Void __asan_poison_memory_region(Void const volatile *addr, size_t size);
-Void __asan_unpoison_memory_region(Void const volatile *addr, size_t size);
-
-#	if defined(__SANITIZE_ADDRESS__)
-#		define ASAN_POISON_MEMORY_REGION(addr, size)   __asan_poison_memory_region((addr), (size))
-#		define ASAN_UNPOISON_MEMORY_REGION(addr, size) __asan_unpoison_memory_region((addr), (size))
-#	else
-#		define ASAN_POISON_MEMORY_REGION(addr, size)
-#		define ASAN_UNPOISON_MEMORY_REGION(addr, size)
-#	endif 
-
-#elif COMPILER_CLANG
-
-#	define ASAN_POISON_MEMORY_REGION(addr, size)
-#	define ASAN_UNPOISON_MEMORY_REGION(addr, size)
-
-#else
-
-// NOTE(hampus): No sanitizer for this compiler
-
-#	define ASAN_POISON_MEMORY_REGION(addr, size)
-#	define ASAN_UNPOISON_MEMORY_REGION(addr, size)
-
-#endif
-
+#include <sanitizer/asan_interface.h>
 
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 thread_local Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
