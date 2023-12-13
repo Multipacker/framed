@@ -1,8 +1,3 @@
-#define UNICODE
-
-#define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
-
 internal Void *
 os_memory_reserve(U64 size)
 {
@@ -29,9 +24,11 @@ os_memory_release(Void *ptr, U64 size)
 }
 
 internal B32
-os_file_read(Arena *arena, Str8 path, Str8 *result)
+os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 {
-	B32 success = true;
+	assert(path.size < MAX_PATH);
+
+	B32 result = true;
 
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
@@ -47,7 +44,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 	if (file == INVALID_HANDLE_VALUE)
 	{
 		// TODO(hampus): Logging
-		success = false;
+		result = false;
 		goto end;
 	}
 
@@ -57,7 +54,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 	if (!GetFileSizeEx(file, &file_size))
 	{
 		// TODO(hampus): Logging
-		success = false;
+		result = false;
 		goto end;
 	}
 
@@ -66,31 +63,37 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 	S32 file_size_s32 = (S32)file_size.QuadPart;
 	U32 push_amount = file_size_s32 + 1;
 
-	result->data = push_array(arena, U8, push_amount);
-	result->size = file_size_s32;
+	result_out->data = push_array(arena, U8, push_amount);
+	result_out->size = file_size_s32;
 
 	DWORD bytes_read;
 
-	if (!ReadFile(file, result->data, file_size_s32, &bytes_read, 0))
+	BOOL read_file_result = ReadFile(file, result_out->data, file_size_s32, &bytes_read, 0);
+
+	if (!read_file_result)
 	{
 		// TODO(hampus): Logging
 		arena_pop_amount(arena, push_amount);
-		success = false;
+		result = false;
 		goto end;
 	}
 
 	assert(bytes_read == file_size_s32);
 
-	CloseHandle(file);
-
 end:
-	return(success);
+	if (file != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(file);
+	}
+	return(result);
 }
 
 internal B32
 os_file_write(Str8 path, Str8 data)
 {
-	B32 success = true;
+	assert(path.size < MAX_PATH);
+
+	B32 result = true;
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
@@ -105,72 +108,143 @@ os_file_write(Str8 path, Str8 data)
 
 	if (file == INVALID_HANDLE_VALUE)
 	{
-		success = false;
+		result = false;
 		goto end;
 	}
 
 	arena_release_scratch(scratch);
 
-		
+	assert(data.size <= S32_MAX);
+	BOOL write_file_result = WriteFile(file, data.data, (S32)data.size, 0, 0);
+
+	if (!write_file_result)
+	{
+		result = false;
+		goto end;
+	}
 
 end:
-	return(success);
+	if (file != INVALID_HANDLE_VALUE)
+	{
+		CloseHandle(file);
+	}
+	return(result);
 }
 
 internal B32
 os_file_delete(Str8 path)
 {
-	B32 success = true;
+	assert(path.size < MAX_PATH);
+	assert(path.size < MAX_PATH);
 
-	return(success);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	B32 result = DeleteFile(str16_from_str8(scratch.arena, path).data);
+	arena_release_scratch(scratch);
+
+	return(result);
 }
 
 internal B32
-os_file_copy(Str8 old_path, Str8 new_path)
+os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 {
-	B32 success = true;
+	assert(old_path.size < MAX_PATH);
+	assert(new_path.size < MAX_PATH);
 
-	return(success);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Str16 old_path_16 = str16_from_str8(scratch.arena, old_path);
+	Str16 new_path_16 = str16_from_str8(scratch.arena, new_path);
+	B32 result = CopyFile(old_path_16.data, new_path_16.data, overwrite_existing);
+	arena_release_scratch(scratch);
+
+	return(result);
 }
 
 internal B32
 os_file_rename(Str8 old_path, Str8 new_path)
 {
-	B32 success = true;
+	assert(old_path.size < MAX_PATH);
+	assert(new_path.size < MAX_PATH);
 
-	return(success);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Str16 old_path_16 = str16_from_str8(scratch.arena, old_path);
+	Str16 new_path_16 = str16_from_str8(scratch.arena, new_path);
+	B32 result = MoveFile(old_path_16.data, new_path_16.data);
+	arena_release_scratch(scratch);
+
+	return(result);
 }
 
 internal B32
 os_file_create_directory(Str8 path)
 {
-	B32 success = true;
-
-	return(success);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	B32 result = CreateDirectory(str16_from_str8(scratch.arena, path).data, 0);
+	arena_release_scratch(scratch);
+	return(result);
 }
 
 internal B32
 os_file_delete_directory(Str8 path)
 {
-	B32 success = true;
-
-	return(success);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	B32 result = RemoveDirectory(str16_from_str8(scratch.arena, path).data);
+	arena_release_scratch(scratch);
+	return(result);
 }
 
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
+	Str8Node nodes[2];
+	Str8List list = { 0 };
+	str8_list_push_explicit(&list, path, nodes + 0);
+	str8_list_push_explicit(&list, str8_lit("\\*"), nodes + 1);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Str8 path_star = str8_join(scratch.arena, &list);
+	Str16 path16 = str16_from_str8(scratch.arena, path_star);
+	memory_zero_struct(iterator);
+	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
+	w32_iter->handle = FindFirstFile(path16.data, &w32_iter->find_data);
+	arena_release_scratch(scratch);
 }
 
 internal B32
 os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 {
-	B32 success = true;
+	B32 result = false;
+	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
+	if (w32_iter->handle != 0 && w32_iter->handle != INVALID_HANDLE_VALUE)
+	{
+		for (;!w32_iter->done;)
+		{
+			WCHAR *file_name = w32_iter->find_data.cFileName;
+			B32 is_dot = (file_name[0] == '.' && file_name[1] == 0);
+			B32 is_dotdot = (file_name[0] == '.' && file_name[1]  == '.' && file_name[2] == 0);
 
-	return(success);
+			B32 emit = (!is_dot && !is_dotdot);
+			WIN32_FIND_DATAW data = { 0 };
+			if (emit)
+			{
+				memory_copy_struct(&data, &w32_iter->find_data);
+				result = true;
+			}
+
+			if (!FindNextFile(w32_iter->handle, &w32_iter->find_data))
+			{
+				w32_iter->done = true;
+			}
+		}
+	}
+
+	return(result);
 }
 
 internal Void
 os_file_iterator_end(OS_FileIterator *iterator)
 {
+	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
+	if (w32_iter->handle != 0 && w32_iter->handle != INVALID_HANDLE_VALUE)
+	{
+		FindClose(w32_iter->handle);
+	}
 }

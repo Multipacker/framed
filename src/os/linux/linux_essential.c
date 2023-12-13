@@ -11,13 +11,13 @@ os_memory_commit(Void *ptr, U64 size)
 {
 	mprotect(ptr, size, PROT_READ | PROT_WRITE);
 }
-internal Void 
+internal Void
 os_memory_decommit(Void *ptr, U64 size)
 {
 	mprotect(ptr, size, PROT_NONE);
 	madvise(ptr, size, MADV_DONTNEED);
 }
-internal Void 
+internal Void
 os_memory_release(Void *ptr, U64 size)
 {
 	munmap(ptr, size);
