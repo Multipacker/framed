@@ -57,7 +57,7 @@ string_from_operating_system(OperatingSystem os)
 		} break;
 
 		case OperatingSystem_COUNT: {
-			assert(!"Not reached!");
+			assert_not_reached();
 		} break;
 	}
 
@@ -97,7 +97,7 @@ string_from_architecture(Architecture arc)
 
 		case Architecture_COUNT:
 		{
-			assert(!"Not reached!");
+			assert_not_reached();
 		} break;
 	}
 
@@ -147,7 +147,7 @@ string_from_day_of_the_week(DayOfWeek day)
 
 		case DayOfWeek_COUNT:
 		{
-			assert(!"Not reached!");
+			assert_not_reached();
 		} break;
 	}
 
@@ -223,7 +223,7 @@ string_from_month(Month month)
 
 		case Month_COUNT:
 		{
-			assert(!"Not reached!");
+			assert_not_reached();
 		} break;
 	}
 

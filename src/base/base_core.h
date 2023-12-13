@@ -212,6 +212,8 @@ typedef void Void;
 
 #define assert(expr) if (!expr) { debug_break(); }
 
+#define assert_not_reached() assert(false)
+
 #define array_count(array) (sizeof(array) / sizeof((*array)))
 
 #define stringify_(s) #s
