@@ -43,7 +43,7 @@ struct Str8List
 
 typedef char *CStr;
 
-#define str8_lit(literal) ((Str8) { .data = literal, .size = sizeof(literal) - 1})
+#define str8_lit(literal) ((Str8) { .data = (U8 *) literal, .size = sizeof(literal) - 1})
 
 typedef struct StringDecode StringDecode;
 struct StringDecode
