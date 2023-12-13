@@ -192,8 +192,11 @@ typedef void Void;
 #define internal static
 #define global   static
 #define local    static
+#define thread_local _Thread_local
 
 #define assert(expr) if (!expr) { *(S32 *)0 = 0; }
+
+#define array_count(array) (sizeof(array) / sizeof((*array)))
 
 #define KILOBYTES(n) (n*1024LL)
 #define MEGABYTES(n) (1024LL*KILOBYTES(n))

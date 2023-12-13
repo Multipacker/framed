@@ -1,16 +1,16 @@
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 thread_local Arena thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 
-internal Arena
+internal Arena *
 arena_create_reserve(U64 reserve_size)
 {
-	Arena result    = { 0 };
-	result.memory   = os_memory_reserve(reserve_size);
+	Arena result    ={ 0 };
+	result.memory   = os_reserve(reserve_size);
 	result.capacity = reserve_size;
 	return result;
 }
 
-internal Arena
+internal Arena *
 arena_create(Void)
 {
 	return arena_create_reserve(ARENA_DEFAULT_RESERVE_SIZE);
@@ -27,46 +27,46 @@ arena_push(Arena *arena, U64 size)
 {
 	Void *result = 0;
 
-	if (arena->position + size <= arena->capacity)
+	if (arena->pos + size <= arena->capacity)
 	{
-		result           = arena->memory + arena->position;
-		arena->position += size;
+		result      = arena->memory + arena->pos;
+		arena->pos += size;
 
-		if (arena->position > arena->commit_position)
+		if (arena->pos > arena->commit_pos)
 		{
-			U64 position_aligned     = u64_round_up_to_power_of_2(arena->position, ARENA_COMMIT_BLOCK_SIZE);
-			U64 next_commit_position = u64_min(position_aligned, arena->capacity);
-			U64 commit_size          = next_commit_position - arena->commit_position;
-			os_memory_commit(arena->memory + arena->commit_position, commit_size);
-			arena->commit_position = next_commit_position;
+			U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
+			U64 next_commit_pos = u64_min(pos_aligned, arena->capacity);
+			U64 commit_size     = next_commit_pos - arena->commit_pos;
+			os_memory_commit(arena->memory + arena->commit_pos, commit_size);
+			arena->commit_pos = next_commit_pos;
 		}
 	}
 
 	return result;
 }
 
-internal Void
-arena_pop_to(Arena *arena, U64 position)
+internal Void 
+arena_pop_to(Arena *arena, U64 pos)
 {
-	if (position < arena->position)
+	if (pos < arena->pos)
 	{
-		arena->position = position;
+		arena->pos = pos;
 
-		U64 position_aligned     = u64_round_up_to_power_of_2(arena->position, ARENA_COMMIT_BLOCK_SIZE);
-		U64 next_commit_position = u64_min(position_aligned, arena->capacity);
-		if (next_commit_position < arena->commit_position)
+		U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
+		U64 next_commit_pos = u64_min(pos_aligned, arena->capacity);
+		if (next_commit_pos < arena->commit_pos)
 		{
-			U64 decommit_size = arena->commit_position - next_commit_position;
-			os_memory_decommit(arena->memory + next_commit_position, decommit_size);
-			arena->commit_position = next_commit_position;
+			U64 decommit_size = arena->commit_pos - next_commit_pos;
+			os_memory_decommit(arena->memory + next_commit_pos, decommit_size);
+			arena->commit_pos = next_commit_pos;
 		}
 	}
 }
 
-internal Void
+internal Void 
 arena_pop_amount(Arena *arena, U64 amount)
 {
-	arena_pop_to(arena, arena->position - amount);
+	arena_pop_to(arena, arena->pos - amount);
 }
 
 internal Void *
@@ -77,45 +77,45 @@ arena_push_zero(Arena *arena, U64 size)
 	return result;
 }
 
-internal Void
+internal Void 
 arena_align(Arena *arena, U64 power)
 {
-	U64 position_aligned = u64_round_up_to_power_of_2(arena->position, power);
-	U64 align = position_aligned - arena->position;
+	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
+	U64 align = pos_aligned - arena->pos;
 	if (align)
 	{
 		arena_push(arena, align);
 	}
 }
 
-internal Void
+internal Void 
 arena_align_zero(Arena *arena, U64 power)
 {
-	U64 position_aligned = u64_round_up_to_power_of_2(arena->position, power);
-	U64 align = position_aligned - arena->position;
+	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
+	U64 align = pos_aligned - arena->pos;
 	if (align)
 	{
 		arena_push_zero(arena, align);
 	}
 }
 
-internal Arena_Temporary
+internal Arena_Temporary 
 arena_begin_temporary(Arena *arena)
 {
 	Arena_Temporary result;
 	result.arena = arena;
-	result.position = arena->position;
+	result.pos = arena->pos;
 
 	return result;
 }
 
-internal Void
+internal Void 
 arena_end_temporary(Arena_Temporary temporary)
 {
-	arena_pop_to(temporary.arena, temporary.position);
+	arena_pop_to(temporary.arena, temporary.pos);
 }
 
-internal Void
+internal Void 
 arena_init_scratch(Void)
 {
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
@@ -124,7 +124,7 @@ arena_init_scratch(Void)
 	}
 }
 
-internal Void
+internal Void 
 arena_destroy_scratch(Void)
 {
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
@@ -133,7 +133,7 @@ arena_destroy_scratch(Void)
 	}
 }
 
-internal Arena_Temporary
+internal Arena_Temporary 
 arena_get_scratch(Arena **conflicts, U32 count)
 {
 	Arena *selected = 0;
