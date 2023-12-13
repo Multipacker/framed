@@ -18,7 +18,7 @@ internal Str8 str8_range(U8 *start, U8 *opl)
 
 internal Str8 str8_copy(Arena *arena, Str8 string)
 {
-	U8 *data = arena_push_array(arena, U8, string.size);
+	U8 *data = push_array(arena, U8, string.size);
 	memory_copy(data, string.data, string.size);
 
 	Str8 result;
@@ -51,7 +51,7 @@ internal Str8 str8_copy_cstr(Arena *arena, U8 *data)
 		++result.size;
 	}
 
-	result.data = arena_push_array(arena, U8, result.size);
+	result.data = push_array(arena, U8, result.size);
 	memory_copy(result.data, data, result.size);
 
 	return result;
@@ -200,14 +200,14 @@ internal Void str8_list_push_explicit(Str8List *list, Str8 string, Str8Node *nod
 
 internal Void str8_list_push(Arena *arena, Str8List *list, Str8 string)
 {
-	Str8Node *node = arena_push_struct(arena, Str8Node);
+	Str8Node *node = push_struct(arena, Str8Node);
 	str8_list_push_explicit(list, string, node);
 }
 
 internal Str8 str8_join(Arena *arena, Str8List *list)
 {
 	U64 size = list->total_size;
-	U8 *data = arena_push_array(arena, U8, size);
+	U8 *data = push_array(arena, U8, size);
 
 	U8 *ptr = data;
 	for (Str8Node *node = list->first; node; node = node->next)
@@ -421,7 +421,7 @@ internal U64 string_encode_utf16(U16 *destination, U32 codepoint)
 internal Str32 str32_from_str8(Arena *arena, Str8 string)
 {
 	U64 allocated_size = string.size;
-	U32 *memory = arena_push_array(arena, U32, allocated_size);
+	U32 *memory = push_array(arena, U32, allocated_size);
 
 	U32 *destination_ptr = memory;
 	U8 *ptr = string.data;
@@ -447,7 +447,7 @@ internal Str32 str32_from_str8(Arena *arena, Str8 string)
 internal Str8 str8_from_str32(Arena *arena, Str32 string)
 {
 	U64 allocated_size = 4 * string.size;
-	U8 *memory = arena_push_array(arena, U8, allocated_size);
+	U8 *memory = push_array(arena, U8, allocated_size);
 
 	U8 *destination_ptr = memory;
 	U32 *ptr = string.data;
@@ -473,7 +473,7 @@ internal Str8 str8_from_str32(Arena *arena, Str32 string)
 internal Str16 str16_from_str8(Arena *arena, Str8 string)
 {
 	U64 allocated_size = string.size;
-	U16 *memory = arena_push_array(arena, U16, allocated_size);
+	U16 *memory = push_array(arena, U16, allocated_size);
 
 	U16 *destination_ptr = memory;
 	U8 *ptr = string.data;
@@ -500,7 +500,7 @@ internal Str16 str16_from_str8(Arena *arena, Str8 string)
 internal Str8  str8_from_str16(Arena *arena, Str16 string)
 {
 	U64 allocated_size = 3 * string.size;
-	U8 *memory = arena_push_array(arena, U8, allocated_size);
+	U8 *memory = push_array(arena, U8, allocated_size);
 
 	U8 *destination_ptr = memory;
 	U16 *ptr = string.data;
@@ -527,7 +527,7 @@ internal Str8  str8_from_str16(Arena *arena, Str16 string)
 internal CStr cstr_from_str8(Arena *arena, Str8 string)
 {
 	U64 allocated_size = string.size + 1;
-	U8 *memory = arena_push_array(arena, U8, allocated_size);
+	U8 *memory = push_array(arena, U8, allocated_size);
 
 	memory_copy(memory, string.data, string.size);
 	memory[string.size] = 0;

@@ -1,16 +1,16 @@
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 thread_local Arena thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 
-internal Arena 
+internal Arena *
 arena_create_reserve(U64 reserve_size)
 {
 	Arena result    ={ 0 };
-	result.memory   = os_memory_reserve(reserve_size);
+	result.memory   = os_reserve(reserve_size);
 	result.capacity = reserve_size;
 	return result;
 }
 
-internal Arena 
+internal Arena *
 arena_create(Void)
 {
 	return arena_create_reserve(ARENA_DEFAULT_RESERVE_SIZE);
