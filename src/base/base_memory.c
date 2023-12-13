@@ -1,25 +1,35 @@
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
-thread_local Arena thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
+thread_local Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 
 internal Arena *
 arena_create_reserve(U64 reserve_size)
 {
-	Arena result    = { 0 };
-	result.memory   = os_reserve(reserve_size);
-	result.capacity = reserve_size;
-	return result;
+	// We need to commit one block in order to have space for the arena itself.
+	U8 *memory = os_reserve(reserve_size);
+	os_commit(result, ARENA_COMMIT_BLOCK_SIZE);
+
+	Arena *result = (Arena *) memory;
+
+	result->memory     = memory;
+	result->cap        = reserve_size;
+	// NOTE(simon): This is for the arena itself.
+	result->pos        = sizeof(*result);
+	result->commit_pos = ARENA_COMMIT_BLOCK_SIZE;
+
+	return(result);
 }
 
 internal Arena *
 arena_create(Void)
 {
-	return arena_create_reserve(ARENA_DEFAULT_RESERVE_SIZE);
+	Arena *result = arena_create_reserve(ARENA_DEFAULT_RESERVE_SIZE);
+	return(result);
 }
 
 internal Void
 arena_destroy(Arena *arena)
 {
-	os_memory_release(arena->memory, arena->capacity);
+	os_release(arena->memory, arena->cap);
 }
 
 internal Void *
@@ -27,7 +37,7 @@ arena_push(Arena *arena, U64 size)
 {
 	Void *result = 0;
 
-	if (arena->pos + size <= arena->capacity)
+	if (arena->pos + size <= arena->cap)
 	{
 		result      = arena->memory + arena->pos;
 		arena->pos += size;
@@ -35,9 +45,9 @@ arena_push(Arena *arena, U64 size)
 		if (arena->pos > arena->commit_pos)
 		{
 			U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
-			U64 next_commit_pos = u64_min(pos_aligned, arena->capacity);
+			U64 next_commit_pos = u64_min(pos_aligned, arena->cap);
 			U64 commit_size     = next_commit_pos - arena->commit_pos;
-			os_memory_commit(arena->memory + arena->commit_pos, commit_size);
+			os_commit(arena->memory + arena->commit_pos, commit_size);
 			arena->commit_pos = next_commit_pos;
 		}
 	}
@@ -53,11 +63,11 @@ arena_pop_to(Arena *arena, U64 pos)
 		arena->pos = pos;
 
 		U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
-		U64 next_commit_pos = u64_min(pos_aligned, arena->capacity);
+		U64 next_commit_pos = u64_min(pos_aligned, arena->cap);
 		if (next_commit_pos < arena->commit_pos)
 		{
 			U64 decommit_size = arena->commit_pos - next_commit_pos;
-			os_memory_decommit(arena->memory + next_commit_pos, decommit_size);
+			os_decommit(arena->memory + next_commit_pos, decommit_size);
 			arena->commit_pos = next_commit_pos;
 		}
 	}
@@ -129,7 +139,7 @@ arena_destroy_scratch(Void)
 {
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
 	{
-		arena_destroy(&thread_scratch_arenas[i]);
+		arena_destroy(thread_scratch_arenas[i]);
 	}
 }
 
@@ -140,7 +150,7 @@ arena_get_scratch(Arena **conflicts, U32 count)
 
 	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
 	{
-		Arena *arena = &thread_scratch_arenas[i];
+		Arena *arena = thread_scratch_arenas[i];
 
 		B32 is_non_conflicting = true;
 		for (U32 j = 0; j < count; ++j)
