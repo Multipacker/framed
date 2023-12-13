@@ -36,6 +36,11 @@ string_from_operating_system(OperatingSystem os)
 	Str8 result = str8_lit("NullOS");
 	switch (os)
 	{
+		case OperatingSystem_Null:
+		{
+			result = str8_lit("Null");
+		} break;
+
 		case OperatingSystem_Windows:
 		{
 			result = str8_lit("Windows");
@@ -50,6 +55,10 @@ string_from_operating_system(OperatingSystem os)
 		{
 			result = str8_lit("Mac");
 		} break;
+
+		case OperatingSystem_COUNT: {
+			assert(!"Not reached!");
+		} break;
 	}
 
 	return(result);
@@ -61,6 +70,11 @@ string_from_architecture(Architecture arc)
 	Str8 result = str8_lit("NullArchitecture");
 	switch (arc)
 	{
+		case Architecture_Null:
+		{
+			result = str8_lit("Null");
+		} break;
+
 		case Architecture_X64:
 		{
 			result = str8_lit("x64");
@@ -79,6 +93,11 @@ string_from_architecture(Architecture arc)
 		case Architecture_ARM64:
 		{
 			result = str8_lit("ARM64");
+		} break;
+
+		case Architecture_COUNT:
+		{
+			assert(!"Not reached!");
 		} break;
 	}
 
@@ -124,6 +143,11 @@ string_from_day_of_the_week(DayOfWeek day)
 		case DayOfWeek_Sunday:
 		{
 			result = str8_lit("Sunday");
+		} break;
+
+		case DayOfWeek_COUNT:
+		{
+			assert(!"Not reached!");
 		} break;
 	}
 
@@ -195,6 +219,11 @@ string_from_month(Month month)
 		case Month_Dec:
 		{
 			result = str8_lit("Dec");
+		} break;
+
+		case Month_COUNT:
+		{
+			assert(!"Not reached!");
 		} break;
 	}
 
