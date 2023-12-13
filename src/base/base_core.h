@@ -200,7 +200,11 @@ typedef void Void;
 #	define thread_local _Thread_local
 #endif
 
+#if COMPILER_CLANG
+#define assert(expr) if (!expr) { __builtin_debugtrap(); }
+#else
 #define assert(expr) if (!expr) { *(S32 *)0 = 0; }
+#endif
 
 #define array_count(array) (sizeof(array) / sizeof((*array)))
 
