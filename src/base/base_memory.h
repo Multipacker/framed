@@ -7,7 +7,7 @@ struct Arena
 	U8 *memory;
 	U64 cap;
 	U64 pos;
-	U64 commit_pos:
+	U64 commit_pos;
 };
 
 typedef struct Arena_Temporary Arena_Temporary;

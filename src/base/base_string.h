@@ -4,21 +4,21 @@
 // NOTE(simon): These types do not gurantee that the data is null terminated.
 
 typedef struct Str8 Str8;
-struct Str8 
+struct Str8
 {
 	U8 *data;
 	U64 size;
 };
 
 typedef struct Str16 Str16;
-struct Str16 
+struct Str16
 {
 	U16 *data;
 	U64  size;
 };
 
 typedef struct Str32 Str32;
-struct Str32 
+struct Str32
 {
 	U32 *data;
 	U64  size;
@@ -46,7 +46,7 @@ typedef char *CStr;
 #define str8_lit(literal) ((Str8) { .data = literal, .size = sizeof(literal) - 1})
 
 typedef struct StringDecode StringDecode;
-struct StringDecode 
+struct StringDecode
 {
 	U32 codepoint;
 	U64 size;

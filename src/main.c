@@ -2,8 +2,8 @@
 
 #include "base/base_inc.c"
 
-internal int 
-main(int argument_count, char *arguments[]) 
+internal int
+main(int argument_count, char *arguments[])
 {
-    return(0);
+	return(0);
 }
