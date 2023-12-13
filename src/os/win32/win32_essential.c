@@ -28,7 +28,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 {
 	assert(path.size < MAX_PATH);
 
-	B32 result = true;
+	B32 result = false;
 
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
@@ -41,50 +41,34 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 		FILE_ATTRIBUTE_NORMAL,
 		0);
 
-	if (file == INVALID_HANDLE_VALUE)
-	{
-		// TODO(hampus): Logging
-		result = false;
-		goto end;
-	}
-
 	arena_release_scratch(scratch);
 
-	LARGE_INTEGER file_size;
-	if (!GetFileSizeEx(file, &file_size))
-	{
-		// TODO(hampus): Logging
-		result = false;
-		goto end;
-	}
-
-	assert(file_size.QuadPart <= S32_MAX);
-
-	S32 file_size_s32 = (S32)file_size.QuadPart;
-	U32 push_amount = file_size_s32 + 1;
-
-	result_out->data = push_array(arena, U8, push_amount);
-	result_out->size = file_size_s32;
-
-	DWORD bytes_read;
-
-	BOOL read_file_result = ReadFile(file, result_out->data, file_size_s32, &bytes_read, 0);
-
-	if (!read_file_result)
-	{
-		// TODO(hampus): Logging
-		arena_pop_amount(arena, push_amount);
-		result = false;
-		goto end;
-	}
-
-	assert(bytes_read == file_size_s32);
-
-end:
 	if (file != INVALID_HANDLE_VALUE)
 	{
+		LARGE_INTEGER file_size;
+		BOOL get_file_size_result = GetFileSizeEx(file, &file_size);
+		if (get_file_size_result)
+		{
+			assert(file_size.QuadPart <= S32_MAX);
+			S32 file_size_s32 = (S32)file_size.QuadPart;
+			U32 push_amount = file_size_s32 + 1;
+			result_out->data = push_array(arena, U8, push_amount);
+			result_out->size = file_size_s32;
+			DWORD bytes_read;
+			BOOL read_file_result = ReadFile(file, result_out->data, file_size_s32, &bytes_read, 0);
+			if (read_file_result)
+			{
+				result = true;
+			}
+			else
+			{
+				arena_pop_amount(arena, push_amount);
+				assert(bytes_read == file_size_s32);
+			}
+		}
 		CloseHandle(file);
 	}
+
 	return(result);
 }
 
@@ -93,7 +77,7 @@ os_file_write(Str8 path, Str8 data)
 {
 	assert(path.size < MAX_PATH);
 
-	B32 result = true;
+	B32 result = false;
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
@@ -106,28 +90,18 @@ os_file_write(Str8 path, Str8 data)
 		FILE_ATTRIBUTE_NORMAL,
 		0);
 
-	if (file == INVALID_HANDLE_VALUE)
+	if (file != INVALID_HANDLE_VALUE)
 	{
-		result = false;
-		goto end;
+		assert(data.size <= S32_MAX);
+		BOOL write_file_result = WriteFile(file, data.data, (S32)data.size, 0, 0);
+		if (write_file_result)
+		{
+			result = true;
+		}
+		CloseHandle(file);
 	}
 
 	arena_release_scratch(scratch);
-
-	assert(data.size <= S32_MAX);
-	BOOL write_file_result = WriteFile(file, data.data, (S32)data.size, 0, 0);
-
-	if (!write_file_result)
-	{
-		result = false;
-		goto end;
-	}
-
-end:
-	if (file != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(file);
-	}
 	return(result);
 }
 
