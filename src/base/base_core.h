@@ -196,6 +196,8 @@ typedef void Void;
 
 #define assert(expr) if (!expr) { *(S32 *)0 = 0; }
 
+#define array_count(array) (sizeof(array) / sizeof((*array)))
+
 #define KILOBYTES(n) (n*1024LL)
 #define MEGABYTES(n) (1024LL*KILOBYTES(n))
 #define GIGABYTES(n) (1024LL*MEGABYTES(n))
