@@ -13,7 +13,7 @@ str8_range(U8 *start, U8 *opl)
 {
 	Str8 result;
 	result.data = start;
-	result.size = opl - start;
+	result.size = (U64) (opl - start);
 
 	return result;
 }
@@ -410,7 +410,7 @@ string_decode_utf16(U16 *string, U64 size)
 
 		if (0xD800 <= lead_surrogate && lead_surrogate <= 0xDBFF && 0xDC00 <= code_unit && code_unit <= 0xDFFF)
 		{
-			result.codepoint = 0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00);
+			result.codepoint = (U32) (0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
 			++result.size;
 		}
 	}
