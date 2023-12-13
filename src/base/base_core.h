@@ -209,12 +209,13 @@ typedef Void VoidFunction(Void);
 #elif COMPILER_CL
 #	define debug_break() DebugBreak()
 #else
-#	define debug_break() *(S32 *)0 = 0;
+#	define debug_break() (*(S32 *)0 = 0)
 #endif
 
 #define assert(expr) if (!expr) { debug_break(); }
 
-#define assert_not_reached() assert(false)
+#define assert_not_reached() debug_break()
+#define invalid_case default: debug_break(); break;
 
 #define array_count(array) (sizeof(array) / sizeof((*array)))
 

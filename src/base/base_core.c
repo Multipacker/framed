@@ -56,9 +56,7 @@ string_from_operating_system(OperatingSystem os)
 			result = str8_lit("Mac");
 		} break;
 
-		case OperatingSystem_COUNT: {
-			assert_not_reached();
-		} break;
+		invalid_case;
 	}
 
 	return(result);
@@ -95,10 +93,7 @@ string_from_architecture(Architecture arc)
 			result = str8_lit("ARM64");
 		} break;
 
-		case Architecture_COUNT:
-		{
-			assert_not_reached();
-		} break;
+		invalid_case;
 	}
 
 	return(result);
@@ -145,10 +140,7 @@ string_from_day_of_the_week(DayOfWeek day)
 			result = str8_lit("Sunday");
 		} break;
 
-		case DayOfWeek_COUNT:
-		{
-			assert_not_reached();
-		} break;
+		invalid_case;
 	}
 
 	return(result);
@@ -221,10 +213,7 @@ string_from_month(Month month)
 			result = str8_lit("Dec");
 		} break;
 
-		case Month_COUNT:
-		{
-			assert_not_reached();
-		} break;
+		invalid_case;
 	}
 
 	return(result);
