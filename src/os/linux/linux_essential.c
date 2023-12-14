@@ -1,7 +1,9 @@
 #include <sys/mman.h>
+#include <sys/stat.h>
 
 #include <dlfcn.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 // NOTE(simon): Don't attempt to close file descriptors multiple times as per `man close.2`.
@@ -63,8 +65,8 @@ os_file_delete(Str8 path)
 
 	// TODO(simon): Not sure if we should keep trying to unlink the path if an
 	// IO error occurs.
-	errno = 0
 	do {
+		errno = 0;
 		success = unlink(cstr_path);
 	} while (success == -1 && errno == EIO);
 
@@ -83,40 +85,50 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 	CStr cstr_new_path = cstr_from_str8(scratch.arena, new_path);
 
 	// TODO(simon): Should we use O_CLOEXEC and O_NOCTTY?
-	S32 old_fd = open(cstr_old_path, O_RDONLY | O_NOCTTY);
+	// TODO(simon): Check for errors
+	S32 old_fd = open(cstr_old_path, O_RDONLY);
 
-	S32 new_fd;
-	if (overwrite_existing)
-	{
-		new_fd = open(cstr_new_path, O_WRONLY | O_CREAT, S_IRUSR | SIWUSR);
-	}
-	else
-	{
-		new_fd = open(cstr_new_path, O_WR_ONLY | O_CREAT | O_EXCL, S_IRUSR | SIWUSR);
-	}
+	// TODO(simon): Check for errors
+	S32 new_fd = open(
+		cstr_new_path,
+		O_WRONLY | O_CREAT | (overwrite_existing ? 0 : O_EXCL),
+		S_IRUSR | S_IWUSR
+	);
 
-	fstat();
-	ftruncate();
+	// TODO(simon): Check for errors
+	struct stat status = { 0 };
+	fstat(old_fd, &status);
+	ssize_t bytes_to_copy = status.st_size;
 
 	// TODO(simon): May want to make sure this doesn't happend
-	// EINVAL fd_in and fd_out refer to the same file and the source and target ranges overlap.
-	// TODO(simon): Ensure that all bytes are written.
-	ssize_t bytes_copied;
+	//              EINVAL fd_in and fd_out refer to the same file and the
+	//              source and target ranges overlap.
+	ssize_t bytes_copied = 0;
 	errno = 0;
 	do {
-		bytes_copied = copy_file_range(old_fd, 0, new_fd, 0, length, 0);
-	} while (bytes_copied == -1 && errno == EIO);
+		bytes_copied = copy_file_range(old_fd, 0, new_fd, 0, (size_t) bytes_to_copy, 0);
+		if (bytes_copied != -1) {
+			bytes_to_copy -= bytes_copied;
+		}
+	} while ((bytes_copied == -1 && errno == EIO) || bytes_to_copy != 0);
 
 	// TODO(simon): In case we cannot write the entire file, should we leave
 	// the file half written or should we delete it?
 
-	// TODO(simon): fsync the destination.
+	// TODO(simon): Check for errors
+	ftruncate(new_fd, status.st_size);
+
+	// NOTE(simon): Ensure that all of the data is written to disk.
+	do {
+		errno = 0;
+		success = fsync(new_fd);
+	} while (success == -1 && (errno == EINTR || errno == EIO));
 
 	close(old_fd);
 	close(new_fd);
 
 	arena_release_scratch(scratch);
-	return(bytes_copied == -1);
+	return(bytes_copied != -1 && success != -1);
 }
 
 internal B32 os_file_rename(Str8 old_path, Str8 new_path);

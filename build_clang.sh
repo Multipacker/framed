@@ -2,7 +2,7 @@
 
 mkdir -p build
 
-src_files="src/main.c"
+src_files="src/linux_test.c"
 errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion"
 compiler_flags="-Isrc -g -fsanitize=address"
 linker_flags=""

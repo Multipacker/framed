@@ -1,12 +1,6 @@
 #ifndef BASE_CORE_H
 #define BASE_CORE_H
 
-#include <stdint.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <math.h>
-
 #if defined(__clang__)
 #	define COMPILER_CLANG 1
 
@@ -117,6 +111,17 @@
 #if !defined(ARCH_ARM64)
 #	define ARCH_ARM64 0
 #endif
+
+#if OS_LINUX
+#	define _GNU_SOURCE
+#	define _FILE_OFFSET_BITS 64
+#endif
+
+#include <stdint.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <math.h>
 
 #define check_null(x) ((x) == 0)
 #define set_null(x) ((x) = 0)
