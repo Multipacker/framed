@@ -2,7 +2,8 @@
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310
 
-set compiler_flags=-nologo -GS- -FC -O2 -W4 -WX %disabled_warnings%
+set opts=-DCONSOLE=0
+set compiler_flags=%opts% -nologo -GS- -FC -O2 -W4 -WX %disabled_warnings%
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib
 set linker_flags=%libs% -fixed -incremental:no -opt:icf -opt:ref libvcruntime.lib
 set src_files=../src/main.c

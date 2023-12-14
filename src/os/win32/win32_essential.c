@@ -399,8 +399,6 @@ win32_common_main()
 	return(exit_code);
 }
 
-#define CONSOLE 1
-
 #if CONSOLE
 
 #pragma comment(linker, "-subsystem:console")
