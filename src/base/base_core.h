@@ -208,6 +208,8 @@ typedef Void VoidFunction(Void);
 #	define debug_break() __builtin_debugtrap()
 #elif COMPILER_CL
 #	define debug_break() DebugBreak()
+#elif COMPILER_GCC
+#	define debug_break() __builtin_trap()
 #else
 #	define debug_break() (*(S32 *)0 = 0)
 #endif

@@ -450,7 +450,7 @@ u16_big_to_local_endian(U16 x)
 {
 #if COMPILER_CL
 	return _byteswap_ushort(x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	return __builtin_bswap16(x);
 #else
 # error Your compiler does not have an implementation of u16_big_to_local_endian.
@@ -537,7 +537,7 @@ u32_big_to_local_endian(U32 x)
 {
 #if COMPILER_CL
 	return _byteswap_ulong(x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	return __builtin_bswap32(x);
 #else
 # error Your compiler does not have an implementation of u32_big_to_local_endian.
@@ -625,7 +625,7 @@ u64_big_to_local_endian(U64 x)
 {
 #if COMPILER_CL
 	return _byteswap_uint64(x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	return __builtin_bswap64(x);
 #else
 # error Your compiler does not have an implementation of u64_big_to_local_endian.
@@ -679,7 +679,7 @@ s16_big_to_local_endian(S16 x)
 {
 #if COMPILER_CL
 	U16 swapped = _byteswap_ushort(*(U16 *)&x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	U16 swapped = __builtin_bswap16(*(U16 *)&x);
 #else
 # error Your compiler does not have an implementation of s16_big_to_local_endian.
@@ -713,7 +713,7 @@ s32_big_to_local_endian(S32 x)
 {
 #if COMPILER_CL
 	U32 swapped = _byteswap_ulong(*(U32 *)&x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	U32 swapped = __builtin_bswap32(*(U32 *)&x);
 #else
 # error Your compiler does not have an implementation of s32_big_to_local_endian.
@@ -747,7 +747,7 @@ s64_big_to_local_endian(S64 x)
 {
 #if COMPILER_CL
 	U64 swapped = _byteswap_uint64(*(U64 *)&x);
-#elif COMPILER_CLANG
+#elif COMPILER_CLANG || COMPILER_GCC
 	U64 swapped = __builtin_bswap64(*(U64 *)&x);
 #else
 # error Your compiler does not have an implementation of s64_big_to_local_endian.
