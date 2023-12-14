@@ -64,6 +64,9 @@ internal Str8 str8_skip(Str8 string, U64 size);
 internal Str8 str8_chop(Str8 string, U64 size);
 internal Str8 str8_substring(Str8 string, U64 start, U64 size);
 
+internal Str8 str8_pushfv(Arena *arena, char *fmt, va_list args);
+internal Str8 str8_pushf(Arena *arena, char *fmt, ...);
+
 // NOTE(simon): These functions are only reliable for ASCII.
 // TODO(hampus): Add flags for comparison of strings
 internal B32 str8_equal(Str8 a, Str8 b);

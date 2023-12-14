@@ -13,7 +13,7 @@ str8_range(U8 *start, U8 *opl)
 {
 	Str8 result;
 	result.data = start;
-	result.size = (U64) (opl - start);
+	result.size = (U64)(opl - start);
 
 	return result;
 }
@@ -121,6 +121,29 @@ str8_substring(Str8 string, U64 start, U64 size)
 	result.size = clamped_size;
 
 	return result;
+}
+
+// TODO(hampus): Replace with stb_sprintf.h
+internal Str8
+str8_pushfv(Arena *arena, CStr cstr, va_list args)
+{
+	Str8 result = { 0 };
+	char buffer[1024];
+	U64 needed_size = vsnprintf(0, 0, cstr, args);
+	result.data = push_array(arena, U8, needed_size + 1);
+	result.size = needed_size;
+	vsnprintf((CStr)result.data, needed_size, cstr, args);
+	return(result);
+}
+
+internal Str8
+str8_pushf(Arena *arena, CStr cstr, ...)
+{
+	va_list args;
+	va_start(args, cstr);
+	Str8 result = str8_pushfv(arena, cstr, args);
+	va_end(args);
+	return(result);
 }
 
 // TODO: Unicode implementation
@@ -410,7 +433,7 @@ string_decode_utf16(U16 *string, U64 size)
 
 		if (0xD800 <= lead_surrogate && lead_surrogate <= 0xDBFF && 0xDC00 <= code_unit && code_unit <= 0xDFFF)
 		{
-			result.codepoint = (U32) (0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
+			result.codepoint = (U32)(0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
 			++result.size;
 		}
 	}
