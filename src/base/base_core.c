@@ -218,3 +218,47 @@ string_from_month(Month month)
 
 	return(result);
 }
+
+internal DenseTime
+dense_time_from_date_time(DateTime *date_time)
+{
+	DenseTime result = { 0 };
+
+	result.time += (U32) ((S32) date_time->year + 0x8000);
+	result.time *= 12;
+	result.time += date_time->month;
+	result.time *= 31;
+	result.time += date_time->day;
+	result.time *= 24;
+	result.time += date_time->hour;
+	result.time *= 60;
+	result.time += date_time->minute;
+	result.time *= 61;
+	result.time += date_time->second;
+	result.time *= 1000;
+	result.time += date_time->millisecond;
+
+	return result;
+}
+
+internal DateTime
+date_time_from_dense_time(DenseTime dense_time)
+{
+	DateTime result = { 0 };
+
+	result.millisecond = dense_time.time % 1000;
+	dense_time.time /= 1000;
+	result.second = dense_time.time % 61;
+	dense_time.time /= 61;
+	result.minute = dense_time.time % 60;
+	dense_time.time /= 60;
+	result.hour = dense_time.time % 24;
+	dense_time.time /= 24;
+	result.day = dense_time.time % 31;
+	dense_time.time /= 31;
+	result.month = dense_time.time % 12;
+	dense_time.time /= 12;
+	result.year = (S16) ((S32) dense_time.time - 0x8000);
+
+	return result;
+}

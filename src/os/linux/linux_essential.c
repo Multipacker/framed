@@ -20,6 +20,7 @@ internal B32
 os_handle_is_zero(OS_Handle handle)
 {
 	B32 result = os_handle_match(handle, os_handle_zero());
+	return result;
 }
 
 internal Void *

@@ -332,6 +332,22 @@ enum DayOfWeek
 	DayOfWeek_COUNT,
 };
 
+typedef struct DenseTime DenseTime;
+struct DenseTime {
+	U64 time;
+};
+
+typedef struct DateTime DateTime;
+struct DateTime {
+	U16 millisecond; // [0, 999]
+	U8  second;      // [0, 60] 60 in the case of leap seconds
+	U8  minute;      // [0, 59]
+	U8  hour;        // [0, 23]
+	U8  day;         // [0, 30]
+	U8  month;       // [0, 11]
+	S16 year;        // 1 = 1 CE; 2020 = 2020 CE, 0 = 1 BCE; -100 = 101 BCE; etc.
+};
+
 internal OperatingSystem  operating_system_from_context(Void);
 internal Architecture     architecture_from_context(Void);
 
@@ -341,5 +357,8 @@ internal Str8 string_from_architecture(Architecture arc);
 internal Str8 string_from_operating_system(OperatingSystem os);
 internal Str8 string_from_day_of_the_week(DayOfWeek day);
 internal Str8 string_from_month(Month month);
+
+internal DenseTime dense_time_from_date_time(DateTime *date_time);
+internal DateTime  date_time_from_dense_time(DenseTime dense_time);
 
 #endif //BASE_CORE_H
