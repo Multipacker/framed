@@ -333,12 +333,14 @@ enum DayOfWeek
 };
 
 typedef struct DenseTime DenseTime;
-struct DenseTime {
+struct DenseTime 
+{
 	U64 time;
 };
 
 typedef struct DateTime DateTime;
-struct DateTime {
+struct DateTime 
+{
 	U16 millisecond; // [0, 999]
 	U8  second;      // [0, 60] 60 in the case of leap seconds
 	U8  minute;      // [0, 59]
