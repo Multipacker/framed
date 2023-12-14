@@ -53,6 +53,7 @@ internal Arena_Temporary arena_get_scratch(Arena **conflicts, U32 count);
 #define memory_zero_typed(destination, count) memory_zero((destination), sizeof(*(destination)) * (count))
 
 #define memory_match(a, b, size) (memcmp((a), (b), (size)) == 0)
+#define type_is_zero(x) (memcmp(&x, (U8 [sizeof(x)]) { 0 }, sizeof(x)) == 0)
 
 #define memory_move(destination, source, size)        memmove((destination), (source), size)
 #define memory_copy(destination, source, size)        memcpy((destination), (source), size)

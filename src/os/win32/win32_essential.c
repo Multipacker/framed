@@ -1,26 +1,5 @@
 global Win32_State win32_state;
 
-internal OS_Handle
-os_handle_zero(Void)
-{
-	OS_Handle result = { 0 };
-	return(result);
-}
-
-internal B32
-os_handle_match(OS_Handle a, OS_Handle b)
-{
-	B32 result = memory_match(&a, &b, sizeof(OS_Handle));
-	return(result);
-}
-
-internal B32
-os_handle_is_zero(OS_Handle handle)
-{
-	B32 result = os_handle_match(handle, os_handle_zero());
-	return(result);
-}
-
 internal Void *
 os_memory_reserve(U64 size)
 {
