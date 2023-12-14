@@ -1,5 +1,5 @@
 internal OS_Handle
-os_handle_zero()
+os_handle_zero(Void)
 {
 	OS_Handle result = { 0 };
 	return(result);
@@ -146,9 +146,9 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 	assert(new_path.size < MAX_PATH);
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
-	Str16 old_path_16 = str16_from_str8(scratch.arena, old_path);
-	Str16 new_path_16 = str16_from_str8(scratch.arena, new_path);
-	B32 result = CopyFile(old_path_16.data, new_path_16.data, overwrite_existing);
+	Str16 old_path16 = str16_from_str8(scratch.arena, old_path);
+	Str16 new_path16 = str16_from_str8(scratch.arena, new_path);
+	B32 result = CopyFile(old_path16.data, new_path16.data, overwrite_existing);
 	arena_release_scratch(scratch);
 
 	return(result);
@@ -161,9 +161,9 @@ os_file_rename(Str8 old_path, Str8 new_path)
 	assert(new_path.size < MAX_PATH);
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
-	Str16 old_path_16 = str16_from_str8(scratch.arena, old_path);
-	Str16 new_path_16 = str16_from_str8(scratch.arena, new_path);
-	B32 result = MoveFile(old_path_16.data, new_path_16.data);
+	Str16 old_path16 = str16_from_str8(scratch.arena, old_path);
+	Str16 new_path16 = str16_from_str8(scratch.arena, new_path);
+	B32 result = MoveFile(old_path16.data, new_path16.data);
 	arena_release_scratch(scratch);
 
 	return(result);

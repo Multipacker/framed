@@ -15,7 +15,7 @@ struct OS_Handle
 	U64 u64[1];
 };
 
-internal OS_Handle os_handle_zero();
+internal OS_Handle os_handle_zero(Void);
 internal B32       os_handle_match(OS_Handle a, OS_Handle b);
 internal B32       os_handle_is_zero(OS_Handle handle);
 
