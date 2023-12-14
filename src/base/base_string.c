@@ -1,3 +1,6 @@
+#define STB_SPRINTF_IMPLEMENTATION
+#include "stb_sprintf.h"
+
 internal Str8
 str8(U8 *data, U64 size)
 {
@@ -128,9 +131,18 @@ internal Str8
 str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {
 	Str8 result = { 0 };
-	char buffer[1024];
-	U64 needed_size = vsnprintf(0, 0, cstr, args);
-	result.data = push_array(arena, U8, needed_size + 1);
+
+	CStr buffer[1024];
+
+	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
+
+	// char *temp_string = push_array_zero(scratch.arena, char, strlen(cstr) + 4);
+	// memory_copy_typed(temp_string, cstr, strlen(cstr));
+	U64 needed_size = stbsp_vsnprintf(0, 0, cstr, args);
+
+	arena_release_scratch(scratch);
+
+	result.data = push_array(arena, U8, needed_size);
 	result.size = needed_size;
 	vsnprintf((CStr)result.data, needed_size, cstr, args);
 	return(result);
