@@ -281,7 +281,6 @@ internal VoidFunction *
 os_library_load_function(OS_Library handle, Str8 name)
 {
 	VoidFunction *result = 0;
-
 	if (!os_handle_is_zero(handle))
 	{
 		HMODULE lib = ptr_from_int(handle.u64[0]);
@@ -289,7 +288,6 @@ os_library_load_function(OS_Library handle, Str8 name)
 		result = (VoidFunction *)GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
 		arena_release_scratch(scratch);
 	}
-
 	return(result);
 }
 

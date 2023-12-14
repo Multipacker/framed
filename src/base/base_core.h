@@ -140,7 +140,7 @@
 
 #define dll_remove(f,l,n) dll_remove_npz(f,l,n,next,prev,check_null,set_null)
 
-#define sll_push_front_np(f, n, next) ((n)->next = (f), \
+#define sll_push_front_np(f, n, next) ((n)->next = (f),\
 (f) = (n));
 
 #define sll_push_front(f, n) sll_push_front_np(f, n, next)
