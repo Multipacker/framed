@@ -60,25 +60,43 @@ internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
 
-internal OS_Handle
+internal OS_Library
 os_library_open(Str8 path)
 {
+	OS_Library result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
-	OS_Handle handle = { 0 };
-
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
-	dlopen(cstr_path, );
+	result.u64[0] = int_from_ptr(dlopen(cstr_path, RTLD_NOW | RTLD_LOCAL));
 
 	arena_release_scratch(scratch);
-	return handle;
+	return result;
 }
 
-os_library_close(OS_Handle handle)
+internal Void
+os_library_close(OS_Library library)
 {
+	if (library.u64[0])
+	{
+		Void *handle = ptr_from_int(handle.u64[0]);
+		dlclose(handle);
+	}
 }
 
 internal VoidFunction *
-os_library_load_function(OS_Handle handle, Str8 name)
+os_library_load_function(OS_Library library, Str8 name)
 {
+	VoidFunction *result = 0;
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	if (library.u64[0])
+	{
+		CStr  cstr_name = cstr_from_str8(scratch.arena, name);
+		Void *handle    = ptr_from_int(library.u64[0]);
+
+		result = dlsym(handle.u64, cstr_name);
+	}
+
+	arena_release_scratch(scratch);
+	return result;
 }

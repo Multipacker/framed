@@ -244,10 +244,10 @@ os_file_iterator_end(OS_FileIterator *iterator)
 	}
 }
 
-internal OS_Handle
+internal OS_Library
 os_library_open(Str8 path)
 {
-	OS_Handle result = os_handle_zero();
+	OS_Handle result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	HMODULE lib = LoadLibrary(str16_from_str8(scratch.arena, path).data);
 	arena_release_scratch(scratch);
@@ -259,7 +259,7 @@ os_library_open(Str8 path)
 }
 
 internal Void
-os_library_close(OS_Handle handle)
+os_library_close(OS_Library handle)
 {
 	if (!os_handle_is_zero(handle))
 	{
@@ -269,7 +269,7 @@ os_library_close(OS_Handle handle)
 }
 
 internal VoidFunction *
-os_library_load_function(OS_Handle handle, Str8 name)
+os_library_load_function(OS_Library handle, Str8 name)
 {
 	VoidFunction *result = 0;
 
