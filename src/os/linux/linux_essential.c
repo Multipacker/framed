@@ -1,6 +1,6 @@
 #include <sys/mman.h>
 
-#include <dlfcn>
+#include <dlfcn.h>
 
 internal OS_Handle
 os_handle_zero(Void)
@@ -78,7 +78,7 @@ os_library_close(OS_Library library)
 {
 	if (library.u64[0])
 	{
-		Void *handle = ptr_from_int(handle.u64[0]);
+		Void *handle = ptr_from_int(library.u64[0]);
 		dlclose(handle);
 	}
 }
@@ -94,7 +94,7 @@ os_library_load_function(OS_Library library, Str8 name)
 		CStr  cstr_name = cstr_from_str8(scratch.arena, name);
 		Void *handle    = ptr_from_int(library.u64[0]);
 
-		result = dlsym(handle.u64, cstr_name);
+		result = dlsym(handle, cstr_name);
 	}
 
 	arena_release_scratch(scratch);
@@ -103,12 +103,12 @@ os_library_load_function(OS_Library library, Str8 name)
 
 global Arena *linux_permanent_arena;
 
-int main(int argument_count, char *argumnets[]) {
+int main(int argument_count, char *arguments[]) {
 	linux_permanent_arena = arena_create();
 
 	Str8List argument_list = { 0 };
 	for (int i = 0; i < argument_count; ++i) {
-		str8_list_push(linux_permanent_arena, str8_cstr(arguments[i]));
+		str8_list_push(linux_permanent_arena, &argument_list, str8_cstr(arguments[i]));
 	}
 
 	S32 exit_code = os_main(argument_list);
