@@ -1,4 +1,4 @@
-global W32_State w32_state; 
+global Win32_State win32_state;
 
 internal OS_Handle
 os_handle_zero(Void)
@@ -56,7 +56,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(
-	  str16_from_str8(scratch.arena, path).data,
+		str16_from_str8(scratch.arena, path).data,
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		0,
@@ -181,6 +181,7 @@ os_file_rename(Str8 old_path, Str8 new_path)
 internal B32
 os_file_create_directory(Str8 path)
 {
+	assert(path.size < MAX_PATH);
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	B32 result = CreateDirectory(str16_from_str8(scratch.arena, path).data, 0);
 	arena_release_scratch(scratch);
@@ -190,6 +191,7 @@ os_file_create_directory(Str8 path)
 internal B32
 os_file_delete_directory(Str8 path)
 {
+	assert(path.size < MAX_PATH);
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	B32 result = RemoveDirectory(str16_from_str8(scratch.arena, path).data);
 	arena_release_scratch(scratch);
@@ -199,6 +201,7 @@ os_file_delete_directory(Str8 path)
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
+	assert(path.size < MAX_PATH);
 	Str8Node nodes[2];
 	Str8List list = { 0 };
 	str8_list_push_explicit(&list, path, nodes + 0);
@@ -207,8 +210,8 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 	Str8 path_star = str8_join(scratch.arena, &list);
 	Str16 path16 = str16_from_str8(scratch.arena, path_star);
 	memory_zero_struct(iterator);
-	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
-	w32_iter->handle = FindFirstFile(path16.data, &w32_iter->find_data);
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	win32_iter->handle = FindFirstFile(path16.data, &win32_iter->find_data);
 	arena_release_scratch(scratch);
 }
 
@@ -216,12 +219,12 @@ internal B32
 os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 {
 	B32 result = false;
-	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
-	if (w32_iter->handle != 0 && w32_iter->handle != INVALID_HANDLE_VALUE)
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
 	{
-		for (;!w32_iter->done;)
+		for (;!win32_iter->done;)
 		{
-			WCHAR *file_name = w32_iter->find_data.cFileName;
+			WCHAR *file_name = win32_iter->find_data.cFileName;
 			B32 is_dot = (file_name[0] == '.' && file_name[1] == 0);
 			B32 is_dotdot = (file_name[0] == '.' && file_name[1]  == '.' && file_name[2] == 0);
 
@@ -229,13 +232,13 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 			WIN32_FIND_DATAW data = { 0 };
 			if (emit)
 			{
-				memory_copy_struct(&data, &w32_iter->find_data);
+				memory_copy_struct(&data, &win32_iter->find_data);
 				result = true;
 			}
 
-			if (!FindNextFile(w32_iter->handle, &w32_iter->find_data))
+			if (!FindNextFile(win32_iter->handle, &win32_iter->find_data))
 			{
-				w32_iter->done = true;
+				win32_iter->done = true;
 			}
 		}
 	}
@@ -246,17 +249,106 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 internal Void
 os_file_iterator_end(OS_FileIterator *iterator)
 {
-	W32_FileIterator *w32_iter = (W32_FileIterator *)iterator;
-	if (w32_iter->handle != 0 && w32_iter->handle != INVALID_HANDLE_VALUE)
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
 	{
-		FindClose(w32_iter->handle);
+		FindClose(win32_iter->handle);
 	}
+}
+
+internal DateTime
+win32_date_time_from_system_time(SYSTEMTIME *system_time)
+{
+	DateTime result = { 0 };
+	result.millisecond = system_time->wMilliseconds;
+	result.second      = (U8)system_time->wSecond;
+	result.minute      = (U8)system_time->wMinute;
+	result.hour        = (U8)system_time->wHour;
+	result.day         = (U8)system_time->wDay;
+	result.month       = (U8)system_time->wMonth;
+	result.year        = (S16)system_time->wYear;
+	return(result);
+}
+
+internal SYSTEMTIME
+win32_system_time_from_date_time(DateTime *date_time)
+{
+	SYSTEMTIME result = { 0 };
+	result.wMilliseconds = (WORD)date_time->millisecond;
+	result.wSecond = (WORD)date_time->second;
+	result.wMinute = (WORD)date_time->minute;
+	result.wHour = (WORD)date_time->hour;
+	result.wDay = (WORD)date_time->day;
+	result.wMonth = (WORD)date_time->month;
+	result.wYear = (WORD)date_time->year;
+	return(result);
+}
+
+internal DateTime
+os_now_universal_time(Void)
+{
+	SYSTEMTIME universal_time = { 0 };
+	GetSystemTime(&universal_time);
+	DateTime result = win32_date_time_from_system_time(&universal_time);
+	return(result);
+}
+
+internal DateTime
+os_now_local_time(Void)
+{
+	SYSTEMTIME local_time = { 0 };
+	GetLocalTime(&local_time);
+	DateTime result = win32_date_time_from_system_time(&local_time);
+	return(result);
+}
+
+internal DateTime
+os_local_time_from_universal(DateTime *date_time)
+{
+	TIME_ZONE_INFORMATION time_zone_information;
+	GetTimeZoneInformation(&time_zone_information);
+	SYSTEMTIME universal_time = win32_system_time_from_date_time(date_time);
+	SYSTEMTIME local_time;
+	SystemTimeToTzSpecificLocalTime(&time_zone_information, &universal_time, &local_time);
+	DateTime result = win32_date_time_from_system_time(&local_time);
+	return(result);
+}
+
+internal DateTime
+os_universal_time_from_local(DateTime *date_time)
+{
+	TIME_ZONE_INFORMATION time_zone_information;
+	GetTimeZoneInformation(&time_zone_information);
+	SYSTEMTIME local_time = win32_system_time_from_date_time(date_time);
+	SYSTEMTIME universal_time;
+	TzSpecificLocalTimeToSystemTime(&time_zone_information, &local_time, &universal_time);
+	DateTime result = win32_date_time_from_system_time(&universal_time);
+	return(result);
+}
+
+internal U64
+os_now_nanoseconds(Void)
+{
+	U64 result = 0;
+	LARGE_INTEGER counter;
+	QueryPerformanceCounter(&counter);
+	// NOTE(hampus): Convert from s -> ns
+	counter.QuadPart *= 1'000'000'000;
+	result = counter.QuadPart / win32_state.frequency.QuadPart;
+	return(result);
+}
+
+internal Void
+os_sleep_milliseconds(U64 time)
+{
+	assert(time < (U64)U32_MAX);
+	Sleep((DWORD)time);
 }
 
 internal OS_Library
 os_library_open(Str8 path)
 {
-	OS_Handle result = { 0 };
+	OS_Library result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	HMODULE lib = LoadLibrary(str16_from_str8(scratch.arena, path).data);
 	arena_release_scratch(scratch);
@@ -268,22 +360,22 @@ os_library_open(Str8 path)
 }
 
 internal Void
-os_library_close(OS_Library handle)
+os_library_close(OS_Library library)
 {
-	if (!os_handle_is_zero(handle))
+	if (library.u64[0])
 	{
-		HMODULE lib = ptr_from_int(handle.u64[0]);
+		HMODULE lib = ptr_from_int(library.u64[0]);
 		FreeLibrary(lib);
 	}
 }
 
 internal VoidFunction *
-os_library_load_function(OS_Library handle, Str8 name)
+os_library_load_function(OS_Library library, Str8 name)
 {
 	VoidFunction *result = 0;
-	if (!os_handle_is_zero(handle))
+	if (library.u64[0])
 	{
-		HMODULE lib = ptr_from_int(handle.u64[0]);
+		HMODULE lib = ptr_from_int(library.u64[0]);
 		Arena_Temporary scratch = arena_get_scratch(0, 0);
 		result = (VoidFunction *)GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
 		arena_release_scratch(scratch);
@@ -291,8 +383,41 @@ os_library_load_function(OS_Library handle, Str8 name)
 	return(result);
 }
 
-S32 APIENTRY 
+internal S32
+win32_common_main()
+{
+	QueryPerformanceFrequency(&win32_state.frequency);
+	win32_state.permanent_arena = arena_create();
+	arena_init_scratch();
+	// NOTE(hampus): 'command_line' handed to WinMain doesn't include the program name
+	LPSTR command_line_with_exe_path = GetCommandLineA();
+	Str8List argument_list = str8_split_by_codepoints(win32_state.permanent_arena, str8_cstr(command_line_with_exe_path), str8_lit(" "));
+	S32 exit_code = os_main(argument_list);
+	return(exit_code);
+}
+
+#define CONSOLE 1
+
+#if CONSOLE
+
+#pragma comment( linker, "-subsystem:console" )
+
+S32
+main(S32 argument_count, CStr arguments[])
+{
+	S32 exit_code = win32_common_main();
+	return(exit_code);
+}
+
+#else
+
+#pragma comment( linker, "-subsystem:windows" )
+
+S32 APIENTRY
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
-	QueryPerformanceCounteR(&w32_state.start_counter);	
+	S32 exit_code = win32_common_main();
+	ExitProcess(exit_code);
 }
+
+#endif
