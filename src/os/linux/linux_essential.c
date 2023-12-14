@@ -1,5 +1,27 @@
 #include <sys/mman.h>
 
+#include <dlfcn>
+
+internal OS_Handle
+os_handle_zero(Void)
+{
+	OS_Handle result = { 0 };
+	return(result);
+}
+
+internal B32
+os_handle_match(OS_Handle a, OS_Handle b)
+{
+	B32 result = memory_match(&a, &b, sizeof(OS_Handle));
+	return(result);
+}
+
+internal B32
+os_handle_is_zero(OS_Handle handle)
+{
+	B32 result = os_handle_match(handle, os_handle_zero());
+}
+
 internal Void *
 os_memory_reserve(U64 size)
 {
@@ -37,3 +59,26 @@ internal B32 os_file_delete_directory(Str8 path);
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
+
+internal OS_Handle
+os_library_open(Str8 path)
+{
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	OS_Handle handle = { 0 };
+
+	CStr cstr_path = cstr_from_str8(scratch.arena, path);
+	dlopen(cstr_path, );
+
+	arena_release_scratch(scratch);
+	return handle;
+}
+
+os_library_close(OS_Handle handle)
+{
+}
+
+internal VoidFunction *
+os_library_load_function(OS_Handle handle, Str8 name)
+{
+}
