@@ -60,12 +60,12 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 			BOOL read_file_result = ReadFile(file, result_out->data, file_size_s32, &bytes_read, 0);
 			if (read_file_result)
 			{
+				assert(bytes_read == file_size_s32);
 				result = true;
 			}
 			else
 			{
 				arena_pop_amount(arena, push_amount);
-				assert(bytes_read == file_size_s32);
 			}
 		}
 		CloseHandle(file);
@@ -376,7 +376,7 @@ win32_common_main()
 	Str8List argument_list = str8_split_by_codepoints(win32_state.permanent_arena, str8_cstr(command_line_with_exe_path), str8_lit(" "));
 	S32 exit_code = os_main(argument_list);
 	return(exit_code);
-}
+} 
 
 #if CONSOLE
 
@@ -394,7 +394,7 @@ main(S32 argument_count, CStr arguments[])
 #pragma comment(linker, "-subsystem:windows")
 
 S32 APIENTRY
-WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
 	S32 exit_code = win32_common_main();
 	ExitProcess(exit_code);

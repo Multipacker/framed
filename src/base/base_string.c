@@ -132,19 +132,21 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {
 	Str8 result = { 0 };
 
-	CStr buffer[1024];
-
+	// NOTE(hampus): Address sanitizer complains about stbsp_vsnprintf
+	// for some reason...
+#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
-
-	// char *temp_string = push_array_zero(scratch.arena, char, strlen(cstr) + 4);
-	// memory_copy_typed(temp_string, cstr, strlen(cstr));
-	U64 needed_size = stbsp_vsnprintf(0, 0, cstr, args);
-
+	char *temp_string = push_array_zero(scratch.arena, char, strlen(cstr) + 4);
+	memory_copy_typed(temp_string, cstr, strlen(cstr));
+	U64 needed_size = stbsp_vsnprintf(0, 0, temp_string, args);
 	arena_release_scratch(scratch);
+#else
+	U64 needed_size = stbsp_vsnprintf(0, 0, cstr, args);
+#endif
 
-	result.data = push_array(arena, U8, needed_size);
+	result.data = push_array(arena, U8, needed_size+1);
 	result.size = needed_size;
-	vsnprintf((CStr)result.data, needed_size, cstr, args);
+	vsnprintf((CStr)result.data, needed_size+1, cstr, args);
 	return(result);
 }
 

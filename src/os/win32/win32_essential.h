@@ -3,10 +3,13 @@
 
 #define UNICODE
 
+#pragma warning(push, 0)
+
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
-
 #include <timeapi.h>
+
+#pragma warning(pop)
 
 typedef struct Win32_FileIterator Win32_FileIterator;
 struct Win32_FileIterator

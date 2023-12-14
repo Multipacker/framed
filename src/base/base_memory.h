@@ -59,6 +59,6 @@ internal Arena_Temporary arena_get_scratch(Arena **conflicts, U32 count);
 #define memory_copy(destination, source, size)        memcpy((destination), (source), size)
 #define memory_copy_struct(destination, source)       memory_copy((destination), (source), u64_min(sizeof(*(destination)), sizeof(*(source))))
 #define memory_copy_array(destination, source) 	      memory_copy((destination), (source), u64_min(sizeof(destination), sizeof(source)))
-#define memory_copy_typed(destination, source, count) memory_copy((d), (source), u64_min(sizeof(*(destination)), sizeof(*(source)))*(count))
+#define memory_copy_typed(destination, source, count) memory_copy((destination), (source), u64_min(sizeof(*(destination)), sizeof(*(source)))*(count))
 
 #endif // BASE_MEMORY_H
