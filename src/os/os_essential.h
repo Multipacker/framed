@@ -45,8 +45,17 @@ internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
 
-internal OS_Handle     os_library_open(Str8 path);
-internal Void          os_library_close(OS_Handle handle);
-internal VoidFunction *os_library_load_function(OS_Handle handle, Str8 name);
+internal DateTime os_now_universal_time(Void);
+internal DateTime os_local_time_from_universal(DateTime *date_time);
+internal DateTime os_universal_time_from_local(DateTime *date_time);
+
+internal U64  os_now_nanoseconds(Void);
+internal Void os_sleep_milliseconds(U64 time);
+
+internal OS_Library    os_library_open(Str8 path);
+internal Void          os_library_close(OS_Library handle);
+internal VoidFunction *os_library_load_function(OS_Library handle, Str8 name);
+
+internal S32 os_main(Str8List arguments);
 
 #endif // OS_ESSENTIAL_H

@@ -14,4 +14,10 @@ struct W32_FileIterator
 	B32 done;
 };
 
+typedef struct W32_State W32_State;
+struct W32_State
+{
+	LARGE_INTEGER start_counter;
+};
+
 #endif // WIN32_ESSENTIAL_H

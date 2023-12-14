@@ -100,3 +100,18 @@ os_library_load_function(OS_Library library, Str8 name)
 	arena_release_scratch(scratch);
 	return result;
 }
+
+global Arena *linux_permanent_arena;
+
+int main(int argument_count, char *argumnets[]) {
+	linux_permanent_arena = arena_create();
+
+	Str8List argument_list = { 0 };
+	for (int i = 0; i < argument_count; ++i) {
+		str8_list_push(linux_permanent_arena, str8_cstr(arguments[i]));
+	}
+
+	S32 exit_code = os_main(argument_list);
+
+	return exit_code;
+}

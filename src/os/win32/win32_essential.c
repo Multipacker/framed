@@ -1,3 +1,5 @@
+global W32_State w32_state; 
+
 internal OS_Handle
 os_handle_zero(Void)
 {
@@ -282,4 +284,10 @@ os_library_load_function(OS_Library handle, Str8 name)
 	}
 
 	return(result);
+}
+
+S32 APIENTRY 
+WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+{
+	QueryPerformanceCounteR(&w32_state.start_counter);	
 }

@@ -4,8 +4,8 @@
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 
-S32
-main(S32 argument_count, CStr arguments[])
+internal S32
+os_main(Str8List arguments)
 {
 	Arena *arena = arena_create();
 	S32 *x = push_array(arena, S32, 1);
