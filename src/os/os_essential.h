@@ -31,7 +31,12 @@ internal Void  os_memory_decommit(Void *ptr, U64 size);
 internal Void  os_memory_release(Void *ptr, U64 size);
 
 internal B32 os_file_read(Arena *arena, Str8 path, Str8 *result);
-internal B32 os_file_write(Str8 path, Str8 data);
+
+/*
+ * If overwrite_existing is false, the file is only written if it doesn't
+ * already exist. If overwrite_existing is true, the file is always written.
+ */
+internal B32 os_file_write(Str8 path, Str8 data, B32 overwrite_existing);
 
 internal B32 os_file_delete(Str8 path);
 // NOTE(simon): Moves the file if neccessary and replaces existing files.

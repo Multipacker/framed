@@ -56,7 +56,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(
-		str16_from_str8(scratch.arena, path).data,
+	  str16_from_str8(scratch.arena, path).data,
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		0,
@@ -96,7 +96,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 }
 
 internal B32
-os_file_write(Str8 path, Str8 data)
+os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 {
 	assert(path.size < MAX_PATH);
 
@@ -104,12 +104,19 @@ os_file_write(Str8 path, Str8 data)
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
+	// NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
+	DWORD create_file_flags = OPEN_ALWAYS;
+	if (overwrite_existing)
+	{
+		create_file_flags = CREATE_ALWAYS;
+	}
+
 	HANDLE file = CreateFile(
 		str16_from_str8(scratch.arena, path).data,
 		GENERIC_READ,
 		FILE_SHARE_READ,
 		0,
-		OPEN_EXISTING,
+		create_file_flags,
 		FILE_ATTRIBUTE_NORMAL,
 		0);
 
