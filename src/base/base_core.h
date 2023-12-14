@@ -214,7 +214,11 @@ typedef Void VoidFunction(Void);
 #	define debug_break() (*(S32 *)0 = 0)
 #endif
 
-#define assert(expr) if (!expr) { debug_break(); }
+#if ENABLE_ASSERT
+#	define assert(expr) if (!expr) { debug_break(); }
+#else
+#	define assert(expr)
+#endif
 
 #define assert_not_reached() debug_break()
 #define invalid_case default: debug_break(); break;
@@ -333,13 +337,13 @@ enum DayOfWeek
 };
 
 typedef struct DenseTime DenseTime;
-struct DenseTime 
+struct DenseTime
 {
 	U64 time;
 };
 
 typedef struct DateTime DateTime;
-struct DateTime 
+struct DateTime
 {
 	U16 millisecond; // [0, 999]
 	U8  second;      // [0, 60] 60 in the case of leap seconds
