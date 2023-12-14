@@ -6,6 +6,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
+#include <timeapi.h>
+
 typedef struct Win32_FileIterator Win32_FileIterator;
 struct Win32_FileIterator
 {

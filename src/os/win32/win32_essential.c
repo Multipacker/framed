@@ -275,12 +275,12 @@ win32_system_time_from_date_time(DateTime *date_time)
 {
 	SYSTEMTIME result = { 0 };
 	result.wMilliseconds = (WORD)date_time->millisecond;
-	result.wSecond = (WORD)date_time->second;
-	result.wMinute = (WORD)date_time->minute;
-	result.wHour = (WORD)date_time->hour;
-	result.wDay = (WORD)date_time->day;
-	result.wMonth = (WORD)date_time->month;
-	result.wYear = (WORD)date_time->year;
+	result.wSecond       = (WORD)date_time->second;
+	result.wMinute       = (WORD)date_time->minute;
+	result.wHour         = (WORD)date_time->hour;
+	result.wDay          = (WORD)date_time->day;
+	result.wMonth        = (WORD)date_time->month;
+	result.wYear         = (WORD)date_time->year;
 	return(result);
 }
 
@@ -332,9 +332,11 @@ os_now_nanoseconds(Void)
 	U64 result = 0;
 	LARGE_INTEGER counter;
 	QueryPerformanceCounter(&counter);
-	// NOTE(hampus): Convert from s -> ns
-	counter.QuadPart *= 1'000'000'000;
-	result = counter.QuadPart / win32_state.frequency.QuadPart;
+	// NOTE(hampus): Convert from s -> us for less precision loss
+	counter.QuadPart *= 1'000'000;
+	counter.QuadPart /= win32_state.frequency.QuadPart;
+	// NOTE(hampus): Convert from us -> ns
+	result = counter.QuadPart * 1'000;
 	return(result);
 }
 
@@ -386,6 +388,7 @@ os_library_load_function(OS_Library library, Str8 name)
 internal S32
 win32_common_main()
 {
+	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);
 	win32_state.permanent_arena = arena_create();
 	arena_init_scratch();
@@ -400,7 +403,7 @@ win32_common_main()
 
 #if CONSOLE
 
-#pragma comment( linker, "-subsystem:console" )
+#pragma comment(linker, "-subsystem:console")
 
 S32
 main(S32 argument_count, CStr arguments[])
@@ -411,10 +414,10 @@ main(S32 argument_count, CStr arguments[])
 
 #else
 
-#pragma comment( linker, "-subsystem:windows" )
+#pragma comment(linker, "-subsystem:windows")
 
 S32 APIENTRY
-WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
 	S32 exit_code = win32_common_main();
 	ExitProcess(exit_code);

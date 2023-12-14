@@ -1,7 +1,7 @@
 #include <sanitizer/asan_interface.h>
 
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
-thread_local Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
+Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);
