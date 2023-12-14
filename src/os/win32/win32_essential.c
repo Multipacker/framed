@@ -118,7 +118,6 @@ internal B32
 os_file_delete(Str8 path)
 {
 	assert(path.size < MAX_PATH);
-	assert(path.size < MAX_PATH);
 
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	B32 result = DeleteFile(str16_from_str8(scratch.arena, path).data);
@@ -206,7 +205,6 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 			WCHAR *file_name = win32_iter->find_data.cFileName;
 			B32 is_dot = (file_name[0] == '.' && file_name[1] == 0);
 			B32 is_dotdot = (file_name[0] == '.' && file_name[1]  == '.' && file_name[2] == 0);
-
 			B32 emit = (!is_dot && !is_dotdot);
 			WIN32_FIND_DATAW data = { 0 };
 			if (emit)
@@ -221,7 +219,6 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 			}
 		}
 	}
-
 	return(result);
 }
 
@@ -312,10 +309,10 @@ os_now_nanoseconds(Void)
 	LARGE_INTEGER counter;
 	QueryPerformanceCounter(&counter);
 	// NOTE(hampus): Convert from s -> us for less precision loss
-	counter.QuadPart *= 1'000'000;
+	counter.QuadPart *= 1000000;
 	counter.QuadPart /= win32_state.frequency.QuadPart;
 	// NOTE(hampus): Convert from us -> ns
-	result = counter.QuadPart * 1'000;
+	result = counter.QuadPart * 1000;
 	return(result);
 }
 
@@ -376,7 +373,7 @@ win32_common_main()
 	Str8List argument_list = str8_split_by_codepoints(win32_state.permanent_arena, str8_cstr(command_line_with_exe_path), str8_lit(" "));
 	S32 exit_code = os_main(argument_list);
 	return(exit_code);
-} 
+}
 
 #if CONSOLE
 

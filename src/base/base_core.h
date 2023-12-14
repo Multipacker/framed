@@ -117,6 +117,12 @@
 #	define _FILE_OFFSET_BITS 64
 #endif
 
+#if defined(__SANITIZE_ADDRESS__)
+#	define SANITIZER_ENABLED 1
+#else
+#	define SANITIZER_ENABLED 0
+#endif
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>

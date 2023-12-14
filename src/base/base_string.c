@@ -126,6 +126,8 @@ str8_substring(Str8 string, U64 start, U64 size)
 	return result;
 }
 
+
+
 // TODO(hampus): Replace with stb_sprintf.h
 internal Str8
 str8_pushfv(Arena *arena, CStr cstr, va_list args)
@@ -134,7 +136,7 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 
 	// NOTE(hampus): Address sanitizer complains about stbsp_vsnprintf
 	// for some reason...
-#if __has_feature(address_sanitizer) || defined(__SANITIZE_ADDRESS__)
+#if SANITIZER_ENABLED
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 	char *temp_string = push_array_zero(scratch.arena, char, strlen(cstr) + 4);
 	memory_copy_typed(temp_string, cstr, strlen(cstr));
