@@ -1,6 +1,10 @@
 #include <sys/mman.h>
 
 #include <dlfcn.h>
+#include <errno.h>
+#include <unistd.h>
+
+// NOTE(simon): Don't attempt to close file descriptors multiple times as per `man close.2`.
 
 internal OS_Handle
 os_handle_zero(Void)
@@ -49,12 +53,74 @@ os_memory_release(Void *ptr, U64 size)
 internal B32 os_file_read(Arena *arena, Str8 path, Str8 *result);
 internal B32 os_file_write(Str8 path, Str8 data, B32 overwrite_existing);
 
-internal B32 os_file_delete(Str8 path);
-// NOTE(simon): Moves the file if neccessary and replaces existing files.
-internal B32 os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing);
+internal B32
+os_file_delete(Str8 path)
+{
+	S32 success = 0;
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	CStr cstr_path = cstr_from_str8(scratch.arena, path);
+
+	// TODO(simon): Not sure if we should keep trying to unlink the path if an
+	// IO error occurs.
+	errno = 0
+	do {
+		success = unlink(cstr_path);
+	} while (success == -1 && errno == EIO);
+
+	arena_release_scratch(scratch);
+	return(success == 0);
+}
+
+// TODO(simon): Should we create directories as needed?
+internal B32
+os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
+{
+	S32 success = 0;
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	CStr cstr_old_path = cstr_from_str8(scratch.arena, old_path);
+	CStr cstr_new_path = cstr_from_str8(scratch.arena, new_path);
+
+	// TODO(simon): Should we use O_CLOEXEC and O_NOCTTY?
+	S32 old_fd = open(cstr_old_path, O_RDONLY | O_NOCTTY);
+
+	S32 new_fd;
+	if (overwrite_existing)
+	{
+		new_fd = open(cstr_new_path, O_WRONLY | O_CREAT, S_IRUSR | SIWUSR);
+	}
+	else
+	{
+		new_fd = open(cstr_new_path, O_WR_ONLY | O_CREAT | O_EXCL, S_IRUSR | SIWUSR);
+	}
+
+	fstat();
+	ftruncate();
+
+	// TODO(simon): May want to make sure this doesn't happend
+	// EINVAL fd_in and fd_out refer to the same file and the source and target ranges overlap.
+	// TODO(simon): Ensure that all bytes are written.
+	ssize_t bytes_copied;
+	errno = 0;
+	do {
+		bytes_copied = copy_file_range(old_fd, 0, new_fd, 0, length, 0);
+	} while (bytes_copied == -1 && errno == EIO);
+
+	// TODO(simon): In case we cannot write the entire file, should we leave
+	// the file half written or should we delete it?
+
+	// TODO(simon): fsync the destination.
+
+	close(old_fd);
+	close(new_fd);
+
+	arena_release_scratch(scratch);
+	return(bytes_copied == -1);
+}
+
 internal B32 os_file_rename(Str8 old_path, Str8 new_path);
 internal B32 os_file_create_directory(Str8 path);
-// NOTE(simon): The directory must be empty.
 internal B32 os_file_delete_directory(Str8 path);
 
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
@@ -71,7 +137,7 @@ os_library_open(Str8 path)
 	result.u64[0] = int_from_ptr(dlopen(cstr_path, RTLD_NOW | RTLD_LOCAL));
 
 	arena_release_scratch(scratch);
-	return result;
+	return(result);
 }
 
 internal Void
@@ -99,13 +165,14 @@ os_library_load_function(OS_Library library, Str8 name)
 	}
 
 	arena_release_scratch(scratch);
-	return result;
+	return(result);
 }
 
 global Arena *linux_permanent_arena;
 
 int main(int argument_count, char *arguments[]) {
 	linux_permanent_arena = arena_create();
+	arena_init_scratch();
 
 	Str8List argument_list = { 0 };
 	for (int i = 0; i < argument_count; ++i) {
@@ -114,5 +181,5 @@ int main(int argument_count, char *arguments[]) {
 
 	S32 exit_code = os_main(argument_list);
 
-	return exit_code;
+	return(exit_code);
 }
