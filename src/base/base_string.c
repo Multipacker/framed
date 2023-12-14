@@ -1,5 +1,13 @@
 #define STB_SPRINTF_IMPLEMENTATION
+
+#if COMPILER_CLANG
+# pragma clang diagnostic push
+# pragma clang diagnostic ignored "-Wconversion"
+#endif
 #include "stb_sprintf.h"
+#if COMPILER_CLANG
+# pragma clang diagnostic pop
+#endif
 
 internal Str8
 str8(U8 *data, U64 size)
