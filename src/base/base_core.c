@@ -9,7 +9,7 @@ operating_system_from_context(Void)
 #elif OS_MAC
 	result = OperatingSystem_Mac;
 #endif
-    
+
 	return(result);
 }
 
@@ -26,7 +26,7 @@ architecture_from_context(Void)
 #elif ARCH_ARM64
 	result = Architecture_ARM64;
 #endif
-    
+
 	return(result);
 }
 
@@ -50,25 +50,25 @@ build_date_from_context(Void)
 {
 	DateTime result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
-    
+
 	// NOTE(hampus): Date is in the format "M D Y"
 	// Example: "Dec 15 2023"
 	Str8 date =  str8_cstr(__DATE__);
-    
+
 	// NOTE(hampus): Time is in the format "HH:MM:SS"
 	// Example: "11:53:37"
 	Str8 time = str8_cstr(__TIME__);
-    
+
 	{
 		Str8List date_list = str8_split_by_codepoints(scratch.arena, date, str8_lit(" "));
-        
+
 		Str8Node *node = date_list.first;
 		Str8 month = node->string;
 		node = node->next;
 		Str8 day = node->string;
 		node = node->next;
 		Str8 year = node->string;
-        
+
 		for (U8 i = 0; i < Month_COUNT; ++i)
 		{
 			if (str8_equal(month, string_from_month(i)))
@@ -77,12 +77,12 @@ build_date_from_context(Void)
 			}
 		}
 	}
-    
+
 	{
         U64 len = u8_from_str8(time, &result.hour);
-        time = str8_skip(time, len+1); 
+        time = str8_skip(time, len+1);
         len = u8_from_str8(time, &result.minute);
-        time = str8_skip(time, len+1); 
+        time = str8_skip(time, len+1);
         u8_from_str8(time, &result.second);
 	}
 	arena_release_scratch(scratch);
@@ -99,17 +99,17 @@ string_from_build_mode(BuildMode mode)
 		{
 			result = str8_lit("Debug");
 		} break;
-        
+
 		case BuildMode_Optimized:
 		{
 			result = str8_lit("Optimized");
 		} break;
-        
+
 		case BuildMode_Release:
 		{
 			result = str8_lit("Release");
 		} break;
-        
+
 		invalid_case;
 	}
 	return(result);
@@ -125,25 +125,25 @@ string_from_operating_system(OperatingSystem os)
 		{
 			result = str8_lit("Null");
 		} break;
-        
+
 		case OperatingSystem_Windows:
 		{
 			result = str8_lit("Windows");
 		} break;
-        
+
 		case OperatingSystem_Linux:
 		{
 			result = str8_lit("Linux");
 		} break;
-        
+
 		case OperatingSystem_Mac:
 		{
 			result = str8_lit("Mac");
 		} break;
-        
+
 		invalid_case;
 	}
-    
+
 	return(result);
 }
 
@@ -157,30 +157,30 @@ string_from_architecture(Architecture arc)
 		{
 			result = str8_lit("Null");
 		} break;
-        
+
 		case Architecture_X64:
 		{
 			result = str8_lit("x64");
 		} break;
-        
+
 		case Architecture_X86:
 		{
 			result = str8_lit("x86");
 		} break;
-        
+
 		case Architecture_ARM:
 		{
 			result = str8_lit("ARM");
 		} break;
-        
+
 		case Architecture_ARM64:
 		{
 			result = str8_lit("ARM64");
 		} break;
-        
+
 		invalid_case;
 	}
-    
+
 	return(result);
 }
 
@@ -194,40 +194,40 @@ string_from_day_of_the_week(DayOfWeek day)
 		{
 			result = str8_lit("Monday");
 		} break;
-        
+
 		case DayOfWeek_Tuesday:
 		{
 			result = str8_lit("Tuesday");
 		} break;
-        
+
 		case DayOfWeek_Wednesday:
 		{
 			result = str8_lit("Wednesday");
 		} break;
-        
+
 		case DayOfWeek_Thursday:
 		{
 			result = str8_lit("Thursday");
 		} break;
-        
+
 		case DayOfWeek_Friday:
 		{
 			result = str8_lit("Friday");
 		} break;
-        
+
 		case DayOfWeek_Saturday:
 		{
 			result = str8_lit("Saturday");
 		} break;
-        
+
 		case DayOfWeek_Sunday:
 		{
 			result = str8_lit("Sunday");
 		} break;
-        
+
 		invalid_case;
 	}
-    
+
 	return(result);
 }
 
@@ -235,72 +235,72 @@ internal Str8
 string_from_month(Month month)
 {
 	Str8 result = str8_lit("NullMonth");
-    
+
 	switch (month)
 	{
 		case Month_Jan:
 		{
 			result = str8_lit("Jan");
 		} break;
-        
+
 		case Month_Feb:
 		{
 			result = str8_lit("Feb");
 		} break;
-        
+
 		case Month_Mar:
 		{
 			result = str8_lit("Mar");
 		} break;
-        
+
 		case Month_Apr:
 		{
 			result = str8_lit("Apr");
 		} break;
-        
+
 		case Month_May:
 		{
 			result = str8_lit("May");
 		} break;
-        
+
 		case Month_Jun:
 		{
 			result = str8_lit("Jun");
 		} break;
-        
+
 		case Month_Jul:
 		{
 			result = str8_lit("Jul");
 		} break;
-        
+
 		case Month_Aug:
 		{
 			result = str8_lit("Aug");
 		} break;
-        
+
 		case Month_Sep:
 		{
 			result = str8_lit("Sep");
 		} break;
-        
+
 		case Month_Oct:
 		{
 			result = str8_lit("Oct");
 		} break;
-        
+
 		case Month_Nov:
 		{
 			result = str8_lit("Nov");
 		} break;
-        
+
 		case Month_Dec:
 		{
 			result = str8_lit("Dec");
 		} break;
-        
+
 		invalid_case;
 	}
-    
+
 	return(result);
 }
 
@@ -308,7 +308,7 @@ internal DenseTime
 dense_time_from_date_time(DateTime *date_time)
 {
 	DenseTime result = { 0 };
-    
+
 	result.time += (U32) ((S32) date_time->year + 0x8000);
 	result.time *= 12;
 	result.time += date_time->month;
@@ -322,7 +322,7 @@ dense_time_from_date_time(DateTime *date_time)
 	result.time += date_time->second;
 	result.time *= 1000;
 	result.time += date_time->millisecond;
-    
+
 	return result;
 }
 
@@ -330,7 +330,7 @@ internal DateTime
 date_time_from_dense_time(DenseTime dense_time)
 {
 	DateTime result = { 0 };
-    
+
 	result.millisecond = dense_time.time % 1000;
 	dense_time.time /= 1000;
 	result.second = dense_time.time % 61;
@@ -344,6 +344,6 @@ date_time_from_dense_time(DenseTime dense_time)
 	result.month = dense_time.time % 12;
 	dense_time.time /= 12;
 	result.year = (S16) ((S32) dense_time.time - 0x8000);
-    
+
 	return result;
 }
