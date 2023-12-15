@@ -91,7 +91,18 @@ internal Str8  str8_from_str16(Arena *arena, Str16 string);
 
 internal CStr cstr_from_str8(Arena *arena, Str8 string);
 
-internal U64 u64_from_str8(Str8 string);
-internal S64 s64_from_str8(Str8 string);
+internal U64 u64_from_str8(Str8 string, U64 *destination);
+internal U64 u32_from_str8(Str8 string, U32 *destination);
+internal U64 u16_from_str8(Str8 string, U16 *destination);
+internal U64 u8_from_str8(Str8 string,  U8 *destination);
+
+internal U64 s64_from_str8(Str8 string, S64 *destination);
+internal U64 s32_from_str8(Str8 string, S32 *destination);
+internal U64 s16_from_str8(Str8 string, S16 *destination);
+internal U64 s8_from_str8(Str8 string, S8 *destination);
+
+internal F64 f64_from_str8(Str8 string, F64 *destination);
+
+internal B32 is_num(U8 ch);
 
 #endif // BASE_STRING_H

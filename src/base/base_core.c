@@ -67,7 +67,7 @@ build_date_from_context(Void)
 		node = node->next;
 		Str8 day = node->string;
 		node = node->next;
-		// Str8 year = node->string;
+		Str8 year = node->string;
         
 		for (U8 i = 0; i < Month_COUNT; ++i)
 		{
@@ -79,17 +79,11 @@ build_date_from_context(Void)
 	}
     
 	{
-		Str8List time_list = str8_split_by_codepoints(scratch.arena, time, str8_lit(":"));
-		Str8Node *node = time_list.first;
-		Str8 hour = node->string;
-		node = node->next;
-		Str8 minute = node->string;
-		node = node->next;
-		// Str8 second = node->string;
-        
-		result.hour = (U8) u64_from_str8(hour);
-		result.minute = (U8) u64_from_str8(minute);
-		// result.second = (U8) u64_from_str8(second);
+        U64 len = u8_from_str8(time, &result.hour);
+        time = str8_skip(time, len+1); 
+        len = u8_from_str8(time, &result.minute);
+        time = str8_skip(time, len+1); 
+        u8_from_str8(time, &result.second);
 	}
 	arena_release_scratch(scratch);
 	return(result);
