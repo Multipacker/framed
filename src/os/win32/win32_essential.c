@@ -52,7 +52,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 		if (get_file_size_result)
 		{
 			assert(file_size.QuadPart <= S32_MAX);
-			U32 file_size_u32 = (U32)file_size.QuadPart;
+			U32 file_size_u32 = (U32) file_size.QuadPart;
 			U32 push_amount = file_size_u32 + 1;
 			result_out->data = push_array(arena, U8, push_amount);
 			result_out->size = file_size_u32;
@@ -102,7 +102,7 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		assert(data.size <= U32_MAX);
-		BOOL write_file_result = WriteFile(file, data.data, (S32)data.size, 0, 0);
+		BOOL write_file_result = WriteFile(file, data.data, (S32) data.size, 0, 0);
 		if (write_file_result)
 		{
 			result = true;
@@ -188,7 +188,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 	Str8 path_star = str8_join(scratch.arena, &list);
 	Str16 path16 = str16_from_str8(scratch.arena, path_star);
 	memory_zero_struct(iterator);
-	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
 	win32_iter->handle = FindFirstFile(path16.data, &win32_iter->find_data);
 	arena_release_scratch(scratch);
 }
@@ -197,7 +197,7 @@ internal B32
 os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 {
 	B32 result = false;
-	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
 	if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
 	{
 		for (;!win32_iter->done;)
@@ -225,7 +225,7 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 internal Void
 os_file_iterator_end(OS_FileIterator *iterator)
 {
-	Win32_FileIterator *win32_iter = (Win32_FileIterator *)iterator;
+	Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
 	if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
 	{
 		FindClose(win32_iter->handle);
@@ -237,12 +237,12 @@ win32_date_time_from_system_time(SYSTEMTIME *system_time)
 {
 	DateTime result = { 0 };
 	result.millisecond = system_time->wMilliseconds;
-	result.second      = (U8)system_time->wSecond;
-	result.minute      = (U8)system_time->wMinute;
-	result.hour        = (U8)system_time->wHour;
-	result.day         = (U8)system_time->wDay;
-	result.month       = (U8)system_time->wMonth;
-	result.year        = (S16)system_time->wYear;
+	result.second      = (U8) system_time->wSecond;
+	result.minute      = (U8) system_time->wMinute;
+	result.hour        = (U8) system_time->wHour;
+	result.day         = (U8) system_time->wDay;
+	result.month       = (U8) system_time->wMonth;
+	result.year        = (S16) system_time->wYear;
 	return(result);
 }
 
@@ -250,13 +250,13 @@ internal SYSTEMTIME
 win32_system_time_from_date_time(DateTime *date_time)
 {
 	SYSTEMTIME result = { 0 };
-	result.wMilliseconds = (WORD)date_time->millisecond;
-	result.wSecond       = (WORD)date_time->second;
-	result.wMinute       = (WORD)date_time->minute;
-	result.wHour         = (WORD)date_time->hour;
-	result.wDay          = (WORD)date_time->day;
-	result.wMonth        = (WORD)date_time->month;
-	result.wYear         = (WORD)date_time->year;
+	result.wMilliseconds = (WORD) date_time->millisecond;
+	result.wSecond       = (WORD) date_time->second;
+	result.wMinute       = (WORD) date_time->minute;
+	result.wHour         = (WORD) date_time->hour;
+	result.wDay          = (WORD) date_time->day;
+	result.wMonth        = (WORD) date_time->month;
+	result.wYear         = (WORD) date_time->year;
 	return(result);
 }
 
@@ -319,8 +319,8 @@ os_now_nanoseconds(Void)
 internal Void
 os_sleep_milliseconds(U64 time)
 {
-	assert(time < (U64)U32_MAX);
-	Sleep((DWORD)time);
+	assert(time < (U64) U32_MAX);
+	Sleep((DWORD) time);
 }
 
 internal OS_Library
@@ -355,7 +355,7 @@ os_library_load_function(OS_Library library, Str8 name)
 	{
 		HMODULE lib = ptr_from_int(library.u64[0]);
 		Arena_Temporary scratch = arena_get_scratch(0, 0);
-		result = (VoidFunction *)GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
+		result = (VoidFunction *) GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
 		arena_release_scratch(scratch);
 	}
 	return(result);

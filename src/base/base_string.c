@@ -24,7 +24,7 @@ str8_range(U8 *start, U8 *opl)
 {
 	Str8 result;
 	result.data = start;
-	result.size = (U64)(opl - start);
+	result.size = (U64) (opl - start);
 
 	return result;
 }
@@ -45,7 +45,7 @@ internal Str8
 str8_cstr(CStr data)
 {
 	Str8 result;
-	result.data = (U8 *)data;
+	result.data = (U8 *) data;
 	result.size = 0;
 
 	while (result.data[result.size])
@@ -156,7 +156,7 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 
 	result.data = push_array(arena, U8, needed_size+1);
 	result.size = needed_size;
-	vsnprintf((CStr)result.data, needed_size+1, cstr, args);
+	vsnprintf((CStr) result.data, needed_size+1, cstr, args);
 	return(result);
 }
 
@@ -185,8 +185,8 @@ str8_equal(Str8 a, Str8 b)
 	U8 *b_opl = b.data + b.size;
 	while (a_ptr < a_opl && b_ptr < b_opl)
 	{
-		StringDecode a_decode = string_decode_utf8(a_ptr, (U64)(a_opl - a_ptr));
-		StringDecode b_decode = string_decode_utf8(b_ptr, (U64)(b_opl - b_ptr));
+		StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
+		StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
 		a_ptr += a_decode.size;
 		b_ptr += b_decode.size;
 
@@ -209,11 +209,11 @@ str8_first_index_of(Str8 string, U32 codepoint, U64 *result_index)
 
 	while (ptr < opl)
 	{
-		StringDecode decode = string_decode_utf8(ptr, (U64)(ptr - opl));
+		StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
 		if (decode.codepoint == codepoint)
 		{
 			found = true;
-			*result_index = (U64)(ptr - string.data);
+			*result_index = (U64) (ptr - string.data);
 			break;
 		}
 		ptr += decode.size;
@@ -233,11 +233,11 @@ str8_last_index_of(Str8 string, U32 codepoint, U64 *result_index)
 
 	while (ptr < opl)
 	{
-		StringDecode decode = string_decode_utf8(ptr, (U64)(ptr - opl));
+		StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
 		if (decode.codepoint == codepoint)
 		{
 			found = true;
-			last_index = (U64)(ptr - string.data);
+			last_index = (U64) (ptr - string.data);
 		}
 		ptr += decode.size;
 	}
@@ -293,13 +293,13 @@ str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints)
 
 	while (string_ptr < string_opl)
 	{
-		StringDecode string_decode = string_decode_utf8(string_ptr, (U64)(string_ptr - string_opl));
+		StringDecode string_decode = string_decode_utf8(string_ptr, (U64) (string_ptr - string_opl));
 
 		U8 *codepoint_ptr       = codepoints.data;
 		U8 *codepoint_opl       = codepoints.data + codepoints.size;
 		while (codepoint_ptr < codepoint_opl)
 		{
-			StringDecode codepoint_decode = string_decode_utf8(codepoint_ptr, (U64)(codepoint_opl - codepoint_ptr));
+			StringDecode codepoint_decode = string_decode_utf8(codepoint_ptr, (U64) (codepoint_opl - codepoint_ptr));
 
 			if (string_decode.codepoint == codepoint_decode.codepoint)
 			{
@@ -395,25 +395,25 @@ string_encode_utf8(U8 *destination, U32 codepoint)
 
 	if (codepoint <= 0x7F)
 	{
-		destination[0] = (U8)codepoint;
+		destination[0] = (U8) codepoint;
 		size = 1;
 	}
 	else if (codepoint <= 0x07FF)
 	{
-		destination[0] = (U8)(0xC0 | (codepoint >> 6));
+		destination[0] = (U8) (0xC0 | (codepoint >> 6));
 		destination[1] = 0x80 | (codepoint & 0x3F);
 		size = 2;
 	}
 	else if (codepoint <= 0xFFFF)
 	{
-		destination[0] = (U8)(0xC0 | (codepoint >> 12));
+		destination[0] = (U8) (0xC0 | (codepoint >> 12));
 		destination[1] = 0x80 | ((codepoint >> 6) & 0x3F);
 		destination[2] = 0x80 | (codepoint & 0x3F);
 		size = 3;
 	}
 	else if (codepoint <= 0x10FFFF)
 	{
-		destination[0] = (U8)(0xC0 | (codepoint >> 18));
+		destination[0] = (U8) (0xC0 | (codepoint >> 18));
 		destination[1] = 0x80 | ((codepoint >> 12) & 0x3F);
 		destination[2] = 0x80 | ((codepoint >> 6) & 0x3F);
 		destination[3] = 0x80 | (codepoint & 0x3F);
@@ -422,7 +422,7 @@ string_encode_utf8(U8 *destination, U32 codepoint)
 	else
 	{
 		U32 missing_codepoint = 0xFFFD;
-		destination[0] = (U8)(0xC0 | (missing_codepoint >> 12));
+		destination[0] = (U8) (0xC0 | (missing_codepoint >> 12));
 		destination[1] = 0x80 | ((missing_codepoint >> 6) & 0x3F);
 		destination[2] = 0x80 | (missing_codepoint & 0x3F);
 		size = 3;
@@ -457,7 +457,7 @@ string_decode_utf16(U16 *string, U64 size)
 
 		if (0xD800 <= lead_surrogate && lead_surrogate <= 0xDBFF && 0xDC00 <= code_unit && code_unit <= 0xDFFF)
 		{
-			result.codepoint = (U32)(0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
+			result.codepoint = (U32) (0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
 			++result.size;
 		}
 	}
@@ -472,13 +472,13 @@ string_encode_utf16(U16 *destination, U32 codepoint)
 
 	if (codepoint < 0x10000)
 	{
-		destination[0] = (U16)codepoint;
+		destination[0] = (U16) codepoint;
 		size = 1;
 	}
 	else
 	{
 		U32 adjusted_codepoint = codepoint - 0x10000;
-		destination[0] = (U16)(0xD800 + (adjusted_codepoint >> 10));
+		destination[0] = (U16) (0xD800 + (adjusted_codepoint >> 10));
 		destination[1] = 0xDC00 + (adjusted_codepoint & 0x03FF);
 		size = 2;
 	}
@@ -498,12 +498,12 @@ str32_from_str8(Arena *arena, Str8 string)
 
 	while (ptr < opl)
 	{
-		StringDecode decode = string_decode_utf8(ptr, (U64)(opl - ptr));
+		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
 		*destination_ptr++ = decode.codepoint;
 		ptr += decode.size;
 	}
 
-	U64 string_size = (U64)(destination_ptr - memory);
+	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
@@ -530,7 +530,7 @@ str8_from_str32(Arena *arena, Str32 string)
 		destination_ptr += size;
 	}
 
-	U64 string_size = (U64)(destination_ptr - memory);
+	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
@@ -552,13 +552,13 @@ str16_from_str8(Arena *arena, Str8 string)
 
 	while (ptr < opl)
 	{
-		StringDecode decode = string_decode_utf8(ptr, (U64)(opl - ptr));
-		U32 encode_size = (U32)string_encode_utf16(destination_ptr, decode.codepoint);
-		*destination_ptr = (U16)encode_size;
+		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+		U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
+		*destination_ptr = (U16) encode_size;
 		ptr += decode.size;
 	}
 
-	U64 string_size = (U64)(destination_ptr - memory);
+	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
@@ -580,13 +580,13 @@ str8_from_str16(Arena *arena, Str16 string)
 
 	while (ptr < opl)
 	{
-		StringDecode decode = string_decode_utf16(ptr, (U64)(opl - ptr));
+		StringDecode decode = string_decode_utf16(ptr, (U64) (opl - ptr));
 		U64 size = string_encode_utf8(destination_ptr, decode.codepoint);
 		ptr += decode.size;
 		destination_ptr += size;
 	}
 
-	U64 string_size = (U64)(destination_ptr - memory);
+	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
@@ -605,5 +605,5 @@ cstr_from_str8(Arena *arena, Str8 string)
 	memory_copy(memory, string.data, string.size);
 	memory[string.size] = 0;
 
-	return (CStr)memory;
+	return (CStr) memory;
 }

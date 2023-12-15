@@ -7,9 +7,12 @@
 internal S32
 os_main(Str8List arguments)
 {
-	if (os_file_copy(str8_lit("build_clang.sh"), str8_lit("test"), false)) {
+	if (os_file_copy(str8_lit("build_clang.sh"), str8_lit("test"), false))
+	{
 		printf("success\n");
-	} else {
+	}
+	else
+	{
 		printf("fail\n");
 	}
 	return(0);

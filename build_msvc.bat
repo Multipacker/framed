@@ -20,9 +20,9 @@ set linker_flags=%libs% -incremental:no
 set src_files=../src/main.c
 
 set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1
-set optimized_compiler_flags=-Zi -fsanitize=address -O2 -GS- -DCONSOLE=1
-
 set debug_linker_flags=-subsystem:console
+
+set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -GS- -DCONSOLE=1
 set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows
 
 set arg0="%1%" 

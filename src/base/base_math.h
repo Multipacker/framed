@@ -257,7 +257,7 @@ internal RectF32 rectf32_from_rects32(RectS32 rect);
 internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
 internal RectU32 retu32(Vec2U32 min, Vec2U32 max);
 
-global S8  S8_MIN  = (S8)  0x80;
+global S8  S8_MIN  = (S8) 0x80;
 global S16 S16_MIN = (S16) 0x8000;
 global S32 S32_MIN = (S32) 0x80000000;
 global S64 S64_MIN = (S64) 0x8000000000000000ll;

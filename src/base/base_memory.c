@@ -23,7 +23,7 @@ arena_create_reserve(U64 reserve_size)
 	U8 *memory = os_memory_reserve(reserve_size);
 	os_memory_commit(memory, ARENA_COMMIT_BLOCK_SIZE);
 
-	Arena *result = (Arena *)memory;
+	Arena *result = (Arena *) memory;
 
 	result->memory     = memory;
 	result->cap        = reserve_size;
@@ -65,7 +65,7 @@ arena_push(Arena *arena, U64 size)
 			U64 next_commit_pos = u64_min(pos_aligned, arena->cap);
 			U64 commit_size     = next_commit_pos - arena->commit_pos;
 			os_memory_commit(arena->memory + arena->commit_pos, commit_size);
-			ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->commit_pos, commit_size);
+			ASAN_POISON_MEMORY_REGION((U8 *) arena->memory + arena->commit_pos, commit_size);
 			arena->commit_pos = next_commit_pos;
 		}
 
@@ -83,7 +83,7 @@ arena_pop_to(Arena *arena, U64 pos)
 		U64 dpos = arena->pos - pos;
 		arena->pos = pos;
 
-		ASAN_POISON_MEMORY_REGION((U8 *)arena->memory + arena->pos, dpos);
+		ASAN_POISON_MEMORY_REGION((U8 *) arena->memory + arena->pos, dpos);
 
 		U64 pos_aligned     = u64_round_up_to_power_of_2(arena->pos, ARENA_COMMIT_BLOCK_SIZE);
 		U64 next_commit_pos = u64_min(pos_aligned, arena->cap);

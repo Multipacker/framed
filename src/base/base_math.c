@@ -283,10 +283,10 @@ rectf32_from_rects32(RectS32 rect)
 {
 	RectF32 result;
 
-	result.x0 = (F32)rect.x0;
-	result.y0 = (F32)rect.y0;
-	result.x1 = (F32)rect.x1;
-	result.y1 = (F32)rect.y1;
+	result.x0 = (F32) rect.x0;
+	result.y0 = (F32) rect.y0;
+	result.x1 = (F32) rect.x1;
+	result.y1 = (F32) rect.y1;
 
 	return(result);
 }
@@ -678,13 +678,13 @@ internal S16
 s16_big_to_local_endian(S16 x)
 {
 #if COMPILER_CL
-	U16 swapped = _byteswap_ushort(*(U16 *)&x);
+	U16 swapped = _byteswap_ushort(*(U16 *) &x);
 #elif COMPILER_CLANG || COMPILER_GCC
-	U16 swapped = __builtin_bswap16(*(U16 *)&x);
+	U16 swapped = __builtin_bswap16(*(U16 *) &x);
 #else
 # error Your compiler does not have an implementation of s16_big_to_local_endian.
 #endif
-	return *(S16 *)&swapped;
+	return *(S16 *) &swapped;
 }
 
 internal S32
@@ -712,13 +712,13 @@ internal S32
 s32_big_to_local_endian(S32 x)
 {
 #if COMPILER_CL
-	U32 swapped = _byteswap_ulong(*(U32 *)&x);
+	U32 swapped = _byteswap_ulong(*(U32 *) &x);
 #elif COMPILER_CLANG || COMPILER_GCC
-	U32 swapped = __builtin_bswap32(*(U32 *)&x);
+	U32 swapped = __builtin_bswap32(*(U32 *) &x);
 #else
 # error Your compiler does not have an implementation of s32_big_to_local_endian.
 #endif
-	return *(S32 *)&swapped;
+	return *(S32 *) &swapped;
 }
 
 internal S64
@@ -746,14 +746,14 @@ internal S64
 s64_big_to_local_endian(S64 x)
 {
 #if COMPILER_CL
-	U64 swapped = _byteswap_uint64(*(U64 *)&x);
+	U64 swapped = _byteswap_uint64(*(U64 *) &x);
 #elif COMPILER_CLANG || COMPILER_GCC
-	U64 swapped = __builtin_bswap64(*(U64 *)&x);
+	U64 swapped = __builtin_bswap64(*(U64 *) &x);
 #else
 # error Your compiler does not have an implementation of s64_big_to_local_endian.
 #endif
 
-	return *(S64 *)&swapped;
+	return *(S64 *) &swapped;
 }
 
 internal F32
@@ -920,13 +920,13 @@ f32_ceil(F32 x)
 internal U32
 f32_round_to_u32(F32 x)
 {
-	return (U32)roundf(x);
+	return (U32) roundf(x);
 }
 
 internal S32
 f32_round_to_s32(F32 x)
 {
-	return (S32)roundf(x);
+	return (S32) roundf(x);
 }
 
 internal F64

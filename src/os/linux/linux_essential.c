@@ -20,7 +20,8 @@ linux_sync_file_descriptor(S32 file_descriptor)
 	B32 success = true;
 
 	S32 return_code = 0;
-	do {
+	do
+	{
 		errno = 0;
 		return_code = fsync(file_descriptor);
 	} while (return_code == -1 && errno == EINTR);
@@ -121,7 +122,8 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 				U64 total_to_read = u64_min((U64) (opl - ptr), SSIZE_MAX);
 				errno = 0;
 				S64 actual_read = read(file_descriptor, ptr, total_to_read);
-				if (!(actual_read == -1 && errno == EINTR) && !(actual_read != -1)) {
+				if (!(actual_read == -1 && errno == EINTR) && !(actual_read != -1))
+				{
 					success = false;
 					break;
 				}
@@ -210,7 +212,8 @@ os_file_delete(Str8 path)
 
 	// TODO(simon): Not sure if we should keep trying to unlink the path if an
 	// IO error occurs.
-	do {
+	do
+	{
 		errno = 0;
 		success = unlink(cstr_path);
 	} while (success == -1 && errno == EIO);
@@ -248,7 +251,8 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 			{
 				ssize_t bytes_to_copy = status.st_size;
 
-				do {
+				do
+				{
 					ssize_t bytes_copied = copy_file_range(old_fd, 0, new_fd, 0, (size_t) bytes_to_copy, 0);
 					if (bytes_copied == -1)
 					{
@@ -262,7 +266,8 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 				// the file half written or should we delete it?
 
 				// NOTE(simon): Remove any trailing data if the file already existed.
-				do {
+				do
+				{
 					errno = 0;
 					success = ftruncate(new_fd, status.st_size);
 				} while (success == -1 && errno == EINTR);
@@ -366,7 +371,7 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 			(
 				linux_iterator->write_index < sizeof(Linux_Dirent64) ||
 				linux_iterator->write_index < ((Linux_Dirent64 *) linux_iterator->buffer)->d_reclen
-			)
+				)
 		)
 		{
 			U64 to_read = array_count(linux_iterator->buffer) - linux_iterator->write_index;
