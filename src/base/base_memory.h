@@ -44,6 +44,7 @@ internal Arena_Temporary arena_get_scratch(Arena **conflicts, U32 count);
 #define arena_release_scratch(scratch) arena_end_temporary(scratch);
 
 #define push_struct(arena, type)            ((type *) arena_push(arena, sizeof(type)))
+#define push_struct_zero(arena, type)       ((type *) arena_push_zero(arena, sizeof(type)))
 #define push_array(arena, type, count)      ((type *) arena_push(arena, sizeof(type)*(count)))
 #define push_array_zero(arena, type, count) ((type *) arena_push_zero(arena, sizeof(type)*(count)))
 

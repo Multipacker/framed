@@ -7,7 +7,7 @@ mkdir -p build
 src_files="src/main.c"
 errors="-Werror -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-function"
 common_flags="-Isrc -Ivendor -o build/out"
-linker_flags="-lm"
+linker_flags="-lm -lSDL2"
 
 if [ "$mode" == "debug" ]; then
 	compiler_flags="-g -fsanitize=address -DBUILD_MODE_DEBUG=1"
