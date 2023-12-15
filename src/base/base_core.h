@@ -142,9 +142,7 @@
 ((f)=(l)=(n),(n)->next=(n)->prev=0):\
 ((n)->prev=(l),(l)->next=(n),(l)=(n),(n)->next=0))
 
-#define dll_push_back(f,l,n) dll_push_back_np(f,l,n,next,prev)
 
-#define dll_push_front(f,l,n) dll_push_back_np(l,f,n,prev,next)
 
 #define dll_remove_npz(f,l,n,next,prev,zchk,zset) (((f)==(n))?\
 ((f)=(f)->next, (zchk(f) ? (zset(l)) : zset((f)->prev))):\
@@ -153,7 +151,6 @@
 ((zchk((n)->next) ? (0) : ((n)->next->prev=(n)->prev)),\
 (zchk((n)->prev) ? (0) : ((n)->prev->next=(n)->next))))
 
-#define dll_remove(f,l,n) dll_remove_npz(f,l,n,next,prev,check_null,set_null)
 
 #define sll_push_front_np(f, n, next) ((n)->next = (f),\
 (f) = (n));
@@ -162,25 +159,29 @@
 
 #define stack_push_n(f,n,next) ((n)->next=(f),(f)=(n))
 
-#define stack_push(f,n) stack_push_n(f,n,next)
-
-#define stack_pop_n(f,next) ((f)==0?0:\
+#define stack_pop_nz(f,next,zchk) ((zchk(f))?0:\
 ((f)=(f)->next))
 
-#define stack_pop(f) stack_pop_n(f, next)
 
-#define queue_push_n(f,l,n,next) ((f)==0?\
+#define queue_push_nz(f,l,n,next,zchk,zset) (zchk(f)?\
 (f)=(l)=(n):\
 ((l)->next=(n),(l)=(n)),\
-(n)->next=0)
+zset((n)->next))
 
-#define queue_push(f,l,n) queue_push_n(f,l,n,next)
 
-#define queue_pop_n(f,l,next) 	((f)==(l)?\
-(f)=(l)=0:\
+#define queue_pop_nz(f,l,next,zset) 	((f)==(l)?\
+(f)=zset(l):\
 ((f)=(f)->next))
 
-#define queue_pop(f,l) queue_pop_n(f,l,next)
+#define dll_push_back(f,l,n) dll_push_back_np(f,l,n,next,prev)
+#define dll_push_front(f,l,n) dll_push_back_np(l,f,n,prev,next)
+#define dll_remove(f,l,n) dll_remove_npz(f,l,n,next,prev,check_null,set_null)
+
+#define stack_push(f,n) stack_push_n(f,n,next)
+#define stack_pop(f) stack_pop_nz(f, next,check_null)
+
+#define queue_push(f,l,n) queue_push_nz(f,l,n,next,check_null,set_null)
+#define queue_pop(f,l) queue_pop_nz(f,l,next,set_null)
 
 typedef uint8_t  U8;
 typedef uint16_t U16;
@@ -265,7 +266,7 @@ enum Axis2
 {
 	Axis2_X,
 	Axis2_Y,
-
+    
 	Axis2_COUNT,
 };
 
@@ -275,7 +276,7 @@ enum Axis3
 	Axis3_X,
 	Axis3_Y,
 	Axis3_Z,
-
+    
 	Axis3_COUNT,
 };
 
@@ -286,7 +287,7 @@ enum Axis4
 	Axis4_Y,
 	Axis4_Z,
 	Axis4_W,
-
+    
 	Axis4_COUNT,
 };
 
@@ -295,7 +296,7 @@ enum Side
 {
 	Side_Min,
 	Side_Max,
-
+    
 	Side_COUNT,
 };
 
@@ -306,7 +307,7 @@ enum OperatingSystem
 	OperatingSystem_Windows,
 	OperatingSystem_Linux,
 	OperatingSystem_Mac,
-
+    
 	OperatingSystem_COUNT,
 };
 
@@ -318,7 +319,7 @@ enum Architecture
 	Architecture_X86,
 	Architecture_ARM,
 	Architecture_ARM64,
-
+    
 	Architecture_COUNT,
 };
 
@@ -329,7 +330,7 @@ enum BuildMode
 	BuildMode_Debug,
 	BuildMode_Optimized,
 	BuildMode_Release,
-
+    
 	BuildMode_COUNT
 };
 
@@ -348,7 +349,7 @@ enum Month
 	Month_Oct,
 	Month_Nov,
 	Month_Dec,
-
+    
 	Month_COUNT
 };
 
@@ -362,7 +363,7 @@ enum DayOfWeek
 	DayOfWeek_Friday,
 	DayOfWeek_Saturday,
 	DayOfWeek_Sunday,
-
+    
 	DayOfWeek_COUNT,
 };
 
@@ -384,6 +385,7 @@ struct DateTime
 	S16 year;        // 1 = 1 CE; 2020 = 2020 CE, 0 = 1 BCE; -100 = 101 BCE; etc.
 };
 
+// TODO(hampus): Finish this implementation
 // Different formats to display the date Dec 15 2023
 typedef enum DateFormat DateFormat;
 enum DateFormat
@@ -392,6 +394,7 @@ enum DateFormat
 	DateFormat_YYYYMMDD, // 2023-12-15
 };
 
+// TODO(hampus): Finish this implementation
 // Different formats to display the time 12:08:30
 typedef enum TimeFormat TimeFormat;
 enum TimeFormat
