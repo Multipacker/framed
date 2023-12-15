@@ -90,6 +90,7 @@ internal Str16 str16_from_str8(Arena *arena, Str8  string);
 internal Str8  str8_from_str16(Arena *arena, Str16 string);
 
 internal CStr cstr_from_str8(Arena *arena, Str8 string);
+internal Str16 cstr16_from_str8(Arena *arena, Str8 string);
 
 internal U64 u64_from_str8(Str8 string, U64 *destination);
 internal U64 u32_from_str8(Str8 string, U32 *destination);

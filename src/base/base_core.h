@@ -118,20 +118,6 @@
 #	define SANITIZER_ENABLED 0
 #endif
 
-#if !defined(BUILD_MODE)
-#    define BUILD_MODE 0
-#endif
-
-#if BUILD_MODE == 0
-#   define BUILD_MODE_DEBUG 1
-#elif BUILD_MODE == 1
-#   define BUILD_MODE_OPTIMIZED 1
-#elif BUILD_MODE == 2
-#   define BUILD_MODE_RELEASE 1
-#else
-#   error Invalid build mode,
-#endif
-
 #if !defined(BUILD_MODE_DEBUG)
 #   define BUILD_MODE_DEBUG 0
 #endif
@@ -281,12 +267,19 @@ typedef Void VoidFunction(Void);
 #define million(n)  ((thousand(n))*1000)
 #define billion(n)  ((million(n))*1000)
 
+#define swap(a, b, type) \
+{ \
+type temp = a; \
+a = b; \
+b = temp; \
+}
+
 typedef enum Axis2 Axis2;
 enum Axis2
 {
 	Axis2_X,
 	Axis2_Y,
-    
+
 	Axis2_COUNT,
 };
 
@@ -296,7 +289,7 @@ enum Axis3
 	Axis3_X,
 	Axis3_Y,
 	Axis3_Z,
-    
+
 	Axis3_COUNT,
 };
 
@@ -307,7 +300,7 @@ enum Axis4
 	Axis4_Y,
 	Axis4_Z,
 	Axis4_W,
-    
+
 	Axis4_COUNT,
 };
 
@@ -316,7 +309,7 @@ enum Side
 {
 	Side_Min,
 	Side_Max,
-    
+
 	Side_COUNT,
 };
 
@@ -327,7 +320,7 @@ enum OperatingSystem
 	OperatingSystem_Windows,
 	OperatingSystem_Linux,
 	OperatingSystem_Mac,
-    
+
 	OperatingSystem_COUNT,
 };
 
@@ -339,7 +332,7 @@ enum Architecture
 	Architecture_X86,
 	Architecture_ARM,
 	Architecture_ARM64,
-    
+
 	Architecture_COUNT,
 };
 
@@ -350,7 +343,7 @@ enum BuildMode
 	BuildMode_Debug,
 	BuildMode_Optimized,
 	BuildMode_Release,
-    
+
 	BuildMode_COUNT
 };
 
@@ -369,7 +362,7 @@ enum Month
 	Month_Oct,
 	Month_Nov,
 	Month_Dec,
-    
+
 	Month_COUNT
 };
 
@@ -383,7 +376,7 @@ enum DayOfWeek
 	DayOfWeek_Friday,
 	DayOfWeek_Saturday,
 	DayOfWeek_Sunday,
-    
+
 	DayOfWeek_COUNT,
 };
 

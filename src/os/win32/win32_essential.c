@@ -35,12 +35,12 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-                             GENERIC_READ,
-                             FILE_SHARE_READ,
-                             0,
-                             OPEN_EXISTING,
-                             FILE_ATTRIBUTE_NORMAL,
-                             0);
+														 GENERIC_READ,
+														 FILE_SHARE_READ,
+														 0,
+														 OPEN_EXISTING,
+														 FILE_ATTRIBUTE_NORMAL,
+														 0);
 
 	arena_release_scratch(scratch);
 
@@ -90,12 +90,12 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 	}
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-                             GENERIC_READ,
-                             FILE_SHARE_READ,
-                             0,
-                             create_file_flags,
-                             FILE_ATTRIBUTE_NORMAL,
-                             0);
+														 GENERIC_READ,
+														 FILE_SHARE_READ,
+														 0,
+														 create_file_flags,
+														 FILE_ATTRIBUTE_NORMAL,
+														 0);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
