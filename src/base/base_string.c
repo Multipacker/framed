@@ -767,6 +767,7 @@ internal F64
 f64_from_str8(Str8 string, F64 *destination)
 {
     assert(!"Not implemented!");
+	return 0.0;
 }
 
 internal
