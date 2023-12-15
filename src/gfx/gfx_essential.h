@@ -6,6 +6,7 @@ typedef struct Gfx_Context Gfx_Context;
 typedef enum Gfx_EventKind Gfx_EventKind;
 enum Gfx_EventKind
 {
+	Gfx_EventKind_Null,
 	Gfx_EventKind_Quit,
 	Gfx_EventKind_KeyPress,
 	Gfx_EventKind_KeyRelease,
