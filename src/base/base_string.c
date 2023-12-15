@@ -134,9 +134,6 @@ str8_substring(Str8 string, U64 start, U64 size)
 	return result;
 }
 
-
-
-// TODO(hampus): Replace with stb_sprintf.h
 internal Str8
 str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {

@@ -11,14 +11,14 @@
 internal S32
 os_main(Str8List arguments)
 {
-    #if 1
+#if 1
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
-    
+
     B32 running = true;
 	while (running)
 	{
@@ -27,8 +27,8 @@ os_main(Str8List arguments)
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
-				 event != 0;
-				 event = event->next)
+             event != 0;
+             event = event->next)
 		{
 			switch (event->kind)
 			{
@@ -40,13 +40,17 @@ os_main(Str8List arguments)
 				case Gfx_EventKind_KeyPress:
 				{
                     printf("Gfx_EventKind_KeyPress: %d\n", event->key);
+                    if (event->key == Gfx_Key_F11)
+                    {
+                        gfx_toggle_fullscreen(&gfx);
+                    }
 				} break;
 
 				case Gfx_EventKind_KeyRelease:
 				{
                     printf("Gfx_EventKind_KeyRelease: %d\n", event->key);
 				} break;
-                
+
 				case Gfx_EventKind_Char:
 				{
                     printf("Gfx_EventKind_Char\n");
@@ -54,14 +58,14 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_Scroll:
 				{
-                    printf("Gfx_EventKind_Scroll\n");
+                    printf("Gfx_EventKind_Scroll: %d\n", (U32)event->scroll.y);
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
                     printf("Gfx_EventKind_Resize\n");
 				} break;
-                
+
                 invalid_case;
 			}
 		}
@@ -69,8 +73,8 @@ os_main(Str8List arguments)
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
-    
+
     #endif
-    
+
 	return(0);
 }
