@@ -112,20 +112,42 @@
 #	define ARCH_ARM64 0
 #endif
 
-#if OS_LINUX
-#	define _GNU_SOURCE
-#	define _FILE_OFFSET_BITS 64
-#endif
-
 #if defined(__SANITIZE_ADDRESS__)
 #	define SANITIZER_ENABLED 1
 #else
 #	define SANITIZER_ENABLED 0
 #endif
 
-#define BUILD_MODE_DEBUG 0
-#define BUILD_MODE_OPTIMIZED 0
-#define BUILD_MODE_RELEASE 0
+#if !defined(BUILD_MODE)
+#    define BUILD_MODE 0
+#endif
+
+#if BUILD_MODE == 0
+#   define BUILD_MODE_DEBUG 1
+#elif BUILD_MODE == 1
+#   define BUILD_MODE_OPTIMIZED 1
+#elif BUILD_MODE == 2
+#   define BUILD_MODE_RELEASE 1
+#else
+#   error Invalid build mode,
+#endif
+
+#if !defined(BUILD_MODE_DEBUG)
+#   define BUILD_MODE_DEBUG 0
+#endif
+
+#if !defined(BUILD_MODE_OPTIMIZED)
+#   define BUILD_MODE_OPTIMIZED 0
+#endif
+
+#if !defined(BUILD_MODE_RELEASE)
+#   define BUILD_MODE_RELEASE 0
+#endif
+
+#if OS_LINUX
+#	define _GNU_SOURCE
+#	define _FILE_OFFSET_BITS 64
+#endif
 
 #include <stdint.h>
 #include <stdlib.h>

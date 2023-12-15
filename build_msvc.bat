@@ -13,6 +13,9 @@ rem 5045: Compiler will insert Spectre mitigation for memory load if /Qspectre s
 rem 4711: x selected for automatic inline expansion
 rem 4710: function not inlined
 
+
+rem -- Common flags -- 
+
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710
 set additional_includes=-I../vendor/
 set opts=-DENABLE_ASSERT=1
@@ -21,20 +24,35 @@ set libs=user32.lib kernel32.lib winmm.lib gdi32.lib
 set linker_flags=%libs% -incremental:no
 set src_files=../src/main.c
 
-set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1
+rem -- Debug build flags -- 
+
+set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1 -DBUILD_MODE=0
 set debug_linker_flags=-subsystem:console
 
-set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -Oi -fp:fast -GS- -DCONSOLE=1
+rem -- Optimized build flags -- 
+
+set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE=1
 set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:console
+
+rem -- Release build flags -- 
+
+set release_compiler_flags=-O2 -Oi -fp:fast -GS- -DBUILD_MODE=2
+set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows
 
 set arg0="%1%" 
 
 if %arg0% == "debug" (
+	echo Debug Build
 	set compiler_flags=%compiler_flags% %debug_compiler_flags%
 	set linker_flags=%linker_flags% %debug_linker_flags%
 ) else if %arg0% == "optimized" (
+	echo Optimized Build
 	set compiler_flags=%compiler_flags% %optimized_compiler_flags%
 	set linker_flags=%linker_flags% %optimized_linker_flags%
+) else if %arg0% == "release" (
+	echo Release Build
+	set compiler_flags=%compiler_flags% %release_compiler_flags%
+	set linker_flags=%linker_flags% %release_linker_flags%
 )
 
 if not exist build mkdir build

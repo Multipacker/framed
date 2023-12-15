@@ -375,22 +375,21 @@ win32_common_main(Void)
 	return(exit_code);
 }
 
-#if CONSOLE
+#if BUILD_MODE_RELEASE 
+S32 APIENTRY
+WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+{
+	S32 exit_code = win32_common_main();
+	ExitProcess(exit_code);
+}
+
+#else
 
 S32
 main(S32 argument_count, CStr arguments[])
 {
 	S32 exit_code = win32_common_main();
 	return(exit_code);
-}
-
-#else
-
-S32 APIENTRY
-WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
-{
-	S32 exit_code = win32_common_main();
-	ExitProcess(exit_code);
 }
 
 #endif
