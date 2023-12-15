@@ -227,7 +227,8 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
                                       create_window_flags,
                                       x, y,
                                       width, height,
-                                      0, 0, instance, 0);
+                                 0, 0, instance, 0);
+    
 	assert(result.hwnd);
 
 	result.hdc = GetDC(result.hwnd);
