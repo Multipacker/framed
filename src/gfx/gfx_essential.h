@@ -72,6 +72,7 @@ enum Gfx_Key
 	Gfx_Key_F12,
 
 	Gfx_Key_Backspace,
+	Gfx_Key_Space,
 	Gfx_Key_Tab,
 	Gfx_Key_Return,
 	Gfx_Key_Shift,
@@ -119,6 +120,6 @@ internal Gfx_EventList gfx_get_events(Arena *arena, Gfx_Context *gfx);
 internal Vec2F32       gfx_get_mouse_pos(Gfx_Context *gfx);
 internal Vec2U32       gfx_get_window_area(Gfx_Context *gfx);
 internal Vec2U32       gfx_get_window_client_area(Gfx_Context *gfx);
-internal void          gfx_toggle_fullscreen(Gfx_Context *gfx);
+internal Void          gfx_toggle_fullscreen(Gfx_Context *gfx);
 
 #endif //GFX_ESSENTIAL_H
