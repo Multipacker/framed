@@ -136,8 +136,6 @@
 #define check_null(x) ((x) == 0)
 #define set_null(x) ((x) = 0)
 
-// TODO(hampus): Add set/zero parameters for all that need
-
 #define dll_push_back_np(f,l,n,next,prev) 	((f)==0?\
 ((f)=(l)=(n),(n)->next=(n)->prev=0):\
 ((n)->prev=(l),(l)->next=(n),(l)=(n),(n)->next=0))
@@ -169,19 +167,19 @@
 zset((n)->next))
 
 
-#define queue_pop_nz(f,l,next,zset) 	((f)==(l)?\
+#define queue_pop_nz(f,l,next,zset) ((f)==(l)?\
 (f)=zset(l):\
 ((f)=(f)->next))
 
-#define dll_push_back(f,l,n) dll_push_back_np(f,l,n,next,prev)
+#define dll_push_back(f,l,n)  dll_push_back_np(f,l,n,next,prev)
 #define dll_push_front(f,l,n) dll_push_back_np(l,f,n,prev,next)
-#define dll_remove(f,l,n) dll_remove_npz(f,l,n,next,prev,check_null,set_null)
+#define dll_remove(f,l,n)     dll_remove_npz(f,l,n,next,prev,check_null,set_null)
 
 #define stack_push(f,n) stack_push_n(f,n,next)
-#define stack_pop(f) stack_pop_nz(f, next,check_null)
+#define stack_pop(f)    stack_pop_nz(f, next,check_null)
 
 #define queue_push(f,l,n) queue_push_nz(f,l,n,next,check_null,set_null)
-#define queue_pop(f,l) queue_pop_nz(f,l,next,set_null)
+#define queue_pop(f,l)    queue_pop_nz(f,l,next,set_null)
 
 typedef uint8_t  U8;
 typedef uint16_t U16;
