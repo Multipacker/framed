@@ -1,0 +1,43 @@
+@echo off
+
+rem 4201: nonstandard extension used: nameless struct/union
+rem 4152: nonstandard extension used: function/data ptr conversion in expression
+rem 4100: unreferenced formal parameter
+rem 4189: local variable is initialized but not referenced
+rem 4101: unreferenced local variable
+rem 4310: cast truncates constant value
+rem 4061: enum case not explicitly handled
+rem 4820: n bytes padding added after data member x
+rem 4191: 'type cast': unsafe conversion
+rem 5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+
+set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045
+set additional_includes=-I../vendor/
+set opts=-DENABLE_ASSERT=1
+set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes%
+set libs=user32.lib kernel32.lib winmm.lib gdi32.lib
+set linker_flags=%libs% -incremental:no
+set src_files=../src/main.c
+
+set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1
+set optimized_compiler_flags=-Zi -fsanitize=address -O2 -GS- -DCONSOLE=1
+
+set debug_linker_flags=-subsystem:console
+set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows
+
+set arg0="%1%" 
+
+if %arg0% == "debug" (
+	set compiler_flags=%compiler_flags% %debug_compiler_flags%
+	set linker_flags=%linker_flags% %debug_linker_flags%
+) else if %arg0% == "optimized" (
+	set compiler_flags=%compiler_flags% %optimized_compiler_flags%
+	set linker_flags=%linker_flags% %optimized_linker_flags%
+)
+
+if not exist build mkdir build
+pushd build
+
+cl %src_files% %compiler_flags% -link %linker_flags%
+
+popd

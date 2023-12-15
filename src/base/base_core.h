@@ -226,7 +226,7 @@ typedef Void VoidFunction(Void);
 #endif
 
 #if ENABLE_ASSERT
-#	define assert(expr) if (!expr) { debug_break(); }
+#	define assert(expr) if (!(expr)) { debug_break(); }
 #else
 #	define assert(expr)
 #endif

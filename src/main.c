@@ -7,6 +7,7 @@
 internal S32
 os_main(Str8List arguments)
 {
+	assert(false);
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	Str8 test_string = str8_pushf(scratch.arena, "Test: %d", 5);
 	str8_pushf(scratch.arena, "aTest: %d", 5);

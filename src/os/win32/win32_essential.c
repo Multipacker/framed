@@ -52,15 +52,15 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 		if (get_file_size_result)
 		{
 			assert(file_size.QuadPart <= S32_MAX);
-			S32 file_size_s32 = (S32)file_size.QuadPart;
-			U32 push_amount = file_size_s32 + 1;
+			U32 file_size_u32 = (U32)file_size.QuadPart;
+			U32 push_amount = file_size_u32 + 1;
 			result_out->data = push_array(arena, U8, push_amount);
-			result_out->size = file_size_s32;
+			result_out->size = file_size_u32;
 			DWORD bytes_read;
-			BOOL read_file_result = ReadFile(file, result_out->data, file_size_s32, &bytes_read, 0);
+			BOOL read_file_result = ReadFile(file, result_out->data, file_size_u32, &bytes_read, 0);
 			if (read_file_result)
 			{
-				assert(bytes_read == file_size_s32);
+				assert(bytes_read == file_size_u32);
 				result = true;
 			}
 			else
@@ -101,7 +101,7 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
-		assert(data.size <= S32_MAX);
+		assert(data.size <= U32_MAX);
 		BOOL write_file_result = WriteFile(file, data.data, (S32)data.size, 0, 0);
 		if (write_file_result)
 		{
@@ -362,7 +362,7 @@ os_library_load_function(OS_Library library, Str8 name)
 }
 
 internal S32
-win32_common_main()
+win32_common_main(Void)
 {
 	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);

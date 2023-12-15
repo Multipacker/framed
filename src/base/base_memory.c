@@ -1,4 +1,12 @@
-#include <sanitizer/asan_interface.h>
+#if COMPILER_CL
+// NOTE(hampus): Compiler warning 4255 complains that functions 
+// from this header doesn't have void in empty function paramters
+#	pragma warning(push, 0)
+#	include <sanitizer/asan_interface.h>
+#	pragma warning(pop)
+#else
+#	include <sanitizer/asan_interface.h>
+#endif
 
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 thread_local Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
