@@ -252,7 +252,7 @@ typedef Void VoidFunction(Void);
 #define glue_(a, b)   a##b
 #define glue(a, b)    glue_(a, b)
 
-#define int_from_ptr(p) (unsigned long long)((char*)p - (char*)0)
+#define int_from_ptr(p) (unsigned long long)((char*)(p) - (char*)0)
 #define ptr_from_int(n) (void*)((char *)0 + (n))
 
 #define member(t, m)        (((t*)0)->m)
