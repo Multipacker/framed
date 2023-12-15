@@ -247,7 +247,7 @@ typedef Void VoidFunction(Void);
 #define member(t, m)        (((t*)0)->m)
 #define member_offset(t, m) int_from_ptr(&member(t, m))
 
-#define kilobytes(n) (n*1024LL)
+#define kilobytes(n) ((n)*1024LL)
 #define megabytes(n) (1024LL*kilobytes(n))
 #define gigabytes(n) (1024LL*megabytes(n))
 #define terabytes(n) (1024LL*gigabytes(n))
