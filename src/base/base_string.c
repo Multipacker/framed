@@ -628,17 +628,15 @@ s64_from_str8(Str8 string)
 	S64 result = 0;
 	B32 negative = false;
 
+	if (string.size != 0)
+	{
+		negative = string.data[0] == '-';
+	}
+
 	for (U64 i = 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-		if (ch == '-')
-		{
-			negative = true;
-		}
-		else
-		{
-			result = result * 10 + (ch - '0');
-		}
+		result = result * 10 + (ch - '0');
 	}
 
 	if (negative)
