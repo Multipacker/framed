@@ -616,7 +616,8 @@ u64_from_str8(Str8 string)
 	for (U64 i = 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-		result = result * 10 + (ch - '0');
+		U64 n = ch - '0';
+		result = result * 10 + n;
 	}
 
 	return(result);
@@ -633,10 +634,11 @@ s64_from_str8(Str8 string)
 		negative = string.data[0] == '-';
 	}
 
-	for (U64 i = 0; i < string.size; ++i)
+	for (U64 i = negative ? 1 : 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-		result = result * 10 + (ch - '0');
+		U64 n = ch - '0';
+		result = result * 10 + n;
 	}
 
 	if (negative)
