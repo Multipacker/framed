@@ -309,10 +309,10 @@ os_now_nanoseconds(Void)
 	LARGE_INTEGER counter;
 	QueryPerformanceCounter(&counter);
 	// NOTE(hampus): Convert from s -> us for less precision loss
-	counter.QuadPart *= 1000000;
+	counter.QuadPart *= million(1);
 	counter.QuadPart /= win32_state.frequency.QuadPart;
 	// NOTE(hampus): Convert from us -> ns
-	result = counter.QuadPart * 1000;
+	result = counter.QuadPart * thousand(1);
 	return(result);
 }
 

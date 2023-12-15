@@ -252,6 +252,10 @@ typedef Void VoidFunction(Void);
 #define GIGABYTES(n) (1024LL*MEGABYTES(n))
 #define TERABYTES(n) (1024LL*GIGABYTES(n))
 
+#define thousand(n) ((n)*1000)
+#define million(n)  ((n)*1000000)
+#define billion(n)  ((n)*1000000000)
+
 typedef enum Axis2 Axis2;
 enum Axis2
 {
