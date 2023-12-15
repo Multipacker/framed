@@ -51,7 +51,9 @@ linux_date_time_from_tm_and_milliseconds(struct tm *time, U16 milliseconds)
 }
 
 // TODO(simon): Double check that this conversion is correct.
-internal struct tm linux_tm_from_date_time(DateTime *date_time) {
+internal struct tm
+linux_tm_from_date_time(DateTime *date_time)
+{
 	struct tm result = { 0 };
 
 	result.tm_sec    = date_time->second;
@@ -68,7 +70,7 @@ internal Void *
 os_memory_reserve(U64 size)
 {
 	Void *result = mmap(0, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-	return result;
+	return(result);
 }
 internal Void
 os_memory_commit(Void *ptr, U64 size)
@@ -408,7 +410,7 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 		}
 	}
 
-	return success;
+	return(success);
 }
 
 internal Void
@@ -540,7 +542,7 @@ os_now_nanoseconds(Void)
 	assert(return_code == 0);
 
 	U64 nanoseconds = (U64) time.tv_sec * billion(1) + (U64) time.tv_nsec;
-	return nanoseconds;
+	return(nanoseconds);
 }
 
 internal Void
@@ -554,7 +556,8 @@ os_sleep_milliseconds(U64 time)
 
 	// NOTE(simon): The only errno we should get from this call is EINTR, so
 	// just loop until we succseed.
-	while (nanosleep(&sleep, &remainder) == -1) {
+	while (nanosleep(&sleep, &remainder) == -1)
+	{
 		sleep = remainder;
 		remainder.tv_sec  = 0;
 		remainder.tv_nsec = 0;
@@ -604,12 +607,15 @@ os_library_load_function(OS_Library library, Str8 name)
 
 global Arena *linux_permanent_arena;
 
-int main(int argument_count, char *arguments[]) {
+int
+main(int argument_count, char *arguments[])
+{
 	linux_permanent_arena = arena_create();
 	arena_init_scratch();
 
 	Str8List argument_list = { 0 };
-	for (int i = 0; i < argument_count; ++i) {
+	for (int i = 0; i < argument_count; ++i)
+	{
 		str8_list_push(linux_permanent_arena, &argument_list, str8_cstr(arguments[i]));
 	}
 
