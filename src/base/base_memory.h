@@ -17,8 +17,8 @@ struct Arena_Temporary
 	U64 pos;
 };
 
-#define ARENA_DEFAULT_RESERVE_SIZE GIGABYTES(1)
-#define ARENA_COMMIT_BLOCK_SIZE    MEGABYTES(64)
+#define ARENA_DEFAULT_RESERVE_SIZE gigabytes(1)
+#define ARENA_COMMIT_BLOCK_SIZE    megabytes(64)
 
 internal Arena *arena_create_reserve(U64 reserve_size);
 internal Arena *arena_create(Void);
