@@ -607,3 +607,43 @@ cstr_from_str8(Arena *arena, Str8 string)
 
 	return (CStr) memory;
 }
+
+internal U64
+u64_from_str8(Str8 string)
+{
+	U64 result = 0;
+
+	for (U64 i = 0; i < string.size; ++i)
+	{
+		U8 ch = string.data[i];
+		result = result * 10 + (ch - '0');
+	}
+
+	return(result);
+}
+
+internal S64
+s64_from_str8(Str8 string)
+{
+	S64 result = 0;
+	B32 negative = false;
+
+	for (U64 i = 0; i < string.size; ++i)
+	{
+		U8 ch = string.data[i];
+		if (ch == '-')
+		{
+			negative = true;
+		}
+		else
+		{
+			result = result * 10 + (ch - '0');
+		}
+	}
+
+	if (negative)
+	{
+		result = -result;
+	}
+	return(result);
+}
