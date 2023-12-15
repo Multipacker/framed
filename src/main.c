@@ -19,21 +19,15 @@ struct S32Queue
     S32Node *last;
 };
 
-internal Void
-test(Void)
-{
-    int x = 0;
-
-    if (x)
-    {
-
-    }
-}
-
 internal S32
 os_main(Str8List arguments)
 {
 	DateTime build_date = build_date_from_context();
+    Str8 build_mode_string = string_from_build_mode(build_mode_from_context());
+    printf("Running %s build %d-%d-%d %d:%d", 
+           build_mode_string.data,
+           build_date.year, (build_date.month+1), build_date.day,
+           build_date.hour, build_date.minute);
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
     S32Node *node0 = push_struct(scratch.arena, S32Node);

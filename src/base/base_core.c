@@ -64,10 +64,6 @@ build_date_from_context(Void)
 
 		Str8Node *node = date_list.first;
 		Str8 month = node->string;
-		node = node->next;
-		Str8 day = node->string;
-		node = node->next;
-		Str8 year = node->string;
 
 		for (U8 i = 0; i < Month_COUNT; ++i)
 		{
@@ -76,6 +72,12 @@ build_date_from_context(Void)
 				result.month = i;
 			}
 		}
+        
+        date = str8_skip(date, 4);
+        
+        U64 len = u8_from_str8(date, &result.day);
+        date = str8_skip(date, len+1);
+        len = s16_from_str8(date, &result.year);
 	}
 
 	{

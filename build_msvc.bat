@@ -26,18 +26,18 @@ set src_files=../src/main.c
 
 rem -- Debug build flags -- 
 
-set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1 -DBUILD_MODE=0
+set debug_compiler_flags=-RTC1 -MTd -Zi -Od -fsanitize=address -DCONSOLE=1 -DBUILD_MODE=0
 set debug_linker_flags=-subsystem:console
 
 rem -- Optimized build flags -- 
 
 set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE=1
-set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:console
+set optimized_linker_flags=-subsystem:console
 
 rem -- Release build flags -- 
 
 set release_compiler_flags=-O2 -Oi -fp:fast -GS- -DBUILD_MODE=2
-set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows
+set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib
 
 set arg0="%1%" 
 
