@@ -539,7 +539,7 @@ os_now_nanoseconds(Void)
 	S32 return_code = clock_gettime(CLOCK_MONOTONIC_RAW, &time);
 	assert(return_code == 0);
 
-	U64 nanoseconds = (U64) time.tv_sec * 1000000000 + (U64) time.tv_nsec;
+	U64 nanoseconds = (U64) time.tv_sec * billion(1) + (U64) time.tv_nsec;
 	return nanoseconds;
 }
 
@@ -550,7 +550,7 @@ os_sleep_milliseconds(U64 time)
 	struct timespec remainder = { 0 };
 
 	sleep.tv_sec  = time / 1000;
-	sleep.tv_nsec = (time % 1000) * 1000000;
+	sleep.tv_nsec = (time % 1000) * million(1);
 
 	// NOTE(simon): The only errno we should get from this call is EINTR, so
 	// just loop until we succseed.
