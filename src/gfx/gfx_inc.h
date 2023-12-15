@@ -4,9 +4,17 @@
 #include "gfx/gfx_essential.h"
 
 #if OS_WINDOWS
-#	include "gfx/win32/win32_gfx_core.h"
+#    if defined(WIN32_ESSENTIAL_H)
+#	    include "gfx/win32/win32_gfx_core.h"
+#    else
+#        error OS layer has not been included 
+#    endif
 #elif OS_LINUX
-#	include "gfx/linux/linux_gfx_core.h"
+#    if defined(LINUX_ESSENTIAL_H)
+#	    include "gfx/linux/linux_gfx_core.h"
+#    else
+#        error OS layer has not been included 
+#    endif
 #else
 #	error No gfx_inc for this OS
 #endif
