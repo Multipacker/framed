@@ -123,6 +123,10 @@
 #	define SANITIZER_ENABLED 0
 #endif
 
+#define BUILD_MODE_DEBUG 0
+#define BUILD_MODE_OPTIMIZED 0
+#define BUILD_MODE_RELEASE 0
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -253,8 +257,8 @@ typedef Void VoidFunction(Void);
 #define terabytes(n) (1024LL*gigabytes(n))
 
 #define thousand(n) ((n)*1000)
-#define million(n)  ((n)*1000000)
-#define billion(n)  ((n)*1000000000)
+#define million(n)  ((thousand(n))*1000)
+#define billion(n)  ((million(n))*1000)
 
 typedef enum Axis2 Axis2;
 enum Axis2
@@ -318,6 +322,17 @@ enum Architecture
 	Architecture_COUNT,
 };
 
+typedef enum BuildMode BuildMode;
+enum BuildMode
+{
+	BuildMode_Null,
+	BuildMode_Debug,
+	BuildMode_Optimized,
+	BuildMode_Release,
+
+	BuildMode_COUNT
+};
+
 typedef enum Month Month;
 enum Month
 {
@@ -369,13 +384,31 @@ struct DateTime
 	S16 year;        // 1 = 1 CE; 2020 = 2020 CE, 0 = 1 BCE; -100 = 101 BCE; etc.
 };
 
+// Different formats to display the date Dec 15 2023
+typedef enum DateFormat DateFormat;
+enum DateFormat
+{
+	DateFormat_YYMMDD,   // 23-12-15 
+	DateFormat_YYYYMMDD, // 2023-12-15
+};
+
+// Different formats to display the time 12:08:30
+typedef enum TimeFormat TimeFormat;
+enum TimeFormat
+{
+	TimeFormat_HHMMSS,   // 12:08:30 
+};
+
 internal OperatingSystem  operating_system_from_context(Void);
 internal Architecture     architecture_from_context(Void);
+internal BuildMode        build_mode_from_context(Void);
+internal DateTime         build_date_from_context(Void);
 
 typedef struct Str8 Str8;
 
 internal Str8 string_from_architecture(Architecture arc);
 internal Str8 string_from_operating_system(OperatingSystem os);
+internal Str8 string_from_build_mode(BuildMode mode);
 internal Str8 string_from_day_of_the_week(DayOfWeek day);
 internal Str8 string_from_month(Month month);
 

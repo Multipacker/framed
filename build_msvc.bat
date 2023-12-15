@@ -10,8 +10,10 @@ rem 4061: enum case not explicitly handled
 rem 4820: n bytes padding added after data member x
 rem 4191: 'type cast': unsafe conversion
 rem 5045: Compiler will insert Spectre mitigation for memory load if /Qspectre switch specified
+rem 4711: x selected for automatic inline expansion
+rem 4710: function not inlined
 
-set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045
+set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710
 set additional_includes=-I../vendor/
 set opts=-DENABLE_ASSERT=1
 set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes%
@@ -22,8 +24,8 @@ set src_files=../src/main.c
 set debug_compiler_flags=-MTd -Zi -Od -fsanitize=address -DCONSOLE=1
 set debug_linker_flags=-subsystem:console
 
-set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -GS- -DCONSOLE=1
-set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows
+set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -Oi -fp:fast -GS- -DCONSOLE=1
+set optimized_linker_flags=-fixed -opt:icf -opt:ref -subsystem:console
 
 set arg0="%1%" 
 

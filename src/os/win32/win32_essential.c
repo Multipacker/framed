@@ -29,22 +29,22 @@ internal B32
 os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 {
 	assert(path.size < MAX_PATH);
-
+    
 	B32 result = false;
-
+    
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
-
+    
 	HANDLE file = CreateFile(
-		str16_from_str8(scratch.arena, path).data,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		0,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		0);
-
+                             str16_from_str8(scratch.arena, path).data,
+                             GENERIC_READ,
+                             FILE_SHARE_READ,
+                             0,
+                             OPEN_EXISTING,
+                             FILE_ATTRIBUTE_NORMAL,
+                             0);
+    
 	arena_release_scratch(scratch);
-
+    
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		LARGE_INTEGER file_size;
@@ -70,7 +70,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 		}
 		CloseHandle(file);
 	}
-
+    
 	return(result);
 }
 
@@ -78,27 +78,27 @@ internal B32
 os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 {
 	assert(path.size < MAX_PATH);
-
+    
 	B32 result = false;
-
+    
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
-
+    
 	// NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
 	DWORD create_file_flags = OPEN_ALWAYS;
 	if (overwrite_existing)
 	{
 		create_file_flags = CREATE_ALWAYS;
 	}
-
+    
 	HANDLE file = CreateFile(
-		str16_from_str8(scratch.arena, path).data,
-		GENERIC_READ,
-		FILE_SHARE_READ,
-		0,
-		create_file_flags,
-		FILE_ATTRIBUTE_NORMAL,
-		0);
-
+                             str16_from_str8(scratch.arena, path).data,
+                             GENERIC_READ,
+                             FILE_SHARE_READ,
+                             0,
+                             create_file_flags,
+                             FILE_ATTRIBUTE_NORMAL,
+                             0);
+    
 	if (file != INVALID_HANDLE_VALUE)
 	{
 		assert(data.size <= U32_MAX);
@@ -109,7 +109,7 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 		}
 		CloseHandle(file);
 	}
-
+    
 	arena_release_scratch(scratch);
 	return(result);
 }
@@ -118,11 +118,11 @@ internal B32
 os_file_delete(Str8 path)
 {
 	assert(path.size < MAX_PATH);
-
+    
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	B32 result = DeleteFile(str16_from_str8(scratch.arena, path).data);
 	arena_release_scratch(scratch);
-
+    
 	return(result);
 }
 
@@ -131,13 +131,13 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 {
 	assert(old_path.size < MAX_PATH);
 	assert(new_path.size < MAX_PATH);
-
+    
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	Str16 old_path16 = str16_from_str8(scratch.arena, old_path);
 	Str16 new_path16 = str16_from_str8(scratch.arena, new_path);
 	B32 result = CopyFile(old_path16.data, new_path16.data, overwrite_existing);
 	arena_release_scratch(scratch);
-
+    
 	return(result);
 }
 
@@ -146,13 +146,13 @@ os_file_rename(Str8 old_path, Str8 new_path)
 {
 	assert(old_path.size < MAX_PATH);
 	assert(new_path.size < MAX_PATH);
-
+    
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 	Str16 old_path16 = str16_from_str8(scratch.arena, old_path);
 	Str16 new_path16 = str16_from_str8(scratch.arena, new_path);
 	B32 result = MoveFile(old_path16.data, new_path16.data);
 	arena_release_scratch(scratch);
-
+    
 	return(result);
 }
 
@@ -212,7 +212,7 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 				memory_copy_struct(&data, &win32_iter->find_data);
 				result = true;
 			}
-
+            
 			if (!FindNextFile(win32_iter->handle, &win32_iter->find_data))
 			{
 				win32_iter->done = true;
@@ -377,8 +377,6 @@ win32_common_main(Void)
 
 #if CONSOLE
 
-#pragma comment(linker, "-subsystem:console")
-
 S32
 main(S32 argument_count, CStr arguments[])
 {
@@ -387,8 +385,6 @@ main(S32 argument_count, CStr arguments[])
 }
 
 #else
-
-#pragma comment(linker, "-subsystem:windows")
 
 S32 APIENTRY
 WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)

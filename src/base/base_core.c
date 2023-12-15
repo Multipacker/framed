@@ -30,6 +30,96 @@ architecture_from_context(Void)
 	return(result);
 }
 
+internal BuildMode
+build_mode_from_context(Void)
+{
+	BuildMode result = BuildMode_Null;
+#if BUILD_MODE_DEBUG
+	result = BuildMode_Debug;
+#elif BUILD_MODE_OPTIMIZED
+	result = BuildMode_Optimized;
+#elif BUILD_MODE_RELEASE
+	result = BuildMode_Release;
+#endif
+	return(result);
+}
+
+internal DateTime
+build_date_from_context(Void)
+{
+	DateTime result = { 0 };
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	// NOTE(hampus): Date is in the format "M D Y"
+	// Example: "Dec 15 2023"
+	Str8 date =  str8_cstr(__DATE__);
+
+	// NOTE(hampus): Time is in the format "HH:MM:SS"
+	// Example: "11:53:37"
+	Str8 time = str8_cstr(__TIME__);
+
+	{
+		Str8List date_list = str8_split_by_codepoints(scratch.arena, date, str8_lit(" "));
+
+		Str8Node *node = date_list.first;
+		Str8 month = node->string;
+		node = node->next;
+		Str8 day = node->string;
+		node = node->next;
+		// Str8 year = node->string;
+
+		for (U8 i = 0; i < Month_COUNT; ++i)
+		{
+			if (str8_equal(month, string_from_month(i)))
+			{
+				result.month = i;
+			}
+		}
+	}
+
+	{
+		Str8List time_list = str8_split_by_codepoints(scratch.arena, time, str8_lit(":"));
+		Str8Node *node = time_list.first;
+		Str8 hour = node->string;
+		node = node->next;
+		Str8 minute = node->string;
+		node = node->next;
+		// Str8 second = node->string;
+
+		result.hour = (U8) u64_from_str8(hour);
+		result.minute = (U8) u64_from_str8(minute);
+		// result.second = (U8) u64_from_str8(second);
+	}
+	arena_release_scratch(scratch);
+	return(result);
+}
+
+internal Str8
+string_from_build_mode(BuildMode mode)
+{
+	Str8 result = str8_lit("NullBuildMode");
+	switch (mode)
+	{
+		case BuildMode_Debug:
+		{
+			result = str8_lit("Debug");
+		} break;
+
+		case BuildMode_Optimized:
+		{
+			result = str8_lit("Optimized");
+		} break;
+
+		case BuildMode_Release:
+		{
+			result = str8_lit("Release");
+		} break;
+
+		invalid_case;
+	}
+	return(result);
+}
+
 internal Str8
 string_from_operating_system(OperatingSystem os)
 {

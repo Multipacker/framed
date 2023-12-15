@@ -616,7 +616,8 @@ u64_from_str8(Str8 string)
 	for (U64 i = 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-		U64 n = ch - '0';
+		U8 n = ch - '0';
+		// assert(n >= 0 && n <= 9);
 		result = result * 10 + n;
 	}
 
@@ -626,7 +627,7 @@ u64_from_str8(Str8 string)
 internal S64
 s64_from_str8(Str8 string)
 {
-	S64 result = 0;
+	U64 temp = 0;
 	B32 negative = false;
 
 	if (string.size != 0)
@@ -637,10 +638,13 @@ s64_from_str8(Str8 string)
 	for (U64 i = negative ? 1 : 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-		U64 n = ch - '0';
-		result = result * 10 + n;
+		U8 n = ch - '0';
+		// assert(n >= 0 && n <= 9);
+		temp = temp * 10 + n;
 	}
 
+	assert(temp <= (U64) S64_MAX);
+	S64 result  = temp;
 	if (negative)
 	{
 		result = -result;
