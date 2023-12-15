@@ -1,0 +1,226 @@
+global Win32_Gfx_State win32_gfx_state;
+
+internal LRESULT CALLBACK
+win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+{
+    Gfx_Context *context = (Gfx_Context *)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
+    
+    Arena_Temporary scratch = arena_get_scratch(0, 0);
+    Gfx_EventList fallback_event_list ={ 0 };
+	if (win32_gfx_state.event_arena == 0)
+	{
+		win32_gfx_state.event_arena = scratch.arena;
+		win32_gfx_state.event_list = &fallback_event_list;
+	}
+    
+    Arena *event_arena = win32_gfx_state.event_arena;
+    Gfx_EventList *event_list = win32_gfx_state.event_list;
+	Gfx_Event *event = 0;
+    
+	LRESULT result = 0;
+	switch (message)
+	{
+		case WM_CLOSE:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = Gfx_EventKind_Quit;
+		} break;
+        
+		case WM_QUIT:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = Gfx_EventKind_Quit;
+		} break;
+        
+		case WM_DESTROY:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = Gfx_EventKind_Quit;
+		} break;
+        
+		case WM_CHAR:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = Gfx_EventKind_Char;
+			event->character = (char)wparam;
+		} break;
+        
+		case WM_MOUSEWHEEL:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = Gfx_EventKind_Scroll;
+			event->scroll.y = (F32)(GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA);
+		} break;
+        
+		case WM_SYSKEYUP:
+		case WM_SYSKEYDOWN:
+		case WM_KEYUP:
+		case WM_KEYDOWN:
+		{
+			event = push_array(event_arena, Gfx_Event, 1);
+			event->kind = (message == WM_SYSKEYUP || message == WM_KEYUP) ? Gfx_EventKind_KeyRelease : Gfx_EventKind_KeyPress;
+            
+			U32 vk_code = (U32)wparam;
+			B32 was_down = ((lparam & (1 << 30)) != 0);
+			B32 is_down = ((lparam & (1 << 31)) == 0);
+			B32 alt_key_was_down = ((lparam & (1 << 29)));
+            
+			local B32 key_table_initialized = false;
+            
+			local char key_table[128] ={ 0 };
+            
+			if (!key_table_initialized)
+			{
+				for (U64 i = 0; i < 10; ++i)
+				{
+					key_table[0x30 + i] = (char)(Gfx_Key_0 + i);
+				}
+                
+				for (U64 i = 0; i < 26; ++i)
+				{
+					key_table[0x41 + i] = (char)(Gfx_Key_A + i);
+				}
+                
+				for (U64 i = 0; i < 12; ++i)
+				{
+					key_table[VK_F1 + i] = (char)(Gfx_Key_F1 + i);
+				}
+                
+				key_table[VK_BACK]    = Gfx_Key_Backspace;
+				key_table[VK_TAB]     = Gfx_Key_Tab;
+				key_table[VK_RETURN]  = Gfx_Key_Return;
+				key_table[VK_SHIFT]   = Gfx_Key_Shift;
+				key_table[VK_CONTROL] = Gfx_Key_Control;
+				key_table[VK_ESCAPE]  = Gfx_Key_Escape;
+				key_table[VK_PRIOR]   = Gfx_Key_PageUp;
+				key_table[VK_NEXT]    = Gfx_Key_PageDown;
+				key_table[VK_END]     = Gfx_Key_End;
+				key_table[VK_HOME]    = Gfx_Key_Home;
+				key_table[VK_LEFT]    = Gfx_Key_Left;
+				key_table[VK_RIGHT]   = Gfx_Key_Right;
+				key_table[VK_UP]      = Gfx_Key_Up;
+				key_table[VK_DOWN]    = Gfx_Key_Down;
+				key_table[VK_DELETE]  = Gfx_Key_Delete;
+				key_table[VK_LBUTTON] = Gfx_Key_MouseLeft;
+				key_table[VK_RBUTTON] = Gfx_Key_MouseRight;
+				key_table[VK_MBUTTON] = Gfx_Key_MouseMiddle;
+                
+				key_table_initialized = true;
+			}
+            
+			event->key = key_table[vk_code];
+            
+		} break;
+        
+		default:
+		{
+			result = DefWindowProcW(hwnd, message, wparam, lparam);
+		} break;
+	}
+    
+	if (event)
+	{
+		dll_push_back(event_list->first, event_list->last, event);
+	}
+    
+	arena_release_scratch(scratch);
+    
+	return(result);
+}
+
+internal Gfx_Context   
+gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
+{
+    Gfx_Context result = {0}; 
+    Arena_Temporary scratch = arena_get_scratch(0, 0);
+    
+    win32_gfx_state.context = &result;
+    
+	HINSTANCE instance = GetModuleHandle(0);
+    
+	Str16 class_name = cstr16_from_str8(scratch.arena, str8_lit("ApplicationWindowClassName"));
+    
+	WNDCLASSEXW window_class = { 0 };
+    
+	window_class.cbSize = sizeof(window_class);
+	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS;
+	window_class.lpfnWndProc = win32_window_proc;
+	window_class.hInstance = instance;
+	window_class.lpszClassName = class_name.data;
+	window_class.hCursor = LoadCursor(0, (LPCWSTR)IDC_ARROW);
+    
+	ATOM register_class_result = RegisterClassEx(&window_class);
+	assert(register_class_result);
+    
+	DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
+    
+	Str16 title_s16 = cstr16_from_str8(scratch.arena, title);
+	result.hwnd = CreateWindowEx(0, window_class.lpszClassName, (LPCWSTR)title_s16.data,
+                                      create_window_flags,
+                                      x, y,
+                                      width, height,
+                                      0, 0, instance, 0);
+	assert(result.hwnd);
+    
+	result.hdc = GetDC(result.hwnd);
+    
+    arena_release_scratch(scratch);
+    
+    return(result);
+}
+
+internal Void          
+gfx_show_window(Gfx_Context *gfx)
+{
+     Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Gfx_EventList events ={ 0 };
+	 win32_gfx_state.event_list = &events;
+	win32_gfx_state.event_arena = scratch.arena;
+	ShowWindow(gfx->hwnd, SW_SHOW);
+	UpdateWindow(gfx->hwnd);
+	arena_release_scratch(scratch);
+}
+
+internal Gfx_EventList 
+gfx_get_events(Arena *arena, Gfx_Context *gfx)
+{
+    Gfx_EventList event_list = { 0 };
+	win32_gfx_state.event_arena = arena;
+	win32_gfx_state.event_list = &event_list;
+    
+	for (MSG message; PeekMessage(&message, 0, 0, 0, PM_REMOVE);)
+	{
+		TranslateMessage(&message);
+		DispatchMessage(&message);
+	}
+    
+	win32_gfx_state.event_arena = 0;
+	win32_gfx_state.event_list = 0;
+    
+	return(event_list);
+}
+
+internal Vec2F32 
+gfx_get_mouse_pos(Gfx_Context *gfx)
+{
+    Vec2F32 result = {0};
+    
+    return(result);
+}
+
+internal Vec2U32       
+gfx_get_window_area(Gfx_Context *gfx)
+{
+    Vec2U32 result = {0};
+    
+    return(result);
+}
+
+internal Vec2U32       
+gfx_get_window_client_area(Gfx_Context *gfx)
+{
+    
+    Vec2U32 result = {0};
+    
+    return(result);
+}

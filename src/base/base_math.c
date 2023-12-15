@@ -544,13 +544,15 @@ u32_big_to_local_endian(U32 x)
 #endif
 }
 
-internal U64 u64_min(U64 a, U64 b)
+internal U64 
+u64_min(U64 a, U64 b)
 {
 	U64 result = (a < b ? a : b);
 	return result;
 }
 
-internal U64 u64_max(U64 a, U64 b)
+internal U64 
+u64_max(U64 a, U64 b)
 {
 	U64 result = (a > b ? a : b);
 	return result;
