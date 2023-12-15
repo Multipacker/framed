@@ -554,7 +554,7 @@ str16_from_str8(Arena *arena, Str8 string)
 	{
 		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
 		U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
-		*destination_ptr = (U16) encode_size;
+		destination_ptr += encode_size;
 		ptr += decode.size;
 	}
 
