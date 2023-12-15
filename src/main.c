@@ -4,44 +4,18 @@
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 
-typedef struct S32Node S32Node;
-struct S32Node
-{
-    S32Node *next;
-    S32Node *prev;
-    S32 value;
-};
-
-typedef struct S32Queue S32Queue;
-struct S32Queue
-{
-    S32Node *first;
-    S32Node *last;
-};
-
 internal S32
 os_main(Str8List arguments)
 {
 	DateTime build_date = build_date_from_context();
     Str8 build_mode_string = string_from_build_mode(build_mode_from_context());
-    printf("Running %s build %d-%d-%d %d:%d", 
-           build_mode_string.data,
-           build_date.year, (build_date.month+1), build_date.day,
-           build_date.hour, build_date.minute);
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
-
-    S32Node *node0 = push_struct(scratch.arena, S32Node);
-    node0->value = 1;
-
-    S32Node *node1 = push_struct(scratch.arena, S32Node);
-    node1->value = 5;
-
-    S32Queue queue = {0};
-    stack_push(queue.first, node0);
-    stack_push(queue.first, node1);
-
-    stack_pop(queue.first);
-
-    arena_release_scratch(scratch);
+	if (os_file_copy(str8_lit("build_clang.sh"), str8_lit("test"), false))
+	{
+		printf("success\n");
+	}
+	else
+	{
+		printf("fail\n");
+	}
     return(0);
 }

@@ -613,6 +613,36 @@ cstr_from_str8(Arena *arena, Str8 string)
 	return (CStr) memory;
 }
 
+internal Str16
+cstr16_from_str8(Arena *arena, Str8 string)
+{
+    U64 allocated_size = string.size + 1;
+	U16 *memory = push_array(arena, U16, allocated_size);
+    
+	U16 *destination_ptr = memory;
+	U8 *ptr = string.data;
+	U8 *opl = string.data + string.size;
+    
+	while (ptr < opl)
+	{
+		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+		U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
+		destination_ptr += encode_size;
+		ptr += decode.size;
+	}
+    
+    *destination_ptr = 0;
+    
+	U64 string_size = (U64) (destination_ptr - memory);
+	U64 unused_size = allocated_size - string_size - 1;
+	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    
+	Str16 result;
+	result.data = memory;
+	result.size = string_size;
+	return result;
+}
+
 internal U64
 u64_from_str8(Str8 string, U64 *destination)
 {
