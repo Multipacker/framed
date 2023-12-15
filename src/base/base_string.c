@@ -314,6 +314,10 @@ str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints)
 		string_ptr += string_decode.size;
 	}
 
+	if (last_split_point < string_opl) {
+		str8_list_push(arena, &result, str8_range(last_split_point, string_opl));
+	}
+
 	return result;
 }
 
