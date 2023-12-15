@@ -39,22 +39,27 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyPress:
 				{
+                    printf("Gfx_EventKind_KeyPress\n");
 				} break;
 
 				case Gfx_EventKind_KeyRelease:
 				{
+                    printf("Gfx_EventKind_KeyRelease\n");
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
+                    printf("Gfx_EventKind_Char\n");
 				} break;
 
 				case Gfx_EventKind_Scroll:
 				{
+                    printf("Gfx_EventKind_Scroll\n");
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
+                    printf("Gfx_EventKind_Resize\n");
 				} break;
                 
                 invalid_case;
