@@ -33,7 +33,7 @@ internal B32 os_file_write(Str8 path, Str8 data, B32 overwrite_existing);
 internal B32 os_file_delete(Str8 path);
 // NOTE(simon): Moves the file if neccessary and replaces existing files.
 internal B32 os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing);
-// TODO(simon): What if there already is a file with the new name?
+// NOTE(hampus): Only renames if new_path doesn't already exist
 internal B32 os_file_rename(Str8 old_path, Str8 new_path);
 internal B32 os_file_create_directory(Str8 path);
 // NOTE(simon): The directory must be empty.

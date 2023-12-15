@@ -191,6 +191,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 	arena_release_scratch(scratch);
 }
 
+// TODO(hampus): Make use of result_name
 internal B32
 os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 {
