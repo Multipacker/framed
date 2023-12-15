@@ -42,8 +42,8 @@ linux_date_time_from_tm_and_milliseconds(struct tm *time, U16 milliseconds)
 
 	result.millisecond = milliseconds;
 	result.second      = (U8) time->tm_sec;
-	result.minute      = (U8) time->tm_min;
-	result.hour        = (U8) time->tm_hour;
+	result.minute      = (U8) (time->tm_min - 1);
+	result.hour        = (U8) (time->tm_hour - 1);
 	result.day         = (U8) (time->tm_mday - 1);
 	result.month       = (U8) time->tm_mon;
 	result.year        = (S16) (time->tm_year + 1900);
@@ -58,8 +58,8 @@ linux_tm_from_date_time(DateTime *date_time)
 	struct tm result = { 0 };
 
 	result.tm_sec    = date_time->second;
-	result.tm_min    = date_time->minute;
-	result.tm_hour   = date_time->hour;
+	result.tm_min    = date_time->minute + 1;
+	result.tm_hour   = date_time->hour + 1;
 	result.tm_mday   = date_time->day + 1;
 	result.tm_mon    = date_time->month;
 	result.tm_year   = date_time->year - 1900;
@@ -298,7 +298,12 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 	return(true);
 }
 
-internal B32 os_file_rename(Str8 old_path, Str8 new_path);
+// TODO(simon): Implement this!
+internal B32
+os_file_rename(Str8 old_path, Str8 new_path)
+{
+	return false;
+}
 
 internal B32
 os_file_create_directory(Str8 path)
@@ -469,7 +474,7 @@ os_now_local_time(Void)
 	assert(return_code == -1);
 
 	struct tm deconstructed_time = { 0 };
-	if (localtime_r(&time.tv_sec, &deconstructed_time) != &deconstructed_time)
+	if (localtime_r(&time.tv_sec, &deconstructed_time) == &deconstructed_time)
 	{
 		local_date_time = linux_date_time_from_tm_and_milliseconds(
 			&deconstructed_time,
@@ -576,7 +581,8 @@ os_library_open(Str8 path)
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
-	result.u64[0] = int_from_ptr(dlopen(cstr_path, RTLD_NOW | RTLD_LOCAL));
+	Void *library = dlopen(cstr_path, RTLD_NOW | RTLD_LOCAL);
+	result.u64[0] = int_from_ptr(library);
 
 	arena_release_scratch(scratch);
 	return(result);
