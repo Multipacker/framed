@@ -20,6 +20,8 @@ enum Gfx_EventKind
 typedef enum Gfx_Key Gfx_Key;
 enum Gfx_Key
 {
+	Gfx_Key_Null,
+
 	Gfx_Key_A,
 	Gfx_Key_B,
 	Gfx_Key_C,
