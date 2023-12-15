@@ -88,6 +88,8 @@ enum Gfx_Key
 	Gfx_Key_Delete,
 	Gfx_Key_MouseLeft,
 	Gfx_Key_MouseRight,
+	Gfx_Key_MouseLeftDouble,
+	Gfx_Key_MouseRightDouble,
 	Gfx_Key_MouseMiddle,
 };
 
