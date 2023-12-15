@@ -20,8 +20,6 @@ enum Gfx_EventKind
 typedef enum Gfx_Key Gfx_Key;
 enum Gfx_Key
 {
-	Gfx_Key_Null,
-
 	Gfx_Key_A,
 	Gfx_Key_B,
 	Gfx_Key_C,
@@ -75,6 +73,8 @@ enum Gfx_Key
 
 	Gfx_Key_Backspace,
 	Gfx_Key_Space,
+	Gfx_Key_Alt,
+	Gfx_Key_OS,
 	Gfx_Key_Tab,
 	Gfx_Key_Return,
 	Gfx_Key_Shift,
