@@ -10,11 +10,11 @@ common_flags="-Isrc -Ivendor -o build/out"
 linker_flags="-lm"
 
 if [ "$mode" == "debug" ]; then
-	compiler_flags="-g -fsanitize=address"
+	compiler_flags="-g -fsanitize=address -DBUILD_MODE=0"
 elif [ "$mode" == "optimized"]; then
-	compiler_flags="-g -fsanitize=address"
+	compiler_flags="-g -fsanitize=address -DBUILD_MODE=1"
 elif [ "$mode" == "release"]; then
-	compiler_flags=""
+	compiler_flags="-DBUILD_MODE=2"
 else
 	echo "ERROR: Unknown build type."
 	exit 1
