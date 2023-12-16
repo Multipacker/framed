@@ -125,5 +125,6 @@ internal Vec2F32       gfx_get_mouse_pos(Gfx_Context *gfx);
 internal Vec2U32       gfx_get_window_area(Gfx_Context *gfx);
 internal Vec2U32       gfx_get_window_client_area(Gfx_Context *gfx);
 internal Void          gfx_toggle_fullscreen(Gfx_Context *gfx);
+internal Void          gfx_swap_buffers(Gfx_Context *gfx);
 
 #endif //GFX_ESSENTIAL_H

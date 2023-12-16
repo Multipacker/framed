@@ -18,8 +18,6 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-    F32 x = sinf(5);
-
     B32 running = true;
 	while (running)
 	{
@@ -70,7 +68,6 @@ os_main(Str8List arguments)
                 invalid_case;
 			}
 		}
-
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
