@@ -272,6 +272,34 @@ v4u32_div_u32(Vec4U32 a, U32 t)
 	return((Vec4U32) { a.x / t, a.y / t, a.z / t, a.w / t });
 }
 
+internal Mat4F32
+m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 _near, F32 _far)
+{
+    Mat4F32 result;
+
+	result.m[0][0] = 2 / (right - left);
+	result.m[0][1] = 0;
+	result.m[0][2] = 0;
+	result.m[0][3] = 0;
+
+	result.m[1][0] = 0;
+	result.m[1][1] = 2 / (top - bottom);
+	result.m[1][2] = 0;
+	result.m[1][3] = 0;
+
+	result.m[2][0] = 0;
+	result.m[2][1] = 0;
+	result.m[2][2] = 1 / (_near - _far);
+	result.m[2][3] = 0;
+
+	result.m[3][0] = (left + right) / (left - right);
+	result.m[3][1] = (top + bottom) / (bottom - top);
+	result.m[3][2] = _near / (_near - _far);
+	result.m[3][3] = 1;
+
+	return result;
+}
+
 internal RectF32
 rectf32(Vec2F32 min, Vec2F32 max)
 {
@@ -544,14 +572,14 @@ u32_big_to_local_endian(U32 x)
 #endif
 }
 
-internal U64 
+internal U64
 u64_min(U64 a, U64 b)
 {
 	U64 result = (a < b ? a : b);
 	return result;
 }
 
-internal U64 
+internal U64
 u64_max(U64 a, U64 b)
 {
 	U64 result = (a > b ? a : b);

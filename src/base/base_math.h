@@ -139,6 +139,12 @@ union Vec4U32
 	U32 v[4];
 };
 
+typedef struct Mat4F32 Mat4F32;
+struct Mat4F32
+{
+    F32 m[4][4];
+};
+
 typedef union RectF32 RectF32;
 union RectF32
 {
@@ -250,6 +256,10 @@ internal Vec4U32 v4u32_sub_v4u32(Vec4U32 a, Vec4U32 b);
 internal Vec4U32 v4u32_mul_u32(Vec4U32 a, U32 t);
 internal Vec4U32 v4u32_div_u32(Vec4U32 a, U32 t);
 
+// Mat4
+
+internal Mat4F32 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 _near, F32 _far);
+
 // Rect
 
 internal RectF32 rectf32(Vec2F32 min, Vec2F32 max);
@@ -278,6 +288,8 @@ global F32 F32_PI      = 3.14159265359f;
 global F32 F32_TAU     = 6.28318530718f;
 global F32 F32_E       = 2.71828182846f;
 global U32 F32_BIAS    = 127;
+global F32 F32_MAX     = 3.402823466e+38F;
+global F32 F32_MIN     = 1.175494351e-38F;
 
 // TODO(simon): Update constants to more precise values.
 global F64 F64_EPSILON = 2.220446e-16;
