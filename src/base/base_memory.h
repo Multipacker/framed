@@ -1,5 +1,5 @@
 #ifndef BASE_MEMORY_H
-#define BASE_MEMORY_H 
+#define BASE_MEMORY_H
 
 typedef struct Arena Arena;
 struct Arena
@@ -18,7 +18,7 @@ struct Arena_Temporary
 };
 
 #define ARENA_DEFAULT_RESERVE_SIZE gigabytes(1)
-#define ARENA_COMMIT_BLOCK_SIZE    megabytes(64)
+#define ARENA_COMMIT_BLOCK_SIZE    megabytes(1)
 
 internal Arena *arena_create_reserve(U64 reserve_size);
 internal Arena *arena_create(Void);

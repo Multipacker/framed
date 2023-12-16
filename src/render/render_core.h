@@ -32,7 +32,7 @@ struct R_RenderStats
 
 typedef struct Renderer Renderer;
 
-internal Renderer render_init(Gfx_Context *gfx);
+internal Renderer *render_init(Gfx_Context *gfx);
 
 internal Void render_begin(Renderer *renderer);
 internal Void render_end(Renderer *renderer);

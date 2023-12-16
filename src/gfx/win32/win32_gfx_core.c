@@ -19,7 +19,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	}
     Arena *event_arena = win32_gfx_state.event_arena;
     Gfx_EventList *event_list = win32_gfx_state.event_list;
-	Gfx_Event *event = push_struct(event_arena, Gfx_Event);
+	Gfx_Event *event = push_struct_zero(event_arena, Gfx_Event);
     event->kind = Gfx_EventKind_Null;
 	LRESULT result = 0;
 	switch (message)
@@ -34,7 +34,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 			event->kind = Gfx_EventKind_Quit;
 		} break;
 
-		case WM_DESTROY:
+        case WM_DESTROY:
 		{
 			event->kind = Gfx_EventKind_Quit;
 		} break;
@@ -163,7 +163,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
             {
                 // NOTE(hampus): The event->key may already be set
                 // by the mouse.
-                if (!event->key)
+                if (event->key == Gfx_Key_Null)
                 {
                     event->key = key_table[vk_code];
                 }

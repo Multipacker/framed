@@ -16,6 +16,8 @@ os_main(Str8List arguments)
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
+    Renderer *renderer = render_init(&gfx);
+
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
@@ -40,7 +42,7 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyPress:
 				{
-                    printf("Gfx_EventKind_KeyPress: %d\n", event->key);
+                     printf("Gfx_EventKind_KeyPress: %d\n", event->key);
                     if (event->key == Gfx_Key_F11)
                     {
                         gfx_toggle_fullscreen(&gfx);
@@ -49,12 +51,12 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyRelease:
 				{
-                    printf("Gfx_EventKind_KeyRelease: %d\n", event->key);
+                     printf("Gfx_EventKind_KeyRelease: %d\n", event->key);
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
-                    printf("Gfx_EventKind_Char\n");
+                     printf("Gfx_EventKind_Char\n");
 				} break;
 
 				case Gfx_EventKind_Scroll:
@@ -70,6 +72,11 @@ os_main(Str8List arguments)
                 invalid_case;
 			}
 		}
+
+        render_begin(renderer);
+
+        render_end(renderer);
+
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
