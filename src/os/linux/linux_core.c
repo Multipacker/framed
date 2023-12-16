@@ -599,8 +599,18 @@ os_library_open(Str8 path)
 	OS_Library result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
-	CStr cstr_path = cstr_from_str8(scratch.arena, path);
+	Str8List part_list = { 0 };
+	Str8Node parts[3];
+	str8_list_push_explicit(&part_list, str8_lit("./"), &parts[0]);
+	str8_list_push_explicit(&part_list, path, &parts[1]);
+	str8_list_push_explicit(&part_list, str8_lit(".so"), &parts[2]);
+
+	Str8 full_path = str8_join(scratch.arena, &part_list);
+
+	CStr cstr_path = cstr_from_str8(scratch.arena, full_path);
+
 	Void *library = dlopen(cstr_path, RTLD_NOW | RTLD_LOCAL);
+
 	result.u64[0] = int_from_ptr(library);
 
 	arena_release_scratch(scratch);

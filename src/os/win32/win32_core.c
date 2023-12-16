@@ -378,7 +378,15 @@ os_library_open(Str8 path)
 {
 	OS_Library result = { 0 };
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
-	HMODULE lib = LoadLibrary(cstr16_from_str8(scratch.arena, path).data);
+
+	Str8List part_list = { 0 };
+	Str8Node parts[2];
+	str8_list_push_explicit(&part_list, path, &parts[0]);
+	str8_list_push_explicit(&part_list, str8_lit(".dll"), &parts[1]);
+
+	Str8 full_path = str8_join(scratch.arena, &part_list);
+
+	HMODULE lib = LoadLibrary(cstr16_from_str8(scratch.arena, full_path).data);
 	arena_release_scratch(scratch);
 	if (lib)
 	{
