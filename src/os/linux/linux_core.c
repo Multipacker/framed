@@ -357,8 +357,6 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 {
 	assert(sizeof(Linux_FileIterator) <= sizeof(OS_FileIterator));
 
-	B32 success = true;
-
 	Linux_FileIterator *linux_iterator = (Linux_FileIterator *) iterator;
 
 	while (!linux_iterator->done)
@@ -389,7 +387,6 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 			if (actual_read == -1)
 			{
 				linux_iterator->done = true;
-				success = false;
 			}
 			else if (actual_read == 0)
 			{
@@ -414,13 +411,13 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 			// directory?
 			if (!str8_equal(name, str8_lit(".")) && !str8_equal(name, str8_lit("..")))
 			{
-				*result_name = name;
+				*result_name = str8_copy(arena, name);
 				break;
 			}
 		}
 	}
 
-	return(success);
+	return(!linux_iterator->done);
 }
 
 internal Void
