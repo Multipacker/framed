@@ -27,14 +27,36 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
 	if (SDL_Init(SDL_INIT_VIDEO) == 0)
 	{
+		SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_ALPHA_SIZE, 8);
+		SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+		SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
+		SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+
 		gfx.window = SDL_CreateWindow(
 			cstr_title,
 			(int) x, (int) y,
 			(int) width, (int) height,
-			SDL_WINDOW_HIDDEN | SDL_WINDOW_RESIZABLE
+			SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
 		);
 
-		if (!gfx.window)
+		if (gfx.window)
+		{
+			gfx.gl_context = SDL_GL_CreateContext(gfx.window);
+
+			if (gladLoadGLLoader(SDL_GL_GetProcAddress))
+			{
+				SDL_GL_SetSwapInterval(1);
+			}
+			else
+			{
+				// TODO(simon): Could not load OpenGL functions.
+			}
+		}
+		else
 		{
 			// TODO(simon): Could not create window
 		}
@@ -52,9 +74,6 @@ internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
 	SDL_ShowWindow(gfx->window);
-	SDL_Surface *surface = SDL_GetWindowSurface(gfx->window);
-	SDL_FillRect(surface, 0, SDL_MapRGB(surface->format, 0xFF, 0xFF, 0xFF));
-	SDL_UpdateWindowSurface(gfx->window);
 }
 
 internal Gfx_EventList
@@ -78,6 +97,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				if (sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 				{
 					event->kind = Gfx_EventKind_Resize;
+					SDL_SetWindowSize(gfx->window, sdl_event.window.data1, sdl_event.window.data2);
 				}
 			} break;
 
@@ -265,4 +285,10 @@ gfx_toggle_fullscreen(Gfx_Context *gfx)
 	// calling this functions because we cannot query the state.
 	gfx->is_fullscreen = !gfx->is_fullscreen;
 	SDL_SetWindowFullscreen(gfx->window, gfx->is_fullscreen);
+}
+
+internal Void
+gfx_swap_buffers(Gfx_Context *gfx)
+{
+	SDL_GL_SwapWindow(gfx->window);
 }
