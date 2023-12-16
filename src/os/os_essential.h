@@ -6,7 +6,7 @@
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
-	U8 data[512];
+	U8 data[1024];
 };
 
 typedef struct OS_Library OS_Library;
@@ -40,7 +40,7 @@ internal B32 os_file_create_directory(Str8 path);
 internal B32 os_file_delete_directory(Str8 path);
 
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
-internal B32  os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name);
+internal B32  os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
 
 internal DateTime os_now_universal_time(Void);

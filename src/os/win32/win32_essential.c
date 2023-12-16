@@ -174,6 +174,18 @@ os_file_delete_directory(Str8 path)
 	return(result);
 }
 
+internal Str16
+win32_str16_from_wchar(WCHAR *wide_char)
+{
+    Str16 result = {0};
+    result.data = wide_char;
+    while (*wide_char++)
+    {
+        result.size++;
+    }
+    return(result);
+}
+
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
@@ -193,7 +205,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 
 // TODO(hampus): Make use of result_name
 internal B32
-os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
+os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name)
 {
 	B32 result = false;
 	Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
@@ -209,13 +221,19 @@ os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
 			if (emit)
 			{
 				memory_copy_struct(&data, &win32_iter->find_data);
-				result = true;
 			}
 
 			if (!FindNextFile(win32_iter->handle, &win32_iter->find_data))
 			{
 				win32_iter->done = true;
 			}
+
+            if (emit)
+            {
+                *result_name = str8_from_str16(arena, win32_str16_from_wchar(data.cFileName));
+                result = true;
+                break;
+            }
 		}
 	}
 	return(result);

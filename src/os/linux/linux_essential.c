@@ -353,7 +353,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 }
 
 internal B32
-os_file_iterator_next(OS_FileIterator *iterator, Str8 *result_name)
+os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name)
 {
 	assert(sizeof(Linux_FileIterator) <= sizeof(OS_FileIterator));
 
