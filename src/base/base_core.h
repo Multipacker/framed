@@ -219,14 +219,6 @@ typedef Void VoidFunction(Void);
 #define local    static
 
 #if COMPILER_CLANG
-#	define thread_local _Thread_local
-#elif COMPILER_CL
-#	define thread_local __declspec( thread )
-#elif COMPILER_GCC
-#	define thread_local __thread
-#endif
-
-#if COMPILER_CLANG
 #	define debug_break() __builtin_debugtrap()
 #elif COMPILER_CL
 #	define debug_break() DebugBreak()

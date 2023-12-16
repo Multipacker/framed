@@ -8,6 +8,12 @@
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
+#if !BUILD_MODE_RELEASE
+#    define LOG(x, ...) printf(x, __VA_ARGS__)
+#else
+#    define LOG(x, ...)
+#endif
+
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
 
 internal S32
@@ -42,7 +48,7 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyPress:
 				{
-                     printf("Gfx_EventKind_KeyPress: %d\n", event->key);
+                      LOG("Gfx_EventKind_KeyPress: %d\n", event->key);
                     if (event->key == Gfx_Key_F11)
                     {
                         gfx_toggle_fullscreen(&gfx);
@@ -51,22 +57,22 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyRelease:
 				{
-                     printf("Gfx_EventKind_KeyRelease: %d\n", event->key);
+                     LOG("Gfx_EventKind_KeyRelease: %d\n", event->key);
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
-                     printf("Gfx_EventKind_Char\n");
+                    LOG("Gfx_EventKind_Char\n");
 				} break;
 
 				case Gfx_EventKind_Scroll:
 				{
-                    printf("Gfx_EventKind_Scroll: %d\n", (U32)event->scroll.y);
+                    LOG("Gfx_EventKind_Scroll: %d\n", (U32)event->scroll.y);
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
-                    printf("Gfx_EventKind_Resize\n");
+                    LOG("Gfx_EventKind_Resize\n");
 				} break;
 
                 invalid_case;

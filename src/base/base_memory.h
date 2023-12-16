@@ -18,6 +18,7 @@ struct Arena_Temporary
 };
 
 #define ARENA_DEFAULT_RESERVE_SIZE gigabytes(1)
+// TODO(hampus): Test performance with higher/lower commit block size
 #define ARENA_COMMIT_BLOCK_SIZE    megabytes(1)
 
 internal Arena *arena_create_reserve(U64 reserve_size);
