@@ -1,6 +1,3 @@
-// TODO(hampus):
-// - Proper error handling
-
 global Win32_State win32_state;
 
 internal void

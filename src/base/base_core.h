@@ -403,7 +403,7 @@ struct DateTime
 typedef enum DateFormat DateFormat;
 enum DateFormat
 {
-	DateFormat_YYMMDD,   // 23-12-15 
+	DateFormat_YYMMDD,   // 23-12-15
 	DateFormat_YYYYMMDD, // 2023-12-15
 };
 
@@ -412,7 +412,7 @@ enum DateFormat
 typedef enum TimeFormat TimeFormat;
 enum TimeFormat
 {
-	TimeFormat_HHMMSS,   // 12:08:30 
+	TimeFormat_HHMMSS,   // 12:08:30
 };
 
 internal OperatingSystem  operating_system_from_context(Void);

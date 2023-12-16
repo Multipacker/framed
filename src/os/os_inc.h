@@ -1,12 +1,12 @@
 #ifndef OS_INC_H
 #define OS_INC_H
 
-#include "os/os_essential.h"
+#include "os/os_core.h"
 
 #if OS_WINDOWS
-#	include "os/win32/win32_essential.h"
+#	include "os/win32/win32_core.h"
 #elif OS_LINUX
-#	include "os/linux/linux_essential.h"
+#	include "os/linux/linux_core.h"
 #else
 #	error No os_inc for this OS
 #endif
