@@ -7,7 +7,7 @@
 #    if defined(RENDERER_OPENGL)
 #        include "render/opengl/opengl_render.h"
 #    elif defined(RENDERER_VULKAN)
-#        include "render/opengl/vulkan_render.h"
+#        include "render/vulkan/vulkan_render.h"
 #    else
 #        error No valid renderer backend selected
 #    endif
@@ -15,7 +15,7 @@
 #    if defined(RENDERER_OPENGL)
 #        include "render/opengl/opengl_render.h"
 #    elif defined(RENDERER_VULKAN)
-#        include "render/opengl/vulkan_render.h"
+#        include "render/vulkan/vulkan_render.h"
 #    elif defined(RENDERER_D3D11)
 #        include "render/d3d11/d3d11_render.h"
 #    else
