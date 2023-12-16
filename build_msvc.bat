@@ -13,7 +13,6 @@ rem 5045: Compiler will insert Spectre mitigation for memory load if /Qspectre s
 rem 4711: x selected for automatic inline expansion
 rem 4710: function not inlined
 
-
 rem -- Common flags -- 
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710

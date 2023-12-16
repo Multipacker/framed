@@ -72,9 +72,9 @@ build_date_from_context(Void)
 				result.month = i;
 			}
 		}
-        
+
         date = str8_skip(date, 4);
-        
+
         U64 len = u8_from_str8(date, &result.day);
         date = str8_skip(date, len+1);
         len = s16_from_str8(date, &result.year);

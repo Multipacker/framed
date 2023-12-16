@@ -11,7 +11,6 @@
 internal S32
 os_main(Str8List arguments)
 {
-#if 1
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
@@ -73,8 +72,6 @@ os_main(Str8List arguments)
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
-
-    #endif
 
 	return(0);
 }

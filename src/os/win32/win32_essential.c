@@ -1,4 +1,17 @@
+// TODO(hampus):
+// - Proper error handling
+
 global Win32_State win32_state;
+
+internal void
+win32_print_error_message(Void)
+{
+    DWORD error = GetLastError();
+    U8 buffer[1024] = {0};
+    U64 size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&buffer, 1024, 0);
+    OutputDebugStringA((LPCSTR)buffer);
+}
 
 internal Void *
 os_memory_reserve(U64 size)
@@ -35,12 +48,12 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-														 GENERIC_READ,
-														 FILE_SHARE_READ,
-														 0,
-														 OPEN_EXISTING,
-														 FILE_ATTRIBUTE_NORMAL,
-														 0);
+                             GENERIC_READ,
+                             FILE_SHARE_READ,
+                             0,
+                             OPEN_EXISTING,
+                             FILE_ATTRIBUTE_NORMAL,
+                             0);
 
 	arena_release_scratch(scratch);
 
@@ -59,16 +72,31 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 			BOOL read_file_result = ReadFile(file, result_out->data, file_size_u32, &bytes_read, 0);
 			if (read_file_result)
 			{
-				assert(bytes_read == file_size_u32);
-				result = true;
+                if (bytes_read == file_size_u32)
+                {
+                    result = true;
+                }
+                else
+                {
+                    assert(false);
+                }
 			}
 			else
 			{
 				arena_pop_amount(arena, push_amount);
+                win32_print_error_message();
 			}
 		}
+        else
+        {
+            win32_print_error_message();
+        }
 		CloseHandle(file);
 	}
+    else
+    {
+        win32_print_error_message();
+    }
 
 	return(result);
 }
@@ -90,12 +118,12 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 	}
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-														 GENERIC_READ,
-														 FILE_SHARE_READ,
-														 0,
-														 create_file_flags,
-														 FILE_ATTRIBUTE_NORMAL,
-														 0);
+                             GENERIC_READ,
+                             FILE_SHARE_READ,
+                             0,
+                             create_file_flags,
+                             FILE_ATTRIBUTE_NORMAL,
+                             0);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
@@ -105,8 +133,16 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 		{
 			result = true;
 		}
+        else
+        {
+            win32_print_error_message();
+        }
 		CloseHandle(file);
 	}
+    else
+    {
+        win32_print_error_message();
+    }
 
 	arena_release_scratch(scratch);
 	return(result);

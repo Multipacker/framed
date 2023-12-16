@@ -1,4 +1,4 @@
-// TODO(hampus): 
+// TODO(hampus):
 // - Window resizing glitching with no repaint
 // - Stop the program from pausing during resize
 
@@ -10,13 +10,12 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
     Gfx_Context *context = (Gfx_Context *)GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
     Arena_Temporary scratch = arena_get_scratch(0, 0);
-    Gfx_EventList fallback_event_list ={ 0 };
+    Gfx_EventList fallback_event_list = { 0 };
 	if (win32_gfx_state.event_arena == 0)
 	{
 		win32_gfx_state.event_arena = scratch.arena;
 		win32_gfx_state.event_list = &fallback_event_list;
 	}
-
     Arena *event_arena = win32_gfx_state.event_arena;
     Gfx_EventList *event_list = win32_gfx_state.event_list;
 	Gfx_Event *event = push_struct(event_arena, Gfx_Event);
@@ -44,20 +43,20 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 			event->kind = Gfx_EventKind_Char;
 			event->character = (char)wparam;
 		} break;
-        
+
 		case WM_SIZE:
 		{
 			event->kind = Gfx_EventKind_Resize;
 		} break;
-        
+
         case WM_PAINT:
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
-            FillRect(hdc, &ps.rcPaint, (HBRUSH) (COLOR_WINDOW+1));
             EndPaint(hwnd, &ps);
+			result = DefWindowProcW(hwnd, message, wparam, lparam);
         } break;
-        
+
 		case WM_MOUSEWHEEL:
 		{
 			event->kind = Gfx_EventKind_Scroll;
@@ -97,8 +96,8 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
         case WM_LBUTTONUP:
         case WM_LBUTTONDOWN:
         {
-        event->key = Gfx_Key_MouseLeft;
-        goto key_begin;
+            event->key = Gfx_Key_MouseLeft;
+            goto key_begin;
         }
 		case WM_SYSKEYUP:
 		case WM_SYSKEYDOWN:
@@ -168,7 +167,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
                     event->key = key_table[vk_code];
                 }
 
-                 B32 up_message = (message == WM_SYSKEYUP || message == WM_KEYUP || message == WM_LBUTTONUP || message == WM_RBUTTONUP || message == WM_MBUTTONUP);
+                B32 up_message = (message == WM_SYSKEYUP || message == WM_KEYUP || message == WM_LBUTTONUP || message == WM_RBUTTONUP || message == WM_MBUTTONUP);
                 event->kind = up_message ? Gfx_EventKind_KeyRelease : Gfx_EventKind_KeyPress;
             }
 
@@ -186,13 +185,13 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	}
 
 	arena_release_scratch(scratch);
-    
+
     if (win32_gfx_state.event_list == &fallback_event_list)
     {
         win32_gfx_state.event_arena = 0;
         win32_gfx_state.event_list = 0;
     }
-    
+
 	return(result);
 }
 
@@ -208,30 +207,40 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
 	Str16 class_name = cstr16_from_str8(scratch.arena, str8_lit("ApplicationWindowClassName"));
 
-	WNDCLASSEXW window_class = { 0 };
+	WNDCLASS window_class = {0};
 
-	window_class.cbSize = sizeof(window_class);
-	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC | CS_DBLCLKS;
+	window_class.style = 0;
 	window_class.lpfnWndProc = win32_window_proc;
 	window_class.hInstance = instance;
 	window_class.lpszClassName = class_name.data;
 	window_class.hCursor = LoadCursor(0, (LPCWSTR)IDC_ARROW);
 
-	ATOM register_class_result = RegisterClassEx(&window_class);
-	assert(register_class_result);
+	ATOM register_class_result = RegisterClass(&window_class);
+    if (register_class_result)
+    {
+        DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
 
-	DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
+        Str16 title_s16 = cstr16_from_str8(scratch.arena, title);
+        result.hwnd = CreateWindow(window_class.lpszClassName, (LPCWSTR)title_s16.data,
+                                   create_window_flags,
+                                   x, y,
+                                   width, height,
+                                   0, 0, instance, 0);
+        if (result.hwnd)
+        {
+            result.hdc = GetDC(result.hwnd);
 
-	Str16 title_s16 = cstr16_from_str8(scratch.arena, title);
-	result.hwnd = CreateWindowEx(0, window_class.lpszClassName, (LPCWSTR)title_s16.data,
-                                      create_window_flags,
-                                      x, y,
-                                      width, height,
-                                 0, 0, instance, 0);
-    
-	assert(result.hwnd);
 
-	result.hdc = GetDC(result.hwnd);
+        }
+        else
+        {
+            win32_print_error_message();
+        }
+    }
+    else
+    {
+        win32_print_error_message();
+    }
 
     arena_release_scratch(scratch);
 
@@ -241,9 +250,9 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
-     Arena_Temporary scratch = arena_get_scratch(0, 0);
+    Arena_Temporary scratch = arena_get_scratch(0, 0);
 	Gfx_EventList events ={ 0 };
-	 win32_gfx_state.event_list = &events;
+    win32_gfx_state.event_list = &events;
 	win32_gfx_state.event_arena = scratch.arena;
 	ShowWindow(gfx->hwnd, SW_SHOW);
 	UpdateWindow(gfx->hwnd);
@@ -314,7 +323,7 @@ gfx_toggle_fullscreen(Gfx_Context *context)
 		    GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &MonitorInfo))
 		{
 			SetWindowLong(context->hwnd, GWL_STYLE, WindowStyle & ~WS_OVERLAPPEDWINDOW);
-            
+
 			SetWindowPos(context->hwnd, HWND_TOP,
 			             MonitorInfo.rcMonitor.left, MonitorInfo.rcMonitor.top,
 			             MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left,
