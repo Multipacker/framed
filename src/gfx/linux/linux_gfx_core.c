@@ -97,7 +97,6 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				if (sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
 				{
 					event->kind = Gfx_EventKind_Resize;
-					SDL_SetWindowSize(gfx->window, sdl_event.window.data1, sdl_event.window.data2);
 				}
 			} break;
 
