@@ -298,11 +298,21 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 	return(true);
 }
 
-// TODO(simon): Implement this!
+// TODO(simon): Make sure that this has the same behaviour as the windows
+// backend.
 internal B32
 os_file_rename(Str8 old_path, Str8 new_path)
 {
-	return false;
+	B32 success = true;
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	CStr cstr_old_path = cstr_from_str8(scratch.arena, old_path);
+	CStr cstr_new_path = cstr_from_str8(scratch.arena, new_path);
+
+	success = (renameat2(AT_FDCWD, cstr_old_path, AT_FDCWD, cstr_new_path, RENAME_NOREPLACE) == 0);
+
+	arena_release_scratch(scratch);
+	return(success);
 }
 
 internal B32
