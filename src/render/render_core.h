@@ -53,8 +53,8 @@ struct R_RectParams
 internal R_RectInstance *render_rect_(Renderer *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params);
 
 internal Void render_push_clip(Renderer *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void render_pop_clip(Renderer *renderer)
+internal Void render_pop_clip(Renderer *renderer);
 
-internal RenderStats render_get_stats(Renderer *renderer);
+internal R_RenderStats render_get_stats(Renderer *renderer);
 
 #endif //RENDER_CORE_H

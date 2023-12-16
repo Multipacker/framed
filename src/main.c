@@ -1,10 +1,12 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "gfx/gfx_inc.h"
+#include "render/render_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 #include "gfx/gfx_inc.c"
+#include "render/render_inc.c"
 
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
 
