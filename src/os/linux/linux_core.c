@@ -361,48 +361,70 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 
 	while (!linux_iterator->done)
 	{
-		// NOTE(simon): Move all data that has been read but not used to the
-		// begining of the buffer.
-		U64 already_read_length = linux_iterator->write_index - linux_iterator->read_index;
-		memory_move(linux_iterator->buffer, &linux_iterator->buffer[linux_iterator->read_index], already_read_length);
-		linux_iterator->write_index -= linux_iterator->read_index;
-		linux_iterator->read_index = 0;
-
-		// NOTE(simon): Read in enough data for one entire entry.
-		while (
-			!linux_iterator->done &&
-			(
-				linux_iterator->write_index < sizeof(Linux_Dirent64) ||
-				linux_iterator->write_index < ((Linux_Dirent64 *) linux_iterator->buffer)->d_reclen
-				)
-		)
+		while (!linux_iterator->done)
 		{
-			U64 to_read = array_count(linux_iterator->buffer) - linux_iterator->write_index;
-			S64 actual_read = getdents64(
-				linux_iterator->file_descriptor,
-				&linux_iterator->buffer[linux_iterator->write_index],
-				to_read
-			);
+			U64 bytes_availible = linux_iterator->write_index - linux_iterator->read_index;
 
-			if (actual_read == -1)
+			U64 bytes_needed = sizeof(Linux_Dirent64);
+			if (bytes_availible >= sizeof(Linux_Dirent64))
 			{
-				linux_iterator->done = true;
+				Linux_Dirent64 *entry = (Linux_Dirent64 *) &linux_iterator->buffer[linux_iterator->read_index];
+				bytes_needed = entry->d_reclen;
 			}
-			else if (actual_read == 0)
+
+			if (bytes_availible >= bytes_needed)
 			{
-				linux_iterator->done = true;
+				break;
 			}
 			else
 			{
-				linux_iterator->write_index += (U64) actual_read;
+				U64 space_left = array_count(linux_iterator->buffer) - linux_iterator->write_index;
+
+				// NOTE(simon): Do we have enough contiguous memory for the entry?
+				if (bytes_availible + space_left < bytes_needed)
+				{
+					memory_move(linux_iterator->buffer, &linux_iterator->buffer[linux_iterator->read_index], bytes_availible);
+					linux_iterator->read_index = 0;
+					linux_iterator->write_index = (U32) bytes_availible;
+
+					space_left = array_count(linux_iterator->buffer) - linux_iterator->write_index;
+				}
+
+				errno = 0;
+				S64 actual_read = getdents64(
+					linux_iterator->file_descriptor,
+					&linux_iterator->buffer[linux_iterator->write_index],
+					space_left
+				);
+
+				if (actual_read == -1 && errno == EINVAL)
+				{
+					// NOTE(simon): Not enough space in the buffer, move all
+					// data to the begining and try again.
+					memory_move(linux_iterator->buffer, &linux_iterator->buffer[linux_iterator->read_index], bytes_availible);
+					linux_iterator->read_index = 0;
+					linux_iterator->write_index = (U32) bytes_availible;
+				}
+				else if (actual_read == -1)
+				{
+					linux_iterator->done = true;
+					// TODO(simon): Report error.
+				}
+				else if (actual_read == 0)
+				{
+					linux_iterator->done = true;
+				}
+				else
+				{
+					linux_iterator->write_index += (U64) actual_read;
+				}
 			}
 		}
 
 		// NOTE(simon): Do we have an entry or are we done?
 		if (!linux_iterator->done)
 		{
-			Linux_Dirent64 *entry = (Linux_Dirent64 *) linux_iterator->buffer;
-			// TODO(simon): Which is the correct way, d_reclen or d_off?
+			Linux_Dirent64 *entry = (Linux_Dirent64 *) &linux_iterator->buffer[linux_iterator->read_index];
 			linux_iterator->read_index += entry->d_reclen;
 
 			Str8 name = str8_cstr(entry->d_name);
