@@ -291,7 +291,7 @@ v4u32_div_u32(Vec4U32 a, U32 t)
 }
 
 internal Mat4F32
-m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 _near, F32 _far)
+m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 near, F32 far)
 {
     Mat4F32 result;
 
@@ -307,12 +307,12 @@ m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 _near, F32 _far)
 
 	result.m[2][0] = 0;
 	result.m[2][1] = 0;
-	result.m[2][2] = 1 / (_near - _far);
+	result.m[2][2] = 1 / (near - far);
 	result.m[2][3] = 0;
 
 	result.m[3][0] = (left + right) / (left - right);
 	result.m[3][1] = (top + bottom) / (bottom - top);
-	result.m[3][2] = _near / (_near - _far);
+	result.m[3][2] = near / (near - far);
 	result.m[3][3] = 1;
 
 	return result;
