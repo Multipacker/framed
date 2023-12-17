@@ -43,6 +43,15 @@ struct R_RenderStats
 	U64 frame_gpu_memory;
 };
 
+typedef enum R_TextureFormat R_TextureFormat;
+enum R_TextureFormat
+{
+    R_TextureFormat_sRGB,
+    R_TextureFormat_Linear,
+
+    R_TextureFormat_COUNT,
+};
+
 typedef struct R_Context R_Context;
 
 // NOTE(simon): This might not always be fully cleared to 0.
@@ -56,19 +65,11 @@ internal Void render_end(R_Context *renderer);
 typedef struct R_RectParams R_RectParams;
 struct R_RectParams
 {
-	Vec4F32 color;
-	F32     radius;
-	F32     softness;
-	F32     border_thickness;
-    union
-    {
+	Vec4F32        color;
+	F32            radius;
+	F32            softness;
+	F32            border_thickness;
         R_TextureSlice slice;
-        struct
-        {
-            RectF32 region;
-             R_Texture texture;
-        };
-    };
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
@@ -82,12 +83,10 @@ internal Void render_pop_clip(R_Context *renderer);
 
 internal R_RenderStats render_get_stats(R_Context *renderer);
 
-internal R_Texture render_create_texture(R_Context *renderer, Str8 path);
-internal Void render_destroy_texture(R_Context *renderer, R_Texture texture);
-
+internal R_Texture      render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format);
+internal Void           render_destroy_texture(R_Context *renderer, R_Texture texture);
 internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 region);
-
-internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path);
+internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path, R_TextureFormat format);
 
 internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);

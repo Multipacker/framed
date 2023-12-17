@@ -93,9 +93,9 @@ os_main(Str8List arguments)
 		render_rect(renderer, v2f32_sub_f32(mouse, 30.0f), v2f32_add_f32(mouse, 30.0f));
 
 		R_RenderStats stats = render_get_stats(renderer);
-		printf("Stats:\n");
-		printf("\tRect count:  %"PRIU64"\n", stats.rect_count);
-		printf("\tBatch count: %"PRIU64"\n", stats.batch_count);
+		LOG("Stats:\n");
+		LOG("\tRect count:  %llu\n", stats.rect_count);
+		LOG("\tBatch count: %llu\n", stats.batch_count);
 
         render_end(renderer);
 
