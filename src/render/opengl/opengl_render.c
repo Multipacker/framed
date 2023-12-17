@@ -94,45 +94,47 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 	glEnableVertexArrayAttrib(vaobj,   attribindex);
 }
 
-internal Renderer
+internal Renderer *
 render_init(Gfx_Context *gfx)
 {
-	Renderer renderer = { 0 };
+	Arena *arena = arena_create();
+	Renderer *renderer = push_struct(arena, Renderer);
 
-	renderer.gfx = gfx;
-	renderer.frame_arena = arena_create();
+	renderer->gfx = gfx;
+	renderer->arena       = arena;
+	renderer->frame_arena = arena_create();
 
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
-	glCreateBuffers(1, &renderer.vbo);
-	glNamedBufferData(renderer.vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
+	glCreateBuffers(1, &renderer->vbo);
+	glNamedBufferData(renderer->vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
 
-	glCreateVertexArrays(1, &renderer.vao);
+	glCreateVertexArrays(1, &renderer->vao);
 
-	opengl_vertex_array_instance_attribute(renderer.vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 2, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[0]), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 3, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[1]), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 4, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[2]), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 5, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[3]), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
-	opengl_vertex_array_instance_attribute(renderer.vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 2, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[0]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 3, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[1]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 4, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[2]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 5, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[3]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
 
-	glVertexArrayVertexBuffer(renderer.vao, 0, renderer.vbo, 0, sizeof(R_RectInstance));
+	glVertexArrayVertexBuffer(renderer->vao, 0, renderer->vbo, 0, sizeof(R_RectInstance));
 
 	GLuint shaders[] = {
 		opengl_create_shader(str8_lit("src/render/opengl/shader.vert"), GL_VERTEX_SHADER),
 		opengl_create_shader(str8_lit("src/render/opengl/shader.frag"), GL_FRAGMENT_SHADER),
 	};
-	renderer.program = opengl_create_program(shaders, array_count(shaders));
+	renderer->program = opengl_create_program(shaders, array_count(shaders));
 
-	renderer.uniform_projection_location = glGetUniformLocation(renderer.program, "uniform_projection");
+	renderer->uniform_projection_location = glGetUniformLocation(renderer->program, "uniform_projection");
 
 	// NOTE(simon): We only need to set these once as we don't change them anywhere
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glUseProgram(renderer.program);
-	glBindVertexArray(renderer.vao);
+	glUseProgram(renderer->program);
+	glBindVertexArray(renderer->vao);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 

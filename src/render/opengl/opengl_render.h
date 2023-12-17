@@ -25,6 +25,7 @@ struct Renderer
 {
 	Gfx_Context *gfx;
 
+	Arena *arena;
 	Arena *frame_arena;
 
 	OpenGL_BatchList batches;
