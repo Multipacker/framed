@@ -298,8 +298,13 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
-render_create_texture(Str8 path)
+render_create_texture(R_Context *renderer, Str8 path)
 {
 	R_Texture result = { 0 };
 	return(result);
+}
+
+internal Void
+render_destroy_texture(R_Context *renderer, R_Texture texture)
+{
 }
