@@ -9,9 +9,9 @@
 #include "render/render_inc.c"
 
 #if !BUILD_MODE_RELEASE
-#    define LOG(x, ...) printf(x, __VA_ARGS__)
+#    define LOG(...) printf(__VA_ARGS__)
 #else
-#    define LOG(x, ...)
+#    define LOG(...)
 #endif
 
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
