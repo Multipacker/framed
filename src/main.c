@@ -22,7 +22,7 @@ os_main(Str8List arguments)
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
-    Renderer *renderer = render_init(&gfx);
+    R_Context *renderer = render_init(&gfx);
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
