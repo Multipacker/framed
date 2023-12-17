@@ -349,29 +349,57 @@ retu32(Vec2U32 min, Vec2U32 max)
 	return((RectU32) { min, max });
 }
 
+internal B32
+rectf32_contains_rectf32(RectF32 container, RectF32 tested)
+{
+	B32 contains_x = (container.min.x <= tested.min.x && tested.max.x <= container.max.x);
+	B32 contains_y = (container.min.y <= tested.min.y && tested.max.y <= container.max.y);
+	B32 result = (contains_x && contains_y);
+	return(result);
+}
+
+internal B32
+rectf32_contains_v2f32(RectF32 container, Vec2F32 tested)
+{
+	B32 contains_x = (container.min.x <= tested.x && tested.x <= container.max.x);
+	B32 contains_y = (container.min.y <= tested.y && tested.y <= container.max.y);
+	B32 result = (contains_x && contains_y);
+	return(result);
+}
+
+internal B32
+rectf32_overlaps(RectF32 a, RectF32 b)
+{
+	B32 overlaps_x = (a.min.x <= b.max.x && b.min.x <= a.max.x);
+	B32 overlaps_y = (a.min.y <= b.max.y && b.min.y <= a.max.y);
+	B32 result = (overlaps_x && overlaps_y);
+	return(result);
+}
+
 internal U8 u8_min(U8 a, U8 b)
 {
 	U8 result = (a < b ? a : b);
-	return result;
+	return(result);
 }
 
 internal U8 u8_max(U8 a, U8 b)
 {
 	U8 result = (a > b ? a : b);
-	return result;
+	return(result);
 }
 
-internal U8 u8_round_down_to_power_of_2(U8 value, U8 power)
+internal U8
+u8_round_down_to_power_of_2(U8 value, U8 power)
 {
 	U8 result = value & ~(power - 1);
-	return result;
+	return(result);
 }
 
 internal U8
 u8_round_up_to_power_of_2(U8 value, U8 power)
 {
 	U8 result = (value + power - 1) & ~(power - 1);
-	return result;
+	return(result);
 }
 
 internal U8
@@ -380,7 +408,8 @@ u8_floor_to_power_of_2(U8 value)
 	value |= value >> 1;
 	value |= value >> 2;
 	value |= value >> 4;
-	return value ^ (value >> 1);
+	value = value ^ (value >> 1);
+	return(value);
 }
 
 internal U8

@@ -270,6 +270,10 @@ internal RectF32 rectf32_from_rects32(RectS32 rect);
 internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
 internal RectU32 retu32(Vec2U32 min, Vec2U32 max);
 
+internal B32 rectf32_contains_rectf32(RectF32 container, RectF32 tested);
+internal B32 rectf32_contains_v2f32(RectF32 container, Vec2F32 tested);
+internal B32 rectf32_overlaps(RectF32 a, RectF32 b);
+
 global S8  S8_MIN  = (S8) 0x80;
 global S16 S16_MIN = (S16) 0x8000;
 global S32 S32_MIN = (S32) 0x80000000;
