@@ -1,3 +1,6 @@
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
+
 internal R_TextureSlice
 render_slice_from_texture(R_Texture texture, RectF32 region)
 {
