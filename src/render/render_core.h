@@ -57,6 +57,15 @@ struct R_RectParams
 	F32     radius;
 	F32     softness;
 	F32     border_thickness;
+    union
+    {
+        R_TextureSlice slice;
+        struct
+        {
+            RectF32 region;
+             R_Texture texture;
+        };
+    };
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
