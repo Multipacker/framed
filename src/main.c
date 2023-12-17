@@ -28,6 +28,8 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
+    R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_TextureFormat_sRGB);
+
     B32 running = true;
 	while (running)
 	{

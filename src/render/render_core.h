@@ -25,11 +25,14 @@ struct R_RectInstance
 {
 	Vec2F32 min;
 	Vec2F32 max;
+    Vec2F32 min_uv;
+    Vec2F32 max_uv;
     // NOTE(hampus): [c00, c10, c11, c01]
 	Vec4F32 colors[4];
 	F32     radies[4];
 	F32     softness;
 	F32     border_thickness;
+    F32     emit_texture
 };
 
 typedef struct R_RenderStats R_RenderStats;
