@@ -45,6 +45,9 @@ struct R_RenderStats
 
 typedef struct R_Context R_Context;
 
+// NOTE(simon): This might not always be fully cleared to 0.
+global R_RectInstance render_rect_instance_null;
+
 internal R_Context *render_init(Gfx_Context *gfx);
 
 internal Void render_begin(R_Context *renderer);
