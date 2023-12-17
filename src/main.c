@@ -83,12 +83,19 @@ os_main(Str8List arguments)
 
 		Vec2F32 mouse = gfx_get_mouse_pos(&gfx);
 
-		render_push_clip(renderer, v2f32(0, 0), v2f32(100, 100), false);
+		render_push_clip(renderer, v2f32(0, 0), v2f32(150, 150), false);
 		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to
 		// show, false should give a 100x100.
+		render_rect(renderer, v2f32(10, 10), v2f32(20, 20));
+
 		render_push_clip(renderer, v2f32(50, 50), v2f32(150, 150), false);
 
-		render_rect(renderer, v2f32_sub_f32(mouse, 50.0f), v2f32_add_f32(mouse, 50.0f));
+		render_rect(renderer, v2f32_sub_f32(mouse, 30.0f), v2f32_add_f32(mouse, 30.0f));
+
+		R_RenderStats stats = render_get_stats(renderer);
+		printf("Stats:\n");
+		printf("\tRect count:  %lu\n", stats.rect_count);
+		printf("\tBatch count: %lu\n", stats.batch_count);
 
         render_end(renderer);
 
