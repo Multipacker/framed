@@ -26,6 +26,12 @@ linear_from_srgb(Vec4F32 c)
     return(result);
 }
 
+internal RectF32
+d3d11_top_clip(R_Context *renderer)
+{
+    return(renderer->clip_rect_stack.first->rect);
+}
+
 internal R_RenderStats *
 d3d11_get_current_stats(R_Context *renderer)
 {
@@ -247,7 +253,7 @@ render_init(Gfx_Context *gfx)
 
     // NOTE(hampus): Blend state
     {
-        // NOTE(hampus): enable alpha blending
+        // NOTE(hampus): Enable alpha blending
         D3D11_BLEND_DESC desc =
         {
             .RenderTarget[0] =
@@ -272,6 +278,7 @@ render_init(Gfx_Context *gfx)
         {
             .FillMode = D3D11_FILL_SOLID,
             .CullMode = D3D11_CULL_NONE,
+            .ScissorEnable = TRUE,
         };
         ID3D11Device_CreateRasterizerState(result->device, &desc, &result->rasterizer_state);
     }
@@ -294,25 +301,28 @@ render_init(Gfx_Context *gfx)
     return(result);
 }
 
-internal R_D3D11_BatchNode *
-d3d11_make_batch(Arena *arena, R_Context *renderer)
+internal D3D11_Batch *
+d3d11_push_batch(R_Context *renderer)
 {
-    R_D3D11_BatchNode *result = push_struct_zero(arena, R_D3D11_BatchNode);
-    result->batch = push_struct_zero(arena, R_D3D11_Batch);
-    result->batch->instances = push_array(arena, R_RectInstance, D3D11_BATCH_SIZE);
-    R_RenderStats *stats = d3d11_get_current_stats(renderer);
-    stats->batch_count++;
+    D3D11_Batch *result     = push_struct_zero(renderer->frame_arena, D3D11_Batch);
+    result->instances = push_array(renderer->frame_arena, R_RectInstance, D3D11_BATCH_SIZE);
+    dll_push_back(renderer->batch_list.first, renderer->batch_list.last, result);
+    result->params.clip_rect = d3d11_top_clip(renderer);
     return(result);
 }
 
 internal Void
 render_begin(R_Context *renderer)
 {
-    Arena *frame_arena = renderer->frame_arena;
-    renderer->batch_list = push_struct_zero(frame_arena, R_D3D11_BatchList);
-    R_D3D11_BatchList *batch_list = renderer->batch_list;
-    R_D3D11_BatchNode *node = d3d11_make_batch(renderer->frame_arena, renderer);
-    dll_push_back(batch_list->first, batch_list->last, node);
+    // NOTE(hampus): Push clip rect
+    Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
+    Vec2F32 max_clip;
+    max_clip.x = (F32)client_area.x;
+    max_clip.y = (F32)client_area.y;
+    render_push_clip(renderer, v2f32(0, 0), max_clip, false);
+
+    // NOTE(hampus): First batch
+    d3d11_push_batch(renderer);
 }
 
 internal Void
@@ -384,16 +394,19 @@ render_end(R_Context *renderer)
             .MaxDepth = 1,
         };
 
+            R_RenderStats *stats = d3d11_get_current_stats(renderer);
         Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
 
         FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
         ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
         ID3D11DeviceContext_ClearDepthStencilView(renderer->context, renderer->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-        R_D3D11_BatchList *batch_list = renderer->batch_list;
-        for (R_D3D11_BatchNode *node = batch_list->first;
-             node != 0;
-             node = node->next)
+        D3D11_BatchList *batch_list = &renderer->batch_list;
+        for (D3D11_Batch *batch = batch_list->first;
+             batch != 0;
+             batch = batch->next)
         {
+            D3D11_BatchParams *params = &batch->params;
+
             // NOTE(hampus): Setup uniform buffer
             {
                 Mat4F32 transform = m4f32_ortho(0, (F32)client_area.width, (F32)client_area.height, 0, -1.0f, 1.0f);
@@ -408,7 +421,7 @@ render_end(R_Context *renderer)
             {
                 D3D11_MAPPED_SUBRESOURCE mapped;
                 ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-                memory_copy_typed((U8 *)mapped.pData, (U8 *)node->batch->instances, sizeof(R_RectInstance) * node->batch->instance_count);
+                memory_copy_typed((U8 *)mapped.pData, (U8 *)batch->instances, sizeof(R_RectInstance) * batch->instance_count);
                 ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0);
             }
 
@@ -423,9 +436,16 @@ render_end(R_Context *renderer)
             ID3D11DeviceContext_VSSetConstantBuffers(renderer->context, 0, 1, &renderer->uniform_buffer);
             ID3D11DeviceContext_VSSetShader(renderer->context, renderer->vertex_shader, 0, 0);
 
+            D3D11_RECT rect;
+            rect.left   = (LONG)params->clip_rect.x0;
+            rect.top    = (LONG)params->clip_rect.y0;
+            rect.right  = (LONG)params->clip_rect.x1;
+            rect.bottom = (LONG)params->clip_rect.y1;
+
             // NOTE(hampus): Rasterizer Stage
             ID3D11DeviceContext_RSSetViewports(renderer->context, 1, &viewport);
             ID3D11DeviceContext_RSSetState(renderer->context, renderer->rasterizer_state);
+            ID3D11DeviceContext_RSSetScissorRects(renderer->context, 1, &rect);
 
             // NOTE(hampus): Pixel Shader
             ID3D11DeviceContext_PSSetSamplers(renderer->context, 0, 1, &renderer->sampler);
@@ -437,9 +457,12 @@ render_end(R_Context *renderer)
             ID3D11DeviceContext_OMSetDepthStencilState(renderer->context, renderer->depth_state, 0);
             ID3D11DeviceContext_OMSetRenderTargets(renderer->context, 1, &renderer->render_target_view, renderer->depth_stencil_view);
 
-            // NOTE(hampus): draw 1 instance
-            assert(node->batch->instance_count <= U32_MAX);
-            ID3D11DeviceContext_DrawInstanced(renderer->context, 4, (UINT)node->batch->instance_count, 0, 0);
+            // NOTE(hampus): Set scissor rect
+
+            // NOTE(hampus): Draw
+            assert(batch->instance_count <= U32_MAX);
+            ID3D11DeviceContext_DrawInstanced(renderer->context, 4, (U32)batch->instance_count, 0, 0);
+            stats->batch_count++;
         }
     }
 
@@ -458,29 +481,41 @@ render_end(R_Context *renderer)
         assert(!"Failed to present swap chain! Device lost?");
     }
 
+    // NOTE(hampus): Reset state
+    render_pop_clip(renderer);
     arena_pop_to(renderer->frame_arena, 0);
     swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
     memory_zero_struct(&renderer->render_stats[0]);
+    renderer->batch_list.first = 0;
+    renderer->batch_list.last  = 0;
+}
+
+internal B32
+d3d11_clip_rect_match_with_top(R_Context *renderer, RectF32 rect)
+{
+    B32 result;
+    RectF32 top = d3d11_top_clip(renderer);
+    result = memory_match((U8 *)&rect, (U8 *)&top, sizeof(RectF32));
+
+    return(result);
 }
 
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
-    R_D3D11_BatchList *batch_list = renderer->batch_list;
-    R_D3D11_BatchNode *node = batch_list->last;
+    D3D11_BatchList *batch_list = &renderer->batch_list;
+    D3D11_Batch *batch = batch_list->last;
 
-    if (node->batch->instance_count == D3D11_BATCH_SIZE)
+    if (batch->instance_count == D3D11_BATCH_SIZE ||
+        !d3d11_clip_rect_match_with_top(renderer, batch->params.clip_rect))
     {
-         node = 0;
+          batch = 0;
     }
 
-    if (!node)
+    if (!batch)
     {
-        node = d3d11_make_batch(renderer->frame_arena, renderer);
-        dll_push_back(batch_list->first, batch_list->last, node);
+         batch = d3d11_push_batch(renderer);
     }
-
-    R_D3D11_Batch *batch = node->batch;
 
     R_RectInstance *instance = batch->instances + batch->instance_count;
 
@@ -505,17 +540,19 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
     return(instance);
 }
 
-internal RectF32
-d3d11_top_clip(R_Context *renderer)
-{
-    return(renderer->clip_rect_stack.first->rect);
-}
-
 internal Void
 render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     RectF32 rect = {min, max};
-    R_D3D11_ClipRectNode *node = push_struct(renderer->frame_arena, R_D3D11_ClipRectNode);
+    if (clip_to_parent)
+    {
+        RectF32 top_clip_rect = d3d11_top_clip(renderer);
+        rect.x0 = f32_clamp(top_clip_rect.x0, rect.x0, top_clip_rect.x1);
+        rect.y0 = f32_clamp(top_clip_rect.y0, rect.y0, top_clip_rect.y1);
+        rect.x1 = f32_clamp(top_clip_rect.x0, rect.x1, top_clip_rect.x1);
+        rect.y1 = f32_clamp(top_clip_rect.y0, rect.y1, top_clip_rect.y1);
+    }
+    D3D11_ClipRect *node = push_struct(renderer->frame_arena, D3D11_ClipRect);
     node->rect = rect;
     stack_push(renderer->clip_rect_stack.first, node);
 }

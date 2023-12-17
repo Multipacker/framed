@@ -1,5 +1,5 @@
-#ifndef RENDER_D3D11_H
-#define RENDER_D3D11_H
+#ifndef RENDED3D11_H
+#define RENDED3D11_H
 
 #define COBJMACROS
 #include <d3d11.h>
@@ -9,50 +9,44 @@
 
 #define D3D11_BATCH_SIZE 4096
 
-typedef struct R_D3D11_BatchParams R_D3D11_BatchParams;
-struct R_D3D11_BatchParams
+typedef struct D3D11_BatchParams D3D11_BatchParams;
+struct D3D11_BatchParams
 {
     ID3D11ShaderResourceView *texture;
     RectF32 clip_rect;
 };
 
-typedef struct R_D3D11_Batch R_D3D11_Batch;
-struct R_D3D11_Batch
+typedef struct D3D11_Batch D3D11_Batch;
+struct D3D11_Batch
 {
+    D3D11_Batch *next;
+    D3D11_Batch *prev;
     R_RectInstance *instances;
     U64 instance_count;
-    R_D3D11_BatchParams params;
+    D3D11_BatchParams params;
 };
 
-typedef struct R_D3D11_BatchNode R_D3D11_BatchNode;
-struct R_D3D11_BatchNode
+typedef struct D3D11_BatchList D3D11_BatchList;
+struct D3D11_BatchList
 {
-    R_D3D11_BatchNode *next;
-    R_D3D11_BatchNode *prev;
-    R_D3D11_Batch *batch;
-};
-
-typedef struct R_D3D11_BatchList R_D3D11_BatchList;
-struct R_D3D11_BatchList
-{
-    R_D3D11_BatchNode *first;
-    R_D3D11_BatchNode *last;
+    D3D11_Batch *first;
+    D3D11_Batch *last;
     U64 count;
 };
 
-typedef struct R_D3D11_ClipRectNode R_D3D11_ClipRectNode;
-struct R_D3D11_ClipRectNode
+typedef struct D3D11_ClipRect D3D11_ClipRect;
+struct D3D11_ClipRect
 {
-    R_D3D11_ClipRectNode *next;
-    R_D3D11_ClipRectNode *prev;
+    D3D11_ClipRect *next;
+    D3D11_ClipRect *prev;
     RectF32 rect;
 };
 
-typedef struct R_D3D11_ClipRectStack R_D3D11_ClipRectStack;
-struct R_D3D11_ClipRectStack
+typedef struct D3D11_ClipRectStack D3D11_ClipRectStack;
+struct D3D11_ClipRectStack
 {
-    R_D3D11_ClipRectNode *first;
-    R_D3D11_ClipRectNode *last;
+    D3D11_ClipRect *first;
+    D3D11_ClipRect *last;
 };
 
 typedef struct R_Context R_Context;
@@ -63,11 +57,11 @@ struct R_Context
 
     Gfx_Context *gfx;
 
-    R_D3D11_BatchList *batch_list;
+    D3D11_BatchList batch_list;
 
     R_RenderStats render_stats[2];
 
-    R_D3D11_ClipRectStack clip_rect_stack;
+    D3D11_ClipRectStack clip_rect_stack;
 
     ID3D11ShaderResourceView *white_texture;
 
@@ -96,4 +90,4 @@ struct R_Context
     DWORD current_height;
 };
 
-#endif //RENDER_D3D11_H
+#endif //RENDED3D11_H

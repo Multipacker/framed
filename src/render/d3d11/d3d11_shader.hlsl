@@ -69,8 +69,7 @@ float4 ps(PS_INPUT input) : SV_TARGET
 {
 	float corner_radius = input.corner_radius[round(input.vertex_id)];
 
-	float2 softness = float2(input.edge_softness, input.edge_softness);
-	float2 softness_padding = float2(max(0, softness.x * 2 - 1), max(0, softness.x * 2 - 1));
+	float2 softness_padding = float2(max(0, input.edge_softness * 2 - 1), max(0, input.edge_softness * 2 - 1));
 
 	float2 dst_pos = float2(input.dst_pos.xy);
 	float dist = rounded_rect_sdf(dst_pos,
@@ -78,7 +77,7 @@ float4 ps(PS_INPUT input) : SV_TARGET
                                   input.dst_half_size-softness_padding,
                                   corner_radius);
 
-	float sdf_factor = 1.f - smoothstep(0, 2*softness.x, dist);
+	float sdf_factor = 1.f - smoothstep(0, 2*input.edge_softness, dist);
 
 
 	float border_factor = 1.f;
@@ -99,7 +98,7 @@ float4 ps(PS_INPUT input) : SV_TARGET
                                           softness_padding,
                                           interior_corner_radius);
 
-		float inside_f = smoothstep(0, 2*softness.x, inside_d);
+		float inside_f = smoothstep(0, 2*input.edge_softness, inside_d);
 		border_factor = inside_f;
 	}
 
