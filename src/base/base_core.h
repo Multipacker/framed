@@ -136,6 +136,7 @@
 #endif
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -188,6 +189,17 @@ zset((n)->next))
 
 #define queue_push(f,l,n) queue_push_nz(f,l,n,next,check_null,set_null)
 #define queue_pop(f,l)    queue_pop_nz(f,l,next,set_null)
+
+#define PRIU8   PRIu8
+#define PRIU16  PRIu16
+#define PRIU32  PRIu32
+#define PRIU64  PRIu64
+#define PRIS8   PRId8
+#define PRIS16  PRId16
+#define PRIS32  PRId32
+#define PRIS64  PRId64
+
+#define PRISTR8 ".*s"
 
 typedef uint8_t  U8;
 typedef uint16_t U16;
