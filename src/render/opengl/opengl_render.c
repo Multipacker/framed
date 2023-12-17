@@ -300,7 +300,7 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
-render_create_texture(R_Context *renderer, Str8 path)
+render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 {
 	R_Texture result = { 0 };
 	return(result);
