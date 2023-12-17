@@ -31,7 +31,7 @@ main()
 {
 	vec2 half_size = 0.5 * (instance_max - instance_min);
 	vec2 center    = 0.5 * (instance_max + instance_min);
-	vec2 position  = center + (half_size + 2.0 * instance_softness) * verticies[gl_VertexID];
+	vec2 position  = center + (half_size + instance_softness) * verticies[gl_VertexID];
 
 	gl_Position           = uniform_projection * vec4(position, 0.0, 1.0);
 	vert_pos              = position;

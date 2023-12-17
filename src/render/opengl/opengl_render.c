@@ -220,8 +220,8 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
 	// NOTE(simon): Account for softness.
 	RectF32 expanded_area = rectf32(
-		v2f32_sub_f32(min, 2.0f * params->softness),
-		v2f32_add_f32(max, 2.0f * params->softness)
+		v2f32_sub_f32(min, params->softness),
+		v2f32_add_f32(max, params->softness)
 	);
 
 	// NOTE(simon): Is the rectangle completly outside of the current clip rect?
