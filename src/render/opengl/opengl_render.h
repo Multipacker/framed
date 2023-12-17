@@ -1,7 +1,7 @@
 #ifndef OPENGL_RENDER_H
 #define OPENGL_RENDER_H
 
-#define OPENGL_BATCH_SIZE 10
+#define OPENGL_BATCH_SIZE 1024
 
 typedef struct OpenGL_Batch OpenGL_Batch;
 struct OpenGL_Batch
