@@ -46,9 +46,8 @@ toLinear(vec4 sRGB)
 void
 main()
 {
-	float padding = max(0, vert_softness * 2 - 1);
-	vec2 softness_padding = vec2(padding, padding);
-	float dist = rounded_rect_sdf(vert_pos, vert_center, vert_half_size-softness_padding, vert_radies[int(round(vertex_id))]);
+	float softness_padding = max(0, vert_softness * 2 - 1);
+	float dist = rounded_rect_sdf(vert_pos, vert_center, vert_half_size - softness_padding, vert_radies[int(round(vertex_id))]);
 	float sdf_factor = 1.0 - smoothstep(0, 2 * vert_softness, dist);
 
 	frag_color = vec4(vert_color.rgb, vert_color.a * sdf_factor);
