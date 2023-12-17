@@ -209,6 +209,8 @@ opengl_create_batch(R_Context *renderer)
 	return(result);
 }
 
+// TODO(simon): Test performance without pruning batches and rectangles once we
+// are rendering more complicated scenes.
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
