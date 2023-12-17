@@ -305,6 +305,17 @@ enum Side
 	Side_COUNT,
 };
 
+typedef enum Corner Corner;
+enum Corner
+{
+    Corner_TopLeft,
+    Corner_TopRight,
+    Corner_BottomLeft,
+    Corner_BottomRight,
+
+    Corner_COUNT,
+};
+
 typedef enum OperatingSystem OperatingSystem;
 enum OperatingSystem
 {
