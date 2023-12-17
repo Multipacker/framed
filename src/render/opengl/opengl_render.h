@@ -21,7 +21,7 @@ struct OpenGL_BatchList
 	U64 batch_count;
 };
 
-struct Renderer
+struct R_Context
 {
 	Gfx_Context *gfx;
 

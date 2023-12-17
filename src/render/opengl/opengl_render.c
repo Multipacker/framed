@@ -94,11 +94,11 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 	glEnableVertexArrayAttrib(vaobj,   attribindex);
 }
 
-internal Renderer *
+internal R_Context *
 render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
-	Renderer *renderer = push_struct(arena, Renderer);
+	R_Context *renderer = push_struct(arena, R_Context);
 
 	renderer->gfx = gfx;
 	renderer->arena       = arena;
@@ -142,7 +142,7 @@ render_init(Gfx_Context *gfx)
 }
 
 internal Void
-render_begin(Renderer *renderer)
+render_begin(R_Context *renderer)
 {
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 
@@ -153,7 +153,7 @@ render_begin(Renderer *renderer)
 }
 
 internal Void
-render_end(Renderer *renderer)
+render_end(R_Context *renderer)
 {
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -173,7 +173,7 @@ render_end(Renderer *renderer)
 }
 
 internal R_RectInstance *
-render_rect_(Renderer *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
+render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
 	OpenGL_Batch *batch = renderer->batches.last;
 	if (!batch || batch->size >= OPENGL_BATCH_SIZE)
@@ -203,17 +203,17 @@ render_rect_(Renderer *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 }
 
 internal Void
-render_push_clip(Renderer *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
 }
 
 internal Void
-render_pop_clip(Renderer *renderer)
+render_pop_clip(R_Context *renderer)
 {
 }
 
 internal R_RenderStats
-render_get_stats(Renderer *renderer)
+render_get_stats(R_Context *renderer)
 {
 	R_RenderStats result = { 0 };
 	return(result);
