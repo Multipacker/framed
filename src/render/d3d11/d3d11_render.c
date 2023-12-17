@@ -5,13 +5,34 @@
 
 #define assert_hr(hr) assert(SUCCEEDED(hr))
 
-#define MAX_RECT_BATCH_COUNT 4096
+#include <intrin.h>
+
+internal F32
+f32_pow_intrin(F32 a, F32 b)
+{
+    F32 result = _mm_cvtss_f32(_mm_pow_ps(_mm_set1_ps(a), _mm_set1_ps(b)));
+    return(result);
+}
+
+internal Vec4F32
+linear_from_srgb(Vec4F32 c)
+{
+    F32 gamma = 2.2f;
+    Vec4F32 result = c;
+    result.r = f32_pow_intrin(c.r, gamma);
+    result.g = f32_pow_intrin(c.g, gamma);
+    result.b = f32_pow_intrin(c.b, gamma);
+    result.a = c.a;
+    return(result);
+}
 
 internal Renderer *
 render_init(Gfx_Context *gfx)
 {
     Arena *arena = arena_create();
     Renderer *result = push_struct(arena, Renderer);
+    result->perm_arena = arena;
+    result->frame_arena = arena_create();
     result->gfx = gfx;
 
     F32 test = 0xff;
@@ -65,7 +86,7 @@ render_init(Gfx_Context *gfx)
 
         DXGI_SWAP_CHAIN_DESC1 desc =
         {
-            // NOTE(hampus): For sRGB use DXGI_FORMAT_R8G8B8A8_UNORM_SRGB
+            //.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
             .Format = DXGI_FORMAT_R8G8B8A8_UNORM,
             .SampleDesc = { 1, 0 },
             .BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT,
@@ -91,7 +112,7 @@ render_init(Gfx_Context *gfx)
     {
         D3D11_BUFFER_DESC desc =
         {
-            .ByteWidth = MAX_RECT_BATCH_COUNT * sizeof(R_RectInstance),
+            .ByteWidth = MAX_RECT_PER_BATCH_COUNT * sizeof(R_RectInstance),
             .Usage = D3D11_USAGE_DYNAMIC,
             .BindFlags = D3D11_BIND_VERTEX_BUFFER,
             .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE
@@ -271,6 +292,13 @@ render_init(Gfx_Context *gfx)
 internal Void
 render_begin(Renderer *renderer)
 {
+    Arena *frame_arena = renderer->frame_arena;
+    renderer->batch_list = push_struct(frame_arena, R_D3D11_BatchList);
+}
+
+internal Void
+render_end(Renderer *renderer)
+{
     Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
     HRESULT hr;
     if (renderer->render_target_view == 0 || renderer->current_width != client_area.width || renderer->current_height != client_area.height)
@@ -295,7 +323,8 @@ render_begin(Renderer *renderer)
             // NOTE(hampus): Create RenderTarget view for new backbuffer texture
             ID3D11Texture2D* backbuffer;
             IDXGISwapChain1_GetBuffer(renderer->swap_chain, 0, &IID_ID3D11Texture2D, (Void**)&backbuffer);
-            ID3D11Device_CreateRenderTargetView(renderer->device, (ID3D11Resource*)backbuffer, 0, &renderer->render_target_view);
+            D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc = {.Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D};
+            ID3D11Device_CreateRenderTargetView(renderer->device, (ID3D11Resource*)backbuffer, &render_target_view_desc, &renderer->render_target_view);
             ID3D11Texture2D_Release(backbuffer);
 
             D3D11_TEXTURE2D_DESC depthDesc =
@@ -320,19 +349,9 @@ render_begin(Renderer *renderer)
         renderer->current_height = client_area.height;
     }
 
-    R_RectInstance instance = {0};
-    instance.min = v2f32(100, 100);
-    instance.max = v2f32(200, 200);
-    instance.colors[0] = v4f32(1, 1, 1, 1);
-    instance.colors[1] = v4f32(1, 0, 0, 1);
-    instance.colors[2] = v4f32(0, 1, 0, 1);
-    instance.colors[3] = v4f32(0, 0, 1, 1);
-    instance.radies[0] = 40;
-    instance.radies[1] = 20;
-    instance.radies[2] = 30;
-    instance.radies[3] = 10;
-    instance.softness = 1;
-    instance.border_thickness = 1;
+    F32 gamma = 2.2f;
+
+    Vec4F32 white = v4f32(1, 1, 1, 1);
 
     if (renderer->render_target_view)
     {
@@ -346,62 +365,70 @@ render_begin(Renderer *renderer)
             .MaxDepth = 1,
         };
 
-        FLOAT color[] = { 0.5f, 0.5f, 0.5f, 1.f };
+        Vec4F32 bg_color = v4f32(0.5f, 0.5f, 0.5f, 1.f);
+
+        FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
         ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
         ID3D11DeviceContext_ClearDepthStencilView(renderer->context, renderer->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-
-        // NOTE(hampus): Setup uniform buffer
+        R_D3D11_BatchList *batch_list = renderer->batch_list;
+        for (R_D3D11_BatchNode *node = batch_list->first;
+             node != 0;
+             node = node->next)
         {
-            Mat4F32 transform = m4f32_ortho(0, (F32)client_area.width, (F32)client_area.height, 0, -1.0f, 1.0f);
+            // NOTE(hampus): Setup uniform buffer
+            {
+                Mat4F32 transform = m4f32_ortho(0, (F32)client_area.width, (F32)client_area.height, 0, -1.0f, 1.0f);
 
-            D3D11_MAPPED_SUBRESOURCE mapped;
-            ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*)renderer->uniform_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-             memory_copy_typed((U8 *)mapped.pData, &transform.m, sizeof(transform));
-            ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*)renderer->uniform_buffer, 0);
+                D3D11_MAPPED_SUBRESOURCE mapped;
+                ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*)renderer->uniform_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+                memory_copy_typed((U8 *)mapped.pData, &transform.m, sizeof(transform));
+                ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*)renderer->uniform_buffer, 0);
+            }
+
+            // NOTE(hampus): Setup vertex buffer
+            {
+                D3D11_MAPPED_SUBRESOURCE mapped;
+                ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+                memory_copy_typed((U8 *)mapped.pData, (U8 *)node->batch->instances, sizeof(R_RectInstance) * node->batch->instance_count);
+                ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0);
+            }
+
+            // NOTE(hampus): Input Assembler
+            ID3D11DeviceContext_IASetInputLayout(renderer->context, renderer->input_layout);
+            ID3D11DeviceContext_IASetPrimitiveTopology(renderer->context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+            UINT stride = sizeof(R_RectInstance);
+            UINT offset = 0;
+            ID3D11DeviceContext_IASetVertexBuffers(renderer->context, 0, 1, &renderer->vertex_buffer, &stride, &offset);
+
+            // NOTE(hampus): Vertex Shader
+            ID3D11DeviceContext_VSSetConstantBuffers(renderer->context, 0, 1, &renderer->uniform_buffer);
+            ID3D11DeviceContext_VSSetShader(renderer->context, renderer->vertex_shader, 0, 0);
+
+            // NOTE(hampus): Rasterizer Stage
+            ID3D11DeviceContext_RSSetViewports(renderer->context, 1, &viewport);
+            ID3D11DeviceContext_RSSetState(renderer->context, renderer->rasterizer_state);
+
+            // NOTE(hampus): Pixel Shader
+            ID3D11DeviceContext_PSSetSamplers(renderer->context, 0, 1, &renderer->sampler);
+            ID3D11DeviceContext_PSSetShaderResources(renderer->context, 0, 1, &renderer->texture_view);
+            ID3D11DeviceContext_PSSetShader(renderer->context, renderer->pixel_shader, 0, 0);
+
+            // NOTE(hampus): Output Merger
+            ID3D11DeviceContext_OMSetBlendState(renderer->context, renderer->blend_state, 0, ~0U);
+            ID3D11DeviceContext_OMSetDepthStencilState(renderer->context, renderer->depth_state, 0);
+            ID3D11DeviceContext_OMSetRenderTargets(renderer->context, 1, &renderer->render_target_view, renderer->depth_stencil_view);
+
+            // NOTE(hampus): draw 1 instance
+            assert(node->batch->instance_count <= U32_MAX);
+            ID3D11DeviceContext_DrawInstanced(renderer->context, 4, (UINT)node->batch->instance_count, 0, 0);
         }
-
-        // NOTE(hampus): Setup vertex buffer
-        {
-            D3D11_MAPPED_SUBRESOURCE mapped;
-            ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-            memory_copy_typed((U8 *)mapped.pData, (U8 *)&instance, sizeof(R_RectInstance));
-            ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*)renderer->vertex_buffer, 0);
-        }
-
-        // NOTE(hampus): Input Assembler
-        ID3D11DeviceContext_IASetInputLayout(renderer->context, renderer->input_layout);
-        ID3D11DeviceContext_IASetPrimitiveTopology(renderer->context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-        UINT stride = sizeof(R_RectInstance);
-        UINT offset = 0;
-        ID3D11DeviceContext_IASetVertexBuffers(renderer->context, 0, 1, &renderer->vertex_buffer, &stride, &offset);
-
-        // NOTE(hampus): Vertex Shader
-        ID3D11DeviceContext_VSSetConstantBuffers(renderer->context, 0, 1, &renderer->uniform_buffer);
-        ID3D11DeviceContext_VSSetShader(renderer->context, renderer->vertex_shader, 0, 0);
-
-        // NOTE(hampus): Rasterizer Stage
-        ID3D11DeviceContext_RSSetViewports(renderer->context, 1, &viewport);
-        ID3D11DeviceContext_RSSetState(renderer->context, renderer->rasterizer_state);
-
-        // NOTE(hampus): Pixel Shader
-        ID3D11DeviceContext_PSSetSamplers(renderer->context, 0, 1, &renderer->sampler);
-        ID3D11DeviceContext_PSSetShaderResources(renderer->context, 0, 1, &renderer->texture_view);
-        ID3D11DeviceContext_PSSetShader(renderer->context, renderer->pixel_shader, 0, 0);
-
-        // NOTE(hampus): Output Merger
-        ID3D11DeviceContext_OMSetBlendState(renderer->context, renderer->blend_state, 0, ~0U);
-        ID3D11DeviceContext_OMSetDepthStencilState(renderer->context, renderer->depth_state, 0);
-        ID3D11DeviceContext_OMSetRenderTargets(renderer->context, 1, &renderer->render_target_view, renderer->depth_stencil_view);
-
-        // NOTE(hampus): draw 1 instance
-        ID3D11DeviceContext_DrawInstanced(renderer->context, 4, 1, 0, 0);
     }
 
     BOOL vsync = TRUE;
     hr = IDXGISwapChain1_Present(renderer->swap_chain, vsync ? 1 : 0, 0);
     if (hr == DXGI_STATUS_OCCLUDED)
     {
-        // window is minimized, cannot vsync - instead sleep a bit
+        // NOTE(hampus): Window is minimized, cannot vsync - instead sleep a bit
         if (vsync)
         {
             Sleep(10);
@@ -411,11 +438,8 @@ render_begin(Renderer *renderer)
     {
         assert(!"Failed to present swap chain! Device lost?");
     }
-}
 
-internal Void
-render_end(Renderer *renderer)
-{
+    arena_pop_to(renderer->frame_arena, 0);
 }
 
 internal R_RectInstance *
