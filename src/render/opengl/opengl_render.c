@@ -180,6 +180,10 @@ render_end(R_Context *renderer)
 		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->size);
 	}
 
+	// NOTE(simon): Update stats
+	renderer->stats.rect_count  = renderer->batches.rect_count;
+	renderer->stats.batch_count = renderer->batches.batch_count;
+
 	arena_pop_to(renderer->frame_arena, 0);
 	renderer->batches.first       = 0;
 	renderer->batches.last        = 0;
@@ -258,6 +262,12 @@ render_pop_clip(R_Context *renderer)
 internal R_RenderStats
 render_get_stats(R_Context *renderer)
 {
-	R_RenderStats result = { 0 };
+	return(renderer->stats);
+}
+
+internal R_Texture
+render_create_texture(Str8 path)
+{
+	R_Texture result = { 0 };
 	return(result);
 }

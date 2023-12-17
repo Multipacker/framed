@@ -35,6 +35,8 @@ struct R_Context
 {
 	Gfx_Context *gfx;
 
+	R_RenderStats stats;
+
 	Arena *arena;
 	Arena *frame_arena;
 
