@@ -40,7 +40,7 @@ PS_INPUT vs(VS_INPUT input)
 
 	float2 dst_half_size = (input.max - input.min) / 2;
 	float2 dst_center = (input.max + input.min) / 2;
-	float2 dst_pos = (vertices[input.vertex_id] * dst_half_size + dst_center);
+	float2 dst_pos = (vertices[input.vertex_id] * (dst_half_size + 2.0 * input.softness) + dst_center);
 
 	PS_INPUT output;
 	output.dst_pos = mul(uTransform, float4(dst_pos, 0, 1));

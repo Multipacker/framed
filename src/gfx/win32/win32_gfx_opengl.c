@@ -4,7 +4,7 @@ global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
 global PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
 global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = 0;
 
- internal void APIENTRY
+ internal Void APIENTRY
 win32_debug_output(GLenum source,
                 GLenum type,
                  U32 id,
@@ -105,7 +105,7 @@ win32_get_wgl_functions(Void)
 	assert(ok && "Failed to make current OpenGL context for dummy window");
 
 	PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB =
-    (void*)wglGetProcAddress("wglGetExtensionsStringARB");
+    (Void*)wglGetProcAddress("wglGetExtensionsStringARB");
 	if (!wglGetExtensionsStringARB)
 	{
 		assert(!"OpenGL does not support WGL_ARB_extensions_string extension!");
@@ -149,7 +149,7 @@ win32_get_wgl_functions(Void)
 	DestroyWindow(dummy);
 }
 
- internal void
+ internal Void
 win32_init_opengl(Gfx_Context *gfx)
 {
 	win32_get_wgl_functions();
@@ -216,7 +216,7 @@ win32_init_opengl(Gfx_Context *gfx)
 	}
 }
 
- internal void
+ internal Void
 gfx_swap_buffers(Gfx_Context *gfx)
 {
 	SwapBuffers(gfx->hdc);

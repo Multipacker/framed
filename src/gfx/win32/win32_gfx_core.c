@@ -245,7 +245,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
     arena_release_scratch(scratch);
 
-#if RENDERER_OPENGL
+#if defined(RENDERER_OPENGL)
     win32_init_opengl(&result);
     #endif
 

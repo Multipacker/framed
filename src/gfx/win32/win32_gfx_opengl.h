@@ -33,25 +33,25 @@ X(PFNGLNAMEDBUFFERSUBDATAPROC,     	 glNamedBufferSubData        ) \
 X(PFNGLDRAWARRAYSINSTANCEDPROC,         glDrawArraysInstanced       ) \
 X(PFNGLSCISSORINDEXEDPROC,              glScissorIndexed            ) \
 X(PFNGLVERTEXARRAYBINDINGDIVISORPROC,   glVertexArrayBindingDivisor ) \
-X(PFNGLCREATESHADERPROC,   glCreateShader ) \
-X(PFNGLSHADERSOURCEPROC,   glShaderSource ) \
-X(PFNGLCOMPILESHADERPROC,   glCompileShader ) \
-X(PFNGLGETSHADERIVPROC,   glGetShaderiv ) \
-X(PFNGLGETSHADERINFOLOGPROC,   glGetShaderInfoLog ) \
-X(PFNGLDELETESHADERPROC,   glDeleteShader ) \
-X(PFNGLCREATEPROGRAMPROC,   glCreateProgram ) \
-X(PFNGLATTACHSHADERPROC,   glAttachShader ) \
-X(PFNGLLINKPROGRAMPROC,   glLinkProgram ) \
-X(PFNGLDETACHSHADERPROC,   glDetachShader ) \
-X(PFNGLDELETEPROGRAMPROC,   glDeleteProgram ) \
-X(PFNGLNAMEDBUFFERDATAPROC,   glNamedBufferData ) \
-X(PFNGLGETUNIFORMLOCATIONPROC,   glGetUniformLocation ) \
-X(PFNGLUSEPROGRAMPROC,   glUseProgram ) \
+X(PFNGLCREATESHADERPROC,                glCreateShader              ) \
+X(PFNGLSHADERSOURCEPROC,                glShaderSource              ) \
+X(PFNGLCOMPILESHADERPROC,               glCompileShader             ) \
+X(PFNGLGETSHADERIVPROC,                 glGetShaderiv               ) \
+X(PFNGLGETSHADERINFOLOGPROC,            glGetShaderInfoLog          ) \
+X(PFNGLDELETESHADERPROC,                glDeleteShader              ) \
+X(PFNGLCREATEPROGRAMPROC,               glCreateProgram             ) \
+X(PFNGLATTACHSHADERPROC,                glAttachShader              ) \
+X(PFNGLLINKPROGRAMPROC,                 glLinkProgram               ) \
+X(PFNGLDETACHSHADERPROC,                glDetachShader              ) \
+X(PFNGLDELETEPROGRAMPROC,               glDeleteProgram             ) \
+X(PFNGLNAMEDBUFFERDATAPROC,             glNamedBufferData           ) \
+X(PFNGLGETUNIFORMLOCATIONPROC,          glGetUniformLocation        ) \
+X(PFNGLUSEPROGRAMPROC,                  glUseProgram                ) \
 
 #define X(type, name) global type name;
 GL_FUNCTIONS(X)
 #undef X
 
-internal void win32_init_opengl(Gfx_Context *gfx);
+internal Void win32_init_opengl(Gfx_Context *gfx);
 
 #endif
