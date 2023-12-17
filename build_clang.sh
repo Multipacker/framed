@@ -5,7 +5,7 @@ mode=${1:-debug}
 mkdir -p build
 
 src_files="src/main.c"
-errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion"
+errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides"
 common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1"
 linker_flags="-lSDL2"
 
