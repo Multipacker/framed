@@ -12,4 +12,6 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 internal Vec2F32
 render_measure_text(R_Font *font, Str8 text)
 {
+	Vec2F32 result = { 0 };
+	return(result);
 }
