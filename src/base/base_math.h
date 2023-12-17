@@ -261,7 +261,7 @@ internal Vec4U32 v4u32_div_u32(Vec4U32 a, U32 t);
 
 // Mat4
 
-internal Mat4F32 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 _near, F32 _far);
+internal Mat4F32 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 n, F32 f);
 
 // Rect
 
