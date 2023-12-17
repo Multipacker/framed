@@ -94,8 +94,8 @@ os_main(Str8List arguments)
 
 		R_RenderStats stats = render_get_stats(renderer);
 		printf("Stats:\n");
-		printf("\tRect count:  %lu\n", stats.rect_count);
-		printf("\tBatch count: %lu\n", stats.batch_count);
+		printf("\tRect count:  %llu\n", stats.rect_count);
+		printf("\tBatch count: %llu\n", stats.batch_count);
 
         render_end(renderer);
 
