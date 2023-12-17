@@ -44,7 +44,6 @@ build_mode_from_context(Void)
 	return(result);
 }
 
-// TODO(hampus): Finish this function
 internal DateTime
 build_date_from_context(Void)
 {
