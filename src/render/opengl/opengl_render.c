@@ -113,10 +113,10 @@ render_init(Gfx_Context *gfx)
 
 	opengl_vertex_array_instance_attribute(renderer->vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 2, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[0]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 3, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[1]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 4, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[2]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 5, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, colors[3]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 2, 4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[0]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 3, 4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[1]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 4, 4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[2]), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 5, 4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[3]), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);

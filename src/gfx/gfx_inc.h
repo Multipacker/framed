@@ -6,6 +6,9 @@
 #if OS_WINDOWS
 #    if defined(WIN32_ESSENTIAL_H)
 #	    include "gfx/win32/win32_gfx_core.h"
+#        if defined(RENDERER_OPENGL)
+#            include "gfx/win32/win32_gfx_opengl.h"
+#        endif
 #    else
 #        error OS layer has not been included
 #    endif
