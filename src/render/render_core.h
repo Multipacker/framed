@@ -25,6 +25,7 @@ struct R_RectInstance
 {
 	Vec2F32 min;
 	Vec2F32 max;
+    // NOTE(hampus): [c00, c10, c11, c01]
 	Vec4F32 colors[4];
 	F32     radies[4];
 	F32     softness;

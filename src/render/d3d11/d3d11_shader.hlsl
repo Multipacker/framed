@@ -34,8 +34,8 @@ PS_INPUT vs(VS_INPUT input)
 	float2 vertices[4];
 	vertices[0] = float2(-1, -1);
 	vertices[1] = float2(+1, -1);
-	vertices[2] = float2(-1, +1);
-	vertices[3] = float2(+1, +1);
+	vertices[2] = float2(+1, +1);
+	vertices[3] = float2(-1, +1);
 
 	float2 dst_half_size = (input.max - input.min) / 2;
 	float2 dst_center = (input.max + input.min) / 2;
