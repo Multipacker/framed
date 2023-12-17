@@ -94,8 +94,8 @@ os_main(Str8List arguments)
 
 		R_RenderStats stats = render_get_stats(renderer);
 		LOG("Stats:\n");
-		LOG("\tRect count:  %llu\n", stats.rect_count);
-		LOG("\tBatch count: %llu\n", stats.batch_count);
+		LOG("\tRect count:  %"PRIU64"\n", stats.rect_count);
+		LOG("\tBatch count: %"PRIU64"\n", stats.batch_count);
 
         render_end(renderer);
 
