@@ -7,6 +7,19 @@
 // - Lines
 // - Icons
 
+typedef struct R_Texture R_Texture;
+struct R_Texture
+{
+    U64 u64[1];
+};
+
+typedef struct R_TextureSlice R_TextureSlice;
+struct R_TextureSlice
+{
+    RectF32 region;
+    R_Texture texture;
+};
+
 typedef struct R_RectInstance R_RectInstance;
 struct R_RectInstance
 {
