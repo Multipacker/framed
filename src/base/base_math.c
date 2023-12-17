@@ -977,6 +977,13 @@ f32_round_to_s32(F32 x)
 	return (S32) roundf(x);
 }
 
+internal F32
+f32_clamp(F32 min, F32 val, F32 max)
+{
+    F32 result = f32_max(f32_min(val, max), min);
+    return(result);
+}
+
 internal F64
 f64_min(F64 a, F64 b)
 {
@@ -1070,4 +1077,11 @@ internal F64
 f64_ceil(F64 x)
 {
 	return ceil(x);
+}
+
+internal F64
+f64_clamp(F64 min, F64 val, F64 max)
+{
+     F64 result = f64_max(f64_min(val, max), min);
+    return(result);
 }

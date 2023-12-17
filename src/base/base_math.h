@@ -390,6 +390,7 @@ internal F32 f32_floor(F32 x);
 internal F32 f32_ceil(F32 x);
 internal U32 f32_round_to_u32(F32 x);
 internal S32 f32_round_to_s32(F32 x);
+internal F32 f32_clamp(F32 min, F32 val, F32 max);
 
 internal F64 f64_min(F64 a, F64 b);
 internal F64 f64_max(F64 a, F64 b);
@@ -405,5 +406,6 @@ internal F64 f64_unlerp(F64 a, F64 b, F64 x);
 internal F64 f64_pow(F64 a, F64 b);
 internal F64 f64_floor(F64 x);
 internal F64 f64_ceil(F64 x);
+internal F64 f64_clamp(F64 min, F64 val, F64 max);
 
 #endif // BASE_MATH_H
