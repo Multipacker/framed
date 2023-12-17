@@ -194,40 +194,72 @@ render_end(R_Context *renderer)
 	gfx_swap_buffers(renderer->gfx);
 }
 
+internal OpenGL_Batch *
+opengl_create_batch(R_Context *renderer)
+{
+	// NOTE(simon): No need to clear everything to zero, manually set the
+	// parameters we care about.
+	OpenGL_Batch *result = push_struct(renderer->frame_arena, OpenGL_Batch);
+
+	result->size = 0;
+	result->clip_node = renderer->clip_stack;
+	dll_push_back(renderer->batches.first, renderer->batches.last, result);
+	++renderer->batches.batch_count;
+
+	return(result);
+}
+
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
-	OpenGL_Batch *batch = renderer->batches.last;
-	if (!batch || batch->size >= OPENGL_BATCH_SIZE || batch->clip_node != renderer->clip_stack)
-	{
-		assert(renderer->clip_stack);
+	assert(renderer->clip_stack);
 
-		// NOTE(simon): No need to clear everything to zero, manually set the
-		// parameters we care about.
-		batch = push_struct(renderer->frame_arena, OpenGL_Batch);
-		batch->size = 0;
-		batch->clip_node = renderer->clip_stack;
-		dll_push_back(renderer->batches.first, renderer->batches.last, batch);
-		++renderer->batches.batch_count;
+	R_RectInstance *result = &render_rect_instance_null;
+
+	// NOTE(simon): Account for softness.
+	RectF32 expanded_area = rectf32(
+		v2f32_sub_f32(min, 2.0f * params->softness),
+		v2f32_add_f32(max, 2.0f * params->softness)
+	);
+
+	// NOTE(simon): Is the rectangle completly outside of the current clip rect?
+	if (!rectf32_overlaps(expanded_area, renderer->clip_stack->rect))
+	{
+		return(result);
 	}
 
-	R_RectInstance *rect = &batch->rects[batch->size++];
-	rect->min              = min;
-	rect->max              = max;
-	rect->colors[0]        = params->color;
-	rect->colors[1]        = params->color;
-	rect->colors[2]        = params->color;
-	rect->colors[3]        = params->color;
-	rect->radies[0]        = params->radius;
-	rect->radies[1]        = params->radius;
-	rect->radies[2]        = params->radius;
-	rect->radies[3]        = params->radius;
-	rect->softness         = params->softness;
-	rect->border_thickness = params->border_thickness;
+	OpenGL_Batch *batch = renderer->batches.last;
+
+	if (!batch || batch->size >= OPENGL_BATCH_SIZE)
+	{
+		batch = opengl_create_batch(renderer);
+	}
+	
+	B32 is_different_clip   = (batch->clip_node != renderer->clip_stack);
+	B32 inside_current_clip = rectf32_contains_rectf32(renderer->clip_stack->rect, expanded_area);
+	B32 inside_batch_clip   = rectf32_contains_rectf32(batch->clip_node->rect,     expanded_area);
+	if (is_different_clip && !(inside_current_clip && inside_batch_clip))
+	{
+		batch = opengl_create_batch(renderer);
+	}
+
+	result = &batch->rects[batch->size++];
+	result->min              = min;
+	result->max              = max;
+	result->colors[0]        = params->color;
+	result->colors[1]        = params->color;
+	result->colors[2]        = params->color;
+	result->colors[3]        = params->color;
+	result->radies[0]        = params->radius;
+	result->radies[1]        = params->radius;
+	result->radies[2]        = params->radius;
+	result->radies[3]        = params->radius;
+	result->softness         = params->softness;
+	result->border_thickness = params->border_thickness;
 
 	++renderer->batches.rect_count;
 
-	return(rect);
+	return(result);
 }
 
 internal Void
