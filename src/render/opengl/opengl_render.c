@@ -169,7 +169,7 @@ render_end(R_Context *renderer)
 		RectF32 clip_rect = batch->clip_node->rect;
 
 		// NOTE(simon): OpenGL has its origin in the lower left corner, not the
-		// top right like we have, hence the weirdness with the y-coordinate.
+		// top left like we have, hence the weirdness with the y-coordinate.
 		glScissor(
 			(GLint)   clip_rect.min.x,
 			(GLint)   ((F32) renderer->client_area.height - clip_rect.max.y),
@@ -236,7 +236,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	{
 		batch = opengl_create_batch(renderer);
 	}
-	
+
 	B32 is_different_clip   = (batch->clip_node != renderer->clip_stack);
 	B32 inside_current_clip = rectf32_contains_rectf32(renderer->clip_stack->rect, expanded_area);
 	B32 inside_batch_clip   = rectf32_contains_rectf32(batch->clip_node->rect,     expanded_area);
