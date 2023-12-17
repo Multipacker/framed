@@ -303,10 +303,72 @@ internal R_Texture
 render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 {
 	R_Texture result = { 0 };
+
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	Str8 contents = { 0 };
+	if (os_file_read(scratch.arena, path, &contents))
+	{
+		int width         = 0;
+		int height        = 0;
+		int channel_count = 0;
+		stbi_uc *pixels = stbi_load_from_memory(
+			(stbi_uc const *) contents.data, (int) contents.size,
+			&width, &height,
+			&channel_count, 4
+		);
+
+		if (pixels)
+		{
+			// TODO(simon): Add support for greyscale and greyscale + alpha.
+			GLenum format = 0;
+			switch (channel_count)
+			{
+				case 1: assert(true); break;
+				case 2: assert(true); break;
+				case 3: format = GL_RGB;  break;
+				case 4: format = GL_RGBA; break;
+				invalid_case;
+			}
+
+			GLuint texture = 0;
+			glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+			// TODO(simon): We might want, GL_SRGB8_ALPHA8 instead of GL_RGBA8
+			glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
+			glTextureSubImage2D(
+				texture,
+				0,
+				0, 0,
+				(GLsizei) width, (GLsizei) height,
+				format, GL_UNSIGNED_BYTE,
+				(const void *) pixels
+			);
+
+			result.u64[0] = (U64) texture;
+
+			STBI_FREE(pixels);
+		}
+		else
+		{
+			// TODO(simon): Could not load image data.
+		}
+	}
+	else
+	{
+		// TODO(simon): Could not read file.
+	}
+
+	arena_release_scratch(scratch);
 	return(result);
 }
 
 internal Void
 render_destroy_texture(R_Context *renderer, R_Texture texture)
 {
+	GLuint opengl_texture = (GLuint) texture.u64[0];
+
+	if (opengl_texture)
+	{
+		glDeleteTextures(1, &opengl_texture);
+	}
 }
