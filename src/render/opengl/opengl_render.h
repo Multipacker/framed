@@ -3,11 +3,21 @@
 
 #define OPENGL_BATCH_SIZE 1024
 
+typedef struct OpenGL_ClipNode OpenGL_ClipNode;
+struct OpenGL_ClipNode
+{
+	OpenGL_ClipNode *next;
+	RectF32 rect;
+};
+
 typedef struct OpenGL_Batch OpenGL_Batch;
 struct OpenGL_Batch
 {
 	OpenGL_Batch *next;
 	OpenGL_Batch *prev;
+
+	OpenGL_ClipNode *clip_node;
+
 	U32 size;
 	R_RectInstance rects[OPENGL_BATCH_SIZE];
 };
@@ -29,11 +39,14 @@ struct R_Context
 	Arena *frame_arena;
 
 	OpenGL_BatchList batches;
+	Vec2U32 client_area;
 
 	GLuint program;
 	GLuint vbo;
 	GLuint vao;
 	GLint uniform_projection_location;
+
+	OpenGL_ClipNode *clip_stack;
 };
 
 #endif // OPENGL_RENDER_H

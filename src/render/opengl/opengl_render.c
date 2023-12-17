@@ -144,22 +144,39 @@ render_init(Gfx_Context *gfx)
 internal Void
 render_begin(R_Context *renderer)
 {
-	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
+	renderer->client_area = gfx_get_window_client_area(renderer->gfx);
 
-	glViewport(0, 0, (GLsizei) client_area.width, (GLsizei) client_area.height);
+	glViewport(0, 0, (GLsizei) renderer->client_area.width, (GLsizei) renderer->client_area.height);
 
-	Mat4F32 projection = m4f32_ortho(0.0f, (F32) client_area.width, (F32) client_area.height, 0.0f, 1.0f, -1.0f);
+	Mat4F32 projection = m4f32_ortho(0.0f, (F32) renderer->client_area.width, (F32) renderer->client_area.height, 0.0f, 1.0f, -1.0f);
 	glProgramUniformMatrix4fv(renderer->program, renderer->uniform_projection_location, 1, GL_FALSE, &projection.m[0][0]);
+
+	// NOTE(simon): Push a clip rect for the entire screen so that there is
+	// always at least on clip rect in the stack.
+	render_push_clip(renderer, v2f32(0.0f, 0.0f), v2f32((F32) renderer->client_area.width, (F32) renderer->client_area.height), false);
 }
 
 internal Void
 render_end(R_Context *renderer)
 {
+	glDisable(GL_SCISSOR_TEST);
 	glClear(GL_COLOR_BUFFER_BIT);
+	glEnable(GL_SCISSOR_TEST);
 
 	for (OpenGL_Batch *batch = renderer->batches.first; batch; batch = batch->next)
 	{
 		glNamedBufferSubData(renderer->vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
+		RectF32 clip_rect = batch->clip_node->rect;
+
+		// NOTE(simon): OpenGL has its origin in the lower left corner, not the
+		// top right like we have, hence the weirdness with the y-coordinate.
+		glScissor(
+			(GLint)   clip_rect.min.x,
+			(GLint)   ((F32) renderer->client_area.height - clip_rect.max.y),
+			(GLsizei) (clip_rect.max.x - clip_rect.min.x),
+			(GLsizei) (clip_rect.max.y - clip_rect.min.y)
+		);
+
 		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->size);
 	}
 
@@ -168,6 +185,7 @@ render_end(R_Context *renderer)
 	renderer->batches.last        = 0;
 	renderer->batches.rect_count  = 0;
 	renderer->batches.batch_count = 0;
+	renderer->clip_stack          = 0;
 
 	gfx_swap_buffers(renderer->gfx);
 }
@@ -176,9 +194,15 @@ internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
 	OpenGL_Batch *batch = renderer->batches.last;
-	if (!batch || batch->size >= OPENGL_BATCH_SIZE)
+	if (!batch || batch->size >= OPENGL_BATCH_SIZE || batch->clip_node != renderer->clip_stack)
 	{
-		batch = push_struct_zero(renderer->frame_arena, OpenGL_Batch);
+		assert(renderer->clip_stack);
+
+		// NOTE(simon): No need to clear everything to zero, manually set the
+		// parameters we care about.
+		batch = push_struct(renderer->frame_arena, OpenGL_Batch);
+		batch->size = 0;
+		batch->clip_node = renderer->clip_stack;
 		dll_push_back(renderer->batches.first, renderer->batches.last, batch);
 		++renderer->batches.batch_count;
 	}
@@ -205,11 +229,30 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 internal Void
 render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
+	OpenGL_ClipNode *node = push_struct(renderer->frame_arena, OpenGL_ClipNode);
+
+	if (clip_to_parent)
+	{
+		assert(renderer->clip_stack);
+		RectF32 parent = renderer->clip_stack->rect;
+
+		node->rect.min.x = f32_clamp(parent.min.x, min.x, parent.max.x);
+		node->rect.min.y = f32_clamp(parent.min.y, min.y, parent.max.y);
+		node->rect.max.x = f32_clamp(parent.min.x, max.x, parent.max.x);
+		node->rect.max.y = f32_clamp(parent.min.y, max.y, parent.max.y);
+	}
+	else
+	{
+		node->rect = rectf32(min, max);
+	}
+
+	stack_push(renderer->clip_stack, node);
 }
 
 internal Void
 render_pop_clip(R_Context *renderer)
 {
+	stack_pop(renderer->clip_stack);
 }
 
 internal R_RenderStats

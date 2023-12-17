@@ -81,6 +81,15 @@ os_main(Str8List arguments)
 
         render_begin(renderer);
 
+		Vec2F32 mouse = gfx_get_mouse_pos(&gfx);
+
+		render_push_clip(renderer, v2f32(0, 0), v2f32(100, 100), false);
+		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to
+		// show, false should give a 100x100.
+		render_push_clip(renderer, v2f32(50, 50), v2f32(150, 150), false);
+
+		render_rect(renderer, v2f32_sub_f32(mouse, 50.0f), v2f32_add_f32(mouse, 50.0f));
+
         render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
