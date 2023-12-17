@@ -88,6 +88,24 @@ v4f32_div_f32(Vec4F32 a, F32 t)
 	return((Vec4F32) { a.x / t, a.y / t, a.z / t, a.w / t });
 }
 
+internal Vec2F32
+v2f32_add_f32(Vec2F32 a, F32 t)
+{
+    Vec2F32 result;
+    result.x = a.x + t;
+    result.y = a.y + t;
+    return(result);
+}
+
+internal Vec2F32
+v2f32_sub_f32(Vec2F32 a, F32 t)
+{
+    Vec2F32 result;
+    result.x = a.x - t;
+    result.y = a.y - t;
+    return(result);
+}
+
 // S32
 
 internal Vec2S32

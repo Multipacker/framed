@@ -204,6 +204,9 @@ internal Vec2F32 v2f32_sub_v2f32(Vec2F32 a, Vec2F32 b);
 internal Vec2F32 v2f32_mul_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
 
+internal Vec2F32 v2f32_add_f32(Vec2F32 a, F32 t);
+internal Vec2F32 v2f32_sub_f32(Vec2F32 a, F32 t);
+
 internal Vec3F32 v3f32(F32 x, F32 y, F32 z);
 internal Vec3F32 v3f32_add_v3f32(Vec3F32 a, Vec3F32 b);
 internal Vec3F32 v3f32_sub_v3f32(Vec3F32 a, Vec3F32 b);
