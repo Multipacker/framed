@@ -26,11 +26,17 @@ linear_from_srgb(Vec4F32 c)
     return(result);
 }
 
-internal Renderer *
+internal R_RenderStats *
+d3d11_get_current_stats(R_Context *renderer)
+{
+    return(&renderer->render_stats[0]);
+}
+
+internal R_Context *
 render_init(Gfx_Context *gfx)
 {
     Arena *arena = arena_create();
-    Renderer *result = push_struct(arena, Renderer);
+    R_Context *result = push_struct(arena, R_Context);
     result->perm_arena = arena;
     result->frame_arena = arena_create();
     result->gfx = gfx;
@@ -112,7 +118,7 @@ render_init(Gfx_Context *gfx)
     {
         D3D11_BUFFER_DESC desc =
         {
-            .ByteWidth = MAX_RECT_PER_BATCH_COUNT * sizeof(R_RectInstance),
+            .ByteWidth = D3D11_BATCH_SIZE * sizeof(R_RectInstance),
             .Usage = D3D11_USAGE_DYNAMIC,
             .BindFlags = D3D11_BIND_VERTEX_BUFFER,
             .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE
@@ -239,7 +245,6 @@ render_init(Gfx_Context *gfx)
         ID3D11Device_CreateSamplerState(result->device, &desc, &result->sampler);
     }
 
-
     // NOTE(hampus): Blend state
     {
         // NOTE(hampus): enable alpha blending
@@ -289,15 +294,29 @@ render_init(Gfx_Context *gfx)
     return(result);
 }
 
-internal Void
-render_begin(Renderer *renderer)
+internal R_D3D11_BatchNode *
+d3d11_make_batch(Arena *arena, R_Context *renderer)
 {
-    Arena *frame_arena = renderer->frame_arena;
-    renderer->batch_list = push_struct(frame_arena, R_D3D11_BatchList);
+    R_D3D11_BatchNode *result = push_struct_zero(arena, R_D3D11_BatchNode);
+    result->batch = push_struct_zero(arena, R_D3D11_Batch);
+    result->batch->instances = push_array(arena, R_RectInstance, D3D11_BATCH_SIZE);
+    R_RenderStats *stats = d3d11_get_current_stats(renderer);
+    stats->batch_count++;
+    return(result);
 }
 
 internal Void
-render_end(Renderer *renderer)
+render_begin(R_Context *renderer)
+{
+    Arena *frame_arena = renderer->frame_arena;
+    renderer->batch_list = push_struct_zero(frame_arena, R_D3D11_BatchList);
+    R_D3D11_BatchList *batch_list = renderer->batch_list;
+    R_D3D11_BatchNode *node = d3d11_make_batch(renderer->frame_arena, renderer);
+    dll_push_back(batch_list->first, batch_list->last, node);
+}
+
+internal Void
+render_end(R_Context *renderer)
 {
     Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
     HRESULT hr;
@@ -365,7 +384,7 @@ render_end(Renderer *renderer)
             .MaxDepth = 1,
         };
 
-        Vec4F32 bg_color = v4f32(0.5f, 0.5f, 0.5f, 1.f);
+        Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
 
         FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
         ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
@@ -440,24 +459,75 @@ render_end(Renderer *renderer)
     }
 
     arena_pop_to(renderer->frame_arena, 0);
+    swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
+    memory_zero_struct(&renderer->render_stats[0]);
 }
 
 internal R_RectInstance *
-render_rect_(Renderer *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
+render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
+    R_D3D11_BatchList *batch_list = renderer->batch_list;
+    R_D3D11_BatchNode *node = batch_list->last;
+
+    if (node->batch->instance_count == D3D11_BATCH_SIZE)
+    {
+         node = 0;
+    }
+
+    if (!node)
+    {
+        node = d3d11_make_batch(renderer->frame_arena, renderer);
+        dll_push_back(batch_list->first, batch_list->last, node);
+    }
+
+    R_D3D11_Batch *batch = node->batch;
+
+    R_RectInstance *instance = batch->instances + batch->instance_count;
+
+    instance->min = min;
+    instance->max = max;
+    instance->colors[0] = params->color;
+    instance->colors[1] = params->color;
+    instance->colors[2] = params->color;
+    instance->colors[3] = params->color;
+    instance->radies[0] = params->radius;
+    instance->radies[1] = params->radius;
+    instance->radies[2] = params->radius;
+    instance->radies[3] = params->radius;
+    instance->softness = params->softness;
+    instance->border_thickness = params->border_thickness;
+
+    batch->instance_count++;
+
+    R_RenderStats *stats = d3d11_get_current_stats(renderer);
+    stats->rect_count++;
+
+    return(instance);
+}
+
+internal RectF32
+d3d11_top_clip(R_Context *renderer)
+{
+    return(renderer->clip_rect_stack.first->rect);
 }
 
 internal Void
-render_push_clip(Renderer *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
+    RectF32 rect = {min, max};
+    R_D3D11_ClipRectNode *node = push_struct(renderer->frame_arena, R_D3D11_ClipRectNode);
+    node->rect = rect;
+    stack_push(renderer->clip_rect_stack.first, node);
 }
 
 internal Void
-render_pop_clip(Renderer *renderer)
+render_pop_clip(R_Context *renderer)
 {
+    stack_pop(renderer->clip_rect_stack.first);
 }
 
 internal R_RenderStats
-render_get_stats(Renderer *renderer)
+render_get_stats(R_Context *renderer)
 {
+    return(renderer->render_stats[1]);
 }

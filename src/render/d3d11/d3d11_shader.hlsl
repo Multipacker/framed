@@ -15,9 +15,10 @@ struct PS_INPUT
 	float2 dst_half_size   : DST_HALF_SIZE;
 	float2 dst_center      : DST_CENTER;
 	float4 color           : COLOR;
-	float corner_radius    : CORNER_RADIUS;
+	nointerpolation float4 corner_radius    : CORNER_RADIUS;
 	float edge_softness    : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
+    float vertex_id        : VERTEX_ID;
 };
 
 cbuffer cbuffer0 : register(b0)
@@ -34,8 +35,8 @@ PS_INPUT vs(VS_INPUT input)
 	float2 vertices[4];
 	vertices[0] = float2(-1, -1);
 	vertices[1] = float2(+1, -1);
-	vertices[2] = float2(+1, +1);
-	vertices[3] = float2(-1, +1);
+	vertices[2] = float2(-1, +1);
+	vertices[3] = float2(+1, +1);
 
 	float2 dst_half_size = (input.max - input.min) / 2;
 	float2 dst_center = (input.max + input.min) / 2;
@@ -46,9 +47,10 @@ PS_INPUT vs(VS_INPUT input)
 	output.dst_half_size = dst_half_size;
 	output.dst_center = dst_center;
 	output.color = input.colors[input.vertex_id];
-	output.corner_radius = input.corner_radius[input.vertex_id];
+	output.corner_radius = input.corner_radius;
 	output.edge_softness = input.softness;
 	output.border_thickness = input.border_thickness;
+	output.vertex_id = input.vertex_id;
 	return output;
 }
 
@@ -65,6 +67,8 @@ float rounded_rect_sdf(float2 sample_pos,
 
 float4 ps(PS_INPUT input) : SV_TARGET
 {
+	float corner_radius = input.corner_radius[round(input.vertex_id)];
+
 	float2 softness = float2(input.edge_softness, input.edge_softness);
 	float2 softness_padding = float2(max(0, softness.x * 2 - 1), max(0, softness.x * 2 - 1));
 
@@ -72,7 +76,7 @@ float4 ps(PS_INPUT input) : SV_TARGET
 	float dist = rounded_rect_sdf(dst_pos,
                                   input.dst_center,
                                   input.dst_half_size-softness_padding,
-                                  input.corner_radius);
+                                  corner_radius);
 
 	float sdf_factor = 1.f - smoothstep(0, 2*softness.x, dist);
 
@@ -85,7 +89,7 @@ float4 ps(PS_INPUT input) : SV_TARGET
 		float interior_radius_reduce_f = min(interior_half_size.x/input.dst_half_size.x,
                                          interior_half_size.y/input.dst_half_size.y);
 		float interior_corner_radius =
-             (input.corner_radius *
+             (corner_radius *
               interior_radius_reduce_f *
               interior_radius_reduce_f);
 

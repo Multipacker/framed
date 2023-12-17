@@ -39,17 +39,16 @@ struct R_RenderStats
 	U64 scissor_count;
 	U64 rect_count;
 	U64 batch_count;
-	U64 draw_call_count;
 	U64 peak_gpu_memory;
 	U64 frame_gpu_memory;
 };
 
-typedef struct Renderer Renderer;
+typedef struct R_Context R_Context;
 
-internal Renderer *render_init(Gfx_Context *gfx);
+internal R_Context *render_init(Gfx_Context *gfx);
 
-internal Void render_begin(Renderer *renderer);
-internal Void render_end(Renderer *renderer);
+internal Void render_begin(R_Context *renderer);
+internal Void render_end(R_Context *renderer);
 
 typedef struct R_RectParams R_RectParams;
 struct R_RectParams
@@ -62,13 +61,13 @@ struct R_RectParams
 
 // TODO(hampus): Test performance with/without passing by pointer
 #define render_rect(renderer, min, max, ...)    render_rect_(renderer, min, max, &(R_RectParams) { .color = v4f32(1, 1, 1, 1), __VA_ARGS__ })
-#define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(R_RectParams) { .color = v4f32(1, 1, 1, 1), .radius = radius, __VA_ARGS__ })
+#define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(R_RectParams) { .color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__ })
 
-internal R_RectInstance *render_rect_(Renderer *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params);
+internal R_RectInstance *render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params);
 
-internal Void render_push_clip(Renderer *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void render_pop_clip(Renderer *renderer);
+internal Void render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
+internal Void render_pop_clip(R_Context *renderer);
 
-internal R_RenderStats render_get_stats(Renderer *renderer);
+internal R_RenderStats render_get_stats(R_Context *renderer);
 
 #endif //RENDER_CORE_H
