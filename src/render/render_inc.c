@@ -1,3 +1,5 @@
+#include "render/render_core.c"
+
 #if OS_LINUX
 #    if defined(RENDERER_OPENGL)
 #        include "render/opengl/opengl_render.c"
