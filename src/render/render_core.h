@@ -80,6 +80,7 @@ internal Void render_pop_clip(R_Context *renderer);
 internal R_RenderStats render_get_stats(R_Context *renderer);
 
 internal R_Texture render_create_texture(Str8 path);
+internal Void render_destroy_texture(R_Texture texture);
 
 internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 region);
 
