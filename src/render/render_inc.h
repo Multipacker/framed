@@ -2,6 +2,7 @@
 #define RENDER_INC_H
 
 #include "render/render_core.h"
+#include "render/render_font.h"
 
 #if OS_LINUX
 #    if defined(RENDERER_OPENGL)

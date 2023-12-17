@@ -1,4 +1,5 @@
 #include "render/render_core.c"
+#include "render/render_font.c"
 
 #if OS_LINUX
 #    if defined(RENDERER_OPENGL)
