@@ -13,9 +13,8 @@ win32_debug_output(GLenum source,
                   const char *message,
                  const Void *userParam)
 {
+    // NOTE(hampus): We do not care about these warnings
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
-
-	assert(false);
 
 	printf("---------------\n");
 	printf("Debug message (%d): %s", id, message);
@@ -54,6 +53,12 @@ win32_debug_output(GLenum source,
 		case GL_DEBUG_SEVERITY_LOW:          printf("Severity: low"); break;
 		case GL_DEBUG_SEVERITY_NOTIFICATION: printf("Severity: notification"); break;
 	}
+
+    if (severity == GL_DEBUG_SEVERITY_HIGH)
+    {
+        assert(false);
+    }
+
 	printf("\n");
 }
 
