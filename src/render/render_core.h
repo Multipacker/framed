@@ -89,4 +89,10 @@ internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 reg
 
 internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path);
 
+internal F32     f32_srgb_to_linear(F32 value)
+internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
+
+internal F32     f32_linear_to_srgb(F32 value);
+internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
+
 #endif //RENDER_CORE_H

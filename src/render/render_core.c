@@ -14,3 +14,57 @@ render_create_texture_slice(R_Context *renderer, Str8 path)
     result.region.max = v2f32(1, 1);
     return(result);
 }
+
+internal F32
+f32_srgb_to_linear(F32 value)
+{
+	F32 result = 0.0f;
+	if (value < 0.04045f)
+	{
+		result = value / 12.92f;
+	}
+	else
+	{
+		result = f32_pow((value + 0.055f) / 1.055f, 2.4f);
+	}
+	return(result);
+}
+
+internal Vec4F32
+vec4f32_srgb_to_linear(Vec4F32 srgb)
+{
+	Vec4F32 result = v4f32(
+		f32_srgb_to_linear(srgb.r),
+		f32_srgb_to_linear(srgb.g),
+		f32_srgb_to_linear(srgb.b),
+		srgb.a
+	);
+    return(result);
+}
+
+internal F32
+f32_linear_to_srgb(F32 value)
+{
+	F32 result = 0.0f;
+	if (value < 0.0031308f)
+	{
+		result  = value * 12.92f;
+	}
+	else
+	{
+		result = 1.055f * f32_pow(value, 1.0f / 2.4f) - 0.055f;
+	}
+	return(result);
+}
+
+internal Vec4F32
+vec4f32_linear_to_srgb(Vec4F32 linear)
+{
+	Vec4F32 result = v4f32(
+		f32_linear_to_srgb(linear.r),
+		f32_linear_to_srgb(linear.g),
+		f32_linear_to_srgb(linear.b),
+		linear.a
+	);
+    return(result);
+}
