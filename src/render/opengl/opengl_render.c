@@ -404,6 +404,33 @@ internal R_Texture
 render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
+
+	GLuint texture = 0;
+	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+
+	GLenum internalformat = 0;
+	switch (color_space)
+	{
+		case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
+		case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
+		invalid_case;
+	}
+	glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTextureSubImage2D(
+		texture,
+		0,
+		0, 0,
+		(GLsizei) width, (GLsizei) height,
+		GL_RGBA, GL_UNSIGNED_BYTE,
+		(const void *) data
+	);
+
+	result.u64[0] = (U64) texture;
+
 	return(result);
 }
 
