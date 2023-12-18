@@ -26,10 +26,10 @@ linear_from_srgb(Vec4F32 c)
     return(result);
 }
 
-internal RectF32
+internal D3D11_ClipRect *
 d3d11_top_clip(R_Context *renderer)
 {
-    return(renderer->clip_rect_stack.first->rect);
+    return(renderer->clip_rect_stack.first);
 }
 
 internal R_RenderStats *
@@ -137,15 +137,42 @@ render_init(Gfx_Context *gfx)
     {
         D3D11_INPUT_ELEMENT_DESC desc[] =
         {
-            { "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0, member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            { "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0, member_offset(R_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, member_offset(R_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, member_offset(R_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, member_offset(R_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0, member_offset(R_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
-            {"BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0, member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+            { "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            { "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(R_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            { "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(R_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            { "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(R_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(R_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(R_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(R_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(R_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
+            {"EMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(R_RectInstance, emit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
         };
 
         UINT flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -200,16 +227,12 @@ render_init(Gfx_Context *gfx)
         ID3D11Device_CreateBuffer(result->device, &desc, 0, &result->uniform_buffer);
     }
 
-    // NOTE(hampus): Texture
+    // NOTE(hampus): White Texture
     {
-         U32 pixels[] =
-        {
-            0x80000000, 0xffffffff,
-            0xffffffff, 0x80000000,
-        };
+        U32 white = 0xffffffff;
 
-        UINT width = 2;
-        UINT height = 2;
+        UINT width = 1;
+        UINT height = 1;
 
         D3D11_TEXTURE2D_DESC desc =
         {
@@ -225,14 +248,17 @@ render_init(Gfx_Context *gfx)
 
         D3D11_SUBRESOURCE_DATA data =
         {
-            .pSysMem = pixels,
-            .SysMemPitch = width * sizeof(unsigned int),
+            .pSysMem = &white,
+            .SysMemPitch = width * sizeof(U32),
         };
 
         ID3D11Texture2D *texture;
+        ID3D11ShaderResourceView *texture_view;
         ID3D11Device_CreateTexture2D(result->device, &desc, &data, &texture);
-        ID3D11Device_CreateShaderResourceView(result->device, (ID3D11Resource*)texture, 0, &result->texture_view);
+        ID3D11Device_CreateShaderResourceView(result->device, (ID3D11Resource*)texture, 0, &texture_view);
         ID3D11Texture2D_Release(texture);
+
+        result->white_texture.u64[0] = int_from_ptr(texture_view);
     }
 
     // NOTE(hampus): Sampler
@@ -308,6 +334,7 @@ d3d11_push_batch(R_Context *renderer)
     result->instances = push_array(renderer->frame_arena, R_RectInstance, D3D11_BATCH_SIZE);
     dll_push_back(renderer->batch_list.first, renderer->batch_list.last, result);
     result->params.clip_rect = d3d11_top_clip(renderer);
+    renderer->batch_list.batch_count++;
     return(result);
 }
 
@@ -322,7 +349,8 @@ render_begin(R_Context *renderer)
     render_push_clip(renderer, v2f32(0, 0), max_clip, false);
 
     // NOTE(hampus): First batch
-    d3d11_push_batch(renderer);
+    D3D11_Batch *first_batch = d3d11_push_batch(renderer);
+    first_batch->params.texture = renderer->white_texture;
 }
 
 internal Void
@@ -339,7 +367,6 @@ render_end(R_Context *renderer)
             ID3D11DepthStencilView_Release(renderer->depth_stencil_view);
             renderer->render_target_view = 0;
         }
-
 
         if (client_area.width != 0 && client_area.height != 0)
         {
@@ -437,27 +464,27 @@ render_end(R_Context *renderer)
             ID3D11DeviceContext_VSSetShader(renderer->context, renderer->vertex_shader, 0, 0);
 
             D3D11_RECT rect;
-            rect.left   = (LONG)params->clip_rect.x0;
-            rect.top    = (LONG)params->clip_rect.y0;
-            rect.right  = (LONG)params->clip_rect.x1;
-            rect.bottom = (LONG)params->clip_rect.y1;
+            rect.left   = (LONG)params->clip_rect->rect.x0;
+            rect.top    = (LONG)params->clip_rect->rect.y0;
+            rect.right  = (LONG)params->clip_rect->rect.x1;
+            rect.bottom = (LONG)params->clip_rect->rect.y1;
 
             // NOTE(hampus): Rasterizer Stage
             ID3D11DeviceContext_RSSetViewports(renderer->context, 1, &viewport);
             ID3D11DeviceContext_RSSetState(renderer->context, renderer->rasterizer_state);
             ID3D11DeviceContext_RSSetScissorRects(renderer->context, 1, &rect);
 
+            ID3D11ShaderResourceView *texture_view = ptr_from_int(batch->params.texture.u64[0]);
+
             // NOTE(hampus): Pixel Shader
             ID3D11DeviceContext_PSSetSamplers(renderer->context, 0, 1, &renderer->sampler);
-            ID3D11DeviceContext_PSSetShaderResources(renderer->context, 0, 1, &renderer->texture_view);
+            ID3D11DeviceContext_PSSetShaderResources(renderer->context, 0, 1, &texture_view);
             ID3D11DeviceContext_PSSetShader(renderer->context, renderer->pixel_shader, 0, 0);
 
             // NOTE(hampus): Output Merger
             ID3D11DeviceContext_OMSetBlendState(renderer->context, renderer->blend_state, 0, ~0U);
             ID3D11DeviceContext_OMSetDepthStencilState(renderer->context, renderer->depth_state, 0);
             ID3D11DeviceContext_OMSetRenderTargets(renderer->context, 1, &renderer->render_target_view, renderer->depth_stencil_view);
-
-            // NOTE(hampus): Set scissor rect
 
             // NOTE(hampus): Draw
             assert(batch->instance_count <= U32_MAX);
@@ -488,39 +515,75 @@ render_end(R_Context *renderer)
     memory_zero_struct(&renderer->render_stats[0]);
     renderer->batch_list.first = 0;
     renderer->batch_list.last  = 0;
-}
-
-internal B32
-d3d11_clip_rect_match_with_top(R_Context *renderer, RectF32 rect)
-{
-    B32 result;
-    RectF32 top = d3d11_top_clip(renderer);
-    result = memory_match((U8 *)&rect, (U8 *)&top, sizeof(RectF32));
-
-    return(result);
+    renderer->batch_list.batch_count  = 0;
 }
 
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
+    if (params->slice.texture.u64[0] == 0)
+    {
+        params->slice.texture = renderer->white_texture;
+    }
     D3D11_BatchList *batch_list = &renderer->batch_list;
     D3D11_Batch *batch = batch_list->last;
 
-    if (batch->instance_count == D3D11_BATCH_SIZE ||
-        !d3d11_clip_rect_match_with_top(renderer, batch->params.clip_rect))
-    {
+    R_RectInstance *instance = &render_rect_instance_null;
+
+	// NOTE(simon): Account for softness.
+	RectF32 expanded_area = rectf32(
+                                    v2f32_sub_f32(min, params->softness),
+                                    v2f32_add_f32(max, params->softness)
+                                    );
+
+	if (!rectf32_overlaps(expanded_area, d3d11_top_clip(renderer)->rect))
+	{
+		return(instance);
+	}
+
+	B32 is_different_clip   = (batch->params.clip_rect != renderer->clip_rect_stack.first);
+	B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
+	B32 inside_batch_clip   = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
+	if (is_different_clip && !(inside_current_clip && inside_batch_clip))
+	{
           batch = 0;
+	}
+
+    if (params->slice.texture.u64[0] != renderer->white_texture.u64[0])
+    {
+        if (batch->params.texture.u64[0] != renderer->white_texture.u64[0])
+        {
+            if (batch->params.texture.u64[0] != params->slice.texture.u64[0])
+            {
+                batch = 0;
+            }
+        }
+        else
+        {
+            batch->params.texture = params->slice.texture;
+        }
+    }
+
+    if (batch)
+    {
+        if (batch->instance_count >= D3D11_BATCH_SIZE)
+        {
+            batch = 0;
+        }
     }
 
     if (!batch)
     {
-         batch = d3d11_push_batch(renderer);
+        batch = d3d11_push_batch(renderer);
+        batch->params.texture = params->slice.texture;
     }
 
-    R_RectInstance *instance = batch->instances + batch->instance_count;
+    instance = batch->instances + batch->instance_count;
 
     instance->min = min;
     instance->max = max;
+    instance->min_uv = params->slice.region.min;
+    instance->max_uv = params->slice.region.max;
     instance->colors[0] = params->color;
     instance->colors[1] = params->color;
     instance->colors[2] = params->color;
@@ -531,6 +594,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
     instance->radies[3] = params->radius;
     instance->softness = params->softness;
     instance->border_thickness = params->border_thickness;
+    instance->emit_texture = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
 
     batch->instance_count++;
 
@@ -546,7 +610,7 @@ render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_pare
     RectF32 rect = {min, max};
     if (clip_to_parent)
     {
-        RectF32 top_clip_rect = d3d11_top_clip(renderer);
+        RectF32 top_clip_rect = d3d11_top_clip(renderer)->rect;
         rect.x0 = f32_clamp(top_clip_rect.x0, rect.x0, top_clip_rect.x1);
         rect.y0 = f32_clamp(top_clip_rect.y0, rect.y0, top_clip_rect.y1);
         rect.x1 = f32_clamp(top_clip_rect.x0, rect.x1, top_clip_rect.x1);
@@ -567,4 +631,82 @@ internal R_RenderStats
 render_get_stats(R_Context *renderer)
 {
     return(renderer->render_stats[1]);
+}
+
+internal R_Texture
+render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
+{
+    R_Texture result = {0};
+    Str8 file  = {0};
+    Arena_Temporary scratch = arena_get_scratch(0, 0);
+    if (os_file_read(scratch.arena, path, &file))
+    {
+        S32 width, height, channels;
+        // NOTE(hampus): We only want images with 4 components, RGBA
+        S32 req_components = 4;
+        assert(file.size <= U32_MAX);
+        Void *memory = stbi_load_from_memory(file.data, (U32)file.size, &width, &height, &channels, req_components);
+        if (memory)
+        {
+            if (width && height)
+            {
+                 DXGI_FORMAT d3d11_format = {0};
+                switch (format)
+                {
+                    case R_TextureFormat_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+                    case R_TextureFormat_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+                    invalid_case;
+                }
+                D3D11_TEXTURE2D_DESC desc =
+                {
+                    .Width = width,
+                    .Height = height,
+                    .MipLevels = 1,
+                    .ArraySize = 1,
+                    .Format = d3d11_format,
+                    .SampleDesc = { 1, 0 },
+                    .Usage = D3D11_USAGE_IMMUTABLE,
+                    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+                };
+
+                D3D11_SUBRESOURCE_DATA data =
+                {
+                    .pSysMem = memory,
+                    .SysMemPitch = width * sizeof(U32),
+                };
+
+                ID3D11Texture2D *texture;
+                ID3D11ShaderResourceView *texture_view;
+                ID3D11Device_CreateTexture2D(renderer->device, &desc, &data, &texture);
+                ID3D11Device_CreateShaderResourceView(renderer->device, (ID3D11Resource*)texture, 0, &texture_view);
+                ID3D11Texture2D_Release(texture);
+
+                result.u64[0] = int_from_ptr(texture_view);
+
+                stbi_image_free(memory);
+            }
+            else
+            {
+            // TODO(hampus): Logging
+            }
+        }
+        else
+        {
+            // TODO(hampus): Logging
+        }
+    }
+    else
+    {
+        // TODO(hampus): Logging
+    }
+
+                         arena_release_scratch(scratch);
+
+    return(result);
+}
+
+internal Void
+render_destroy_texture(R_Context *renderer, R_Texture texture)
+{
+    // TODO(hampus): How to release texture view?
 }

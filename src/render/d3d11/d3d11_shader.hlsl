@@ -2,10 +2,13 @@ struct VS_INPUT
 {
 	float2 min             : MIN;
 	float2 max             : MAX;
+	float2 min_uv          : MIN_UV;
+	float2 max_uv          : MAX_UV;
 	float4 colors[4]       : COLOR;
 	float4 corner_radius   : CORNER_RADIUS;
 	float softness         : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
+	float emit_texture     : EMIT_TEXTURE;
 	uint vertex_id         : SV_VertexID;
 };
 
@@ -14,10 +17,12 @@ struct PS_INPUT
 	float4 dst_pos         : SV_POSITION;
 	float2 dst_half_size   : DST_HALF_SIZE;
 	float2 dst_center      : DST_CENTER;
+	float2 uv              : UV;
 	float4 color           : COLOR;
 	nointerpolation float4 corner_radius    : CORNER_RADIUS;
 	float edge_softness    : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
+	float emit_texture     : EMIT_TEXTURE;
     float vertex_id        : VERTEX_ID;
 };
 
@@ -40,16 +45,22 @@ PS_INPUT vs(VS_INPUT input)
 
 	float2 dst_half_size = (input.max - input.min) / 2;
 	float2 dst_center = (input.max + input.min) / 2;
-	float2 dst_pos = (vertices[input.vertex_id] * (dst_half_size + input.softness) + dst_center);
+	float2 dst_pos = (vertices[input.vertex_id] * (dst_half_size) + dst_center);
+
+	float2 uv_half_size = (input.max_uv - input.min_uv) / 2;
+	float2 uv_center = (input.max_uv + input.min_uv) / 2;
+	float2 uv_pos = vertices[input.vertex_id] * uv_half_size + uv_center;
 
 	PS_INPUT output;
 	output.dst_pos = mul(uTransform, float4(dst_pos, 0, 1));
 	output.dst_half_size = dst_half_size;
 	output.dst_center = dst_center;
+	output.uv = uv_pos;
 	output.color = input.colors[input.vertex_id];
 	output.corner_radius = input.corner_radius;
 	output.edge_softness = input.softness;
 	output.border_thickness = input.border_thickness;
+	output.emit_texture = input.emit_texture;
 	output.vertex_id = input.vertex_id;
 	return output;
 }
@@ -102,7 +113,13 @@ float4 ps(PS_INPUT input) : SV_TARGET
 		border_factor = inside_f;
 	}
 
-	float4 color = input.color;
+	float4 sample_color = float4(1, 1, 1, 1);
+	if (input.emit_texture < 1)
+	{
+		sample_color = texture0.Sample(sampler0, input.uv);
+	}
+
+	float4 color = input.color * sample_color;
 	color.a *= sdf_factor * border_factor;
 
 	return color;

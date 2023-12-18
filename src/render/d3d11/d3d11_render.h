@@ -9,11 +9,26 @@
 
 #define D3D11_BATCH_SIZE 4096
 
+typedef struct D3D11_ClipRect D3D11_ClipRect;
+struct D3D11_ClipRect
+{
+    D3D11_ClipRect *next;
+    D3D11_ClipRect *prev;
+    RectF32 rect;
+};
+
+typedef struct D3D11_ClipRectStack D3D11_ClipRectStack;
+struct D3D11_ClipRectStack
+{
+    D3D11_ClipRect *first;
+    D3D11_ClipRect *last;
+};
+
 typedef struct D3D11_BatchParams D3D11_BatchParams;
 struct D3D11_BatchParams
 {
-    ID3D11ShaderResourceView *texture;
-    RectF32 clip_rect;
+    R_Texture texture;
+    D3D11_ClipRect *clip_rect;
 };
 
 typedef struct D3D11_Batch D3D11_Batch;
@@ -31,22 +46,7 @@ struct D3D11_BatchList
 {
     D3D11_Batch *first;
     D3D11_Batch *last;
-    U64 count;
-};
-
-typedef struct D3D11_ClipRect D3D11_ClipRect;
-struct D3D11_ClipRect
-{
-    D3D11_ClipRect *next;
-    D3D11_ClipRect *prev;
-    RectF32 rect;
-};
-
-typedef struct D3D11_ClipRectStack D3D11_ClipRectStack;
-struct D3D11_ClipRectStack
-{
-    D3D11_ClipRect *first;
-    D3D11_ClipRect *last;
+    U64 batch_count;
 };
 
 typedef struct R_Context R_Context;
@@ -63,7 +63,7 @@ struct R_Context
 
     D3D11_ClipRectStack clip_rect_stack;
 
-    ID3D11ShaderResourceView *white_texture;
+    R_Texture white_texture;
 
     ID3D11Device        *device;
     ID3D11DeviceContext *context;
@@ -83,8 +83,6 @@ struct R_Context
 
     ID3D11RenderTargetView  *render_target_view;
     ID3D11DepthStencilView  *depth_stencil_view;
-
-    ID3D11ShaderResourceView *texture_view;
 
     DWORD current_width;
     DWORD current_height;
