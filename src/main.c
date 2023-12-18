@@ -88,8 +88,9 @@ os_main(Str8List arguments)
 
 		Vec2F32 mouse = gfx_get_mouse_pos(&gfx);
 
+		render_rect(renderer, v2f32(300, 300), v2f32(600, 370), .border_thickness = 1, .radius = 10, .softness = 1, .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
         render_text(renderer, v2f32(300, 300), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
-        render_text(renderer, v2f32(400, 400), str8_lit("123456789"), font, v4f32(1, 0, 0, 1));
+        render_text(renderer, v2f32(400, 400), str8_lit("123456789_[]()"), font, v4f32(1, 0, 0, 1));
 
 		render_push_clip(renderer, v2f32(0, 0), v2f32(150, 150), false);
 		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to

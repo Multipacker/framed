@@ -173,6 +173,9 @@ render_init(Gfx_Context *gfx)
             {"EMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
                 member_offset(R_RectInstance, emit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
+            {"IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(R_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+
         };
 
         UINT flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
@@ -595,6 +598,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
     instance->softness         = params->softness;
     instance->border_thickness = params->border_thickness;
     instance->emit_texture     = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
+    instance->is_subpixel_text = (F32)params->is_subpixel_text;
 
     batch->instance_count++;
 

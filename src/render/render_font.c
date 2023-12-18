@@ -50,7 +50,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             if (!ft_open_face_error)
             {
                 result = push_struct(arena, R_Font);
-                F32 size = 10;
+                F32 size = 50;
                 B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
                 if (!ft_set_pixel_sizes_error)
                 {
@@ -225,7 +225,8 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
                     v2f32(xpos + width,
                       ypos + height),
                     .slice = glyph->slice,
-                    .color = color);
+                    .color = color,
+                    .is_subpixel_text = true);
         min.x += (glyph->advance_width);
 	}
 }

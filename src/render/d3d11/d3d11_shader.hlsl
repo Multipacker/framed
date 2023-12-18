@@ -9,6 +9,7 @@ struct VS_INPUT
 	float softness         : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
 	float emit_texture     : EMIT_TEXTURE;
+	float is_subpixel_text : IS_SUBPIXEL_TEXT;
 	uint vertex_id         : SV_VertexID;
 };
 
@@ -23,6 +24,7 @@ struct PS_INPUT
 	float edge_softness    : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
 	float emit_texture     : EMIT_TEXTURE;
+	float is_subpixel_text : IS_SUBPIXEL_TEXT;
     float vertex_id        : VERTEX_ID;
 };
 
@@ -62,6 +64,7 @@ PS_INPUT vs(VS_INPUT input)
 	output.border_thickness = input.border_thickness;
 	output.emit_texture = input.emit_texture;
 	output.vertex_id = input.vertex_id;
+	output.is_subpixel_text = input.is_subpixel_text;
 	return output;
 }
 
@@ -129,8 +132,7 @@ ps_out ps(PS_INPUT input)
 
 	ps_out output;
 
-	float is_subpixel_text = 1;
-	if (is_subpixel_text < 1)
+	if (input.is_subpixel_text < 1)
 	{
 		float4 color = input.color * sample_color;
 		color.a *= sdf_factor * border_factor;

@@ -35,6 +35,7 @@ struct R_RectInstance
 	F32     softness;
 	F32     border_thickness;
     F32     emit_texture;
+    F32     is_subpixel_text;
 };
 
 typedef struct R_RenderStats R_RenderStats;
@@ -75,6 +76,7 @@ struct R_RectParams
 	F32            softness;
 	F32            border_thickness;
     R_TextureSlice slice;
+     B32            is_subpixel_text;
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
