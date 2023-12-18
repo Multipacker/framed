@@ -77,7 +77,7 @@ struct R_RectParams
 	F32            softness;
 	F32            border_thickness;
     R_TextureSlice slice;
-     B32            is_subpixel_text;
+    B32            is_subpixel_text;
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
