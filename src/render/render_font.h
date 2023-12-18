@@ -15,8 +15,14 @@ struct R_Font
 {
     R_Glyph glyphs[128];
     F32 size_in_pixels;
-    F32 line_height;
-    Str8 font_name;
+    F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
+    F32 underline_position; // NOTE(hampus): Relative to the baseline
+    F32 max_advance_width;
+    F32 max_ascent;
+    F32 max_descent;
+    B32 has_kerning;
+    Str8 family_name;
+    Str8 style_name;
 };
 
 internal R_Font *render_font_init(Arena *arena, R_Context *renderer, Str8 path);

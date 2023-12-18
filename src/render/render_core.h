@@ -33,6 +33,7 @@ struct R_RectInstance
 	F32     softness;
 	F32     border_thickness;
     F32     emit_texture;
+    F32 a;
 };
 
 typedef struct R_RenderStats R_RenderStats;
@@ -72,7 +73,7 @@ struct R_RectParams
 	F32            radius;
 	F32            softness;
 	F32            border_thickness;
-        R_TextureSlice slice;
+    R_TextureSlice slice;
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
@@ -87,6 +88,7 @@ internal Void render_pop_clip(R_Context *renderer);
 internal R_RenderStats render_get_stats(R_Context *renderer);
 
 internal R_Texture      render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format);
+internal R_Texture      render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_TextureFormat format);
 internal Void           render_destroy_texture(R_Context *renderer, R_Texture texture);
 internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 region);
 internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path, R_TextureFormat format);

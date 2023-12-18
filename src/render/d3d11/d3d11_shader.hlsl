@@ -45,11 +45,11 @@ PS_INPUT vs(VS_INPUT input)
 
 	float2 dst_half_size = (input.max - input.min) / 2;
 	float2 dst_center = (input.max + input.min) / 2;
-	float2 dst_pos = (vertices[input.vertex_id] * (dst_half_size) + dst_center);
+	float2 dst_pos = (vertices[input.vertex_id] * (dst_half_size + input.softness) + dst_center);
 
 	float2 uv_half_size = (input.max_uv - input.min_uv) / 2;
 	float2 uv_center = (input.max_uv + input.min_uv) / 2;
-	float2 uv_pos = vertices[input.vertex_id] * uv_half_size + uv_center;
+	float2 uv_pos = vertices[input.vertex_id] * (uv_half_size * (1 + input.softness / (dst_half_size*2).x)) + uv_center;
 
 	PS_INPUT output;
 	output.dst_pos = mul(uTransform, float4(dst_pos, 0, 1));
@@ -78,6 +78,8 @@ float rounded_rect_sdf(float2 sample_pos,
 
 float4 ps(PS_INPUT input) : SV_TARGET
 {
+	input.uv.x = clamp(input.uv.x, 0, 1);
+	input.uv.y = clamp(input.uv.y, 0, 1);
 	float corner_radius = input.corner_radius[round(input.vertex_id)];
 
 	float2 softness_padding = float2(max(0, input.edge_softness * 2 - 1), max(0, input.edge_softness * 2 - 1));

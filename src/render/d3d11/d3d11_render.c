@@ -335,6 +335,8 @@ d3d11_push_batch(R_Context *renderer)
     dll_push_back(renderer->batch_list.first, renderer->batch_list.last, result);
     result->params.clip_rect = d3d11_top_clip(renderer);
     renderer->batch_list.batch_count++;
+    R_RenderStats *stats = d3d11_get_current_stats(renderer);
+    stats->batch_count++;
     return(result);
 }
 
@@ -489,7 +491,6 @@ render_end(R_Context *renderer)
             // NOTE(hampus): Draw
             assert(batch->instance_count <= U32_MAX);
             ID3D11DeviceContext_DrawInstanced(renderer->context, 4, (U32)batch->instance_count, 0, 0);
-            stats->batch_count++;
         }
     }
 
@@ -580,21 +581,21 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
     instance = batch->instances + batch->instance_count;
 
-    instance->min = min;
-    instance->max = max;
-    instance->min_uv = params->slice.region.min;
-    instance->max_uv = params->slice.region.max;
-    instance->colors[0] = params->color;
-    instance->colors[1] = params->color;
-    instance->colors[2] = params->color;
-    instance->colors[3] = params->color;
-    instance->radies[0] = params->radius;
-    instance->radies[1] = params->radius;
-    instance->radies[2] = params->radius;
-    instance->radies[3] = params->radius;
-    instance->softness = params->softness;
+    instance->min              = min;
+    instance->max              = max;
+    instance->min_uv           = params->slice.region.min;
+    instance->max_uv           = params->slice.region.max;
+    instance->colors[0]        = params->color;
+    instance->colors[1]        = params->color;
+    instance->colors[2]        = params->color;
+    instance->colors[3]        = params->color;
+    instance->radies[0]        = params->radius;
+    instance->radies[1]        = params->radius;
+    instance->radies[2]        = params->radius;
+    instance->radies[3]        = params->radius;
+    instance->softness         = params->softness;
     instance->border_thickness = params->border_thickness;
-    instance->emit_texture = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
+    instance->emit_texture     = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
 
     batch->instance_count++;
 
@@ -634,6 +635,45 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
+render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, S32 height, R_TextureFormat format)
+{
+    R_Texture result = {0};
+    DXGI_FORMAT d3d11_format = {0};
+    switch (format)
+    {
+        case R_TextureFormat_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case R_TextureFormat_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        invalid_case;
+    }
+    D3D11_TEXTURE2D_DESC desc =
+    {
+        .Width = width,
+        .Height = height,
+        .MipLevels = 1,
+        .ArraySize = 1,
+        .Format = d3d11_format,
+        .SampleDesc = { 1, 0 },
+        .Usage = D3D11_USAGE_IMMUTABLE,
+        .BindFlags = D3D11_BIND_SHADER_RESOURCE,
+    };
+
+    D3D11_SUBRESOURCE_DATA data =
+    {
+        .pSysMem = memory,
+        .SysMemPitch = width * sizeof(U32),
+    };
+
+    ID3D11Texture2D *texture;
+    ID3D11ShaderResourceView *texture_view;
+    ID3D11Device_CreateTexture2D(renderer->device, &desc, &data, &texture);
+    ID3D11Device_CreateShaderResourceView(renderer->device, (ID3D11Resource*)texture, 0, &texture_view);
+    ID3D11Texture2D_Release(texture);
+
+    result.u64[0] = int_from_ptr(texture_view);
+    return(result);
+}
+
+internal R_Texture
 render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 {
     R_Texture result = {0};
@@ -650,39 +690,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
         {
             if (width && height)
             {
-                 DXGI_FORMAT d3d11_format = {0};
-                switch (format)
-                {
-                    case R_TextureFormat_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-                    case R_TextureFormat_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-                    invalid_case;
-                }
-                D3D11_TEXTURE2D_DESC desc =
-                {
-                    .Width = width,
-                    .Height = height,
-                    .MipLevels = 1,
-                    .ArraySize = 1,
-                    .Format = d3d11_format,
-                    .SampleDesc = { 1, 0 },
-                    .Usage = D3D11_USAGE_IMMUTABLE,
-                    .BindFlags = D3D11_BIND_SHADER_RESOURCE,
-                };
-
-                D3D11_SUBRESOURCE_DATA data =
-                {
-                    .pSysMem = memory,
-                    .SysMemPitch = width * sizeof(U32),
-                };
-
-                ID3D11Texture2D *texture;
-                ID3D11ShaderResourceView *texture_view;
-                ID3D11Device_CreateTexture2D(renderer->device, &desc, &data, &texture);
-                ID3D11Device_CreateShaderResourceView(renderer->device, (ID3D11Resource*)texture, 0, &texture_view);
-                ID3D11Texture2D_Release(texture);
-
-                result.u64[0] = int_from_ptr(texture_view);
-
+                result = render_create_texture_from_bitmap(renderer, memory, width, height, format);
                 stbi_image_free(memory);
             }
             else

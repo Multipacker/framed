@@ -30,6 +30,9 @@ os_main(Str8List arguments)
 
     R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_TextureFormat_sRGB);
 
+    Arena *perm_arena = arena_create();
+    R_Font *font = render_font_init(perm_arena, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
+
     B32 running = true;
 	while (running)
 	{
@@ -85,20 +88,26 @@ os_main(Str8List arguments)
 
 		Vec2F32 mouse = gfx_get_mouse_pos(&gfx);
 
+        render_text(renderer, v2f32(300, 300), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
+        render_text(renderer, v2f32(400, 400), str8_lit("123456789"), font, v4f32(1, 0, 0, 1));
+
 		render_push_clip(renderer, v2f32(0, 0), v2f32(150, 150), false);
 		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to
 		// show, false should give a 100x100.
-		render_rect(renderer, v2f32(10, 10), v2f32(20, 20));
+		render_rect(renderer, v2f32(10, 10), v2f32(20, 20), .softness = 1);
+
+		render_rect(renderer, v2f32(64, 64), v2f32(128, 128), .slice = texture, .radius = 10, .softness = 1);
 
 		render_push_clip(renderer, v2f32(50, 50), v2f32(150, 150), false);
 
 		render_rect(renderer, v2f32_sub_f32(mouse, 30.0f), v2f32_add_f32(mouse, 30.0f));
 
 		R_RenderStats stats = render_get_stats(renderer);
-		LOG("Stats:\n");
+		#if 0
+        LOG("Stats:\n");
 		LOG("\tRect count:  %"PRIU64"\n", stats.rect_count);
 		LOG("\tBatch count: %"PRIU64"\n", stats.batch_count);
-
+        #endif
         render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
