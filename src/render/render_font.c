@@ -1,6 +1,5 @@
 // TODO(hampus):
    // [x] - Subpixel rendering
-// [ ] - Premultiplied alpha
 // [ ] - Kerning
 // [ ] - Underline & strikethrough
 // [ ] - Font atlas & cache

@@ -35,7 +35,6 @@ struct R_RectInstance
 	F32     softness;
 	F32     border_thickness;
     F32     emit_texture;
-    F32 a;
 };
 
 typedef struct R_RenderStats R_RenderStats;
