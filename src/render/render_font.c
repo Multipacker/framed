@@ -1,5 +1,5 @@
 /* TODO(hampus):
-- [ ] Subpixel rendering
+- [x] Subpixel rendering
  - [ ] Premultiplied alpha
 - [ ] Kerning
 - [ ] Underline & strikethrough
@@ -13,6 +13,17 @@
 
 #define R_FONT_USE_SUBPIXEL_RENDERING 1
 
+internal Str8
+render_get_ft_error_message(FT_Error err)
+{
+#undef FTERRORS_H_
+#define FT_ERRORDEF( e, v, s )  case e: return(str8_lit(s));
+#define FT_ERROR_START_LIST     switch (err) {
+#define FT_ERROR_END_LIST       }
+#include FT_ERRORS_H
+    return(str8_lit("(Unknown error)"));
+}
+
 internal R_Font *
 render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
 {
@@ -21,6 +32,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
 
     FT_Library ft;
     // NOTE(hampus): 0 indicates a success in freetype, otherwise error
+    Str8 error;
     B32 ft_init_error = FT_Init_FreeType(&ft);
         if (!ft_init_error)
     {
@@ -41,7 +53,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             {
                 result = push_struct(arena, R_Font);
                 F32 size = 10;
-                B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
+                B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(0, 0, (U32)size);
                 if (!ft_set_pixel_sizes_error)
                 {
                     F32 pixels_per_EM = size / (F32)face->units_per_EM;
@@ -52,8 +64,8 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                     result->max_ascent          = face->ascender           * pixels_per_EM;
                     result->max_descent         = face->descender          * pixels_per_EM;
                     result->has_kerning         = FT_HAS_KERNING(face);
-                    result->family_name         = str8_pushf(arena, "%s", face->family_name);
-                    result->style_name          = str8_pushf(arena, "%s", face->style_name);
+                    //result->family_name         = str8_pushf(arena, "%s", face->family_name);
+                    //result->style_name          = str8_pushf(arena, "%s", face->style_name);
                     result->size_in_pixels      = size;
                     for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
                     {
@@ -81,10 +93,11 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                 S32 bearing_left = face->glyph->bitmap_left;
                                 S32 bearing_top = face->glyph->bitmap_top;
 #if R_FONT_USE_SUBPIXEL_RENDERING
+                                // NOTE(hampus): We now have 3 "pixels" for each value.
                                 S32 bitmap_width = face->glyph->bitmap.width / 3;
 
                                 // TODO(hampus): SIMD
-                                // NOTE(hampus): Convert from 8 bit to 32 bit
+                                // NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
                                 U8 *new_texture_data = push_array(arena, U8, (bitmap_height * bitmap_width * 4));
                                 U8 *dst = new_texture_data;
                                 U8 *src = face->glyph->bitmap.buffer;
@@ -141,17 +154,20 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                             else
                             {
                                 // TODO(hampus): Logging
+                            error = render_get_ft_error_message(ft_render_glyph_error);
                             }
                         }
                         else
                         {
                             // TODO(hampus): Logging
+                            error = render_get_ft_error_message(ft_load_glyph_error);
                         }
                     }
                 }
                 else
                 {
                     // TODO(hampus): Logging
+                    error = render_get_ft_error_message(ft_set_pixel_sizes_error);
                 }
 
                 FT_Done_Face(face);
@@ -159,6 +175,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             else
             {
                 // TODO(hampus): Logging
+                error = render_get_ft_error_message(ft_open_face_error);
             }
         }
         else
@@ -171,6 +188,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
     else
     {
         // TODO(hampus): Logging
+        error = render_get_ft_error_message(ft_init_error);
     }
 
     arena_release_scratch(scratch);
