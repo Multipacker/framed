@@ -76,7 +76,13 @@ float rounded_rect_sdf(float2 sample_pos,
 	return min(max(d2.x, d2.y), 0.0) + length(max(d2, 0.0)) - r;
 }
 
-float4 ps(PS_INPUT input) : SV_TARGET
+struct ps_out
+{
+	float4 color0 : SV_TARGET0;
+	float4 color1 : SV_TARGET1;
+};
+
+ps_out ps(PS_INPUT input)
 {
 	input.uv.x = clamp(input.uv.x, 0, 1);
 	input.uv.y = clamp(input.uv.y, 0, 1);
@@ -121,8 +127,21 @@ float4 ps(PS_INPUT input) : SV_TARGET
 		sample_color = texture0.Sample(sampler0, input.uv);
 	}
 
-	float4 color = input.color * sample_color;
-	color.a *= sdf_factor * border_factor;
+	ps_out output;
 
-	return color;
+	float is_subpixel_text = 1;
+	if is_subpixel_text < 1)
+	{
+		float4 color = input.color * sample_color;
+		color.a *= sdf_factor * border_factor;
+		output.color0 = color;
+		output.color1 = float4(color.a, color.a, color.a, color.a);
+	}
+	else
+	{
+		output.color0 = float4(input.color.rgb * input.color.a, input.color.a);
+		output.color1 = float4(sample_color.rgb, input.color.a);
+	}
+
+	return output;
 }

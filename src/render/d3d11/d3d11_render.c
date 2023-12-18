@@ -285,8 +285,8 @@ render_init(Gfx_Context *gfx)
             .RenderTarget[0] =
             {
                 .BlendEnable = TRUE,
-                .SrcBlend = D3D11_BLEND_SRC_ALPHA,
-                .DestBlend = D3D11_BLEND_INV_SRC_ALPHA,
+                .SrcBlend = D3D11_BLEND_SRC1_COLOR,
+                .DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
                 .BlendOp = D3D11_BLEND_OP_ADD,
                 .SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA,
                 .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
@@ -326,7 +326,6 @@ render_init(Gfx_Context *gfx)
 
     return(result);
 }
-
 internal D3D11_Batch *
 d3d11_push_batch(R_Context *renderer)
 {

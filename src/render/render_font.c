@@ -11,6 +11,8 @@
 #include "freetype/freetype.h"
 #define internal static
 
+#define R_FONT_USE_SUBPIXEL_RENDERING 1
+
 internal R_Font *
 render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
 {
@@ -53,20 +55,65 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                     result->family_name         = str8_pushf(arena, "%s", face->family_name);
                     result->style_name          = str8_pushf(arena, "%s", face->style_name);
                     result->size_in_pixels      = size;
-
-                    for (U32 glyph_index = 32; glyph_index < 128; ++glyph_index)
+                    for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
                     {
                         R_Glyph *glyph = result->glyphs + glyph_index;
-                        B32 ft_load_glyph_error = FT_Load_Char(face, glyph_index, FT_LOAD_DEFAULT);
+
+                        FT_Int32 ft_load_flags = 0;
+#if R_FONT_USE_SUBPIXEL_RENDERING
+                        ft_load_flags |= FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
+#else
+                        ft_load_flags |= FT_LOAD_DEFAULT;
+                        #endif
+                        B32 ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
                         if (!ft_load_glyph_error)
                         {
-                            B32 ft_render_glyph_error = FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
+                            FT_Int32 ft_render_flags = 0;
+#if R_FONT_USE_SUBPIXEL_RENDERING
+                            ft_render_flags |= FT_RENDER_MODE_LCD;
+#else
+                            ft_render_flags |= FT_RENDER_MODE_NORMAL;
+#endif
+                            B32 ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
                             if (!ft_render_glyph_error)
                             {
-                                S32 bitmap_width = face->glyph->bitmap.width;
                                 S32 bitmap_height = face->glyph->bitmap.rows;
                                 S32 bearing_left = face->glyph->bitmap_left;
                                 S32 bearing_top = face->glyph->bitmap_top;
+#if R_FONT_USE_SUBPIXEL_RENDERING
+                                S32 bitmap_width = face->glyph->bitmap.width / 3;
+
+                                // TODO(hampus): SIMD
+                                // NOTE(hampus): Convert from 8 bit to 32 bit
+                                U8 *new_texture_data = push_array(arena, U8, (bitmap_height * bitmap_width * 4));
+                                U8 *dst = new_texture_data;
+                                U8 *src = face->glyph->bitmap.buffer;
+                                for (S32 y = 0; y < bitmap_height; ++y)
+                                {
+                                    U8 *dst_row = dst;
+                                    U8 *src_row = src;
+                                    U8 *test2 = (U8 *)src_row;
+                                    for (S32 x = 0; x < bitmap_width; ++x)
+                                    {
+                                        U8 r = *test2++;
+                                        U8 g = *test2++;
+                                        U8 b = *test2++;
+                                        *dst_row++ = r;
+                                        *dst_row++ = g;
+                                        *dst_row++ = b;
+                                        *dst_row++ = 0xff;
+                                    }
+
+                                    dst += (S32)(bitmap_width * 4);
+
+                                    // NOTE(hampus): Freetype actually adds padding
+                                    // so the pitch is the correct width to increment
+                                    // by.
+                                    src += (S32)(face->glyph->bitmap.pitch);
+                                }
+
+#else
+                                S32 bitmap_width = face->glyph->bitmap.width;
 
                                 // TODO(hampus): SIMD
                                 // NOTE(hampus): Convert from 8 bit to 32 bit
@@ -82,7 +129,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                     (0xff << 16) |
                                     (val  << 24);
                                 }
-
+                                #endif
                                 glyph->slice.texture = render_create_texture_from_bitmap(renderer, (U8 *)new_texture_data, bitmap_width, bitmap_height, R_TextureFormat_Linear);
                                 glyph->slice.region.max = v2f32(1, 1);
                                 glyph->size_in_pixels = v2f32((F32)bitmap_width, (F32)bitmap_height);
