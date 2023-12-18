@@ -1,3 +1,4 @@
 /build/
 **/*.swp
 /project.4coder
+**/*.h.gch
