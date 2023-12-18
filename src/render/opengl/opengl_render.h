@@ -17,6 +17,7 @@ struct OpenGL_Batch
 	OpenGL_Batch *prev;
 
 	OpenGL_ClipNode *clip_node;
+	R_Texture texture;
 
 	U32 size;
 	R_RectInstance rects[OPENGL_BATCH_SIZE];
@@ -47,6 +48,7 @@ struct R_Context
 	GLuint vbo;
 	GLuint vao;
 	GLint uniform_projection_location;
+	GLint uniform_sampler_location;
 
 	OpenGL_ClipNode *clip_stack;
 };

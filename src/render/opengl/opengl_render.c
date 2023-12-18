@@ -120,6 +120,7 @@ render_init(Gfx_Context *gfx)
 	opengl_vertex_array_instance_attribute(renderer->vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, emit_texture), 0);
 
 	glVertexArrayVertexBuffer(renderer->vao, 0, renderer->vbo, 0, sizeof(R_RectInstance));
 
@@ -130,6 +131,7 @@ render_init(Gfx_Context *gfx)
 	renderer->program = opengl_create_program(shaders, array_count(shaders));
 
 	renderer->uniform_projection_location = glGetUniformLocation(renderer->program, "uniform_projection");
+	renderer->uniform_sampler_location    = glGetUniformLocation(renderer->program, "uniform_sampler");
 
 	// NOTE(simon): We only need to set these once as we don't change them anywhere
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -163,6 +165,8 @@ render_end(R_Context *renderer)
 	glClear(GL_COLOR_BUFFER_BIT);
 	glEnable(GL_SCISSOR_TEST);
 
+	glProgramUniform1i(renderer->program, renderer->uniform_sampler_location, 0);
+
 	for (OpenGL_Batch *batch = renderer->batches.first; batch; batch = batch->next)
 	{
 		glNamedBufferSubData(renderer->vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
@@ -176,6 +180,12 @@ render_end(R_Context *renderer)
 			(GLsizei) (clip_rect.max.x - clip_rect.min.x),
 			(GLsizei) (clip_rect.max.y - clip_rect.min.y)
 		);
+
+		if (batch->texture.u64[0])
+		{
+			GLuint opengl_texture = (GLuint) batch->texture.u64[0];
+			glBindTextureUnit(0, opengl_texture);
+		}
 
 		glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->size);
 	}
@@ -201,8 +211,9 @@ opengl_create_batch(R_Context *renderer)
 	// parameters we care about.
 	OpenGL_Batch *result = push_struct(renderer->frame_arena, OpenGL_Batch);
 
-	result->size = 0;
+	result->size      = 0;
 	result->clip_node = renderer->clip_stack;
+	result->texture   = (R_Texture) { 0 };
 	dll_push_back(renderer->batches.first, renderer->batches.last, result);
 	++renderer->batches.batch_count;
 
@@ -245,6 +256,21 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 		batch = opengl_create_batch(renderer);
 	}
 
+	if (
+		batch->texture.u64[0] &&
+		params->slice.texture.u64[0] &&
+		batch->texture.u64[0] != params->slice.texture.u64[0]
+	)
+	{
+		batch = opengl_create_batch(renderer);
+	}
+
+	// NOTE(simon): The batch either has the same texture, or none at all.
+	if (params->slice.texture.u64[0])
+	{
+		batch->texture = params->slice.texture;
+	}
+
 	result = &batch->rects[batch->size++];
 	result->min              = min;
 	result->max              = max;
@@ -258,6 +284,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	result->radies[3]        = params->radius;
 	result->softness         = params->softness;
 	result->border_thickness = params->border_thickness;
+	result->emit_texture     = (params->slice.texture.u64[0] == 0);
 
 	++renderer->batches.rect_count;
 
@@ -342,6 +369,10 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 				invalid_case;
 			}
 			glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
+			glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+			glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+			glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTextureSubImage2D(
 				texture,
 				0,
@@ -379,10 +410,9 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S3
 internal Void
 render_destroy_texture(R_Context *renderer, R_Texture texture)
 {
-	GLuint opengl_texture = (GLuint) texture.u64[0];
-
-	if (opengl_texture)
+	if (texture.u64[0])
 	{
+		GLuint opengl_texture = (GLuint) texture.u64[0];
 		glDeleteTextures(1, &opengl_texture);
 	}
 }

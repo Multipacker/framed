@@ -1,18 +1,21 @@
 #version 450 core
 
 in vec2  vert_pos;
+in vec2  vert_uv;
 in vec4  vert_color;
 in float vert_softness;
 in float vert_border_thickness;
 in float vertex_id;
 in flat vec4 vert_radies;
+in flat float vert_emit_texture;
 // TODO(simon): See if we can avoid passing these
 in flat vec2 vert_center;
 in flat vec2 vert_half_size;
 
 out vec4 frag_color;
 
-uniform mat4 uniform_projection;
+uniform mat4      uniform_projection;
+uniform sampler2D uniform_sampler;
 
 float
 rounded_rect_sdf(vec2 sample_pos, vec2 rect_center, vec2 rect_half_size, float radius)
@@ -65,5 +68,13 @@ main()
 		border_factor = inside_factor;
 	}
 
-	frag_color = vec4(vert_color.rgb, vert_color.a * sdf_factor * border_factor);
+	vec4 sample_color = vec4(1.0);
+	if (vert_emit_texture < 1)
+	{
+		sample_color = texture(uniform_sampler, vert_uv);
+	}
+
+	vec4 color = sample_color * vert_color;
+
+	frag_color = vec4(color.rgb, color.a * sdf_factor * border_factor);
 }
