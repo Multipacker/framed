@@ -52,7 +52,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             {
                 result = push_struct(arena, R_Font);
                 F32 size = 10;
-                B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(0, 0, (U32)size);
+                B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
                 if (!ft_set_pixel_sizes_error)
                 {
                     F32 pixels_per_EM = size / (F32)face->units_per_EM;
@@ -234,6 +234,12 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 internal Vec2F32
 render_measure_text(R_Font *font, Str8 text)
 {
-	Vec2F32 result = { 0 };
+    Vec2F32 result = {0};
+    for (U64 i = 0; i < text.size; ++i)
+	{
+		R_Glyph *glyph = font->glyphs + text.data[i];
+        result.x += (glyph->advance_width);
+	}
+    result.y = font->line_height;
 	return(result);
 }
