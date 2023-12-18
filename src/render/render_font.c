@@ -54,7 +54,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                     result->style_name          = str8_pushf(arena, "%s", face->style_name);
                     result->size_in_pixels      = size;
 
-                    for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
+                    for (U32 glyph_index = 32; glyph_index < 128; ++glyph_index)
                     {
                         R_Glyph *glyph = result->glyphs + glyph_index;
                         B32 ft_load_glyph_error = FT_Load_Char(face, glyph_index, FT_LOAD_DEFAULT);
@@ -69,6 +69,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                 S32 bearing_top = face->glyph->bitmap_top;
 
                                 // TODO(hampus): SIMD
+                                // NOTE(hampus): Convert from 8 bit to 32 bit
                                 U8 *new_texture_data = push_array(arena, U8, (bitmap_height * bitmap_width * 4));
                                 U32 *dst = (U32 *)new_texture_data;
                                 U8 *src = face->glyph->bitmap.buffer;
@@ -79,7 +80,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                     (0xff <<  0) |
                                     (0xff <<  8) |
                                     (0xff << 16) |
-                                    (val << 24);
+                                    (val  << 24);
                                 }
 
                                 glyph->slice.texture = render_create_texture_from_bitmap(renderer, (U8 *)new_texture_data, bitmap_width, bitmap_height, R_TextureFormat_Linear);
@@ -87,6 +88,8 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                 glyph->size_in_pixels = v2f32((F32)bitmap_width, (F32)bitmap_height);
                                 glyph->bearing_in_pixels = v2f32((F32)bearing_left, (F32)bearing_top);
                                 glyph->advance_width = (F32)(face->glyph->advance.x >> 6);
+
+                                // FT_Done_Glyph(face->glyph);
                             }
                             else
                             {
@@ -131,6 +134,7 @@ internal R_Font *
 render_font_init_stb_truetype(Arena *arena, R_Context *renderer, Str8 path)
 {
     R_Font *result = 0;
+
     return(result);
 }
 
