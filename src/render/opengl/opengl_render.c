@@ -300,7 +300,7 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
-render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
+render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 
@@ -321,26 +321,33 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 		if (pixels)
 		{
 			// TODO(simon): Add support for greyscale and greyscale + alpha.
-			GLenum format = 0;
+			GLenum byte_layout = 0;
 			switch (channel_count)
 			{
 				case 1: assert(true); break;
 				case 2: assert(true); break;
-				case 3: format = GL_RGB;  break;
-				case 4: format = GL_RGBA; break;
+				case 3: byte_layout = GL_RGB;  break;
+				case 4: byte_layout = GL_RGBA; break;
 				invalid_case;
 			}
 
 			GLuint texture = 0;
 			glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-			// TODO(simon): We might want, GL_SRGB8_ALPHA8 instead of GL_RGBA8
+
+			GLenum internalformat = 0;
+			switch (color_space)
+			{
+				case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
+				case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
+				invalid_case;
+			}
 			glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
 			glTextureSubImage2D(
 				texture,
 				0,
 				0, 0,
 				(GLsizei) width, (GLsizei) height,
-				format, GL_UNSIGNED_BYTE,
+				byte_layout, GL_UNSIGNED_BYTE,
 				(const void *) pixels
 			);
 
@@ -363,7 +370,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 }
 
 internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_TextureFormat format)
+render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 	return(result);
