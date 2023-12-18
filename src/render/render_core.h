@@ -8,6 +8,7 @@
 // [ ] - Icons
 // [ ] - Push/Pop matrices
 // [ ] - Premultiplied alpha
+// [ ] - Nearest neighbor/Bilinear filtering
 
 typedef struct R_Texture R_Texture;
 struct R_Texture

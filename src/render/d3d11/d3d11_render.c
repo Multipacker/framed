@@ -288,12 +288,21 @@ render_init(Gfx_Context *gfx)
             .RenderTarget[0] =
             {
                 .BlendEnable = TRUE,
+
+                // NOTE(hampus): For subpixel text rendering the rgb values are acting
+                // as an alpha value for each component. Therefore we specify another
+                // color source which will be these alpha values.
+
+                // NOTE(hampus): dst.rgb = dst.rgb * (1 - weights.rgb) + src.rgb * (weights.rgb)
                 .SrcBlend = D3D11_BLEND_SRC1_COLOR,
                 .DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
                 .BlendOp = D3D11_BLEND_OP_ADD,
+
+                // NOTE(hampus): dst.a = dst.a * (1 - color.a) + src.a * (color.a)
                 .SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA,
                 .DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
                 .BlendOpAlpha = D3D11_BLEND_OP_ADD,
+
                 .RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
             },
         };
@@ -426,7 +435,7 @@ render_end(R_Context *renderer)
         };
 
             R_RenderStats *stats = d3d11_get_current_stats(renderer);
-        Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
+        Vec4F32 bg_color = linear_from_srgb(v4f32(0, 0, 0, 1.f));
 
         FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
         ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
