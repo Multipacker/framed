@@ -648,14 +648,14 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, S32 height, R_TextureFormat format)
+render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, S32 height, R_ColorSpace color_space)
 {
     R_Texture result = {0};
     DXGI_FORMAT d3d11_format = {0};
-    switch (format)
+    switch (color_space)
     {
-        case R_TextureFormat_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-        case R_TextureFormat_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+        case R_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+        case R_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
         invalid_case;
     }
 
@@ -688,7 +688,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, 
 }
 
 internal R_Texture
-render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
+render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 {
     R_Texture result = {0};
     Str8 file  = {0};
@@ -704,7 +704,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
         {
             if (width && height)
             {
-                result = render_create_texture_from_bitmap(renderer, memory, width, height, format);
+                result = render_create_texture_from_bitmap(renderer, memory, width, height, color_space);
                 stbi_image_free(memory);
             }
             else

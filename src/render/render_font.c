@@ -145,7 +145,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                     (val  << 24);
                                 }
                                 #endif
-                                glyph->slice.texture = render_create_texture_from_bitmap(renderer, (U8 *)new_texture_data, bitmap_width, bitmap_height, R_TextureFormat_Linear);
+                                glyph->slice.texture = render_create_texture_from_bitmap(renderer, (U8 *)new_texture_data, bitmap_width, bitmap_height, R_ColorSpace_Linear);
                                 glyph->slice.region.max = v2f32(1, 1);
                                 glyph->size_in_pixels = v2f32((F32)bitmap_width, (F32)bitmap_height);
                                 glyph->bearing_in_pixels = v2f32((F32)bearing_left, (F32)bearing_top);
