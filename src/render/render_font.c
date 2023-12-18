@@ -31,7 +31,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
     FT_Library ft;
     // NOTE(hampus): 0 indicates a success in freetype, otherwise error
     Str8 error;
-    B32 ft_init_error = FT_Init_FreeType(&ft);
+    FT_Error ft_init_error = FT_Init_FreeType(&ft);
         if (!ft_init_error)
     {
         S32 major_version, minor_version, patch;
@@ -46,12 +46,12 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             assert(file_read_result.size <= U32_MAX);
             open_args.memory_size = (U32)file_read_result.size;
             FT_Face face;
-             B32 ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
+			FT_Error ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
             if (!ft_open_face_error)
             {
                 result = push_struct(arena, R_Font);
                 F32 size = 50;
-                B32 ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
+                FT_Error ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
                 if (!ft_set_pixel_sizes_error)
                 {
                     F32 pixels_per_EM = size / (F32)face->units_per_EM;
@@ -75,28 +75,28 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
 #else
                         ft_load_flags |= FT_LOAD_DEFAULT;
                         #endif
-                        B32 ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
+                        FT_Error ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
                         if (!ft_load_glyph_error)
                         {
-                            FT_Int32 ft_render_flags = 0;
+                            FT_Render_Mode ft_render_flags = 0;
 #if R_FONT_USE_SUBPIXEL_RENDERING
                             ft_render_flags |= FT_RENDER_MODE_LCD;
 #else
                             ft_render_flags |= FT_RENDER_MODE_NORMAL;
 #endif
-                            B32 ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
+                            FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
                             if (!ft_render_glyph_error)
                             {
-                                S32 bitmap_height = face->glyph->bitmap.rows;
-                                S32 bearing_left = face->glyph->bitmap_left;
-                                S32 bearing_top = face->glyph->bitmap_top;
+                                S32 bitmap_height = (S32) face->glyph->bitmap.rows;
+                                S32 bearing_left  = face->glyph->bitmap_left;
+                                S32 bearing_top   = face->glyph->bitmap_top;
 #if R_FONT_USE_SUBPIXEL_RENDERING
                                 // NOTE(hampus): We now have 3 "pixels" for each value.
                                 S32 bitmap_width = face->glyph->bitmap.width / 3;
 
                                 // TODO(hampus): SIMD
                                 // NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
-                                U8 *new_texture_data = push_array(arena, U8, (bitmap_height * bitmap_width * 4));
+                                U8 *new_texture_data = push_array(arena, U8, (U64) (bitmap_height * bitmap_width * 4));
                                 U8 *dst = new_texture_data;
                                 U8 *src = face->glyph->bitmap.buffer;
                                 for (S32 y = 0; y < bitmap_height; ++y)
