@@ -130,7 +130,7 @@ ps_out ps(PS_INPUT input)
 	ps_out output;
 
 	float is_subpixel_text = 1;
-	if is_subpixel_text < 1)
+	if (is_subpixel_text < 1)
 	{
 		float4 color = input.color * sample_color;
 		color.a *= sdf_factor * border_factor;
