@@ -345,3 +345,18 @@ gfx_toggle_fullscreen(Gfx_Context *context)
 		             SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 	}
 }
+
+internal Vec2F32
+gfx_get_dpi(Gfx_Context *gfx)
+{
+    // NOTE(hampus): The primary monitor by definition
+    // has its upper left corner at (0, 0)
+    POINT point = { 0, 0 };
+    HMONITOR monitor = MonitorFromPoint(point, MONITOR_DEFAULTTOPRIMARY);
+    U32 dpi_x, dpi_y;
+    GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+    Vec2F32 result;
+    result.x = (F32)dpi_x;
+    result.y = (F32)dpi_y;
+    return(result);
+}
