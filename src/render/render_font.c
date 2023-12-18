@@ -1,10 +1,9 @@
-/* TODO(hampus):
-- [x] Subpixel rendering
- - [ ] Premultiplied alpha
-- [ ] Kerning
-- [ ] Underline & strikethrough
-- [ ] Font atlas & cache
-*/
+// TODO(hampus):
+   // [x] - Subpixel rendering
+// [ ] - Premultiplied alpha
+// [ ] - Kerning
+// [ ] - Underline & strikethrough
+// [ ] - Font atlas & cache
 
 // NOTE(hampus): Freetype have variables called 'internal' :(
 #undef internal

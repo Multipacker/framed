@@ -2,10 +2,12 @@
 #define RENDER_CORE_H
 
 // TODO:
-// - Textures
-// - Text rendering
-// - Lines
-// - Icons
+// [x] - Textures
+// [ ] - Text rendering
+// [ ] - Lines
+// [ ] - Icons
+// [ ] - Push/Pop matrices
+// [ ] - Premultiplied alpha
 
 typedef struct R_Texture R_Texture;
 struct R_Texture
