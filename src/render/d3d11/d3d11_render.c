@@ -268,10 +268,10 @@ render_init(Gfx_Context *gfx)
     {
         D3D11_SAMPLER_DESC desc =
         {
-            .Filter = D3D11_FILTER_MIN_MAG_MIP_POINT,
-            .AddressU = D3D11_TEXTURE_ADDRESS_WRAP,
-            .AddressV = D3D11_TEXTURE_ADDRESS_WRAP,
-            .AddressW = D3D11_TEXTURE_ADDRESS_WRAP,
+            .Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR,
+            .AddressU = D3D11_TEXTURE_ADDRESS_CLAMP,
+            .AddressV = D3D11_TEXTURE_ADDRESS_CLAMP,
+            .AddressW = D3D11_TEXTURE_ADDRESS_CLAMP,
 			.MaxAnisotropy = 1,
 			.MinLOD = -F32_MAX,
 			.MaxLOD = +F32_MAX,
@@ -293,7 +293,7 @@ render_init(Gfx_Context *gfx)
                 // as an alpha value for each component. Therefore we specify another
                 // color source which will be these alpha values.
 
-                // NOTE(hampus): dst.rgb = dst.rgb * (1 - weights.rgb) + src.rgb * (weights.rgb)
+                // NOTE(hampus): dst.rgb = dst.rgb * (1 - src1.rgb) + src0.rgb * (src1.rgb)
                 .SrcBlend = D3D11_BLEND_SRC1_COLOR,
                 .DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
                 .BlendOp = D3D11_BLEND_OP_ADD,
@@ -338,6 +338,7 @@ render_init(Gfx_Context *gfx)
 
     return(result);
 }
+
 internal D3D11_Batch *
 d3d11_push_batch(R_Context *renderer)
 {
@@ -657,6 +658,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, 
         case R_TextureFormat_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
         invalid_case;
     }
+
     D3D11_TEXTURE2D_DESC desc =
     {
         .Width = width,
@@ -719,9 +721,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
     {
         // TODO(hampus): Logging
     }
-
                          arena_release_scratch(scratch);
-
     return(result);
 }
 
