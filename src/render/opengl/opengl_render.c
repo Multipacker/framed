@@ -362,6 +362,13 @@ render_create_texture(R_Context *renderer, Str8 path, R_TextureFormat format)
 	return(result);
 }
 
+internal R_Texture
+render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_TextureFormat format)
+{
+	R_Texture result = { 0 };
+	return(result);
+}
+
 internal Void
 render_destroy_texture(R_Context *renderer, R_Texture texture)
 {
