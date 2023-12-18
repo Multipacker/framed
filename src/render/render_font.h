@@ -10,11 +10,25 @@ struct R_Glyph
     R_TextureSlice slice;
 };
 
+typedef struct R_FreeFontAtlasRegion R_FreeFontAtlasRegion;
+struct R_FreeFontAtlasRegion
+{
+    struct R_FreeFontAtlasRegion *next;
+    RectF32 region;
+};
+
+typedef struct R_FontAtlas R_FontAtlas;
+struct R_FontAtlas
+{
+    Vec2U32 dim;
+    R_Texture texture;
+};
+
 typedef struct R_Font R_Font;
 struct R_Font
 {
     R_Glyph glyphs[128];
-    F32 size_in_pixels;
+    F32 font_size;
     F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
     F32 underline_position; // NOTE(hampus): Relative to the baseline
     F32 max_advance_width;

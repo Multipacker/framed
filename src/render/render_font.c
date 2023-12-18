@@ -50,21 +50,26 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
             if (!ft_open_face_error)
             {
                 result = push_struct(arena, R_Font);
-                F32 size = 50;
-                FT_Error ft_set_pixel_sizes_error = FT_Set_Pixel_Sizes(face, 0, (U32)size);
+                F32 font_size = 18;
+                 F32 dpi = 96;
+                FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32)font_size << 6, (U32)font_size << 6, (U32)dpi, (U32)dpi);
                 if (!ft_set_pixel_sizes_error)
                 {
-                    F32 pixels_per_EM = size / (F32)face->units_per_EM;
+                    F32 points_per_inch = 72;
+                    F32 em_per_font_unit = 1.0f / (F32)face->units_per_EM;
+                    F32 points_per_font_unit = em_per_font_unit / font_size;
+                    F32 inches_per_font_unit = points_per_font_unit / points_per_inch;
+                    F32 pixels_per_font_unit = inches_per_font_unit * (F32)dpi;
 
-                    result->line_height         = face->height             * pixels_per_EM;
-                    result->underline_position  = face->underline_position * pixels_per_EM;
-                    result->max_advance_width   = face->max_advance_width  * pixels_per_EM;
-                    result->max_ascent          = face->ascender           * pixels_per_EM;
-                    result->max_descent         = face->descender          * pixels_per_EM;
+                    result->line_height         = face->height             * pixels_per_font_unit;
+                    result->underline_position  = face->underline_position * pixels_per_font_unit;
+                    result->max_advance_width   = face->max_advance_width  * pixels_per_font_unit;
+                    result->max_ascent          = face->ascender           * pixels_per_font_unit;
+                    result->max_descent         = face->descender          * pixels_per_font_unit;
                     result->has_kerning         = FT_HAS_KERNING(face);
-                    //result->family_name         = str8_pushf(arena, "%s", face->family_name);
-                    //result->style_name          = str8_pushf(arena, "%s", face->style_name);
-                    result->size_in_pixels      = size;
+                    result->family_name         = str8_copy_cstr(arena, (U8 *)face->family_name);
+                    result->style_name          = str8_copy_cstr(arena, (U8 *)face->style_name);
+                    result->font_size           = font_size;
                     for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
                     {
                         R_Glyph *glyph = result->glyphs + glyph_index;
@@ -122,7 +127,6 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path)
                                     // by.
                                     src += (S32)(face->glyph->bitmap.pitch);
                                 }
-
 #else
                                 S32 bitmap_width = face->glyph->bitmap.width;
 
@@ -242,4 +246,21 @@ render_measure_text(R_Font *font, Str8 text)
 	}
     result.y = font->line_height;
 	return(result);
+}
+
+internal R_FontAtlas *
+render_make_font_atlas(Arena *arena, Vec2U32 dim)
+{
+    return(0);
+}
+
+internal RectF32
+render_alloc_font_atlas_region(Arena *arena, Vec2U32 dim)
+{
+    return((RectF32){0});
+}
+
+internal void
+render_free_font_atlas_region(R_FontAtlas *atlas, RectF32 region)
+{
 }
