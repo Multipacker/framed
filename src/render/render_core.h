@@ -96,6 +96,7 @@ internal R_Texture      render_create_texture_from_bitmap(R_Context *renderer, V
 internal Void           render_destroy_texture(R_Context *renderer, R_Texture texture);
 internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 region);
 internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path, R_ColorSpace color_space);
+internal R_Texture render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, );
 
 internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
