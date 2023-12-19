@@ -145,9 +145,9 @@ render_free_atlas_region(Atlas *atlas, AtlasRegion region)
             for (U64 i = 0; i < Corner_COUNT; ++i)
             {
                 dll_remove_npz(atlas->first_free_region, atlas->last_free_region, parent->children[i], next_free, prev_free,check_null, set_null);
-                parent->used = false;
             }
             dll_push_back_np(atlas->first_free_region, atlas->last_free_region, parent, next_free, prev_free);
+                parent->used = false;
         }
         else
         {
@@ -182,8 +182,16 @@ os_main(Str8List arguments)
 
     Atlas atlas = render_make_atlas(perm_arena, v2u32(128, 128));
 
-    AtlasRegion region = render_alloc_atlas_region(perm_arena, &atlas, v2u32(128, 128));
-    render_free_atlas_region(&atlas, region);
+    // NOTE(hampus): This should first create 4 regions with 64x64, leaving the atlas empty.
+    // When freeing them, the atlas should only have 1 128x128 node in its free list.
+    AtlasRegion region0 = render_alloc_atlas_region(perm_arena, &atlas, v2u32(64, 64));
+    AtlasRegion region1 = render_alloc_atlas_region(perm_arena, &atlas, v2u32(64, 64));
+    AtlasRegion region2 = render_alloc_atlas_region(perm_arena, &atlas, v2u32(64, 64));
+    AtlasRegion region3 = render_alloc_atlas_region(perm_arena, &atlas, v2u32(64, 64));
+    render_free_atlas_region(&atlas, region0);
+    render_free_atlas_region(&atlas, region1);
+    render_free_atlas_region(&atlas, region2);
+    render_free_atlas_region(&atlas, region3);
 
     B32 running = true;
 	while (running)
