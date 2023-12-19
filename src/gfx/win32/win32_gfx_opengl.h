@@ -47,6 +47,7 @@ X(PFNGLDELETEPROGRAMPROC,               glDeleteProgram             ) \
 X(PFNGLNAMEDBUFFERDATAPROC,             glNamedBufferData           ) \
 X(PFNGLGETUNIFORMLOCATIONPROC,          glGetUniformLocation        ) \
 X(PFNGLUSEPROGRAMPROC,                  glUseProgram                ) \
+X(PFNGLPROGRAMUNIFORM1IPROC,            glProgramUniform1i          ) \
 
 #define X(type, name) global type name;
 GL_FUNCTIONS(X)
