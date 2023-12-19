@@ -1,6 +1,16 @@
 #ifndef RENDER_FONT_H
 #define RENDER_FONT_H
 
+#define R_FONT_USE_SUBPIXEL_RENDERING 1
+
+typedef enum R_FontRenderMode R_FontRenderMode;
+enum R_FontRenderMode
+{
+    R_FontRenderMode_Normal, // Default render mode. 8-bit AA bitmaps
+    R_FontRenderMode_LCD,    // Subpixel rendering for horizontally decimated LCD displays
+    R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
+};
+
 typedef struct R_Glyph R_Glyph;
 struct R_Glyph
 {
