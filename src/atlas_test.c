@@ -145,9 +145,9 @@ render_free_atlas_region(Atlas *atlas, AtlasRegion region)
             for (U64 i = 0; i < Corner_COUNT; ++i)
             {
                 dll_remove_npz(atlas->first_free_region, atlas->last_free_region, parent->children[i], next_free, prev_free,check_null, set_null);
-                dll_push_back_np(atlas->first_free_region, atlas->last_free_region, parent, next_free, prev_free);
                 parent->used = false;
             }
+            dll_push_back_np(atlas->first_free_region, atlas->last_free_region, parent, next_free, prev_free);
         }
         else
         {
