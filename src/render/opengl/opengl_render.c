@@ -374,7 +374,8 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 				case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
 				invalid_case;
 			}
-			glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
+
+			glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
 			glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -421,7 +422,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S3
 		case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
 		invalid_case;
 	}
-	glTextureStorage2D(texture, 1, GL_RGBA8, (GLsizei) width, (GLsizei) height);
+	glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
