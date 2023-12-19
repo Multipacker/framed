@@ -35,7 +35,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 
     // NOTE(hampus): Get the width of a space
     FT_Int32 ft_load_flags = 0;
-    FT_Int32 ft_render_flags = 0;
+    FT_Render_Mode ft_render_flags = 0;
     switch (render_mode)
     {
         case R_FontRenderMode_Normal:
@@ -64,21 +64,22 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
                     bitmap_height = (S32) face->glyph->bitmap.rows;
                     bearing_left  = face->glyph->bitmap_left;
                     bearing_top   = face->glyph->bitmap_top;
-                    bitmap_width = face->glyph->bitmap.width;
+                    bitmap_width  = (S32) face->glyph->bitmap.width;
 
                     // TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
                     // NOTE(hampus): Convert from 8 bit to 32 bit
-                    texture_data = push_array(arena, U8, (bitmap_height * bitmap_width * 4));
+                    texture_data = push_array(arena, U8, (U64) (bitmap_height * bitmap_width * 4));
                     U32 *dst = (U32 *)texture_data;
                     U8 *src = face->glyph->bitmap.buffer;
                     for (S32 i = 0; i < (bitmap_height*bitmap_width); ++i)
                     {
                         U8 val = src[i];
-                        *dst++ =
-                        (0xff <<  0) |
-                        (0xff <<  8) |
-                        (0xff << 16) |
-                        (val  << 24);
+                        *dst++ = (U32) (
+							(0xff <<  0) |
+							(0xff <<  8) |
+							(0xff << 16) |
+							(val  << 24)
+						);
                     }
                 } break;
 
@@ -201,7 +202,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path, R_FontRe
                         FT_Error ft_load_glyph_error = FT_Load_Char(face, ' ', ft_load_flags);
                         if (!ft_load_glyph_error)
                         {
-                            result->space_width = face->glyph->linearHoriAdvance / 65536.0f;
+                            result->space_width = (F32) face->glyph->linearHoriAdvance / 65536.0f;
                             // FT_Done_Glyph(face->glyph);
                         }
                         else
