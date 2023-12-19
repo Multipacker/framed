@@ -557,32 +557,34 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	B32 is_different_clip   = (batch->params.clip_rect != renderer->clip_rect_stack.first);
 	B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
 	B32 inside_batch_clip   = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
-	if (is_different_clip && !(inside_current_clip && inside_batch_clip))
+	if ((is_different_clip && !(inside_current_clip && inside_batch_clip)) ||
+        batch->instance_count >= D3D11_BATCH_SIZE)
 	{
           batch = 0;
 	}
 
-    if (params->slice.texture.u64[0] != renderer->white_texture.u64[0])
-    {
-        if (batch->params.texture.u64[0] != renderer->white_texture.u64[0])
-        {
-            if (batch->params.texture.u64[0] != params->slice.texture.u64[0])
-            {
-                batch = 0;
-            }
-        }
-        else
-        {
-            batch->params.texture = params->slice.texture;
-        }
-    }
-
     if (batch)
     {
-        if (batch->instance_count >= D3D11_BATCH_SIZE)
-        {
-            batch = 0;
-        }
+        B32 batch_is_white  = batch->params.texture.u64[0] == renderer->white_texture.u64[0];
+            B32 params_is_white = params->slice.texture.u64[0] == renderer->white_texture.u64[0];
+            if (!params_is_white)
+            {
+                if (!batch_is_white)
+                {
+                    if (batch->params.texture.u64[0] != params->slice.texture.u64[0])
+                {
+                    // NOTE(hampus): None of them are white and their
+                    // texture is not the same.
+                        batch = 0;
+                    }
+                }
+                else
+            {
+                // NOTE(hampus): The batch is just white. Overwrite it with
+                // the new texture instead
+                    batch->params.texture = params->slice.texture;
+                }
+            }
     }
 
     if (!batch)
