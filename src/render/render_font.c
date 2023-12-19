@@ -322,6 +322,20 @@ render_measure_text(R_Font *font, Str8 text)
 	return(result);
 }
 
+typedef struct R_FreeFontAtlasRegion R_FreeFontAtlasRegion;
+struct R_FreeFontAtlasRegion
+{
+    struct R_FreeFontAtlasRegion *next;
+    RectF32 region;
+};
+
+typedef struct R_FontAtlas R_FontAtlas;
+struct R_FontAtlas
+{
+    Vec2U32 dim;
+    R_Texture texture;
+};
+
 internal R_FontAtlas *
 render_make_font_atlas(Arena *arena, Vec2U32 dim)
 {

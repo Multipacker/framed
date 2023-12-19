@@ -18,20 +18,6 @@ struct R_Glyph
     R_TextureSlice slice;
 };
 
-typedef struct R_FreeFontAtlasRegion R_FreeFontAtlasRegion;
-struct R_FreeFontAtlasRegion
-{
-    struct R_FreeFontAtlasRegion *next;
-    RectF32 region;
-};
-
-typedef struct R_FontAtlas R_FontAtlas;
-struct R_FontAtlas
-{
-    Vec2U32 dim;
-    R_Texture texture;
-};
-
 typedef struct R_Font R_Font;
 struct R_Font
 {

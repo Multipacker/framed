@@ -170,7 +170,7 @@ render_init(Gfx_Context *gfx)
             {"BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
                 member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
-            {"EMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
+            {"OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
                 member_offset(R_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
