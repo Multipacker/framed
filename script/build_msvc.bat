@@ -19,7 +19,7 @@ set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -w
 set additional_includes=-I../vendor/
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes% -Fe:main
-set libs=user32.lib kernel32.lib winmm.lib gdi32.lib freetype.lib
+set libs=user32.lib kernel32.lib winmm.lib gdi32.lib freetype.lib shcore.lib
 set linker_flags=%libs% -incremental:no
 set src_files=../src/main.c
 
