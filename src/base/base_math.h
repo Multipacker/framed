@@ -207,6 +207,8 @@ internal Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_add_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_sub_f32(Vec2F32 a, F32 t);
 
+internal Vec2F32 v2f32_from_v2u32(Vec2U32 v);
+
 internal Vec3F32 v3f32(F32 x, F32 y, F32 z);
 internal Vec3F32 v3f32_add_v3f32(Vec3F32 a, Vec3F32 b);
 internal Vec3F32 v3f32_sub_v3f32(Vec3F32 a, Vec3F32 b);
@@ -268,7 +270,7 @@ internal Mat4F32 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 n, F3
 internal RectF32 rectf32(Vec2F32 min, Vec2F32 max);
 internal RectF32 rectf32_from_rects32(RectS32 rect);
 internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
-internal RectU32 retu32(Vec2U32 min, Vec2U32 max);
+internal RectU32 rectu32(Vec2U32 min, Vec2U32 max);
 
 internal B32 rectf32_contains_rectf32(RectF32 container, RectF32 tested);
 internal B32 rectf32_contains_v2f32(RectF32 container, Vec2F32 tested);

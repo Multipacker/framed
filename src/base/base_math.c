@@ -22,6 +22,15 @@ v2f32_mul_f32(Vec2F32 a, F32 t)
 	return((Vec2F32) { a.x * t, a.y * t });
 }
 
+
+internal Vec2F32
+v2f32_from_v2u32(Vec2U32 v)
+{
+    Vec2F32 result = (Vec2F32){(F32)v.x, (F32)v.y};
+    return(result);
+}
+
+
 internal Vec2F32
 v2f32_div_f32(Vec2F32 a, F32 t)
 {
@@ -324,8 +333,22 @@ rectf32(Vec2F32 min, Vec2F32 max)
 	return((RectF32) { min, max });
 }
 
+
 internal RectF32
 rectf32_from_rects32(RectS32 rect)
+{
+	RectF32 result;
+
+	result.x0 = (F32) rect.x0;
+	result.y0 = (F32) rect.y0;
+	result.x1 = (F32) rect.x1;
+	result.y1 = (F32) rect.y1;
+
+	return(result);
+}
+
+internal RectF32
+rectf32_from_rectu32(RectU32 rect)
 {
 	RectF32 result;
 
@@ -344,7 +367,7 @@ rects32(Vec2S32 min, Vec2S32 max)
 }
 
 internal RectU32
-retu32(Vec2U32 min, Vec2U32 max)
+rectu32(Vec2U32 min, Vec2U32 max)
 {
 	return((RectU32) { min, max });
 }
