@@ -8,7 +8,7 @@ struct VS_INPUT
 	float4 corner_radius   : CORNER_RADIUS;
 	float softness         : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
-	float emit_texture     : EMIT_TEXTURE;
+	float omit_texture     : EMIT_TEXTURE;
 	float is_subpixel_text : IS_SUBPIXEL_TEXT;
 	uint vertex_id         : SV_VertexID;
 };
@@ -23,7 +23,7 @@ struct PS_INPUT
 	nointerpolation float4 corner_radius    : CORNER_RADIUS;
 	float edge_softness    : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
-	float emit_texture     : EMIT_TEXTURE;
+	float omit_texture     : EMIT_TEXTURE;
 	float is_subpixel_text : IS_SUBPIXEL_TEXT;
     float vertex_id        : VERTEX_ID;
 };
@@ -62,7 +62,7 @@ PS_INPUT vs(VS_INPUT input)
 	output.corner_radius = input.corner_radius;
 	output.edge_softness = input.softness;
 	output.border_thickness = input.border_thickness;
-	output.emit_texture = input.emit_texture;
+	output.omit_texture = input.emit_texture;
 	output.vertex_id = input.vertex_id;
 	output.is_subpixel_text = input.is_subpixel_text;
 	return output;
@@ -125,7 +125,7 @@ ps_out ps(PS_INPUT input)
 	}
 
 	float4 sample_color = float4(1, 1, 1, 1);
-	if (input.emit_texture < 1)
+	if (input.omit_texture < 1)
 	{
 		sample_color = texture0.Sample(sampler0, input.uv);
 	}

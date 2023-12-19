@@ -171,7 +171,7 @@ render_init(Gfx_Context *gfx)
                 member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"EMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
-                member_offset(R_RectInstance, emit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+                member_offset(R_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
                 member_offset(R_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1},
@@ -436,7 +436,7 @@ render_end(R_Context *renderer)
         };
 
             R_RenderStats *stats = d3d11_get_current_stats(renderer);
-        Vec4F32 bg_color = linear_from_srgb(v4f32(0, 0, 0, 1.f));
+        Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
 
         FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
         ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
@@ -609,7 +609,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
     instance->radies[3]        = params->radius;
     instance->softness         = params->softness;
     instance->border_thickness = params->border_thickness;
-    instance->emit_texture     = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
+    instance->omit_texture     = (F32)(params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
     instance->is_subpixel_text = (F32)params->is_subpixel_text;
 
     batch->instance_count++;
