@@ -129,11 +129,11 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
         {
         }
 
-    glyph->slice.texture = render_create_texture_from_bitmap(renderer, texture_data, bitmap_width, bitmap_height, R_ColorSpace_Linear);
-    glyph->slice.region.max = v2f32(1, 1);
-    glyph->size_in_pixels = v2f32((F32)bitmap_width, (F32)bitmap_height);
+    glyph->slice.texture     = render_create_texture_from_bitmap(renderer, texture_data, bitmap_width, bitmap_height, R_ColorSpace_Linear);
+    glyph->slice.region.max  = v2f32(1, 1);
+    glyph->size_in_pixels    = v2f32((F32)bitmap_width, (F32)bitmap_height);
     glyph->bearing_in_pixels = v2f32((F32)bearing_left, (F32)bearing_top);
-    glyph->advance_width = (F32)(face->glyph->advance.x >> 6);
+    glyph->advance_width     = (F32)(face->glyph->advance.x >> 6);
 
     return(result);
 }
@@ -188,25 +188,27 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path, R_FontRe
                     result->style_name          = str8_copy_cstr(arena, (U8 *)face->style_name);
                     result->font_size           = font_size;
 
-                    // NOTE(hampus): Get the width of a space
-                    FT_Int32 ft_load_flags = 0;
-                    switch (render_mode)
                     {
-                        case R_FontRenderMode_Normal: ft_load_flags = FT_LOAD_DEFAULT; break;
-                        case R_FontRenderMode_LCD:    ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD; break;
-                        case R_FontRenderMode_LCD_V:  assert(false);; break;
-                    }
+                        // NOTE(hampus): Get the width of a space
+                        FT_Int32 ft_load_flags = 0;
+                        switch (render_mode)
+                        {
+                            case R_FontRenderMode_Normal: ft_load_flags = FT_LOAD_DEFAULT; break;
+                            case R_FontRenderMode_LCD:    ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD; break;
+                            case R_FontRenderMode_LCD_V:  assert(false); break;
+                        }
 
-                    FT_Error ft_load_glyph_error = FT_Load_Char(face, ' ', ft_load_flags);
-                    if (!ft_load_glyph_error)
-                    {
-                        result->space_width = face->glyph->linearHoriAdvance * pixels_per_font_unit;
-                        // FT_Done_Glyph(face->glyph);
-                    }
-                    else
-                    {
-                        // TODO(hampus): Failed to load glyph
-                        error = render_get_ft_error_message(ft_set_pixel_sizes_error);
+                        FT_Error ft_load_glyph_error = FT_Load_Char(face, ' ', ft_load_flags);
+                        if (!ft_load_glyph_error)
+                        {
+                            result->space_width = face->glyph->linearHoriAdvance / 65536.0f;
+                            // FT_Done_Glyph(face->glyph);
+                        }
+                        else
+                        {
+                            // TODO(hampus): Failed to load glyph
+                            error = render_get_ft_error_message(ft_set_pixel_sizes_error);
+                        }
                     }
 
                     for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
@@ -275,21 +277,28 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 {
 	for (U64 i = 0; i < text.size; ++i)
 	{
-		R_Glyph *glyph = font->glyphs + text.data[i];
-		F32 xpos = min.x + glyph->bearing_in_pixels.x;
-        F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
+        if (text.data[i] == ' ')
+        {
+            min.x += font->space_width;
+        }
+        else
+        {
+            R_Glyph *glyph = font->glyphs + text.data[i];
+            F32 xpos = min.x + glyph->bearing_in_pixels.x;
+            F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-        F32 width = (F32)glyph->size_in_pixels.x;
-        F32 height = (F32)glyph->size_in_pixels.y;
+            F32 width = (F32)glyph->size_in_pixels.x;
+            F32 height = (F32)glyph->size_in_pixels.y;
 
-        render_rect(renderer,
-                    v2f32(xpos, ypos),
-                    v2f32(xpos + width,
-                      ypos + height),
-                    .slice = glyph->slice,
-                    .color = color,
-                    .is_subpixel_text = true);
-        min.x += (glyph->advance_width);
+            render_rect(renderer,
+                        v2f32(xpos, ypos),
+                        v2f32(xpos + width,
+                              ypos + height),
+                        .slice = glyph->slice,
+                        .color = color,
+                        .is_subpixel_text = true);
+            min.x += (glyph->advance_width);
+        }
 	}
 }
 
@@ -299,8 +308,15 @@ render_measure_text(R_Font *font, Str8 text)
     Vec2F32 result = {0};
     for (U64 i = 0; i < text.size; ++i)
 	{
+        if (text.data[i] == ' ')
+        {
+            result.x += font->space_width;
+        }
+        else
+        {
 		R_Glyph *glyph = font->glyphs + text.data[i];
         result.x += (glyph->advance_width);
+        }
 	}
     result.y = font->line_height;
 	return(result);

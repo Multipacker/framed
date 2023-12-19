@@ -1,8 +1,6 @@
 #ifndef RENDER_FONT_H
 #define RENDER_FONT_H
 
-#define R_FONT_USE_SUBPIXEL_RENDERING 1
-
 typedef enum R_FontRenderMode R_FontRenderMode;
 enum R_FontRenderMode
 {
@@ -44,6 +42,7 @@ struct R_Font
     F32 max_advance_width;
     F32 max_ascent;
     F32 max_descent;
+    F32 space_width;
     B32 has_kerning;
     Str8 family_name;
     Str8 style_name;
