@@ -21,6 +21,8 @@ out flat float vert_omit_texture;
 // TODO(simon): See if we can avoid passing these
 out flat vec2 vert_center;
 out flat vec2 vert_half_size;
+out flat vec2 vert_min_uv;
+out flat vec2 vert_max_uv;
 
 uniform mat4 uniform_projection;
 
@@ -39,7 +41,7 @@ main()
 	vec2 position  = center + (half_size + instance_softness) * verticies[gl_VertexID];
 	vec2 uv_center    = 0.5 * (instance_max_uv + instance_min_uv);
 	vec2 uv_half_size = 0.5 * (instance_max_uv - instance_min_uv);
-	vec2 uv           = uv_center + uv_half_size * verticies[gl_VertexID];
+	vec2 uv           = uv_center + (uv_half_size * (1.0 + instance_softness / half_size)) * verticies[gl_VertexID];
 
 	gl_Position           = uniform_projection * vec4(position, 0.0, 1.0);
 	vert_pos              = position;
@@ -52,4 +54,6 @@ main()
 	vert_radies           = instance_radies;
 	vert_omit_texture     = instance_omit_texture;
 	vert_half_size        = half_size;
+	vert_min_uv           = instance_min_uv;
+	vert_max_uv           = instance_max_uv;
 }

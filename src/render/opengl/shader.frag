@@ -11,6 +11,8 @@ in flat float vert_omit_texture;
 // TODO(simon): See if we can avoid passing these
 in flat vec2 vert_center;
 in flat vec2 vert_half_size;
+in flat vec2 vert_min_uv;
+in flat vec2 vert_max_uv;
 
 out vec4 frag_color;
 
@@ -71,7 +73,7 @@ main()
 	vec4 sample_color = vec4(1.0);
 	if (vert_omit_texture < 1)
 	{
-		sample_color = texture(uniform_sampler, vert_uv);
+		sample_color = texture(uniform_sampler, clamp(vert_uv, vert_min_uv, vert_max_uv));
 	}
 
 	vec4 color = sample_color * vert_color;
