@@ -7,7 +7,7 @@ in float vert_softness;
 in float vert_border_thickness;
 in float vertex_id;
 in flat vec4 vert_radies;
-in flat float vert_emit_texture;
+in flat float vert_omit_texture;
 // TODO(simon): See if we can avoid passing these
 in flat vec2 vert_center;
 in flat vec2 vert_half_size;
@@ -69,7 +69,7 @@ main()
 	}
 
 	vec4 sample_color = vec4(1.0);
-	if (vert_emit_texture < 1)
+	if (vert_omit_texture < 1)
 	{
 		sample_color = texture(uniform_sampler, vert_uv);
 	}

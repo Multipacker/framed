@@ -120,7 +120,7 @@ render_init(Gfx_Context *gfx)
 	opengl_vertex_array_instance_attribute(renderer->vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, emit_texture), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
 
 	glVertexArrayVertexBuffer(renderer->vao, 0, renderer->vbo, 0, sizeof(R_RectInstance));
 
@@ -284,7 +284,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	result->radies[3]        = params->radius;
 	result->softness         = params->softness;
 	result->border_thickness = params->border_thickness;
-	result->emit_texture     = (params->slice.texture.u64[0] == 0);
+	result->omit_texture     = (F32)(params->slice.texture.u64[0] == 0);
 
 	++renderer->batches.rect_count;
 

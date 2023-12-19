@@ -6,7 +6,7 @@ layout (location = 2) in mat4  instance_colors;
 layout (location = 6) in vec4  instance_radies;
 layout (location = 7) in float instance_softness;
 layout (location = 8) in float instance_border_thickness;
-layout (location = 9) in float instance_emit_texture;
+layout (location = 9) in float instance_omit_texture;
 
 out vec2  vert_pos;
 out vec2  vert_uv;
@@ -15,7 +15,7 @@ out float vert_softness;
 out float vert_border_thickness;
 out float vertex_id;
 out flat vec4 vert_radies;
-out flat float vert_emit_texture;
+out flat float vert_omit_texture;
 // TODO(simon): See if we can avoid passing these
 out flat vec2 vert_center;
 out flat vec2 vert_half_size;
@@ -48,6 +48,6 @@ main()
 	vertex_id             = gl_VertexID;
 	vert_center           = center;
 	vert_radies           = instance_radies;
-	vert_emit_texture     = instance_emit_texture;
+	vert_omit_texture     = instance_omit_texture;
 	vert_half_size        = half_size;
 }
