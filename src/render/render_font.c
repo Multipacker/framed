@@ -32,17 +32,34 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
     B32 result = true;
     Str8 error;
     R_Glyph *glyph = font->glyphs + glyph_index;
+
+    // NOTE(hampus): Get the width of a space
+    FT_Int32 ft_load_flags = 0;
+    FT_Int32 ft_render_flags = 0;
     switch (render_mode)
     {
         case R_FontRenderMode_Normal:
         {
-            FT_Int32 ft_load_flags = FT_LOAD_DEFAULT;
-            FT_Error ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
-            if (!ft_load_glyph_error)
+            ft_load_flags = FT_LOAD_DEFAULT;
+            ft_render_flags = FT_RENDER_MODE_NORMAL;
+        } break;
+        case R_FontRenderMode_LCD:
+        {
+            ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
+            ft_render_flags = FT_RENDER_MODE_LCD;
+        } break;
+        invalid_case;
+    }
+
+    FT_Error ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
+    if (!ft_load_glyph_error)
+    {
+        FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
+        if (!ft_render_glyph_error)
+        {
+            switch (render_mode)
             {
-                FT_Render_Mode ft_render_flags = FT_RENDER_MODE_NORMAL;
-                FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
-                if (!ft_render_glyph_error)
+                case R_FontRenderMode_Normal:
                 {
                     bitmap_height = (S32) face->glyph->bitmap.rows;
                     bearing_left  = face->glyph->bitmap_left;
@@ -63,32 +80,9 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
                         (0xff << 16) |
                         (val  << 24);
                     }
-                }
-                else
-                {
-                    // TODO(hampus): Logging
-                    result = false;
-                    error = render_get_ft_error_message(ft_render_glyph_error);
-                }
-            }
-            else
-            {
-                // TODO(hampus): Logging
-                result = false;
-                error = render_get_ft_error_message(ft_load_glyph_error);
-            }
+                } break;
 
-        } break;
-
-        case R_FontRenderMode_LCD:
-        {
-            FT_Int32 ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
-            FT_Error ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
-            if (!ft_load_glyph_error)
-            {
-                FT_Render_Mode ft_render_flags = FT_RENDER_MODE_LCD;
-                FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
-                if (!ft_render_glyph_error)
+                case R_FontRenderMode_LCD:
                 {
                     bitmap_height = (S32) face->glyph->bitmap.rows;
                     bearing_left  = face->glyph->bitmap_left;
@@ -123,28 +117,17 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
                         // by.
                         src += (S32)(face->glyph->bitmap.pitch);
                     }
-
-                }
-                else
-                {
-                    // TODO(hampus): Logging
-                    result = false;
-                    error = render_get_ft_error_message(ft_render_glyph_error);
+                } break;
+                invalid_case;
                 }
             }
             else
             {
-                // TODO(hampus): Logging
-                result = false;
-                error = render_get_ft_error_message(ft_load_glyph_error);
             }
-        } break;
-
-        case R_FontRenderMode_LCD_V:
+        }
+        else
         {
-            // TODO(hampus): Implement this
-        } break;
-    }
+        }
 
     glyph->slice.texture = render_create_texture_from_bitmap(renderer, texture_data, bitmap_width, bitmap_height, R_ColorSpace_Linear);
     glyph->slice.region.max = v2f32(1, 1);
@@ -184,6 +167,7 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path, R_FontRe
             {
                 result = push_struct(arena, R_Font);
                 F32 font_size = 18;
+                // TODO(hampus): Get the monitor's DPI
                  F32 dpi = 96;
                 FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32)font_size << 6, (U32)font_size << 6, (U32)dpi, (U32)dpi);
                 if (!ft_set_pixel_sizes_error)
@@ -203,6 +187,28 @@ render_font_init_freetype(Arena *arena, R_Context *renderer, Str8 path, R_FontRe
                     result->family_name         = str8_copy_cstr(arena, (U8 *)face->family_name);
                     result->style_name          = str8_copy_cstr(arena, (U8 *)face->style_name);
                     result->font_size           = font_size;
+
+                    // NOTE(hampus): Get the width of a space
+                    FT_Int32 ft_load_flags = 0;
+                    switch (render_mode)
+                    {
+                        case R_FontRenderMode_Normal: ft_load_flags = FT_LOAD_DEFAULT; break;
+                        case R_FontRenderMode_LCD:    ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD; break;
+                        case R_FontRenderMode_LCD_V:  assert(false);; break;
+                    }
+
+                    FT_Error ft_load_glyph_error = FT_Load_Char(face, ' ', ft_load_flags);
+                    if (!ft_load_glyph_error)
+                    {
+                        result->space_width = face->glyph->linearHoriAdvance * pixels_per_font_unit;
+                        // FT_Done_Glyph(face->glyph);
+                    }
+                    else
+                    {
+                        // TODO(hampus): Failed to load glyph
+                        error = render_get_ft_error_message(ft_set_pixel_sizes_error);
+                    }
+
                     for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
                     {
                         if (render_make_glyph(arena, renderer, result, face, glyph_index, render_mode))
