@@ -36,7 +36,24 @@ struct Atlas
     AtlasRegionNode *first_free_region;
     AtlasRegionNode *last_free_region;
     Vec2U32 dim;
+    U64 num_free_regions;
 };
+
+internal void
+render_push_free_region_to_atlas(Atlas *atlas, AtlasRegionNode *node)
+{
+    dll_push_back_np(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free);
+    node->used = false;
+    atlas->num_free_regions++;
+}
+
+internal void
+render_remove_free_region_from_atlas(Atlas *atlas, AtlasRegionNode *node)
+{
+    dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
+    node->used = true;
+    atlas->num_free_regions--;
+}
 
 internal Atlas
 render_make_atlas(Arena *arena, Vec2U32 dim)
@@ -46,7 +63,7 @@ render_make_atlas(Arena *arena, Vec2U32 dim)
     AtlasRegionNode *first_free_region = push_struct(arena, AtlasRegionNode);
     first_free_region->region.min = v2f32(0, 0);
     first_free_region->region.max = v2f32((F32)dim.x, (F32)dim.x);
-    dll_push_back_np(result.first_free_region, result.last_free_region, first_free_region, next_free, prev_free);
+    render_push_free_region_to_atlas(&result, first_free_region);
     return(result);
 }
 
@@ -64,9 +81,8 @@ render_alloc_atlas_region(Arena *arena, Atlas *atlas, Vec2U32 dim)
     {
         // NOTE(hampus): Remove the current node, it will no longer
         // be free to take because one of its descendants will
-        // be taken. Mark it used aswell
-        dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
-        node->used = true;
+        // be taken.
+        render_remove_free_region_from_atlas(atlas, node);
 
         // NOTE(hampus): Allocate 4 children to replace
         // the parent
@@ -100,8 +116,8 @@ render_alloc_atlas_region(Arena *arena, Atlas *atlas, Vec2U32 dim)
         for (U64 i = 0; i < Corner_COUNT; ++i)
         {
             children[i].parent = node;
-        node->children[i] = &children[i];
-        dll_push_back_np(atlas->first_free_region, atlas->last_free_region, &children[i], next_free, prev_free);
+            node->children[i] = &children[i];
+            render_push_free_region_to_atlas(atlas, children + i);
         }
 
         node = &children[0];
@@ -110,8 +126,7 @@ render_alloc_atlas_region(Arena *arena, Atlas *atlas, Vec2U32 dim)
         can_halve_size = region_size >= (required_size*2);
     }
 
-    dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
-    node->used = true;
+    render_remove_free_region_from_atlas(atlas, node);
     node->next_free = 0;
     node->prev_free = 0;
     AtlasRegion result = {node, node->region};
@@ -123,6 +138,7 @@ render_free_atlas_region(Atlas *atlas, AtlasRegion region)
 {
     AtlasRegionNode *node = region.node;
     AtlasRegionNode *parent = node->parent;
+    render_push_free_region_to_atlas(atlas, node);
     if (parent)
     {
         node->used = false;
@@ -141,28 +157,12 @@ render_free_atlas_region(Atlas *atlas, AtlasRegion region)
             // NOTE(hampus): All the siblings are marked as empty.
             // Remove the children from the free list and push
             // their parent.
-
             for (U64 i = 0; i < Corner_COUNT; ++i)
             {
-                dll_remove_npz(atlas->first_free_region, atlas->last_free_region, parent->children[i], next_free, prev_free,check_null, set_null);
+                render_remove_free_region_from_atlas(atlas, parent->children[i]);
             }
-            dll_push_back_np(atlas->first_free_region, atlas->last_free_region, parent, next_free, prev_free);
-                parent->used = false;
+            render_free_atlas_region(atlas, (AtlasRegion){parent, parent->region});
         }
-        else
-        {
-            // NOTE(hampus): Some sibling was marked as used.
-            // Just push this node back into the free list
-            dll_push_back_np(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free);
-            node->used = false;
-        }
-    }
-    else
-    {
-        // NOTE(hampus): This was the root node. Just put
-        // it in the free list again.
-        dll_push_back_np(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free);
-        node->used = false;
     }
 }
 
