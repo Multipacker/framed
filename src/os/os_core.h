@@ -15,12 +15,21 @@ struct OS_Library
 	U64 u64[1];
 };
 
+typedef struct {
+	U8 *data;
+	U64 size;
+	U64 repeat_count;
+} OS_CircularBuffer;
+
 #define os_handle_is_valid(handle) (!type_is_zero(handle))
 
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);
 internal Void  os_memory_decommit(Void *ptr, U64 size);
 internal Void  os_memory_release(Void *ptr, U64 size);
+
+internal OS_CircularBuffer os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count);
+internal Void              os_circular_buffer_free(OS_CircularBuffer circular_buffer);
 
 internal B32 os_file_read(Arena *arena, Str8 path, Str8 *result);
 

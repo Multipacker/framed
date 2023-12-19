@@ -35,6 +35,22 @@ os_memory_release(Void *ptr, U64 size)
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
+internal OS_CircularBuffer
+os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
+{
+	OS_CircularBuffer result = { 0 };
+
+	// TODO(simon): Implement.
+
+	return(reuslt);
+}
+
+internal Void
+os_circular_buffer_free(OS_CircularBuffer circular_buffer)
+{
+	// TODO(simon): Implement.
+}
+
 internal B32
 os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 {

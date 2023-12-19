@@ -90,6 +90,81 @@ os_memory_release(Void *ptr, U64 size)
 	munmap(ptr, size);
 }
 
+internal OS_CircularBuffer
+os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
+{
+	B32 success = true;
+
+	S64 page_size = -1;
+	if (success)
+	{
+		page_size = sysconf(_SC_PAGESIZE);
+		success &= (page_size != -1);
+	}
+
+	// TODO(simon): Rounding could be optimized if `page_size` is guaranteed to
+	// be a power of 2.
+	U64 size = 0;
+	if (success)
+	{
+		size = (minimum_size + (U64) page_size - 1) / (U64) page_size * (U64) page_size;
+	}
+
+	U8 *reserved_addresses = MAP_FAILED;
+	if (success)
+	{
+		reserved_addresses = mmap(0, repeat_count * size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+		success &= (reserved_addresses != MAP_FAILED);
+	}
+
+	S32 file_descriptor = -1;
+	if (success)
+	{
+		file_descriptor = memfd_create("circular-buffer", 0);
+		success &= (file_descriptor != -1);
+	}
+
+	if (success)
+	{
+		success &= (ftruncate(file_descriptor, (off_t) size) != -1);
+	}
+
+	if (success)
+	{
+		for (U64 i = 0; i < repeat_count; ++i)
+		{
+			U8 *mapping = mmap(reserved_addresses + i * size, size, PROT_READ | PROT_WRITE, MAP_SHARED | MAP_FIXED, file_descriptor, 0);
+			success &= (mapping != MAP_FAILED);
+		}
+	}
+
+	if (file_descriptor != -1)
+	{
+		close(file_descriptor);
+	}
+
+	if (!success && reserved_addresses)
+	{
+		munmap(reserved_addresses, repeat_count * size);
+	}
+
+	OS_CircularBuffer result = { 0 };
+	if (success)
+	{
+		result.data         = reserved_addresses;
+		result.size         = size;
+		result.repeat_count = repeat_count;
+	}
+
+	return result;
+}
+
+internal Void
+os_circular_buffer_free(OS_CircularBuffer circular_buffer)
+{
+	munmap(circular_buffer.data, circular_buffer.repeat_count * circular_buffer.size);
+}
+
 internal B32
 os_file_read(Arena *arena, Str8 path, Str8 *result)
 {
