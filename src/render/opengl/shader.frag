@@ -8,13 +8,15 @@ in float vert_border_thickness;
 in float vertex_id;
 in flat vec4 vert_radies;
 in flat float vert_omit_texture;
+in flat float vert_is_subpixel_text;
 // TODO(simon): See if we can avoid passing these
 in flat vec2 vert_center;
 in flat vec2 vert_half_size;
 in flat vec2 vert_min_uv;
 in flat vec2 vert_max_uv;
 
-out vec4 frag_color;
+layout(location = 0, index = 0) out vec4 frag_color;
+layout(location = 0, index = 1) out vec4 frag_blend_weights;
 
 uniform mat4      uniform_projection;
 uniform sampler2D uniform_sampler;
@@ -76,7 +78,17 @@ main()
 		sample_color = texture(uniform_sampler, clamp(vert_uv, vert_min_uv, vert_max_uv));
 	}
 
-	vec4 color = sample_color * vert_color;
+	if (vert_is_subpixel_text < 1)
+	{
+		vec4 color = sample_color * vert_color;
+		color.a   *= sdf_factor * border_factor;
 
-	frag_color = vec4(color.rgb, color.a * sdf_factor * border_factor);
+		frag_color         = color;
+		frag_blend_weights = vec4(color.a);
+	}
+	else
+	{
+		frag_color         = vec4(vert_color.rgb, vert_color.a);
+		frag_blend_weights = vec4(sample_color.rgb * vert_color.a, vert_color.a);
+	}
 }

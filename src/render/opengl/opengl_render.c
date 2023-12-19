@@ -121,8 +121,9 @@ render_init(Gfx_Context *gfx)
 	opengl_vertex_array_instance_attribute(renderer->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
 	opengl_vertex_array_instance_attribute(renderer->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 10, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
+	opengl_vertex_array_instance_attribute(renderer->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
 
 	glVertexArrayVertexBuffer(renderer->vao, 0, renderer->vbo, 0, sizeof(R_RectInstance));
 
@@ -140,7 +141,7 @@ render_init(Gfx_Context *gfx)
 	glUseProgram(renderer->program);
 	glBindVertexArray(renderer->vao);
 	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glBlendFunc(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR);
 
 	return(renderer);
 }
@@ -288,7 +289,8 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	result->radies[3]        = params->radius;
 	result->softness         = params->softness;
 	result->border_thickness = params->border_thickness;
-	result->omit_texture     = (F32)(params->slice.texture.u64[0] == 0);
+	result->omit_texture     = (F32) (params->slice.texture.u64[0] == 0);
+	result->is_subpixel_text = (F32) params->is_subpixel_text;
 
 	++renderer->batches.rect_count;
 
