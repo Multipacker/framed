@@ -25,6 +25,8 @@ struct PS_INPUT
 	float border_thickness : BORDER_THICKNESS;
 	float omit_texture     : OMIT_TEXTURE;
 	float is_subpixel_text : IS_SUBPIXEL_TEXT;
+	float2 min_uv          : MIN_UV;
+	float2 max_uv          : MAX_UV;
     float vertex_id        : VERTEX_ID;
 };
 
@@ -51,7 +53,7 @@ PS_INPUT vs(VS_INPUT input)
 
 	float2 uv_half_size = (input.max_uv - input.min_uv) / 2;
 	float2 uv_center = (input.max_uv + input.min_uv) / 2;
-	float2 uv_pos = vertices[input.vertex_id] * (uv_half_size * (1 + input.softness / (dst_half_size*2).x)) + uv_center;
+	float2 uv_pos = vertices[input.vertex_id] * (uv_half_size * (1 + input.softness / (dst_half_size).x)) + uv_center;
 
 	PS_INPUT output;
 	output.dst_pos = mul(uTransform, float4(dst_pos, 0, 1));
@@ -65,6 +67,8 @@ PS_INPUT vs(VS_INPUT input)
 	output.omit_texture = input.omit_texture;
 	output.vertex_id = input.vertex_id;
 	output.is_subpixel_text = input.is_subpixel_text;
+	output.min_uv = input.min_uv;
+	output.max_uv = input.max_uv;
 	return output;
 }
 
@@ -87,8 +91,8 @@ struct ps_out
 
 ps_out ps(PS_INPUT input)
 {
-	input.uv.x = clamp(input.uv.x, 0, 1);
-	input.uv.y = clamp(input.uv.y, 0, 1);
+	input.uv.x = clamp(input.uv.x, input.min_uv.x, input.max_uv.x);
+	input.uv.y = clamp(input.uv.y, input.min_uv.y, input.max_uv.y);
 	float corner_radius = input.corner_radius[round(input.vertex_id)];
 
 	float2 softness_padding = float2(max(0, input.edge_softness * 2 - 1), max(0, input.edge_softness * 2 - 1));
@@ -141,8 +145,8 @@ ps_out ps(PS_INPUT input)
 	}
 	else
 	{
-		output.color0 = float4(input.color.rgb * input.color.a, input.color.a);
-		output.color1 = float4(sample_color.rgb, input.color.a);
+		output.color0 = float4(input.color.rgb, input.color.a);
+		output.color1 = float4(sample_color.rgb * input.color.a, 0);
 	}
 
 	return output;

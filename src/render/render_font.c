@@ -9,6 +9,40 @@
 #include "freetype/freetype.h"
 #define internal static
 
+typedef struct R_FontAtlasRegionNode R_FontAtlasRegionNode;
+struct R_FontAtlasRegionNode
+{
+    R_FontAtlasRegionNode *next_free;
+    R_FontAtlasRegionNode *prev_free;
+
+    R_FontAtlasRegionNode *parent;
+    R_FontAtlasRegionNode *children[Corner_COUNT];
+    RectF32 region;
+
+    // NOTE(hampus): This will be true if either this
+    // node is used or one of it descendants are used
+    // TODO(hampus): Test performance when this is
+    // a bitmask instead
+    B32 used;
+};
+
+typedef struct R_FontAtlasRegion R_FontAtlasRegion;
+struct R_FontAtlasRegion
+{
+    R_FontAtlasRegionNode *node;
+    RectF32 region;
+};
+
+typedef struct R_FontAtlas R_FontAtlas;
+struct R_FontAtlas
+{
+    R_FontAtlasRegionNode *first_free_region;
+    R_FontAtlasRegionNode *last_free_region;
+    Vec2U32 dim;
+    Void *memory;
+    U64 num_free_regions;
+};
+
 internal Str8
 render_get_ft_error_message(FT_Error err)
 {
@@ -323,33 +357,133 @@ render_measure_text(R_Font *font, Str8 text)
 	return(result);
 }
 
-typedef struct R_FreeFontAtlasRegion R_FreeFontAtlasRegion;
-struct R_FreeFontAtlasRegion
+internal void
+render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
 {
-    struct R_FreeFontAtlasRegion *next;
-    RectF32 region;
-};
-
-typedef struct R_FontAtlas R_FontAtlas;
-struct R_FontAtlas
-{
-    Vec2U32 dim;
-    R_Texture texture;
-};
-
-internal R_FontAtlas *
-render_make_font_atlas(Arena *arena, Vec2U32 dim)
-{
-    return(0);
-}
-
-internal RectF32
-render_alloc_font_atlas_region(Arena *arena, Vec2U32 dim)
-{
-    return((RectF32){0});
+    dll_push_back_np(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free);
+    node->used = false;
+    atlas->num_free_regions++;
 }
 
 internal void
-render_free_font_atlas_region(R_FontAtlas *atlas, RectF32 region)
+render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
 {
+    dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
+    node->used = true;
+    atlas->num_free_regions--;
+}
+
+internal R_FontAtlas *
+render_make_atlas(Arena *arena, Vec2U32 dim)
+{
+    R_FontAtlas *result = push_struct(arena, R_FontAtlas);
+    result->dim = dim;
+    R_FontAtlasRegionNode *first_free_region = push_struct(arena, R_FontAtlasRegionNode);
+    first_free_region->region.min = v2f32(0, 0);
+    first_free_region->region.max = v2f32((F32)dim.x, (F32)dim.x);
+    result->memory = push_array(arena, U8, dim.x * dim.y * 4);
+    render_push_free_region_to_atlas(result, first_free_region);
+    return(result);
+}
+
+internal R_FontAtlasRegion
+render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
+{
+    R_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
+    // NOTE(hampus): Each region will always be the same size in
+    // x and y, so we only need to check the width
+    R_FontAtlasRegionNode *node = first_free_region;
+    F32 required_size = (F32)u32_max(dim.x, dim.y);
+    F32 region_size = node->region.max.x - node->region.min.x;
+    B32 can_halve_size = region_size >= (required_size*2);
+    while (can_halve_size)
+    {
+        // NOTE(hampus): Remove the current node, it will no longer
+        // be free to take because one of its descendants will
+        // be taken.
+        render_remove_free_region_from_atlas(atlas, node);
+
+        // NOTE(hampus): Allocate 4 children to replace
+        // the parent
+
+        R_FontAtlasRegionNode *children = push_array(arena, R_FontAtlasRegionNode, Corner_COUNT);
+
+        {
+            Vec2F32 bbox[Corner_COUNT] =
+            {
+                bbox[Corner_TopLeft] = node->region.min,
+                bbox[Corner_TopRight] = v2f32(node->region.max.x, node->region.min.y),
+                bbox[Corner_BottomLeft] = v2f32(node->region.min.x, node->region.max.y),
+                bbox[Corner_BottomRight] = node->region.max,
+            };
+
+            Vec2F32 middle = v2f32_div_f32(v2f32_add_v2f32(bbox[Corner_BottomRight], bbox[Corner_TopLeft]), 2.0f);
+
+            children[Corner_TopLeft].region     = rectf32(bbox[Corner_TopLeft], middle);
+
+            children[Corner_TopRight].region.min = v2f32(middle.x, bbox[Corner_TopRight].y);
+            children[Corner_TopRight].region.max = v2f32(bbox[Corner_TopRight].x, middle.y);
+
+            children[Corner_BottomLeft].region.min = v2f32(bbox[Corner_TopLeft].x, middle.y);
+            children[Corner_BottomLeft].region.max = v2f32(middle.x, bbox[Corner_BottomRight].y);
+
+            children[Corner_BottomRight].region = rectf32(middle, bbox[Corner_BottomRight]);
+        }
+
+        // NOTE(hampus): Push back the new children to
+        // the free list and link them into the quad-tree.
+        for (U64 i = 0; i < Corner_COUNT; ++i)
+        {
+            children[i].parent = node;
+            node->children[i] = &children[i];
+            render_push_free_region_to_atlas(atlas, children + i);
+        }
+
+        node = &children[0];
+
+        region_size = node->region.max.x - node->region.min.x;
+        can_halve_size = region_size >= (required_size*2);
+    }
+
+    render_remove_free_region_from_atlas(atlas, node);
+    node->next_free = 0;
+    node->prev_free = 0;
+    R_FontAtlasRegion result = {node, node->region};
+    return(result);
+}
+
+internal void
+render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
+{
+    R_FontAtlasRegionNode *node = region.node;
+    R_FontAtlasRegionNode *parent = node->parent;
+    render_push_free_region_to_atlas(atlas, node);
+    if (parent)
+    {
+        // NOTE(hampus): Lets check if we can combine
+        // any empty nodes to larger nodes. Otherwise
+        // we just put it back into the free list
+        B32 used = false;
+        for (U64 i = 0; i < Corner_COUNT; ++i)
+        {
+            R_FontAtlasRegionNode *child = parent->children[i];
+            if (child->used)
+            {
+                used = true;
+                break;
+            }
+        }
+
+        if (!used)
+        {
+            // NOTE(hampus): All the siblings are marked as empty.
+            // Remove the children from the free list and push
+            // their parent.
+            for (U64 i = 0; i < Corner_COUNT; ++i)
+            {
+                render_remove_free_region_from_atlas(atlas, parent->children[i]);
+            }
+            render_free_atlas_region(atlas, (R_FontAtlasRegion){parent, parent->region});
+        }
+    }
 }

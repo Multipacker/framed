@@ -65,6 +65,8 @@ struct R_Context
 
     R_Texture white_texture;
 
+    struct R_FontAtlas *font_atlas;
+
     ID3D11Device        *device;
     ID3D11DeviceContext *context;
     IDXGISwapChain1     *swap_chain;
