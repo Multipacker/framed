@@ -139,6 +139,10 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {
 	Str8 result = { 0 };
 
+	// NOTE(simon): We need to make a copy as we use args twice.
+	va_list format_args;
+	va_copy(format_args, args);
+
 	// NOTE(hampus): Address sanitizer complains about stbsp_vsnprintf
 	// for some reason...
 #if SANITIZER_ENABLED
@@ -153,7 +157,9 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 
 	result.data = push_array(arena, U8, needed_size+1);
 	result.size = needed_size;
-	vsnprintf((CStr) result.data, needed_size+1, cstr, args);
+	vsnprintf((CStr) result.data, needed_size+1, cstr, format_args);
+
+	va_end(format_args);
 	return(result);
 }
 
