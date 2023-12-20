@@ -2,7 +2,11 @@
 	 // [x] - Subpixel rendering
 // [ ] - Kerning
 // [ ] - Underline & strikethrough
+// [ ] - Bold & italic fonts
 // [ ] - Font atlas & cache
+// [ ] - Icons
+// [ ] - Subpixel positioning
+// [ ] - Unicode
 
 // NOTE(hampus): Freetype have variables called 'internal' :(
 #undef internal
@@ -66,7 +70,7 @@ render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
 	{
 		if (!node->next_free)
 		{
-			// NOTE(hampus): There wasn't any free region left 
+			// NOTE(hampus): There wasn't any free region left
 			// TODO(hampus): Logging
 			assert(false);
 			break;
@@ -76,7 +80,7 @@ render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
 		can_halve_size = region_size >= (required_size*2);
 		fits = region_size > required_size;
 	}
-	
+
 	while (can_halve_size)
 	{
 		// NOTE(hampus): Remove the current node, it will no longer
@@ -238,22 +242,22 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					bearing_left  = face->glyph->bitmap_left;
 					bearing_top   = face->glyph->bitmap_top;
 					bitmap_width  = face->glyph->bitmap.width;
-					
+
 					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
-					
+
 					glyph->font_atlas_region = font_atlas_region;
-					
+
 					rect_region = font_atlas_region.region;
-					
+
 					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
 					// NOTE(hampus): Convert from 8 bit to 32 bit
 					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
 					U32 *dst = (U32 *)texture_data;
 					U8 *src = face->glyph->bitmap.buffer;
-					for (S32 y = 0; y < bitmap_height; ++y)
+					for (U32 y = 0; y < bitmap_height; ++y)
 					{
 						U32 *dst_row = dst;
-						for (S32 x = 0; x < bitmap_width; ++x)
+						for (U32 x = 0; x < bitmap_width; ++x)
 						{
 							U8 val = *src++;
 							*dst_row++ = (U32) ((0xff <<  0) |
@@ -261,10 +265,10 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 											(0xff << 16) |
 											(val  << 24));
 						}
-						
+
 						dst += renderer->font_atlas->dim.x;
 					}
-					
+
 				} break;
 
 				case R_FontRenderMode_LCD:
@@ -276,9 +280,9 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					bitmap_width = face->glyph->bitmap.width / 3;
 
 					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
-					
+
 					glyph->font_atlas_region = font_atlas_region;
-					
+
 					rect_region = font_atlas_region.region;
 
 					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
@@ -286,11 +290,11 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
 					U8 *dst = texture_data;
 					U8 *src = face->glyph->bitmap.buffer;
-					for (S32 y = 0; y < bitmap_height; ++y)
+					for (U32 y = 0; y < bitmap_height; ++y)
 					{
 						U8 *dst_row = dst;
 						U8 *src_row = src;
-						for (S32 x = 0; x < bitmap_width; ++x)
+						for (U32 x = 0; x < bitmap_width; ++x)
 						{
 							U8 r = *src_row++;
 							U8 g = *src_row++;
@@ -308,7 +312,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 						// by.
 						src += (S32) (face->glyph->bitmap.pitch);
 					}
-					
+
 				} break;
 				invalid_case;
 			}
@@ -494,7 +498,7 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 									v2f32(xpos + width,
 												ypos + height),
 									.slice = glyph->slice,
-						.color = color, 
+						.color = color,
 						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 			min.x += (glyph->advance_width);
 		}

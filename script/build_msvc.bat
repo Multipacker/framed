@@ -16,7 +16,7 @@ rem -- Common flags --
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710
 set additional_includes=-I../vendor/
-set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
+set opts=-DENABLE_ASSERT=1 -DRENDERER_OPENGL=1
 set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes% -Fe:main
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
 set linker_flags=%libs% -incremental:no
@@ -25,7 +25,7 @@ set src_files=../src/atlas_test.c
 rem -- Debug build flags --
 
 set debug_compiler_flags=-RTC1 -MTd -Zi -Od -fsanitize=address -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
-set debug_linker_flags=-subsystem:console freetype_debug.lib 
+set debug_linker_flags=-subsystem:console freetype_debug.lib
 
 rem -- Optimized build flags --
 
@@ -35,7 +35,7 @@ set optimized_linker_flags=-subsystem:console freetype_debug.lib
 rem -- Release build flags --
 
 set release_compiler_flags=-O2 -Oi -EHsc -fp:fast -GS- -DBUILD_MODE_RELEASE=1
-set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib freetype.lib 
+set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib freetype.lib
 
 set arg0="%1%"
 

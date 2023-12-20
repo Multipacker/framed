@@ -16,11 +16,11 @@ struct R_FontAtlasRegionNode
 {
 	R_FontAtlasRegionNode *next_free;
 	R_FontAtlasRegionNode *prev_free;
-	
+
 	R_FontAtlasRegionNode *parent;
 	R_FontAtlasRegionNode *children[Corner_COUNT];
 	RectU32 region;
-	
+
 	// NOTE(hampus): This will be true if either this
 	// node is used or one of it descendants are used
 	// TODO(hampus): Test performance when this is

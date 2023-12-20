@@ -42,7 +42,7 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 
 	// TODO(simon): Implement.
 
-	return(reuslt);
+	return(result);
 }
 
 internal Void

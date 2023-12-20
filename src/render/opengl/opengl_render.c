@@ -455,14 +455,14 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 	}
 }
 
-internal Void           
+internal Void
 render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
 	if (texture.u64[0])
 	{
 		GLuint opengl_texture = (GLuint) texture.u64[0];
 		U32 x = offset % texture.u64[1];
-		U32 y = offset / texture.u64[1];
+		U32 y = (U32)(offset / texture.u64[1]);
 		glTextureSubImage2D(
 			opengl_texture,
 			0,

@@ -1,14 +1,12 @@
 #ifndef RENDER_CORE_H
 #define RENDER_CORE_H
 
-// TODO:
+// TODO(hampus):
 // [x] - Textures
-// [ ] - Text rendering
+// [ ] - Finish text rendering
 // [ ] - Lines
-// [ ] - Icons
 // [ ] - Push/Pop matrices
 // [ ] - Premultiplied alpha
-// [ ] - Subpixel positioning for text
 
 typedef struct R_Texture R_Texture;
 struct R_Texture
