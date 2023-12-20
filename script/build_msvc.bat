@@ -20,7 +20,7 @@ set opts=-DENABLE_ASSERT=1 -DRENDERER_OPENGL=1
 set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes% -Fe:main
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
 set linker_flags=%libs% -incremental:no
-set src_files=../src/atlas_test.c
+set src_files=../src/main.c
 
 rem -- Debug build flags --
 

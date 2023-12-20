@@ -44,13 +44,10 @@ os_main(Str8List arguments)
 	R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
 
 	Arena *perm_arena = arena_create();
-	R_Font *font = render_font_init(perm_arena, renderer, str8_lit("data/fonts/Inter-Regular.ttf"));
 
-    F32 test = 5.0f;
+	R_Font *font  = render_make_font(renderer, 10, str8_lit("data/fonts/liberation-mono.ttf"));
 
-    S32 x = test;
-
-	B32 running = true;
+    B32 running = true;
 	while (running)
 	{
 		Arena *current_arena  = frame_arenas[0];
