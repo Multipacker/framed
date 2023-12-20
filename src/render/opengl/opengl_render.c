@@ -371,7 +371,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 			switch (color_space)
 			{
 				case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-				case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
+				case R_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
 				invalid_case;
 			}
 
@@ -421,7 +421,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 	switch (color_space)
 	{
 		case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-		case R_ColorSpace_Linear: internalformat = GL_RGB8;         break;
+		case R_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
 		invalid_case;
 	}
 	glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
