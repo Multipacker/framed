@@ -194,10 +194,10 @@ render_get_ft_error_message(FT_Error err)
 internal B32
 render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_index, R_FontRenderMode render_mode)
 {
-	S32 bitmap_height = 0;
+	U32 bitmap_height = 0;
 	S32 bearing_left  = 0;
 	S32 bearing_top   = 0;
-	S32 bitmap_width  = 0;
+	U32 bitmap_width  = 0;
 	U8 *texture_data = 0;
 	RectU32 rect_region = { 0 };
 
@@ -234,10 +234,10 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 			{
 				case R_FontRenderMode_Normal:
 				{
-					bitmap_height = (S32) face->glyph->bitmap.rows;
+					bitmap_height = face->glyph->bitmap.rows;
 					bearing_left  = face->glyph->bitmap_left;
 					bearing_top   = face->glyph->bitmap_top;
-					bitmap_width  = (S32) face->glyph->bitmap.width;
+					bitmap_width  = face->glyph->bitmap.width;
 					
 					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 					
@@ -269,7 +269,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 
 				case R_FontRenderMode_LCD:
 				{
-					bitmap_height = (S32) face->glyph->bitmap.rows;
+					bitmap_height = face->glyph->bitmap.rows;
 					bearing_left  = face->glyph->bitmap_left;
 					bearing_top   = face->glyph->bitmap_top;
 					// NOTE(hampus): We now have 3 "pixels" for each value.
@@ -375,7 +375,7 @@ render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8
 				{
 					F32 points_per_inch = 72;
 					F32 em_per_font_unit = 1.0f / (F32) face->units_per_EM;
-					F32 points_per_font_unit = em_per_font_unit / font_size;
+					F32 points_per_font_unit = em_per_font_unit / (F32) font_size;
 					F32 inches_per_font_unit = points_per_font_unit / points_per_inch;
 					F32 pixels_per_font_unit = inches_per_font_unit * (F32) dpi;
 

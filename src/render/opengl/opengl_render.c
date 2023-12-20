@@ -408,7 +408,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 }
 
 internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *data, S32 width, S32 height, R_ColorSpace color_space)
+render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U32 height, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 
@@ -452,6 +452,6 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 }
 
 internal Void           
-render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, S32 width, S32 height, S32 offset)
+render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
 }

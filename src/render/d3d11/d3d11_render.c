@@ -650,7 +650,7 @@ render_get_stats(R_Context *renderer)
 }
 
 internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *memory, S32 width, S32 height, R_ColorSpace color_space)
+render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, U32 height, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 	DXGI_FORMAT d3d11_format = { 0 };
@@ -737,7 +737,7 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 }
 
 internal Void
-render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, S32 width, S32 height, S32 offset)
+render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
 	// TODO(hampus): Benchmark these
 	S32 dst_width  = (S32) texture.u64[1];
