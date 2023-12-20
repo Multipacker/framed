@@ -390,6 +390,8 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 			);
 
 			result.u64[0] = (U64) texture;
+			result.u64[1] = (U64) width;
+			result.u64[2] = (U64) height;
 
 			STBI_FREE(pixels);
 		}
@@ -437,6 +439,8 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 	);
 
 	result.u64[0] = (U64) texture;
+	result.u64[1] = width;
+	result.u64[2] = height;
 
 	return(result);
 }
@@ -454,4 +458,18 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 internal Void           
 render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
+	if (texture.u64[0])
+	{
+		GLuint opengl_texture = (GLuint) texture.u64[0];
+		U32 x = offset % texture.u64[1];
+		U32 y = offset / texture.u64[1];
+		glTextureSubImage2D(
+			opengl_texture,
+			0,
+			(GLint) x, (GLint) y,
+			(GLsizei) width, (GLsizei) height,
+			GL_RGBA, GL_UNSIGNED_BYTE,
+			(const void *) memory
+		);
+	}
 }
