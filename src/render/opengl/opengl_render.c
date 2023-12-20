@@ -141,7 +141,7 @@ render_init(Gfx_Context *gfx)
 	glUseProgram(renderer->program);
 	glBindVertexArray(renderer->vao);
 	glEnable(GL_BLEND);
-	glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC1_ALPHA, GL_ONE_MINUS_SRC1_ALPHA);
+	glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	return(renderer);
 }
