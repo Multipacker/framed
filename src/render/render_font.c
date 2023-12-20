@@ -243,7 +243,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					bearing_top   = face->glyph->bitmap_top;
 					bitmap_width  = face->glyph->bitmap.width;
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
 					glyph->font_atlas_region = font_atlas_region;
 
@@ -279,7 +279,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					// NOTE(hampus): We now have 3 "pixels" for each value.
 					bitmap_width = face->glyph->bitmap.width / 3;
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
 					glyph->font_atlas_region = font_atlas_region;
 

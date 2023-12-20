@@ -29,13 +29,13 @@ linear_from_srgb(Vec4F32 c)
 internal D3D11_ClipRect *
 d3d11_top_clip(R_Context *renderer)
 {
-	return(renderer->clip_rect_stack.first);
+	return(renderer->backend->clip_rect_stack.first);
 }
 
 internal R_RenderStats *
 d3d11_get_current_stats(R_Context *renderer)
 {
-	return(&renderer->render_stats[0]);
+	return(&renderer->render_stats[1]);
 }
 
 internal R_Context *
@@ -43,7 +43,9 @@ render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
 	R_Context *result = push_struct(arena, R_Context);
-	result->arena = arena;
+    result->backend = push_struct(arena, R_BackendContext);
+        R_BackendContext *backend = result->backend;
+	result->permanent_arena = arena;
 	result->frame_arena = arena_create();
 	result->gfx = gfx;
 
@@ -64,14 +66,14 @@ render_init(Gfx_Context *gfx)
 #endif
 		D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_0 };
 		hr = D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, flags, levels, ARRAYSIZE(levels),
-													 D3D11_SDK_VERSION, &result->device, 0, &result->context);
+                               D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
 		assert_hr(hr);
 	}
 
 	// NOTE(hampus): Enable useful debug break on errors
 #if !BUILD_MODE_RELEASE
 	{
-		ID3D11Device_QueryInterface(result->device, &IID_ID3D11InfoQueue, (Void**) &info);
+		ID3D11Device_QueryInterface(backend->device, &IID_ID3D11InfoQueue, (Void**) &info);
 		ID3D11InfoQueue_SetBreakOnSeverity(info, D3D11_MESSAGE_SEVERITY_CORRUPTION, TRUE);
 		ID3D11InfoQueue_SetBreakOnSeverity(info, D3D11_MESSAGE_SEVERITY_ERROR, TRUE);
 		ID3D11InfoQueue_Release(info);
@@ -87,7 +89,7 @@ render_init(Gfx_Context *gfx)
 
 	// NOTE(hampus): Create swap chain
 	{
-		hr = ID3D11Device_QueryInterface(result->device, &IID_IDXGIDevice, (Void**) &dxgi_device);
+		hr = ID3D11Device_QueryInterface(backend->device, &IID_IDXGIDevice, (Void**) &dxgi_device);
 		assert_hr(hr);
 
 		hr = IDXGIDevice_GetAdapter(dxgi_device, &dxgi_adapter);
@@ -110,7 +112,7 @@ render_init(Gfx_Context *gfx)
 			.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
 		};
 
-		hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*) result->device, gfx->hwnd, &desc, 0, 0, &result->swap_chain);
+		hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*) backend->device, gfx->hwnd, &desc, 0, 0, &backend->swap_chain);
 		assert_hr(hr);
 
 		IDXGIFactory_MakeWindowAssociation(factory, gfx->hwnd, DXGI_MWA_NO_ALT_ENTER);
@@ -130,7 +132,7 @@ render_init(Gfx_Context *gfx)
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE
 		};
 
-		ID3D11Device_CreateBuffer(result->device, &desc, 0, &result->vertex_buffer);
+		ID3D11Device_CreateBuffer(backend->device, &desc, 0, &backend->vertex_buffer);
 	}
 
 	// NOTE(hampus): Create shaders
@@ -210,9 +212,9 @@ render_init(Gfx_Context *gfx)
 			assert(!"Failed to compile pixel shader!");
 		}
 
-		ID3D11Device_CreateVertexShader(result->device, ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), 0, &result->vertex_shader);
-		ID3D11Device_CreatePixelShader(result->device, ID3D10Blob_GetBufferPointer(pblob), ID3D10Blob_GetBufferSize(pblob), 0, &result->pixel_shader);
-		ID3D11Device_CreateInputLayout(result->device, desc, ARRAYSIZE(desc), ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), &result->input_layout);
+		ID3D11Device_CreateVertexShader(backend->device, ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), 0, &backend->vertex_shader);
+		ID3D11Device_CreatePixelShader(backend->device, ID3D10Blob_GetBufferPointer(pblob), ID3D10Blob_GetBufferSize(pblob), 0, &backend->pixel_shader);
+		ID3D11Device_CreateInputLayout(backend->device, desc, ARRAYSIZE(desc), ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), &backend->input_layout);
 		ID3D10Blob_Release(pblob);
 		ID3D10Blob_Release(vblob);
 
@@ -227,7 +229,7 @@ render_init(Gfx_Context *gfx)
 			.BindFlags = D3D11_BIND_CONSTANT_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
 		};
-		ID3D11Device_CreateBuffer(result->device, &desc, 0, &result->uniform_buffer);
+		ID3D11Device_CreateBuffer(backend->device, &desc, 0, &backend->uniform_buffer);
 	}
 
 	// NOTE(hampus): White Texture
@@ -257,11 +259,11 @@ render_init(Gfx_Context *gfx)
 
 		ID3D11Texture2D *texture;
 		ID3D11ShaderResourceView *texture_view;
-		ID3D11Device_CreateTexture2D(result->device, &desc, &data, &texture);
-		ID3D11Device_CreateShaderResourceView(result->device, (ID3D11Resource*) texture, 0, &texture_view);
+		ID3D11Device_CreateTexture2D(backend->device, &desc, &data, &texture);
+		ID3D11Device_CreateShaderResourceView(backend->device, (ID3D11Resource*) texture, 0, &texture_view);
 		ID3D11Texture2D_Release(texture);
 
-		result->white_texture.u64[0] = int_from_ptr(texture_view);
+		backend->white_texture.u64[0] = int_from_ptr(texture_view);
 	}
 
 	// NOTE(hampus): Sampler
@@ -277,7 +279,7 @@ render_init(Gfx_Context *gfx)
 			.MaxLOD = +F32_MAX,
 		};
 
-		ID3D11Device_CreateSamplerState(result->device, &desc, &result->sampler);
+		ID3D11Device_CreateSamplerState(backend->device, &desc, &backend->sampler);
 	}
 
 	// NOTE(hampus): Blend state
@@ -306,7 +308,7 @@ render_init(Gfx_Context *gfx)
 			.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
 		},
 		};
-		ID3D11Device_CreateBlendState(result->device, &desc, &result->blend_state);
+		ID3D11Device_CreateBlendState(backend->device, &desc, &backend->blend_state);
 	}
 
 	// NOTE(hampus): Rasterizer state
@@ -318,7 +320,7 @@ render_init(Gfx_Context *gfx)
 			.CullMode = D3D11_CULL_NONE,
 			.ScissorEnable = TRUE,
 		};
-		ID3D11Device_CreateRasterizerState(result->device, &desc, &result->rasterizer_state);
+		ID3D11Device_CreateRasterizerState(backend->device, &desc, &backend->rasterizer_state);
 	}
 
 	// NOTE(hampus): Depth stencil state
@@ -333,7 +335,7 @@ render_init(Gfx_Context *gfx)
 			.StencilReadMask = D3D11_DEFAULT_STENCIL_READ_MASK,
 			.StencilWriteMask = D3D11_DEFAULT_STENCIL_WRITE_MASK,
 		};
-		ID3D11Device_CreateDepthStencilState(result->device, &desc, &result->depth_state);
+		ID3D11Device_CreateDepthStencilState(backend->device, &desc, &backend->depth_state);
 	}
 
 	return(result);
@@ -344,9 +346,9 @@ d3d11_push_batch(R_Context *renderer)
 {
 	D3D11_Batch *result     = push_struct_zero(renderer->frame_arena, D3D11_Batch);
 	result->instances = push_array(renderer->frame_arena, R_RectInstance, D3D11_BATCH_SIZE);
-	dll_push_back(renderer->batch_list.first, renderer->batch_list.last, result);
+	dll_push_back(renderer->backend->batch_list.first, renderer->backend->batch_list.last, result);
 	result->params.clip_rect = d3d11_top_clip(renderer);
-	renderer->batch_list.batch_count++;
+	renderer->backend->batch_list.batch_count++;
 	R_RenderStats *stats = d3d11_get_current_stats(renderer);
 	stats->batch_count++;
 	return(result);
@@ -364,27 +366,28 @@ render_begin(R_Context *renderer)
 
 	// NOTE(hampus): First batch
 	D3D11_Batch *first_batch = d3d11_push_batch(renderer);
-	first_batch->params.texture = renderer->white_texture;
+	first_batch->params.texture = renderer->backend->white_texture;
 }
 
 internal Void
 render_end(R_Context *renderer)
 {
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
+    R_BackendContext *backend = renderer->backend;
 	HRESULT hr;
-	if (renderer->render_target_view == 0 || renderer->current_width != client_area.width || renderer->current_height != client_area.height)
+	if (backend->render_target_view == 0 || backend->current_width != client_area.width || backend->current_height != client_area.height)
 	{
-		if (renderer->render_target_view)
+		if (backend->render_target_view)
 		{
-			ID3D11DeviceContext_ClearState(renderer->context);
-			ID3D11RenderTargetView_Release(renderer->render_target_view);
-			ID3D11DepthStencilView_Release(renderer->depth_stencil_view);
-			renderer->render_target_view = 0;
+			ID3D11DeviceContext_ClearState(backend->context);
+			ID3D11RenderTargetView_Release(backend->render_target_view);
+			ID3D11DepthStencilView_Release(backend->depth_stencil_view);
+			backend->render_target_view = 0;
 		}
 
 		if (client_area.width != 0 && client_area.height != 0)
 		{
-			hr = IDXGISwapChain1_ResizeBuffers(renderer->swap_chain, 0, client_area.width, client_area.height, DXGI_FORMAT_UNKNOWN, 0);
+			hr = IDXGISwapChain1_ResizeBuffers(backend->swap_chain, 0, client_area.width, client_area.height, DXGI_FORMAT_UNKNOWN, 0);
 			if (FAILED(hr))
 			{
 				assert(!"Failed to resize swap chain!");
@@ -392,9 +395,9 @@ render_end(R_Context *renderer)
 
 			// NOTE(hampus): Create RenderTarget view for new backbuffer texture
 			ID3D11Texture2D* backbuffer;
-			IDXGISwapChain1_GetBuffer(renderer->swap_chain, 0, &IID_ID3D11Texture2D, (Void**) &backbuffer);
+			IDXGISwapChain1_GetBuffer(backend->swap_chain, 0, &IID_ID3D11Texture2D, (Void**) &backbuffer);
 			D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc = { .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D };
-			ID3D11Device_CreateRenderTargetView(renderer->device, (ID3D11Resource*) backbuffer, &render_target_view_desc, &renderer->render_target_view);
+			ID3D11Device_CreateRenderTargetView(backend->device, (ID3D11Resource*) backbuffer, &render_target_view_desc, &backend->render_target_view);
 			ID3D11Texture2D_Release(backbuffer);
 
 			D3D11_TEXTURE2D_DESC depthDesc =
@@ -411,19 +414,19 @@ render_end(R_Context *renderer)
 
 			// NOTE(hampus): Create new depth stencil texture & DepthStencil view
 			ID3D11Texture2D* depth;
-			ID3D11Device_CreateTexture2D(renderer->device, &depthDesc, 0, &depth);
-			ID3D11Device_CreateDepthStencilView(renderer->device, (ID3D11Resource*) depth, 0, &renderer->depth_stencil_view);
+			ID3D11Device_CreateTexture2D(backend->device, &depthDesc, 0, &depth);
+			ID3D11Device_CreateDepthStencilView(backend->device, (ID3D11Resource*) depth, 0, &backend->depth_stencil_view);
 			ID3D11Texture2D_Release(depth);
 		}
-		renderer->current_width = client_area.width;
-		renderer->current_height = client_area.height;
+		backend->current_width = client_area.width;
+		backend->current_height = client_area.height;
 	}
 
 	F32 gamma = 2.2f;
 
 	Vec4F32 white = v4f32(1, 1, 1, 1);
 
-	if (renderer->render_target_view)
+	if (backend->render_target_view)
 	{
 		D3D11_VIEWPORT viewport =
 		{
@@ -439,9 +442,9 @@ render_end(R_Context *renderer)
 		Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
 
 		FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
-		ID3D11DeviceContext_ClearRenderTargetView(renderer->context, renderer->render_target_view, color);
-		ID3D11DeviceContext_ClearDepthStencilView(renderer->context, renderer->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
-		D3D11_BatchList *batch_list = &renderer->batch_list;
+		ID3D11DeviceContext_ClearRenderTargetView(backend->context, backend->render_target_view, color);
+		ID3D11DeviceContext_ClearDepthStencilView(backend->context, backend->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
+		D3D11_BatchList *batch_list = &backend->batch_list;
 		for (D3D11_Batch *batch = batch_list->first;
 				 batch != 0;
 				 batch = batch->next)
@@ -453,29 +456,29 @@ render_end(R_Context *renderer)
 				Mat4F32 transform = m4f32_ortho(0, (F32) client_area.width, (F32) client_area.height, 0, -1.0f, 1.0f);
 
 				D3D11_MAPPED_SUBRESOURCE mapped;
-				ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*) renderer->uniform_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				ID3D11DeviceContext_Map(backend->context, (ID3D11Resource*) backend->uniform_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				memory_copy_typed((U8 *) mapped.pData, &transform.m, sizeof(transform));
-				ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*) renderer->uniform_buffer, 0);
+				ID3D11DeviceContext_Unmap(backend->context, (ID3D11Resource*) backend->uniform_buffer, 0);
 			}
 
 			// NOTE(hampus): Setup vertex buffer
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped;
-				ID3D11DeviceContext_Map(renderer->context, (ID3D11Resource*) renderer->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+				ID3D11DeviceContext_Map(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 				memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(R_RectInstance) * batch->instance_count);
-				ID3D11DeviceContext_Unmap(renderer->context, (ID3D11Resource*) renderer->vertex_buffer, 0);
+				ID3D11DeviceContext_Unmap(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0);
 			}
 
 			// NOTE(hampus): Input Assembler
-			ID3D11DeviceContext_IASetInputLayout(renderer->context, renderer->input_layout);
-			ID3D11DeviceContext_IASetPrimitiveTopology(renderer->context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+			ID3D11DeviceContext_IASetInputLayout(backend->context, backend->input_layout);
+			ID3D11DeviceContext_IASetPrimitiveTopology(backend->context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
 			UINT stride = sizeof(R_RectInstance);
 			UINT offset = 0;
-			ID3D11DeviceContext_IASetVertexBuffers(renderer->context, 0, 1, &renderer->vertex_buffer, &stride, &offset);
+			ID3D11DeviceContext_IASetVertexBuffers(backend->context, 0, 1, &backend->vertex_buffer, &stride, &offset);
 
 			// NOTE(hampus): Vertex Shader
-			ID3D11DeviceContext_VSSetConstantBuffers(renderer->context, 0, 1, &renderer->uniform_buffer);
-			ID3D11DeviceContext_VSSetShader(renderer->context, renderer->vertex_shader, 0, 0);
+			ID3D11DeviceContext_VSSetConstantBuffers(backend->context, 0, 1, &backend->uniform_buffer);
+			ID3D11DeviceContext_VSSetShader(backend->context, backend->vertex_shader, 0, 0);
 
 			D3D11_RECT rect;
 			rect.left   = (LONG) params->clip_rect->rect.x0;
@@ -484,30 +487,30 @@ render_end(R_Context *renderer)
 			rect.bottom = (LONG) params->clip_rect->rect.y1;
 
 			// NOTE(hampus): Rasterizer Stage
-			ID3D11DeviceContext_RSSetViewports(renderer->context, 1, &viewport);
-			ID3D11DeviceContext_RSSetState(renderer->context, renderer->rasterizer_state);
-			ID3D11DeviceContext_RSSetScissorRects(renderer->context, 1, &rect);
+			ID3D11DeviceContext_RSSetViewports(backend->context, 1, &viewport);
+			ID3D11DeviceContext_RSSetState(backend->context, backend->rasterizer_state);
+			ID3D11DeviceContext_RSSetScissorRects(backend->context, 1, &rect);
 
 			ID3D11ShaderResourceView *texture_view = ptr_from_int(batch->params.texture.u64[0]);
 
 			// NOTE(hampus): Pixel Shader
-			ID3D11DeviceContext_PSSetSamplers(renderer->context, 0, 1, &renderer->sampler);
-			ID3D11DeviceContext_PSSetShaderResources(renderer->context, 0, 1, &texture_view);
-			ID3D11DeviceContext_PSSetShader(renderer->context, renderer->pixel_shader, 0, 0);
+			ID3D11DeviceContext_PSSetSamplers(backend->context, 0, 1, &backend->sampler);
+			ID3D11DeviceContext_PSSetShaderResources(backend->context, 0, 1, &texture_view);
+			ID3D11DeviceContext_PSSetShader(backend->context, backend->pixel_shader, 0, 0);
 
 			// NOTE(hampus): Output Merger
-			ID3D11DeviceContext_OMSetBlendState(renderer->context, renderer->blend_state, 0, ~0U);
-			ID3D11DeviceContext_OMSetDepthStencilState(renderer->context, renderer->depth_state, 0);
-			ID3D11DeviceContext_OMSetRenderTargets(renderer->context, 1, &renderer->render_target_view, renderer->depth_stencil_view);
+			ID3D11DeviceContext_OMSetBlendState(backend->context, backend->blend_state, 0, ~0U);
+			ID3D11DeviceContext_OMSetDepthStencilState(backend->context, backend->depth_state, 0);
+			ID3D11DeviceContext_OMSetRenderTargets(backend->context, 1, &backend->render_target_view, backend->depth_stencil_view);
 
 			// NOTE(hampus): Draw
 			assert(batch->instance_count <= U32_MAX);
-			ID3D11DeviceContext_DrawInstanced(renderer->context, 4, (U32) batch->instance_count, 0, 0);
+			ID3D11DeviceContext_DrawInstanced(backend->context, 4, (U32) batch->instance_count, 0, 0);
 		}
 	}
 
 	BOOL vsync = TRUE;
-	hr = IDXGISwapChain1_Present(renderer->swap_chain, vsync ? 1 : 0, 0);
+	hr = IDXGISwapChain1_Present(backend->swap_chain, vsync ? 1 : 0, 0);
 	if (hr == DXGI_STATUS_OCCLUDED)
 	{
 		// NOTE(hampus): Window is minimized, cannot vsync - instead sleep a bit
@@ -526,19 +529,20 @@ render_end(R_Context *renderer)
 	arena_pop_to(renderer->frame_arena, 0);
 	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
-	renderer->batch_list.first = 0;
-	renderer->batch_list.last  = 0;
-	renderer->batch_list.batch_count  = 0;
+	backend->batch_list.first = 0;
+	backend->batch_list.last  = 0;
+	backend->batch_list.batch_count  = 0;
 }
 
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
+    R_BackendContext *backend = renderer->backend;
 	if (params->slice.texture.u64[0] == 0)
 	{
-		params->slice.texture = renderer->white_texture;
+		params->slice.texture = backend->white_texture;
 	}
-	D3D11_BatchList *batch_list = &renderer->batch_list;
+	D3D11_BatchList *batch_list = &backend->batch_list;
 	D3D11_Batch *batch = batch_list->last;
 
 	R_RectInstance *instance = &render_rect_instance_null;
@@ -554,7 +558,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 		return(instance);
 	}
 
-	B32 is_different_clip   = (batch->params.clip_rect != renderer->clip_rect_stack.first);
+	B32 is_different_clip   = (batch->params.clip_rect != backend->clip_rect_stack.first);
 	B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
 	B32 inside_batch_clip   = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
 	if ((is_different_clip && !(inside_current_clip && inside_batch_clip)) ||
@@ -565,8 +569,8 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
 	if (batch)
 	{
-		B32 batch_is_white  = batch->params.texture.u64[0] == renderer->white_texture.u64[0];
-		B32 params_is_white = params->slice.texture.u64[0] == renderer->white_texture.u64[0];
+		B32 batch_is_white  = batch->params.texture.u64[0] == backend->white_texture.u64[0];
+		B32 params_is_white = params->slice.texture.u64[0] == backend->white_texture.u64[0];
 		if (!params_is_white)
 		{
 			if (!batch_is_white)
@@ -609,7 +613,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	instance->radies[3]        = params->radius;
 	instance->softness         = params->softness;
 	instance->border_thickness = params->border_thickness;
-	instance->omit_texture     = (F32) (params->slice.texture.u64[0] == renderer->white_texture.u64[0]);
+	instance->omit_texture     = (F32) (params->slice.texture.u64[0] == backend->white_texture.u64[0]);
 	instance->is_subpixel_text = (F32) params->is_subpixel_text;
 
 	batch->instance_count++;
@@ -634,19 +638,13 @@ render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_pare
 	}
 	D3D11_ClipRect *node = push_struct(renderer->frame_arena, D3D11_ClipRect);
 	node->rect = rect;
-	stack_push(renderer->clip_rect_stack.first, node);
+	stack_push(renderer->backend->clip_rect_stack.first, node);
 }
 
 internal Void
 render_pop_clip(R_Context *renderer)
 {
-	stack_pop(renderer->clip_rect_stack.first);
-}
-
-internal R_RenderStats
-render_get_stats(R_Context *renderer)
-{
-	return(renderer->render_stats[1]);
+	stack_pop(renderer->backend->clip_rect_stack.first);
 }
 
 internal R_Texture
@@ -682,8 +680,8 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, 
 
 	ID3D11Texture2D *texture;
 	ID3D11ShaderResourceView *texture_view;
-	ID3D11Device_CreateTexture2D(renderer->device, &desc, &data, &texture);
-	ID3D11Device_CreateShaderResourceView(renderer->device, (ID3D11Resource*) texture, 0, &texture_view);
+	ID3D11Device_CreateTexture2D(renderer->backend->device, &desc, &data, &texture);
+	ID3D11Device_CreateShaderResourceView(renderer->backend->device, (ID3D11Resource*) texture, 0, &texture_view);
 
 	result.u64[0] = int_from_ptr(texture_view);
 	result.u64[1] = (U64) width;
@@ -751,12 +749,12 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 	box.bottom     = box.top  + height;
 	box.front      = 0;
 	box.back       = 1;
-	ID3D11DeviceContext_UpdateSubresource(renderer->context, resource,
+	ID3D11DeviceContext_UpdateSubresource(renderer->backend->context, resource,
 																				0, &box, memory, (U32) width * 4, 0);
 #else
 	D3D11_MAPPED_SUBRESOURCE mapped;
-	ID3D11DeviceContext_Map(renderer->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+	ID3D11DeviceContext_Map(backend->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 	memory_copy_typed((U8 *) mapped.pData, (U8 *) memory, (width * height * 4));
-	ID3D11DeviceContext_Unmap(renderer->context, resource, 0);
+	ID3D11DeviceContext_Unmap(backend->context, resource, 0);
 #endif
 }

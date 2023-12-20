@@ -32,17 +32,8 @@ struct OpenGL_BatchList
 	U64 batch_count;
 };
 
-struct R_Context
+struct R_BackendContext
 {
-	Gfx_Context *gfx;
-
-	R_RenderStats stats;
-
-	Arena *arena;
-	Arena *frame_arena;
-	
-	struct R_FontAtlas *font_atlas;
-	
 	OpenGL_BatchList batches;
 	Vec2U32 client_area;
 

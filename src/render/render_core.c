@@ -94,3 +94,9 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
 	);
 	return(result);
 }
+
+internal R_RenderStats
+render_get_stats(R_Context *renderer)
+{
+	return(renderer->render_stats[1]);
+}

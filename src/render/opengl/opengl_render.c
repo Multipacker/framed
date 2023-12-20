@@ -99,47 +99,48 @@ render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
 	R_Context *renderer = push_struct(arena, R_Context);
-
+    renderer->backend = push_struct(arena, R_BackendContext);
+    R_BackendContext *backend = renderer->backend;
 	renderer->gfx = gfx;
-	renderer->arena       = arena;
+	renderer->permanent_arena       = arena;
 	renderer->frame_arena = arena_create();
 
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
-	glCreateBuffers(1, &renderer->vbo);
-	glNamedBufferData(renderer->vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
+	glCreateBuffers(1, &backend->vbo);
+	glNamedBufferData(backend->vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
 
-	glCreateVertexArrays(1, &renderer->vao);
+	glCreateVertexArrays(1, &backend->vao);
 
-	opengl_vertex_array_instance_attribute(renderer->vao, 0,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 1,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 2,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[0]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 3,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[1]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 4,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[2]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 5,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[3]), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 6,  4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
-	opengl_vertex_array_instance_attribute(renderer->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 0,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 1,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 2,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[0]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 3,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[1]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 4,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[2]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 5,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[3]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 6,  4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
 
-	glVertexArrayVertexBuffer(renderer->vao, 0, renderer->vbo, 0, sizeof(R_RectInstance));
+	glVertexArrayVertexBuffer(backend->vao, 0, backend->vbo, 0, sizeof(R_RectInstance));
 
 	GLuint shaders[] = {
 		opengl_create_shader(str8_lit("src/render/opengl/shader.vert"), GL_VERTEX_SHADER),
 		opengl_create_shader(str8_lit("src/render/opengl/shader.frag"), GL_FRAGMENT_SHADER),
 	};
-	renderer->program = opengl_create_program(shaders, array_count(shaders));
+	backend->program = opengl_create_program(shaders, array_count(shaders));
 
-	renderer->uniform_projection_location = glGetUniformLocation(renderer->program, "uniform_projection");
-	renderer->uniform_sampler_location    = glGetUniformLocation(renderer->program, "uniform_sampler");
+	backend->uniform_projection_location = glGetUniformLocation(backend->program, "uniform_projection");
+	backend->uniform_sampler_location    = glGetUniformLocation(backend->program, "uniform_sampler");
 
 	// NOTE(simon): We only need to set these once as we don't change them anywhere
 	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-	glUseProgram(renderer->program);
-	glBindVertexArray(renderer->vao);
+	glUseProgram(backend->program);
+	glBindVertexArray(backend->vao);
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -149,37 +150,39 @@ render_init(Gfx_Context *gfx)
 internal Void
 render_begin(R_Context *renderer)
 {
-	renderer->client_area = gfx_get_window_client_area(renderer->gfx);
+    R_BackendContext *backend = renderer->backend;
+	backend->client_area = gfx_get_window_client_area(renderer->gfx);
 
-	glViewport(0, 0, (GLsizei) renderer->client_area.width, (GLsizei) renderer->client_area.height);
+	glViewport(0, 0, (GLsizei) backend->client_area.width, (GLsizei) backend->client_area.height);
 
-	Mat4F32 projection = m4f32_ortho(0.0f, (F32) renderer->client_area.width, (F32) renderer->client_area.height, 0.0f, 1.0f, -1.0f);
-	glProgramUniformMatrix4fv(renderer->program, renderer->uniform_projection_location, 1, GL_FALSE, &projection.m[0][0]);
+	Mat4F32 projection = m4f32_ortho(0.0f, (F32) backend->client_area.width, (F32) backend->client_area.height, 0.0f, 1.0f, -1.0f);
+	glProgramUniformMatrix4fv(backend->program, backend->uniform_projection_location, 1, GL_FALSE, &projection.m[0][0]);
 
 	// NOTE(simon): Push a clip rect for the entire screen so that there is
 	// always at least on clip rect in the stack.
-	render_push_clip(renderer, v2f32(0.0f, 0.0f), v2f32((F32) renderer->client_area.width, (F32) renderer->client_area.height), false);
+	render_push_clip(renderer, v2f32(0.0f, 0.0f), v2f32((F32) backend->client_area.width, (F32) backend->client_area.height), false);
 }
 
 internal Void
 render_end(R_Context *renderer)
 {
+    R_BackendContext *backend = renderer->backend;
 	glDisable(GL_SCISSOR_TEST);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glEnable(GL_SCISSOR_TEST);
 
-	glProgramUniform1i(renderer->program, renderer->uniform_sampler_location, 0);
+	glProgramUniform1i(backend->program, backend->uniform_sampler_location, 0);
 
-	for (OpenGL_Batch *batch = renderer->batches.first; batch; batch = batch->next)
+	for (OpenGL_Batch *batch = backend->batches.first; batch; batch = batch->next)
 	{
-		glNamedBufferSubData(renderer->vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
+		glNamedBufferSubData(backend->vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
 		RectF32 clip_rect = batch->clip_node->rect;
 
 		// NOTE(simon): OpenGL has its origin in the lower left corner, not the
 		// top left like we have, hence the weirdness with the y-coordinate.
 		glScissor(
 			(GLint)   clip_rect.min.x,
-			(GLint)   ((F32) renderer->client_area.height - clip_rect.max.y),
+			(GLint)   ((F32) backend->client_area.height - clip_rect.max.y),
 			(GLsizei) (clip_rect.max.x - clip_rect.min.x),
 			(GLsizei) (clip_rect.max.y - clip_rect.min.y)
 		);
@@ -194,31 +197,34 @@ render_end(R_Context *renderer)
 	}
 
 	// NOTE(simon): Update stats
-	renderer->stats.rect_count  = renderer->batches.rect_count;
-	renderer->stats.batch_count = renderer->batches.batch_count;
+	renderer->render_stats[0].rect_count  = backend->batches.rect_count;
+	renderer->render_stats[0].batch_count = backend->batches.batch_count;
+
+	backend->batches.first       = 0;
+	backend->batches.last        = 0;
+	backend->batches.rect_count  = 0;
+	backend->batches.batch_count = 0;
+	backend->clip_stack          = 0;
 
 	arena_pop_to(renderer->frame_arena, 0);
-	renderer->batches.first       = 0;
-	renderer->batches.last        = 0;
-	renderer->batches.rect_count  = 0;
-	renderer->batches.batch_count = 0;
-	renderer->clip_stack          = 0;
-
+	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
+	memory_zero_struct(&renderer->render_stats[0]);
 	gfx_swap_buffers(renderer->gfx);
 }
 
 internal OpenGL_Batch *
 opengl_create_batch(R_Context *renderer)
 {
+    R_BackendContext *backend = renderer->backend;
 	// NOTE(simon): No need to clear everything to zero, manually set the
 	// parameters we care about.
 	OpenGL_Batch *result = push_struct(renderer->frame_arena, OpenGL_Batch);
 
 	result->size      = 0;
-	result->clip_node = renderer->clip_stack;
+	result->clip_node = backend->clip_stack;
 	result->texture   = (R_Texture) { 0 };
-	dll_push_back(renderer->batches.first, renderer->batches.last, result);
-	++renderer->batches.batch_count;
+	dll_push_back(backend->batches.first, backend->batches.last, result);
+	++backend->batches.batch_count;
 
 	return(result);
 }
@@ -228,7 +234,8 @@ opengl_create_batch(R_Context *renderer)
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
-	assert(renderer->clip_stack);
+    R_BackendContext *backend = renderer->backend;
+	assert(backend->clip_stack);
 
 	R_RectInstance *result = &render_rect_instance_null;
 
@@ -239,20 +246,20 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	);
 
 	// NOTE(simon): Is the rectangle completly outside of the current clip rect?
-	if (!rectf32_overlaps(expanded_area, renderer->clip_stack->rect))
+	if (!rectf32_overlaps(expanded_area, backend->clip_stack->rect))
 	{
 		return(result);
 	}
 
-	OpenGL_Batch *batch = renderer->batches.last;
+	OpenGL_Batch *batch = backend->batches.last;
 
 	if (!batch || batch->size >= OPENGL_BATCH_SIZE)
 	{
 		batch = opengl_create_batch(renderer);
 	}
 
-	B32 is_different_clip   = (batch->clip_node != renderer->clip_stack);
-	B32 inside_current_clip = rectf32_contains_rectf32(renderer->clip_stack->rect, expanded_area);
+	B32 is_different_clip   = (batch->clip_node != backend->clip_stack);
+	B32 inside_current_clip = rectf32_contains_rectf32(backend->clip_stack->rect, expanded_area);
 	B32 inside_batch_clip   = rectf32_contains_rectf32(batch->clip_node->rect,     expanded_area);
 	if (is_different_clip && !(inside_current_clip && inside_batch_clip))
 	{
@@ -292,7 +299,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	result->omit_texture     = (F32) (params->slice.texture.u64[0] == 0);
 	result->is_subpixel_text = (F32) params->is_subpixel_text;
 
-	++renderer->batches.rect_count;
+	++backend->batches.rect_count;
 
 	return(result);
 }
@@ -300,12 +307,13 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 internal Void
 render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
+    R_BackendContext *backend = renderer->backend;
 	OpenGL_ClipNode *node = push_struct(renderer->frame_arena, OpenGL_ClipNode);
 
 	if (clip_to_parent)
 	{
-		assert(renderer->clip_stack);
-		RectF32 parent = renderer->clip_stack->rect;
+		assert(backend->clip_stack);
+		RectF32 parent = backend->clip_stack->rect;
 
 		node->rect.min.x = f32_clamp(parent.min.x, min.x, parent.max.x);
 		node->rect.min.y = f32_clamp(parent.min.y, min.y, parent.max.y);
@@ -317,19 +325,13 @@ render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_pare
 		node->rect = rectf32(min, max);
 	}
 
-	stack_push(renderer->clip_stack, node);
+	stack_push(backend->clip_stack, node);
 }
 
 internal Void
 render_pop_clip(R_Context *renderer)
 {
-	stack_pop(renderer->clip_stack);
-}
-
-internal R_RenderStats
-render_get_stats(R_Context *renderer)
-{
-	return(renderer->stats);
+	stack_pop(renderer->backend->clip_stack);
 }
 
 internal R_Texture

@@ -49,23 +49,14 @@ struct D3D11_BatchList
 	U64 batch_count;
 };
 
-typedef struct R_Context R_Context;
-struct R_Context
+typedef struct R_BackendContext R_BackendContext;
+struct R_BackendContext
 {
-	Arena *arena;
-	Arena *frame_arena;
-
-	Gfx_Context *gfx;
-
 	D3D11_BatchList batch_list;
-
-	R_RenderStats render_stats[2];
 
 	D3D11_ClipRectStack clip_rect_stack;
 
 	R_Texture white_texture;
-
-	R_FontAtlas *font_atlas;
 
 	ID3D11Device        *device;
 	ID3D11DeviceContext *context;

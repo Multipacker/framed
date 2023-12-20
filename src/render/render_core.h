@@ -57,7 +57,18 @@ enum R_ColorSpace
 	R_ColorSpace_COUNT,
 };
 
+typedef struct R_BackendContext R_BackendContext;
+
 typedef struct R_Context R_Context;
+struct R_Context
+{
+	Arena *permanent_arena;
+	Arena *frame_arena;
+	Gfx_Context *gfx;
+	struct R_FontAtlas *font_atlas;
+	R_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
+    R_BackendContext *backend;
+};
 
 // NOTE(simon): This might not always be fully cleared to 0.
 global R_RectInstance render_rect_instance_null;
