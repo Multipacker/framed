@@ -1,10 +1,12 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
+#include "logging/logging_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
+#include "logging/logging_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
@@ -19,7 +21,18 @@
 internal S32
 os_main(Str8List arguments)
 {
+#if 0
+	log_init(str8_lit(""));
+
+	U32 test = 32;
+	log_info("Test: %u", test);
+
+	log_flush();
+	return 0;
+#endif
+
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
+
 	gfx_show_window(&gfx);
 
 	R_Context *renderer = render_init(&gfx);
