@@ -1,10 +1,11 @@
 // TODO(hampus):
 	 // [x] - Subpixel rendering
+// [x] - Atlasing
+// [ ] - Icons
+// [ ] - Caching
 // [ ] - Kerning
 // [ ] - Underline & strikethrough
 // [ ] - Bold & italic fonts
-// [ ] - Font atlas & cache
-// [ ] - Icons
 // [ ] - Subpixel positioning
 // [ ] - Unicode
 
@@ -57,6 +58,7 @@ render_make_font_atlas(R_Context *renderer, Vec2U32 dim)
 internal R_FontAtlasRegion
 render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim)
 {
+    assert(atlas->num_free_regions > 0);
 	// TODO(hampus): Benchmark and eventually optimize.
 	R_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
 	// NOTE(hampus): Each region will always be the same size in
@@ -196,7 +198,7 @@ render_get_ft_error_message(FT_Error err)
 }
 
 internal B32
-render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_index, R_FontRenderMode render_mode)
+render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U32 codepoint, R_FontRenderMode render_mode)
 {
 	U32 bitmap_height = 0;
 	S32 bearing_left  = 0;
@@ -205,9 +207,15 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_ind
 	U8 *texture_data = 0;
 	RectU32 rect_region = { 0 };
 
+    R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
+    R_GlyphNode *node = push_struct(renderer->permanent_arena, R_GlyphNode);
+    node->codepoint = codepoint;
+    node->index = index;
+    sll_push_front(bucket->first, node);
+
 	B32 result = true;
 	Str8 error;
-	R_Glyph *glyph = font->glyphs + glyph_index;
+	R_Glyph *glyph = font->glyphs + node->index;
 
 	// NOTE(hampus): Get the width of a space
 	FT_Int32 ft_load_flags = 0;
@@ -227,8 +235,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_ind
 		} break;
 		invalid_case;
 	}
-
-	FT_Error ft_load_glyph_error = FT_Load_Char(face, glyph_index, ft_load_flags);
+	FT_Error ft_load_glyph_error = FT_Load_Glyph(face, index, ft_load_flags);
 	if (!ft_load_glyph_error)
 	{
 		FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
@@ -371,7 +378,9 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 			FT_Error ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
 			if (!ft_open_face_error)
 			{
+                FT_Select_Charmap(face , ft_encoding_unicode);
 				result = push_struct(renderer->permanent_arena, R_Font);
+                result->num_glyphs_used = 1;
 				// TODO(hampus): Get the monitor's DPI
 				F32 dpi = 96;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
@@ -393,32 +402,12 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 					result->style_name          = str8_copy_cstr(renderer->permanent_arena, (U8 *) face->style_name);
 					result->font_size           = (F32)font_size;
 
-					{
-						// NOTE(hampus): Get the width of a space
-						FT_Int32 ft_load_flags = 0;
-						switch (render_mode)
-						{
-							case R_FontRenderMode_Normal: ft_load_flags = FT_LOAD_DEFAULT; break;
-							case R_FontRenderMode_LCD:    ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD; break;
-							case R_FontRenderMode_LCD_V:  assert(false); break;
-						}
+                    U32 index;
+                    U32 charcode = FT_Get_First_Char(face, &index);
 
-						FT_Error ft_load_glyph_error = FT_Load_Char(face, ' ', ft_load_flags);
-						if (!ft_load_glyph_error)
-						{
-							result->space_width = (F32) face->glyph->linearHoriAdvance / 65536.0f;
-							// FT_Done_Glyph(face->glyph);
-						}
-						else
-						{
-							// TODO(hampus): Failed to load glyph
-							error = render_get_ft_error_message(ft_set_pixel_sizes_error);
-						}
-					}
-
-					for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
-					{
-						if (render_make_glyph(renderer, result, face, glyph_index, render_mode))
+                    while (charcode != 0)
+                    {
+                        if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
 							// TODO(hampus): We don't have the declaration for
 							// this function for some reason
@@ -428,7 +417,9 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 						{
 							// TODO(hampus): Logging
 						}
-					}
+
+                        charcode = FT_Get_Next_Char(face, charcode, &index);
+                    }
 				}
 				else
 				{
@@ -475,18 +466,37 @@ render_make_font(R_Context *renderer, S32 font_size, Str8 path)
 	return(result);
 }
 
+internal U32
+render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
+{
+    U32 index = 0;
+    R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
+
+    for (R_GlyphNode *node = bucket->first;
+         node != 0;
+         node = node->next)
+    {
+        if (node->codepoint == codepoint)
+        {
+            index = node->index;
+            break;
+        }
+    }
+    return(index);
+}
+
 internal void
 render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color)
 {
 	for (U64 i = 0; i < text.size; ++i)
 	{
-		if (text.data[i] == ' ')
-		{
-			min.x += font->space_width;
-		}
-		else
-		{
-			R_Glyph *glyph = font->glyphs + text.data[i];
+            U32 codepoint = text.data[i];
+
+            U32 index = render_glyph_index_from_codepoint(font, codepoint);
+
+            assert(index != 0);
+			R_Glyph *glyph = font->glyphs + index;
+
 			F32 xpos = min.x + glyph->bearing_in_pixels.x;
 			F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
@@ -502,6 +512,34 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 			min.x += (glyph->advance_width);
 		}
+}
+
+internal void
+render_text16(R_Context *renderer, Vec2F32 min, Str16 text, R_Font *font, Vec4F32 color)
+{
+	for (U64 i = 0; i < text.size; ++i)
+	{
+            U32 codepoint = text.data[i];
+
+            U32 index = render_glyph_index_from_codepoint(font, codepoint);
+
+            assert(index != 0);
+			R_Glyph *glyph = font->glyphs + index;
+
+			F32 xpos = min.x + glyph->bearing_in_pixels.x;
+			F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
+
+			F32 width = (F32) glyph->size_in_pixels.x;
+			F32 height = (F32) glyph->size_in_pixels.y;
+
+			render_rect(renderer,
+                        v2f32(xpos, ypos),
+                        v2f32(xpos + width,
+                              ypos + height),
+                        .slice = glyph->slice,
+						.color = color,
+						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
+			min.x += (glyph->advance_width);
 	}
 }
 
@@ -511,15 +549,8 @@ render_measure_text(R_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
 	for (U64 i = 0; i < text.size; ++i)
 	{
-		if (text.data[i] == ' ')
-		{
-			result.x += font->space_width;
-		}
-		else
-		{
 			R_Glyph *glyph = font->glyphs + text.data[i];
 			result.x += (glyph->advance_width);
-		}
 	}
 	result.y = font->line_height;
 	return(result);

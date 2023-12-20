@@ -58,17 +58,35 @@ struct R_Glyph
 	R_FontAtlasRegion font_atlas_region;
 };
 
+typedef struct R_GlyphNode R_GlyphNode;
+struct R_GlyphNode
+{
+    R_GlyphNode *next;
+    U32 codepoint;
+    U32 index; // NOTE(hampus): The index into the glyphs array in the font
+};
+
+typedef struct R_GlyphBucket R_GlyphBucket;
+struct R_GlyphBucket
+{
+    R_GlyphNode *first;
+    R_GlyphNode *last;
+};
+
+#define GLYPH_BUCKETS_ARRAY_SIZE 128
+
 typedef struct R_Font R_Font;
 struct R_Font
 {
-	R_Glyph glyphs[128];
+    R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
+    U64 num_glyphs_used;
+	R_Glyph glyphs[1024];
 	F32 font_size;
 	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
 	F32 underline_position; // NOTE(hampus): Relative to the baseline
 	F32 max_advance_width;
 	F32 max_ascent;
 	F32 max_descent;
-	F32 space_width;
 	B32 has_kerning;
 	Str8 family_name;
 	Str8 style_name;

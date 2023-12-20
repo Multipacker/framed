@@ -77,7 +77,7 @@ os_main(Str8List arguments)
 				case Gfx_EventKind_KeyRelease:
 				{
 					LOG("Gfx_EventKind_KeyRelease: %d\n", event->key);
-				} break;
+				.} break;
 
 				case Gfx_EventKind_Char:
 				{
