@@ -52,7 +52,7 @@ struct D3D11_BatchList
 typedef struct R_Context R_Context;
 struct R_Context
 {
-	Arena *perm_arena;
+	Arena *arena;
 	Arena *frame_arena;
 
 	Gfx_Context *gfx;
@@ -65,7 +65,7 @@ struct R_Context
 
 	R_Texture white_texture;
 
-	struct R_FontAtlas *font_atlas;
+	R_FontAtlas *font_atlas;
 
 	ID3D11Device        *device;
 	ID3D11DeviceContext *context;

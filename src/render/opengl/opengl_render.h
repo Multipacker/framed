@@ -40,7 +40,9 @@ struct R_Context
 
 	Arena *arena;
 	Arena *frame_arena;
-
+	
+	struct R_FontAtlas *font_atlas;
+	
 	OpenGL_BatchList batches;
 	Vec2U32 client_area;
 

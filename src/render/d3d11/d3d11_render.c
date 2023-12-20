@@ -43,7 +43,7 @@ render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
 	R_Context *result = push_struct(arena, R_Context);
-	result->perm_arena = arena;
+	result->arena = arena;
 	result->frame_arena = arena_create();
 	result->gfx = gfx;
 

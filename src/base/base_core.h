@@ -149,6 +149,8 @@
 ((f)=(l)=(n),(n)->next=(n)->prev=0):\
 ((n)->prev=(l),(l)->next=(n),(l)=(n),(n)->next=0))
 
+// TODO(hampus): This does not work properly
+#define dll_push_front_np(f,l,n,next,prev) 	dll_push_back_np(l,f,n,next,prev)
 
 
 #define dll_remove_npz(f,l,n,next,prev,zchk,zset) (((f)==(n))?\
@@ -181,7 +183,7 @@ zset((n)->next))
 ((f)=(f)->next))
 
 #define dll_push_back(f,l,n)  dll_push_back_np(f,l,n,next,prev)
-#define dll_push_front(f,l,n) dll_push_back_np(l,f,n,prev,next)
+#define dll_push_front(f,l,n) dll_push_front_np(f,l,n,prev,next)
 #define dll_remove(f,l,n)     dll_remove_npz(f,l,n,next,prev,check_null,set_null)
 
 #define stack_push(f,n) stack_push_n(f,n,next)

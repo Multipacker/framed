@@ -450,3 +450,8 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 		glDeleteTextures(1, &opengl_texture);
 	}
 }
+
+internal Void           
+render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, S32 width, S32 height, S32 offset)
+{
+}
