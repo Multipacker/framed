@@ -155,9 +155,9 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 	U64 needed_size = (U64) stbsp_vsnprintf(0, 0, cstr, args);
 #endif
 
-	result.data = push_array(arena, U8, needed_size+1);
+	result.data = push_array(arena, U8, needed_size + 1);
 	result.size = needed_size;
-	vsnprintf((CStr) result.data, needed_size+1, cstr, format_args);
+	stbsp_vsnprintf((CStr) result.data, (int) (needed_size + 1), cstr, format_args);
 
 	va_end(format_args);
 	return(result);
