@@ -434,7 +434,7 @@ win32_common_main(Void)
 
 #if BUILD_MODE_RELEASE
 S32 APIENTRY
-WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
 	S32 exit_code = win32_common_main();
 	ExitProcess(exit_code);

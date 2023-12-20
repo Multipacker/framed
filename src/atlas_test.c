@@ -20,7 +20,6 @@ internal S32
 os_main(Str8List arguments)
 {
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
-	gfx_show_window(&gfx);
 
 	R_Context *renderer = render_init(&gfx);
 
@@ -41,10 +40,7 @@ os_main(Str8List arguments)
 	R_Font *medium_font = render_make_font(renderer->arena, 20, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
 	R_Font *large_font  = render_make_font(renderer->arena, 30, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
 	
-	render_destroy_font(renderer, small_font);
-	render_destroy_font(renderer, medium_font);
-	render_destroy_font(renderer, large_font);
-	
+	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
 	{

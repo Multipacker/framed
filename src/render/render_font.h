@@ -9,6 +9,8 @@ enum R_FontRenderMode
 	R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
 };
 
+#define R_USE_SUBPIXEL_RENDERING 0
+
 typedef struct R_FontAtlasRegionNode R_FontAtlasRegionNode;
 struct R_FontAtlasRegionNode
 {
@@ -51,6 +53,8 @@ struct R_Glyph
 	Vec2F32 bearing_in_pixels;
 	F32 advance_width;
 	R_TextureSlice slice;
+	// NOTE(hampus): This is needed here so we can easily
+	// free the region again
 	R_FontAtlasRegion font_atlas_region;
 };
 

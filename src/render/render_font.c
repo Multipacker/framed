@@ -53,6 +53,7 @@ render_make_atlas(R_Context *renderer, Arena *arena, Vec2U32 dim)
 internal R_FontAtlasRegion
 render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
 {
+	// TODO(hampus): Benchmark and eventually optimize.
 	R_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
 	// NOTE(hampus): Each region will always be the same size in
 	// x and y, so we only need to check the width
@@ -176,6 +177,7 @@ render_destroy_font(R_Context *renderer, R_Font *font)
 		R_Glyph *glyph = font->glyphs + glyph_index;
 		render_free_atlas_region(renderer->font_atlas, glyph->font_atlas_region);
 	}
+	memory_zero_struct(font);
 }
 
 internal Str8
@@ -236,22 +238,33 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					bearing_left  = face->glyph->bitmap_left;
 					bearing_top   = face->glyph->bitmap_top;
 					bitmap_width  = (S32) face->glyph->bitmap.width;
-
+					
+					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+					
+					glyph->font_atlas_region = font_atlas_region;
+					
+					rect_region = font_atlas_region.region;
+					
 					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
 					// NOTE(hampus): Convert from 8 bit to 32 bit
-					texture_data = push_array(arena, U8, (U64) (bitmap_height * bitmap_width * 4));
-					U32 *dst = (U32 *) texture_data;
+					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
+					U32 *dst = (U32 *)texture_data;
 					U8 *src = face->glyph->bitmap.buffer;
-					for (S32 i = 0; i < (bitmap_height*bitmap_width); ++i)
+					for (S32 y = 0; y < bitmap_height; ++y)
 					{
-						U8 val = src[i];
-						*dst++ = (U32) (
-	(0xff <<  0) |
-	(0xff <<  8) |
-	(0xff << 16) |
-	(val  << 24)
-);
+						U32 *dst_row = dst;
+						for (S32 x = 0; x < bitmap_width; ++x)
+						{
+							U8 val = *src++;
+							*dst_row++ = (U32) ((0xff <<  0) |
+											(0xff <<  8) |
+											(0xff << 16) |
+											(val  << 24));
+						}
+						
+						dst += renderer->font_atlas->dim.x;
 					}
+					
 				} break;
 
 				case R_FontRenderMode_LCD:
@@ -295,6 +308,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 						// by.
 						src += (S32) (face->glyph->bitmap.pitch);
 					}
+					
 				} break;
 				invalid_case;
 			}
@@ -449,7 +463,11 @@ internal R_Font *
 render_make_font(Arena *arena, S32 font_size, R_Context *renderer, Str8 path)
 {
 	// TODO(hampus): Check the pixel orientation of the monitor.
+	#if R_USE_SUBPIXEL_RENDERING
 	R_Font *result = render_make_font_freetype(arena, font_size, renderer, path, R_FontRenderMode_LCD);
+#else
+	R_Font *result = render_make_font_freetype(arena, font_size, renderer, path, R_FontRenderMode_Normal);
+#endif
 	return(result);
 }
 
@@ -476,8 +494,8 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 c
 									v2f32(xpos + width,
 												ypos + height),
 									.slice = glyph->slice,
-									.color = color,
-									.is_subpixel_text = true);
+						.color = color, 
+						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 			min.x += (glyph->advance_width);
 		}
 	}
