@@ -45,7 +45,7 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_Font *font  = render_make_font(renderer, 10, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *font  = render_make_font(renderer, 10, str8_lit("data/fonts/arial.ttf"));
 
     B32 running = true;
 	while (running)

@@ -75,10 +75,12 @@ os_main(Str8List arguments)
 
 		R_TextureSlice atlas_slice = render_slice_from_texture(renderer->font_atlas->texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
 		render_rect(renderer, v2f32(0, 0), v2f32(1024, 1024), .slice = atlas_slice);
-        #endif
+#endif
+        #if 0
 		render_text(renderer, v2f32(100, 100), str8_lit("Hello, world!"), medium_font, v4f32(1, 1, 1, 1));
 		render_text16(renderer, v2f32(100, 200), str16_from_str8(current_arena, str8_lit("åäö!")), medium_font, v4f32(1, 1, 1, 1));
-
+#endif
+        render_character(renderer, v2f32(100, 100), 197, medium_font, v4f32(1, 1, 1, 1));
 		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);

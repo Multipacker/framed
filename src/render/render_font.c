@@ -123,7 +123,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 		{
 			children[i].parent = node;
 			node->children[i] = &children[i];
-			render_push_free_region_to_atlas(atlas, children + i);
+			render_push_free_region_to_atlas(atlas, children + 3 - i);
 		}
 
 		node = &children[0];
@@ -380,7 +380,6 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 			{
                 FT_Select_Charmap(face , ft_encoding_unicode);
 				result = push_struct(renderer->permanent_arena, R_Font);
-                result->num_glyphs_used = 1;
 				// TODO(hampus): Get the monitor's DPI
 				F32 dpi = 96;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
@@ -404,11 +403,16 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 
                     U32 index;
                     U32 charcode = FT_Get_First_Char(face, &index);
-
+                    U64 num_loaded_glyphs = 0;
                     while (charcode != 0)
                     {
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
+                            num_loaded_glyphs++;
+                            if (num_loaded_glyphs == 4096)
+                            {
+                                break;
+                            }
 							// TODO(hampus): We don't have the declaration for
 							// this function for some reason
 							// FT_Done_Glyph(face->glyph);
@@ -541,6 +545,29 @@ render_text16(R_Context *renderer, Vec2F32 min, Str16 text, R_Font *font, Vec4F3
 						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 			min.x += (glyph->advance_width);
 	}
+}
+
+internal void
+render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color)
+{
+        U32 index = render_glyph_index_from_codepoint(font, codepoint);
+
+        assert(index != 0);
+        R_Glyph *glyph = font->glyphs + index;
+
+        F32 xpos = min.x + glyph->bearing_in_pixels.x;
+        F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
+
+        F32 width = (F32) glyph->size_in_pixels.x;
+        F32 height = (F32) glyph->size_in_pixels.y;
+
+        render_rect(renderer,
+                    v2f32(xpos, ypos),
+                    v2f32(xpos + width,
+                          ypos + height),
+                    .slice = glyph->slice,
+                    .color = color,
+                    .is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 }
 
 internal Vec2F32
