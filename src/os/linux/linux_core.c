@@ -34,7 +34,6 @@ linux_sync_file_descriptor(S32 file_descriptor)
 	return success;
 }
 
-// TODO(simon): Double check that this conversion is correct.
 internal DateTime
 linux_date_time_from_tm_and_milliseconds(struct tm *time, U16 milliseconds)
 {
@@ -42,8 +41,8 @@ linux_date_time_from_tm_and_milliseconds(struct tm *time, U16 milliseconds)
 
 	result.millisecond = milliseconds;
 	result.second      = (U8) time->tm_sec;
-	result.minute      = (U8) (time->tm_min - 1);
-	result.hour        = (U8) (time->tm_hour - 1);
+	result.minute      = (U8) time->tm_min;
+	result.hour        = (U8) time->tm_hour;
 	result.day         = (U8) (time->tm_mday - 1);
 	result.month       = (U8) time->tm_mon;
 	result.year        = (S16) (time->tm_year + 1900);
@@ -51,15 +50,14 @@ linux_date_time_from_tm_and_milliseconds(struct tm *time, U16 milliseconds)
 	return(result);
 }
 
-// TODO(simon): Double check that this conversion is correct.
 internal struct tm
 linux_tm_from_date_time(DateTime *date_time)
 {
 	struct tm result = { 0 };
 
 	result.tm_sec    = date_time->second;
-	result.tm_min    = date_time->minute + 1;
-	result.tm_hour   = date_time->hour + 1;
+	result.tm_min    = date_time->minute;
+	result.tm_hour   = date_time->hour;
 	result.tm_mday   = date_time->day + 1;
 	result.tm_mon    = date_time->month;
 	result.tm_year   = date_time->year - 1900;
