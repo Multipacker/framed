@@ -23,7 +23,7 @@ os_main(Str8List arguments)
 
 	R_Context *renderer = render_init(&gfx);
 
-	Arena *frame_arenas[2];
+    Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
@@ -64,7 +64,7 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-        #if 0
+        #if 1
 		for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
 				 node != 0;
 				 node = node->next_free)
@@ -79,8 +79,9 @@ os_main(Str8List arguments)
         #if 0
 		render_text(renderer, v2f32(100, 100), str8_lit("Hello, world!"), medium_font, v4f32(1, 1, 1, 1));
 		render_text16(renderer, v2f32(100, 200), str16_from_str8(current_arena, str8_lit("åäö!")), medium_font, v4f32(1, 1, 1, 1));
+
+        render_character(renderer, v2f32(100, 100), R_ICON_ZOOM_OUT, icon_font, v4f32(1, 1, 1, 1));
 #endif
-        render_character(renderer, v2f32(100, 100), 197, medium_font, v4f32(1, 1, 1, 1));
 		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);

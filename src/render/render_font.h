@@ -55,6 +55,9 @@ struct R_Glyph
 	R_TextureSlice slice;
 	// NOTE(hampus): This is needed here so we can easily
 	// free the region again
+    // TODO(hampus): Remove this. Only actually
+    // keep the stuff that the renderer needs to
+    // render a glyph
 	R_FontAtlasRegion font_atlas_region;
 };
 
@@ -79,8 +82,9 @@ typedef struct R_Font R_Font;
 struct R_Font
 {
     R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
-	R_Glyph glyphs[4096];
-	F32 font_size;
+	R_Glyph glyphs[1024];
+	U32 num_loaded_glyphs;
+    F32 font_size;
 	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
 	F32 underline_position; // NOTE(hampus): Relative to the baseline
 	F32 max_advance_width;

@@ -14,6 +14,8 @@
 #include "freetype/freetype.h"
 #define internal static
 
+#include "render/render_icon_codepoints.h"
+
 internal void
 render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
 {
@@ -381,7 +383,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                 FT_Select_Charmap(face , ft_encoding_unicode);
 				result = push_struct(renderer->permanent_arena, R_Font);
 				// TODO(hampus): Get the monitor's DPI
-				F32 dpi = 96;
+				F32 dpi = 72;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
 				if (!ft_set_pixel_sizes_error)
 				{
@@ -390,8 +392,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 					F32 points_per_font_unit = em_per_font_unit / (F32) font_size;
 					F32 inches_per_font_unit = points_per_font_unit / points_per_inch;
 					F32 pixels_per_font_unit = inches_per_font_unit * (F32) dpi;
-
-					result->line_height         = face->height             * pixels_per_font_unit;
+result->line_height         = face->height             * pixels_per_font_unit;
 					result->underline_position  = face->underline_position * pixels_per_font_unit;
 					result->max_advance_width   = face->max_advance_width  * pixels_per_font_unit;
 					result->max_ascent          = face->ascender           * pixels_per_font_unit;
@@ -403,13 +404,12 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 
                     U32 index;
                     U32 charcode = FT_Get_First_Char(face, &index);
-                    U64 num_loaded_glyphs = 0;
                     while (charcode != 0)
                     {
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
-                            num_loaded_glyphs++;
-                            if (num_loaded_glyphs == 4096)
+                            result->num_loaded_glyphs++;
+                            if (result->num_loaded_glyphs == 1024)
                             {
                                 break;
                             }
