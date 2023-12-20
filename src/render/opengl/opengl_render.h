@@ -46,4 +46,6 @@ struct R_BackendContext
 	OpenGL_ClipNode *clip_stack;
 };
 
+internal R_BackendContext *render_backend_init(R_Context *renderer);
+
 #endif // OPENGL_RENDER_H

@@ -27,18 +27,9 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
-
-	TestNode *first = push_array(scratch.arena, TestNode, 1);
-	TestNode *last  = push_array(scratch.arena, TestNode, 1);
-
-	arena_release_scratch(scratch);
-
-	renderer->font_atlas = render_make_atlas(renderer, renderer->permanent_arena, v2u32(1024, 1024));
-
-	R_Font *small_font  = render_make_font(renderer->permanent_arena, 10, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
-	R_Font *medium_font = render_make_font(renderer->permanent_arena, 20, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
-	R_Font *large_font  = render_make_font(renderer->permanent_arena, 30, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *small_font  = render_make_font(renderer, 10, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *medium_font = render_make_font(renderer, 20, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *large_font  = render_make_font(renderer, 30, str8_lit("data/fonts/liberation-mono.ttf"));
 
 	gfx_show_window(&gfx);
 	B32 running = true;

@@ -94,17 +94,11 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 	glEnableVertexArrayAttrib(vaobj,   attribindex);
 }
 
-internal R_Context *
-render_init(Gfx_Context *gfx)
+internal R_BackendContext *
+render_backend_init(R_Context *renderer)
 {
-	Arena *arena = arena_create();
-	R_Context *renderer = push_struct(arena, R_Context);
-    renderer->backend = push_struct(arena, R_BackendContext);
+    renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
     R_BackendContext *backend = renderer->backend;
-	renderer->gfx = gfx;
-	renderer->permanent_arena       = arena;
-	renderer->frame_arena = arena_create();
-
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	glCreateBuffers(1, &backend->vbo);
@@ -144,7 +138,7 @@ render_init(Gfx_Context *gfx)
 	glEnable(GL_BLEND);
 	glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	return(renderer);
+	return(backend);
 }
 
 internal Void

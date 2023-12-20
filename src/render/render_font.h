@@ -74,7 +74,9 @@ struct R_Font
 	Str8 style_name;
 };
 
-internal R_Font *render_make_font(Arena *arena, S32 font_size, R_Context *renderer, Str8 path);
+internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
+
+internal R_Font *render_make_font(R_Context *renderer, S32 font_size, Str8 path);
 internal void    render_destroy_font(R_Context *renderer, R_Font *font);
 
 internal void    render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color);

@@ -41,21 +41,21 @@ render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *
 }
 
 internal R_FontAtlas *
-render_make_atlas(R_Context *renderer, Arena *arena, Vec2U32 dim)
+render_make_font_atlas(R_Context *renderer, Vec2U32 dim)
 {
-	R_FontAtlas *result = push_struct(arena, R_FontAtlas);
+	R_FontAtlas *result = push_struct(renderer->permanent_arena, R_FontAtlas);
 	result->dim = dim;
-	R_FontAtlasRegionNode *first_free_region = push_struct(arena, R_FontAtlasRegionNode);
+	R_FontAtlasRegionNode *first_free_region = push_struct(renderer->permanent_arena, R_FontAtlasRegionNode);
 	first_free_region->region.min = v2u32(0, 0);
 	first_free_region->region.max = v2u32(dim.x, dim.x);
-	result->memory = push_array(arena, U8, dim.x * dim.y * 4);
+	result->memory = push_array(renderer->permanent_arena, U8, dim.x * dim.y * 4);
 	render_push_free_region_to_atlas(result, first_free_region);
 	result->texture = render_create_texture_from_bitmap(renderer, result->memory, result->dim.x, result->dim.y, R_ColorSpace_Linear);
 	return(result);
 }
 
 internal R_FontAtlasRegion
-render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
+render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim)
 {
 	// TODO(hampus): Benchmark and eventually optimize.
 	R_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
@@ -91,7 +91,7 @@ render_alloc_atlas_region(Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
 		// NOTE(hampus): Allocate 4 children to replace
 		// the parent
 
-		R_FontAtlasRegionNode *children = push_array(arena, R_FontAtlasRegionNode, Corner_COUNT);
+		R_FontAtlasRegionNode *children = push_array(renderer->permanent_arena, R_FontAtlasRegionNode, Corner_COUNT);
 
 		{
 			Vec2U32 bbox[Corner_COUNT] =
@@ -196,7 +196,7 @@ render_get_ft_error_message(FT_Error err)
 }
 
 internal B32
-render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_index, R_FontRenderMode render_mode)
+render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 glyph_index, R_FontRenderMode render_mode)
 {
 	U32 bitmap_height = 0;
 	S32 bearing_left  = 0;
@@ -243,7 +243,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					bearing_top   = face->glyph->bitmap_top;
 					bitmap_width  = face->glyph->bitmap.width;
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+					R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
 					glyph->font_atlas_region = font_atlas_region;
 
@@ -279,7 +279,7 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 					// NOTE(hampus): We now have 3 "pixels" for each value.
 					bitmap_width = face->glyph->bitmap.width / 3;
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_atlas_region(renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+					R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
 					glyph->font_atlas_region = font_atlas_region;
 
@@ -345,10 +345,10 @@ render_make_glyph(Arena *arena, R_Context *renderer, R_Font *font, FT_Face face,
 }
 
 internal R_Font *
-render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8 path, R_FontRenderMode render_mode)
+render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
 	R_Font *result = 0;
-	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
 	FT_Library ft;
 	// NOTE(hampus): 0 indicates a success in freetype, otherwise error
@@ -371,7 +371,7 @@ render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8
 			FT_Error ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
 			if (!ft_open_face_error)
 			{
-				result = push_struct(arena, R_Font);
+				result = push_struct(renderer->permanent_arena, R_Font);
 				// TODO(hampus): Get the monitor's DPI
 				F32 dpi = 96;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
@@ -389,8 +389,8 @@ render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8
 					result->max_ascent          = face->ascender           * pixels_per_font_unit;
 					result->max_descent         = face->descender          * pixels_per_font_unit;
 					result->has_kerning         = FT_HAS_KERNING(face);
-					result->family_name         = str8_copy_cstr(arena, (U8 *) face->family_name);
-					result->style_name          = str8_copy_cstr(arena, (U8 *) face->style_name);
+					result->family_name         = str8_copy_cstr(renderer->permanent_arena, (U8 *) face->family_name);
+					result->style_name          = str8_copy_cstr(renderer->permanent_arena, (U8 *) face->style_name);
 					result->font_size           = (F32)font_size;
 
 					{
@@ -418,7 +418,7 @@ render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8
 
 					for (U32 glyph_index = 33; glyph_index < 128; ++glyph_index)
 					{
-						if (render_make_glyph(arena, renderer, result, face, glyph_index, render_mode))
+						if (render_make_glyph(renderer, result, face, glyph_index, render_mode))
 						{
 							// TODO(hampus): We don't have the declaration for
 							// this function for some reason
@@ -464,13 +464,13 @@ render_make_font_freetype(Arena *arena, S32 font_size, R_Context *renderer, Str8
 }
 
 internal R_Font *
-render_make_font(Arena *arena, S32 font_size, R_Context *renderer, Str8 path)
+render_make_font(R_Context *renderer, S32 font_size, Str8 path)
 {
 	// TODO(hampus): Check the pixel orientation of the monitor.
 	#if R_USE_SUBPIXEL_RENDERING
-	R_Font *result = render_make_font_freetype(arena, font_size, renderer, path, R_FontRenderMode_LCD);
+	R_Font *result = render_make_font_freetype(renderer, font_size, path, R_FontRenderMode_LCD);
 #else
-	R_Font *result = render_make_font_freetype(arena, font_size, renderer, path, R_FontRenderMode_Normal);
+	R_Font *result = render_make_font_freetype(renderer, font_size, path, R_FontRenderMode_Normal);
 #endif
 	return(result);
 }

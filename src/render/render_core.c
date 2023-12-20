@@ -100,3 +100,17 @@ render_get_stats(R_Context *renderer)
 {
 	return(renderer->render_stats[1]);
 }
+
+
+internal R_Context *
+render_init(Gfx_Context *gfx)
+{
+	Arena *arena = arena_create();
+	R_Context *renderer = push_struct(arena, R_Context);
+	renderer->gfx = gfx;
+	renderer->permanent_arena       = arena;
+	renderer->frame_arena = arena_create();
+    renderer->backend = render_backend_init(renderer);
+	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(1024, 1024));
+    return(renderer);
+}

@@ -38,18 +38,13 @@ d3d11_get_current_stats(R_Context *renderer)
 	return(&renderer->render_stats[1]);
 }
 
-internal R_Context *
-render_init(Gfx_Context *gfx)
+internal R_BackendContext *
+render_backend_init(R_Context *renderer)
 {
-	Arena *arena = arena_create();
-	R_Context *result = push_struct(arena, R_Context);
-    result->backend = push_struct(arena, R_BackendContext);
-        R_BackendContext *backend = result->backend;
-	result->permanent_arena = arena;
-	result->frame_arena = arena_create();
-	result->gfx = gfx;
+    Gfx_Context *gfx = renderer->gfx;
 
-	F32 test = 0xff;
+    renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
+    R_BackendContext *backend = renderer->backend;
 
 	HRESULT hr;
 
@@ -338,7 +333,7 @@ render_init(Gfx_Context *gfx)
 		ID3D11Device_CreateDepthStencilState(backend->device, &desc, &backend->depth_state);
 	}
 
-	return(result);
+	return(backend);
 }
 
 internal D3D11_Batch *

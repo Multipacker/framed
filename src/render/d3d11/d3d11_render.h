@@ -81,4 +81,6 @@ struct R_BackendContext
 	DWORD current_height;
 };
 
+internal R_BackendContext *render_backend_init(R_Context *renderer);
+
 #endif //RENDED3D11_H
