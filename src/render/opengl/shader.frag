@@ -88,7 +88,7 @@ main()
 	}
 	else
 	{
-		frag_color         = vec4(vert_color.rgb, vert_color.a);
-		frag_blend_weights = vec4(sample_color.rgb * vert_color.a, vert_color.a);
+		frag_color         = vert_color;
+		frag_blend_weights = vec4(sample_color.rgb * vert_color.a, 0.0);
 	}
 }
