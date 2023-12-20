@@ -72,19 +72,19 @@ build_date_from_context(Void)
 			}
 		}
 
-        date = str8_skip(date, 4);
+		date = str8_skip(date, 4);
 
-        U64 len = u8_from_str8(date, &result.day);
-        date = str8_skip(date, len+1);
-        len = s16_from_str8(date, &result.year);
+		U64 len = u8_from_str8(date, &result.day);
+		date = str8_skip(date, len+1);
+		len = s16_from_str8(date, &result.year);
 	}
 
 	{
-        U64 len = u8_from_str8(time, &result.hour);
-        time = str8_skip(time, len+1);
-        len = u8_from_str8(time, &result.minute);
-        time = str8_skip(time, len+1);
-        u8_from_str8(time, &result.second);
+		U64 len = u8_from_str8(time, &result.hour);
+		time = str8_skip(time, len+1);
+		len = u8_from_str8(time, &result.minute);
+		time = str8_skip(time, len+1);
+		u8_from_str8(time, &result.second);
 	}
 	arena_release_scratch(scratch);
 	return(result);

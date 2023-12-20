@@ -113,9 +113,9 @@ struct Gfx_Event
 typedef struct Gfx_EventList Gfx_EventList;
 struct Gfx_EventList
 {
-    Gfx_Event *first;
-    Gfx_Event *last;
-    U64 count;
+	Gfx_Event *first;
+	Gfx_Event *last;
+	U64 count;
 };
 
 internal Gfx_Context   gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title);

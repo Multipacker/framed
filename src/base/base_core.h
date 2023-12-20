@@ -320,12 +320,12 @@ enum Side
 typedef enum Corner Corner;
 enum Corner
 {
-    Corner_TopLeft,
-    Corner_TopRight,
-    Corner_BottomLeft,
-    Corner_BottomRight,
+	Corner_TopLeft,
+	Corner_TopRight,
+	Corner_BottomLeft,
+	Corner_BottomRight,
 
-    Corner_COUNT,
+	Corner_COUNT,
 };
 
 typedef enum OperatingSystem OperatingSystem;

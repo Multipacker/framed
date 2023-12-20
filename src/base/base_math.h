@@ -142,7 +142,7 @@ union Vec4U32
 typedef struct Mat4F32 Mat4F32;
 struct Mat4F32
 {
-    F32 m[4][4];
+	F32 m[4][4];
 };
 
 typedef union RectF32 RectF32;

@@ -13,20 +13,32 @@
 #endif
 
 internal R_TextureSlice
-render_slice_from_texture(R_Texture texture, RectF32 region)
+render_slice_from_texture(R_Texture texture, RectF32 uv)
 {
-    R_TextureSlice result = {region, texture};
-    return(result);
+	R_TextureSlice result = { uv, texture };
+	return(result);
+}
+
+internal R_TextureSlice
+render_slice_from_texture_region(R_Texture texture, RectU32 region)
+{
+#if 0
+	RectF32 uv = rectf32_from_rectu32(region);
+	R_TextureSlice result = { region, texture };
+	return(result);
+#endif
+	R_TextureSlice result = { 0 };
+	return(result);
 }
 
 internal R_TextureSlice
 render_create_texture_slice(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 {
-    R_TextureSlice result;
-    result.texture = render_create_texture(renderer, path, color_space);
-    result.region.min = v2f32(0, 0);
-    result.region.max = v2f32(1, 1);
-    return(result);
+	R_TextureSlice result;
+	result.texture = render_create_texture(renderer, path, color_space);
+	result.region.min = v2f32(0, 0);
+	result.region.max = v2f32(1, 1);
+	return(result);
 }
 
 internal F32
@@ -53,7 +65,7 @@ vec4f32_srgb_to_linear(Vec4F32 srgb)
 		f32_srgb_to_linear(srgb.b),
 		srgb.a
 	);
-    return(result);
+	return(result);
 }
 
 internal F32
@@ -80,5 +92,5 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
 		f32_linear_to_srgb(linear.b),
 		linear.a
 	);
-    return(result);
+	return(result);
 }

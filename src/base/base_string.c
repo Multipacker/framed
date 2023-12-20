@@ -311,7 +311,8 @@ str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints)
 		string_ptr += string_decode.size;
 	}
 
-	if (last_split_point < string_opl) {
+	if (last_split_point < string_opl)
+	{
 		str8_list_push(arena, &result, str8_range(last_split_point, string_opl));
 	}
 
@@ -328,7 +329,7 @@ string_decode_utf8(U8 *string, U64 size)
 	// 3:  // 3 bytes needed
 	// 4:  // Invalid
 	local U8 lengths[32] =
-    {
+	{
 		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xxxxxxx: 0 bytes needed
 		4, 4, 4, 4, 4, 4, 4, 4,                         // 10xxxxxx: Invalid
 		1, 1, 1, 1,                                     // 110xxxxx: 1 byte needed
@@ -613,7 +614,7 @@ cstr_from_str8(Arena *arena, Str8 string)
 internal Str16
 cstr16_from_str8(Arena *arena, Str8 string)
 {
-    U64 allocated_size = string.size + 1;
+	U64 allocated_size = string.size + 1;
 	U16 *memory = push_array(arena, U16, allocated_size);
 
 	U16 *destination_ptr = memory;
@@ -628,7 +629,7 @@ cstr16_from_str8(Arena *arena, Str8 string)
 		ptr += decode.size;
 	}
 
-    *destination_ptr = 0;
+	*destination_ptr = 0;
 
 	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size - 1;
@@ -643,15 +644,15 @@ cstr16_from_str8(Arena *arena, Str8 string)
 internal U64
 u64_from_str8(Str8 string, U64 *destination)
 {
-    U64 i;
+	U64 i;
 	for (i = 0; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-        if (!is_num(ch))
-        {
-            break;
-        }
-        *destination = (*destination) * 10 + ch - '0';
+		if (!is_num(ch))
+		{
+			break;
+		}
+		*destination = (*destination) * 10 + ch - '0';
 	}
 
 	return(i);
@@ -660,66 +661,66 @@ u64_from_str8(Str8 string, U64 *destination)
 internal U64
 u32_from_str8(Str8 string, U32 *destination)
 {
-    U64 result = 0;
-    U64 temp = 0;
-    result = u64_from_str8(string, &temp);
-    assert(temp <= U32_MAX);
-    *destination = (U32) temp;
+	U64 result = 0;
+	U64 temp = 0;
+	result = u64_from_str8(string, &temp);
+	assert(temp <= U32_MAX);
+	*destination = (U32) temp;
 
-    return(result);
+	return(result);
 }
 
 internal U64
 u16_from_str8(Str8 string, U16 *destination)
 {
-    U64 result = 0;
-    U64 temp = 0;
-    result = u64_from_str8(string, &temp);
-    assert(temp <= U16_MAX);
-    *destination = (U16) temp;
+	U64 result = 0;
+	U64 temp = 0;
+	result = u64_from_str8(string, &temp);
+	assert(temp <= U16_MAX);
+	*destination = (U16) temp;
 
-    return(result);
+	return(result);
 }
 
 internal U64
 u8_from_str8(Str8 string, U8 *destination)
 {
-    U64 result = 0;
-    U64 temp = 0;
-    result = u64_from_str8(string, &temp);
-    assert(temp <= U8_MAX);
-    *destination = (U8) temp;
+	U64 result = 0;
+	U64 temp = 0;
+	result = u64_from_str8(string, &temp);
+	assert(temp <= U8_MAX);
+	*destination = (U8) temp;
 
-    return(result);
+	return(result);
 }
 
 internal U64
 s64_from_str8(Str8 string, S64 *destination)
 {
 	U64 i = 0;
-    B32 negative = false;
-    if (string.size > 0)
-    {
-        if (string.data[0] == '-')
-        {
-            negative = true;
-            i += 1;
-        }
-    }
+	B32 negative = false;
+	if (string.size > 0)
+	{
+		if (string.data[0] == '-')
+		{
+			negative = true;
+			i += 1;
+		}
+	}
 	for (; i < string.size; ++i)
 	{
 		U8 ch = string.data[i];
-        if (!is_num(ch))
-        {
-            break;
-        }
-        *destination = (*destination) * 10 + ch - '0';
+		if (!is_num(ch))
+		{
+			break;
+		}
+		*destination = (*destination) * 10 + ch - '0';
 	}
 
-    if (negative)
-    {
-        *destination = -(*destination);
-    }
+	if (negative)
+	{
+		*destination = -(*destination);
+	}
 
 	return(i);
 }
@@ -727,50 +728,50 @@ s64_from_str8(Str8 string, S64 *destination)
 internal U64
 s32_from_str8(Str8 string, S32 *destination)
 {
-    U64 result = 0;
-    S64 temp = 0;
-    result = s64_from_str8(string, &temp);
-    assert(temp <= S32_MAX);
-    *destination = (S32) temp;
+	U64 result = 0;
+	S64 temp = 0;
+	result = s64_from_str8(string, &temp);
+	assert(temp <= S32_MAX);
+	*destination = (S32) temp;
 
-    return(result);
+	return(result);
 }
 
 internal U64
 s16_from_str8(Str8 string, S16 *destination)
 {
-    U64 result = 0;
-    S64 temp = 0;
-    result = s64_from_str8(string, &temp);
-    assert(temp <= S16_MAX);
-    *destination = (S16) temp;
+	U64 result = 0;
+	S64 temp = 0;
+	result = s64_from_str8(string, &temp);
+	assert(temp <= S16_MAX);
+	*destination = (S16) temp;
 
-    return(result);
+	return(result);
 }
 
 internal U64
 s8_from_str8(Str8 string, S8 *destination)
 {
-    U64 result = 0;
-    S64 temp = 0;
-    result = s64_from_str8(string, &temp);
-    assert(temp <= S8_MAX);
-    *destination = (S8) temp;
+	U64 result = 0;
+	S64 temp = 0;
+	result = s64_from_str8(string, &temp);
+	assert(temp <= S8_MAX);
+	*destination = (S8) temp;
 
-    return(result);
+	return(result);
 }
 
 internal F64
 f64_from_str8(Str8 string, F64 *destination)
 {
-    assert(!"Not implemented!");
+	assert(!"Not implemented!");
 	return 0.0;
 }
 
 internal
 B32 is_num(U8 ch)
 {
-    U8 n = ch - '0';
-    B32 result = n >= 0 && n <= 9;
-    return(result);
+	U8 n = ch - '0';
+	B32 result = n >= 0 && n <= 9;
+	return(result);
 }

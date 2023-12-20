@@ -96,7 +96,7 @@ internal Str16 cstr16_from_str8(Arena *arena, Str8 string);
 internal U64 u64_from_str8(Str8 string, U64 *destination);
 internal U64 u32_from_str8(Str8 string, U32 *destination);
 internal U64 u16_from_str8(Str8 string, U16 *destination);
-internal U64 u8_from_str8(Str8 string,  U8 *destination);
+internal U64 u8_from_str8(Str8 string, U8 *destination);
 
 internal U64 s64_from_str8(Str8 string, S64 *destination);
 internal U64 s32_from_str8(Str8 string, S32 *destination);

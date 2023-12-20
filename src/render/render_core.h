@@ -13,14 +13,14 @@
 typedef struct R_Texture R_Texture;
 struct R_Texture
 {
-    U64 u64[1];
+	U64 u64[4];
 };
 
 typedef struct R_TextureSlice R_TextureSlice;
 struct R_TextureSlice
 {
-    RectF32 region;
-    R_Texture texture;
+	RectF32 region;
+	R_Texture texture;
 };
 
 typedef struct R_RectInstance R_RectInstance;
@@ -28,15 +28,15 @@ struct R_RectInstance
 {
 	Vec2F32 min;
 	Vec2F32 max;
-    Vec2F32 min_uv;
-    Vec2F32 max_uv;
-    // NOTE(hampus): [c00, c10, c11, c01]
+	Vec2F32 min_uv;
+	Vec2F32 max_uv;
+	// NOTE(hampus): [c00, c10, c11, c01]
 	Vec4F32 colors[4];
 	F32     radies[4];
 	F32     softness;
 	F32     border_thickness;
-    F32     omit_texture;
-    F32     is_subpixel_text;
+	F32     omit_texture;
+	F32     is_subpixel_text;
 };
 
 typedef struct R_RenderStats R_RenderStats;
@@ -53,10 +53,10 @@ struct R_RenderStats
 typedef enum R_ColorSpace R_ColorSpace;
 enum R_ColorSpace
 {
-    R_ColorSpace_sRGB,
-    R_ColorSpace_Linear,
+	R_ColorSpace_sRGB,
+	R_ColorSpace_Linear,
 
-    R_ColorSpace_COUNT,
+	R_ColorSpace_COUNT,
 };
 
 typedef struct R_Context R_Context;
@@ -76,8 +76,8 @@ struct R_RectParams
 	F32            radius;
 	F32            softness;
 	F32            border_thickness;
-    R_TextureSlice slice;
-    B32            is_subpixel_text;
+	R_TextureSlice slice;
+	B32            is_subpixel_text;
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
@@ -97,7 +97,7 @@ internal R_Texture      render_create_texture_from_bitmap(R_Context *renderer, V
 internal Void           render_destroy_texture(R_Context *renderer, R_Texture texture);
 internal R_TextureSlice render_slice_from_texture(R_Texture texture, RectF32 region);
 internal R_TextureSlice render_create_texture_slice(R_Context *renderer, Str8 path, R_ColorSpace color_space);
-internal R_Texture      render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, S32 width, S32 height, S32 offset);
+internal Void           render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, S32 width, S32 height, S32 offset);
 
 internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);

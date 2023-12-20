@@ -14,17 +14,16 @@ os_main(Str8List arguments)
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
-    R_Context *renderer = render_init(&gfx);
+	R_Context *renderer = render_init(&gfx);
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-    Arena *perm_arena = arena_create();
+	renderer->font_atlas = render_make_atlas(renderer, renderer->perm_arena, v2u32(1024, 1024));
 
-    renderer->font_atlas = render_make_atlas(perm_arena, v2u32(1024, 1024));
-
-    B32 running = true;
+	R_Font *font = render_font_init(renderer->perm_arena, renderer, str8_lit("data/fonts/liberation-mono.ttf"));
+	B32 running = true;
 	while (running)
 	{
 		Arena *current_arena  = frame_arenas[0];
@@ -32,41 +31,46 @@ os_main(Str8List arguments)
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
-             event != 0;
-             event = event->next)
+						 event != 0;
+						 event = event->next)
 		{
 			switch (event->kind)
 			{
 				case Gfx_EventKind_Quit:
 				{
-                    running = false;
+					running = false;
 				} break;
 
 				case Gfx_EventKind_KeyPress:
 				{
-                    if (event->key == Gfx_Key_F11)
-                    {
-                        gfx_toggle_fullscreen(&gfx);
-                    }
+					if (event->key == Gfx_Key_F11)
+					{
+						gfx_toggle_fullscreen(&gfx);
+					}
 				} break;
 
-                default:
-                {
-                } break;
+				default:
+				{
+				} break;
 			}
 		}
 
-        render_begin(renderer);
+		render_begin(renderer);
 
-        for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
-             node != 0;
-             node = node->next_free)
-        {
-            RectF32 rect = node->region;
-            render_rect(renderer, rect.min, rect.max, .border_thickness = 1.0f, .color = v4f32(1.0f, 0, 0, 1.0f));
-        }
+		for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
+				 node != 0;
+				 node = node->next_free)
+		{
+			RectU32 rect = node->region;
+			render_rect(renderer, v2f32_from_v2u32(rect.min), v2f32_from_v2u32(rect.max), .border_thickness = 1.0f, .color = v4f32(1.0f, 0, 0, 1.0f));
+		}
 
-        render_end(renderer);
+		R_TextureSlice atlas_slice = render_slice_from_texture(renderer->font_atlas->texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
+		render_rect(renderer, v2f32(0, 0), v2f32(1024, 1024), .slice = atlas_slice);
+
+		render_text(renderer, v2f32(100, 100), str8_lit("Hello world!"), font, v4f32(1, 1, 1, 1));
+
+		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);

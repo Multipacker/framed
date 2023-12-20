@@ -4,16 +4,16 @@ global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
 global PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
 global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = 0;
 
- internal Void APIENTRY
+internal Void APIENTRY
 win32_debug_output(GLenum source,
-                GLenum type,
-                 U32 id,
-                GLenum severity,
-                GLsizei length,
-                  const char *message,
-                 const Void *userParam)
+								GLenum type,
+								 U32 id,
+								GLenum severity,
+								GLsizei length,
+									const char *message,
+								 const Void *userParam)
 {
-    // NOTE(hampus): We do not care about these warnings
+	// NOTE(hampus): We do not care about these warnings
 	if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
 	printf("---------------\n");
@@ -54,10 +54,10 @@ win32_debug_output(GLenum source,
 		case GL_DEBUG_SEVERITY_NOTIFICATION: printf("Severity: notification"); break;
 	}
 
-    if (severity == GL_DEBUG_SEVERITY_HIGH)
-    {
-        assert(false);
-    }
+	if (severity == GL_DEBUG_SEVERITY_HIGH)
+	{
+		assert(false);
+	}
 
 	printf("\n");
 }
@@ -65,15 +65,15 @@ win32_debug_output(GLenum source,
 internal Void
 win32_get_wgl_functions(Void)
 {
-	 Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
 	HWND dummy = CreateWindowEx(0,
-                                (LPCWSTR)cstr16_from_str8(scratch.arena, str8_lit("STATIC")).data,
-                                (LPCWSTR)cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")).data,
-                                WS_OVERLAPPED,
-                                CW_USEDEFAULT, CW_USEDEFAULT,
-                                CW_USEDEFAULT, CW_USEDEFAULT,
-                                NULL, NULL, NULL, NULL);
+																(LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")).data,
+																(LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")).data,
+																WS_OVERLAPPED,
+																CW_USEDEFAULT, CW_USEDEFAULT,
+																CW_USEDEFAULT, CW_USEDEFAULT,
+																NULL, NULL, NULL, NULL);
 
 	assert(dummy && "Failed to create dummy window");
 
@@ -110,36 +110,36 @@ win32_get_wgl_functions(Void)
 	assert(ok && "Failed to make current OpenGL context for dummy window");
 
 	PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB =
-    (Void*)wglGetProcAddress("wglGetExtensionsStringARB");
+		(Void*) wglGetProcAddress("wglGetExtensionsStringARB");
 	if (!wglGetExtensionsStringARB)
 	{
 		assert(!"OpenGL does not support WGL_ARB_extensions_string extension!");
 	}
 
-	Str8 extensions = str8_cstr((CStr)wglGetExtensionsStringARB(dc));
+	Str8 extensions = str8_cstr((CStr) wglGetExtensionsStringARB(dc));
 	assert(extensions.data && "Failed to get OpenGL WGL extension string");
 
-    Str8List extension_list = str8_split_by_codepoints(scratch.arena, extensions, str8_lit(" "));
+	Str8List extension_list = str8_split_by_codepoints(scratch.arena, extensions, str8_lit(" "));
 
-    for (Str8Node *node = extension_list.first;
-         node != 0;
-         node = node->next)
-    {
-        Str8 string = node->string;
+	for (Str8Node *node = extension_list.first;
+			 node != 0;
+			 node = node->next)
+	{
+		Str8 string = node->string;
 
 		if (str8_equal(string, str8_lit("WGL_ARB_pixel_format")))
 		{
-			wglChoosePixelFormatARB = (Void *)wglGetProcAddress("wglChoosePixelFormatARB");
+			wglChoosePixelFormatARB = (Void *) wglGetProcAddress("wglChoosePixelFormatARB");
 		}
 		else if (str8_equal(string, str8_lit("WGL_ARB_create_context")))
 		{
-			wglCreateContextAttribsARB = (Void *)wglGetProcAddress("wglCreateContextAttribsARB");
+			wglCreateContextAttribsARB = (Void *) wglGetProcAddress("wglCreateContextAttribsARB");
 		}
 		else if (str8_equal(string, str8_lit("WGL_EXT_swap_control")))
 		{
-			wglSwapIntervalEXT = (Void *)wglGetProcAddress("wglSwapIntervalEXT");
+			wglSwapIntervalEXT = (Void *) wglGetProcAddress("wglSwapIntervalEXT");
 		}
-    }
+	}
 
 	if (!wglChoosePixelFormatARB || !wglCreateContextAttribsARB || !wglSwapIntervalEXT)
 	{
@@ -154,7 +154,7 @@ win32_get_wgl_functions(Void)
 	DestroyWindow(dummy);
 }
 
- internal Void
+internal Void
 win32_init_opengl(Gfx_Context *gfx)
 {
 	win32_get_wgl_functions();
@@ -179,7 +179,7 @@ win32_init_opengl(Gfx_Context *gfx)
 			assert(!"OpenGL does not support required pixel format!");
 		}
 
-		PIXELFORMATDESCRIPTOR desc ={ .nSize = sizeof(desc) };
+		PIXELFORMATDESCRIPTOR desc = { .nSize = sizeof(desc) };
 		S32 ok = DescribePixelFormat(gfx->hdc, format, sizeof(desc), &desc);
 		assert(ok && "Failed to describe OpenGL pixel format");
 
@@ -190,7 +190,7 @@ win32_init_opengl(Gfx_Context *gfx)
 	}
 
 	{
-		 S32 attrib[] =
+		S32 attrib[] =
 		{
 			WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
 			WGL_CONTEXT_MINOR_VERSION_ARB, 5,
@@ -215,13 +215,13 @@ win32_init_opengl(Gfx_Context *gfx)
 #undef X
 
 #if !BUILD_MODE_RELEASE
-        glDebugMessageCallback(&win32_debug_output, NULL);
+			glDebugMessageCallback(&win32_debug_output, NULL);
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 	}
 }
 
- internal Void
+internal Void
 gfx_swap_buffers(Gfx_Context *gfx)
 {
 	SwapBuffers(gfx->hdc);

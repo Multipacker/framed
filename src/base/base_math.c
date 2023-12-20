@@ -26,8 +26,8 @@ v2f32_mul_f32(Vec2F32 a, F32 t)
 internal Vec2F32
 v2f32_from_v2u32(Vec2U32 v)
 {
-    Vec2F32 result = (Vec2F32){(F32)v.x, (F32)v.y};
-    return(result);
+	Vec2F32 result = (Vec2F32) { (F32) v.x, (F32) v.y };
+	return(result);
 }
 
 
@@ -100,19 +100,19 @@ v4f32_div_f32(Vec4F32 a, F32 t)
 internal Vec2F32
 v2f32_add_f32(Vec2F32 a, F32 t)
 {
-    Vec2F32 result;
-    result.x = a.x + t;
-    result.y = a.y + t;
-    return(result);
+	Vec2F32 result;
+	result.x = a.x + t;
+	result.y = a.y + t;
+	return(result);
 }
 
 internal Vec2F32
 v2f32_sub_f32(Vec2F32 a, F32 t)
 {
-    Vec2F32 result;
-    result.x = a.x - t;
-    result.y = a.y - t;
-    return(result);
+	Vec2F32 result;
+	result.x = a.x - t;
+	result.y = a.y - t;
+	return(result);
 }
 
 // S32
@@ -302,7 +302,7 @@ v4u32_div_u32(Vec4U32 a, U32 t)
 internal Mat4F32
 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 n, F32 f)
 {
-    Mat4F32 result;
+	Mat4F32 result;
 
 	result.m[0][0] = 2 / (right - left);
 	result.m[0][1] = 0;
@@ -1032,8 +1032,8 @@ f32_round_to_s32(F32 x)
 internal F32
 f32_clamp(F32 min, F32 val, F32 max)
 {
-    F32 result = f32_max(f32_min(val, max), min);
-    return(result);
+	F32 result = f32_max(f32_min(val, max), min);
+	return(result);
 }
 
 internal F64
@@ -1134,6 +1134,6 @@ f64_ceil(F64 x)
 internal F64
 f64_clamp(F64 min, F64 val, F64 max)
 {
-     F64 result = f64_max(f64_min(val, max), min);
-    return(result);
+	F64 result = f64_max(f64_min(val, max), min);
+	return(result);
 }

@@ -22,18 +22,18 @@ os_main(Str8List arguments)
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 	gfx_show_window(&gfx);
 
-    R_Context *renderer = render_init(&gfx);
+	R_Context *renderer = render_init(&gfx);
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-    R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
+	R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
+	
+	Arena *perm_arena = arena_create();
+	R_Font *font = render_font_init(perm_arena, renderer, str8_lit("data/fonts/Inter-Regular.ttf"));
 
-    Arena *perm_arena = arena_create();
-    R_Font *font = render_font_init(perm_arena, renderer, str8_lit("data/fonts/Inter-Regular.ttf"));
-
-    B32 running = true;
+	B32 running = true;
 	while (running)
 	{
 		Arena *current_arena  = frame_arenas[0];
@@ -41,50 +41,50 @@ os_main(Str8List arguments)
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
-             event != 0;
-             event = event->next)
+						 event != 0;
+						 event = event->next)
 		{
 			switch (event->kind)
 			{
 				case Gfx_EventKind_Quit:
 				{
-                    running = false;
+					running = false;
 				} break;
 
 				case Gfx_EventKind_KeyPress:
 				{
-                      LOG("Gfx_EventKind_KeyPress: %d\n", event->key);
-                    if (event->key == Gfx_Key_F11)
-                    {
-                        gfx_toggle_fullscreen(&gfx);
-                    }
+					LOG("Gfx_EventKind_KeyPress: %d\n", event->key);
+					if (event->key == Gfx_Key_F11)
+					{
+						gfx_toggle_fullscreen(&gfx);
+					}
 				} break;
 
 				case Gfx_EventKind_KeyRelease:
 				{
-                     LOG("Gfx_EventKind_KeyRelease: %d\n", event->key);
+					LOG("Gfx_EventKind_KeyRelease: %d\n", event->key);
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
-                    LOG("Gfx_EventKind_Char\n");
+					LOG("Gfx_EventKind_Char\n");
 				} break;
 
 				case Gfx_EventKind_Scroll:
 				{
-                    LOG("Gfx_EventKind_Scroll: %d\n", (U32)event->scroll.y);
+					LOG("Gfx_EventKind_Scroll: %d\n", (U32) event->scroll.y);
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
-                    LOG("Gfx_EventKind_Resize\n");
+					LOG("Gfx_EventKind_Resize\n");
 				} break;
 
-                invalid_case;
+				invalid_case;
 			}
 		}
 
-        render_begin(renderer);
+		render_begin(renderer);
 
 		Vec2U32 screen_area = gfx_get_window_client_area(&gfx);
 		render_rect(renderer, v2f32(0, 0), v2f32((F32) screen_area.width, (F32) screen_area.height), .color = v4f32(0.25, 0.25, 0.25, 1.0));
@@ -92,8 +92,8 @@ os_main(Str8List arguments)
 		Vec2F32 mouse = gfx_get_mouse_pos(&gfx);
 
 		render_rect(renderer, v2f32(300, 300), v2f32(600, 370), .border_thickness = 1, .radius = 10, .softness = 1, .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
-        render_text(renderer, v2f32(300, 300), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
-        render_text(renderer, v2f32(400, 400), str8_lit("123456789_[]()"), font, v4f32(1, 0, 0, 0.5));
+		render_text(renderer, v2f32(300, 300), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
+		render_text(renderer, v2f32(400, 400), str8_lit("123456789_[]()"), font, v4f32(1, 0, 0, 0.5));
 
 		render_push_clip(renderer, v2f32(0, 0), v2f32(150, 150), false);
 		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to
@@ -107,12 +107,12 @@ os_main(Str8List arguments)
 		render_rect(renderer, v2f32_sub_f32(mouse, 30.0f), v2f32_add_f32(mouse, 30.0f));
 
 		R_RenderStats stats = render_get_stats(renderer);
-		#if 0
-        LOG("Stats:\n");
+#if 0
+		LOG("Stats:\n");
 		LOG("\tRect count:  %"PRIU64"\n", stats.rect_count);
 		LOG("\tBatch count: %"PRIU64"\n", stats.batch_count);
-        #endif
-        render_end(renderer);
+#endif
+		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
