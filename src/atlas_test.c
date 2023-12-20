@@ -28,6 +28,7 @@ os_main(Str8List arguments)
 	frame_arenas[1] = arena_create();
 
 	R_Font *medium_font = render_make_font(renderer, 20, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *icon_font = render_make_font(renderer, 20, str8_lit("data/fonts/fontello.ttf"));
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -64,7 +65,7 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-        #if 1
+        #if 0
 		for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
 				 node != 0;
 				 node = node->next_free)
@@ -76,11 +77,11 @@ os_main(Str8List arguments)
 		R_TextureSlice atlas_slice = render_slice_from_texture(renderer->font_atlas->texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
 		render_rect(renderer, v2f32(0, 0), v2f32(1024, 1024), .slice = atlas_slice);
 #endif
-        #if 0
+        #if 1
 		render_text(renderer, v2f32(100, 100), str8_lit("Hello, world!"), medium_font, v4f32(1, 1, 1, 1));
 		render_text16(renderer, v2f32(100, 200), str16_from_str8(current_arena, str8_lit("åäö!")), medium_font, v4f32(1, 1, 1, 1));
 
-        render_character(renderer, v2f32(100, 100), R_ICON_ZOOM_OUT, icon_font, v4f32(1, 1, 1, 1));
+        render_character(renderer, v2f32(400, 400), R_ICON_ZOOM_OUT, icon_font, v4f32(1, 1, 1, 1));
 #endif
 		render_end(renderer);
 
