@@ -471,7 +471,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                 Arena *arena = arena_create();
                 result = push_struct(arena, R_Font);
                 result->arena = arena;
-                result->glyphs = push_array(result->arena, R_Glyph, face->num_glyphs);
+                result->glyphs = push_array(result->arena, R_Glyph, (U64) face->num_glyphs);
                 FT_Select_Charmap(face, ft_encoding_unicode);
 				result->num_glyphs = (U32) face->num_glyphs;
                 result->path = path;
@@ -493,7 +493,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 					result->has_kerning         = FT_HAS_KERNING(face);
 					result->family_name         = str8_copy_cstr(result->arena, (U8 *) face->family_name);
 					result->style_name          = str8_copy_cstr(result->arena, (U8 *) face->style_name);
-					result->font_size           = font_size;
+					result->font_size           = (U32) font_size;
 
                     // NOTE(hampus): Make an empty glyph that the spaces will use
 
@@ -635,12 +635,12 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
             // find a font we can evict
             assert(unused_slot != -1 && "Cache is hot and full");
             render_destroy_font(renderer, renderer->font_cache->fonts[unused_slot]);
-            renderer->font_cache->fonts[unused_slot] = render_make_font(renderer, font_key.font_size, font_key.path);
+            renderer->font_cache->fonts[unused_slot] = render_make_font(renderer, (S32) font_key.font_size, font_key.path);
             result = renderer->font_cache->fonts[unused_slot];
         }
         else
         {
-            renderer->font_cache->fonts[empty_slot] = render_make_font(renderer, font_key.font_size, font_key.path);
+            renderer->font_cache->fonts[empty_slot] = render_make_font(renderer, (S32) font_key.font_size, font_key.path);
             result = renderer->font_cache->fonts[empty_slot];
             renderer->font_cache->slots_used++;
         }
