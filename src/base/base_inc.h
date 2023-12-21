@@ -5,5 +5,6 @@
 #include "base/base_math.h"
 #include "base/base_memory.h"
 #include "base/base_string.h"
+#include "base/base_hash.h"
 
 #endif // BASE_INC_H

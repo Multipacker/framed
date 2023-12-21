@@ -70,17 +70,19 @@ struct R_GlyphIndexNode
 };
 
 typedef struct R_GlyphBucket R_GlyphBucket;
-struct R_GlyphBucket
+struct  R_GlyphBucket
 {
     R_GlyphIndexNode *first;
     R_GlyphIndexNode *last;
 };
 
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
+#define R_FONT_CACHE_SIZE        16
 
 typedef struct R_Font R_Font;
 struct R_Font
 {
+    Arena *arena;
     R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
     R_FontAtlasRegion empty_font_atlas_region;
@@ -89,21 +91,46 @@ struct R_Font
 
 	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
 	F32 max_advance_width;
-    F32 font_size;
 	F32 underline_position; // NOTE(hampus): Relative to the baseline
     B32 has_kerning;
 	U32 num_glyphs;
 	U32 num_loaded_glyphs;
-	Str8 family_name;
+
+     U32 font_size;
+    // TODO(hampus): Collapse these somehow
+    Str8 family_name;
 	Str8 style_name;
+    Str8 path;
+
+    U64 last_frame_index_used;
+};
+
+typedef struct R_FontCache R_FontCache;
+struct R_FontCache
+{
+    U32 slots_used;
+    R_Font *fonts[R_FONT_CACHE_SIZE];
+};
+
+typedef struct R_FontKey R_FontKey;
+struct R_FontKey
+{
+    U32 font_size;
+	Str8 path;
+};
+
+typedef struct R_FontHash R_FontHash;
+struct R_FontHash
+{
+    U64 hash;
 };
 
 internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 
 internal R_Font *render_make_font(R_Context *renderer, S32 font_size, Str8 path);
-internal void    render_destroy_font(R_Context *renderer, R_Font *font);
+internal Void    render_destroy_font(R_Context *renderer, R_Font *font);
 
-internal void    render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color);
+internal Void render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);
 internal Vec2F32 render_measure_text(R_Font *font, Str8 text);
 
 #endif

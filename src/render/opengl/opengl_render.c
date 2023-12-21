@@ -382,7 +382,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 				0, 0,
 				(GLsizei) width, (GLsizei) height,
 				byte_layout, GL_UNSIGNED_BYTE,
-				(const void *) pixels
+				(const Void *) pixels
 			);
 
 			result.u64[0] = (U64) texture;
@@ -431,7 +431,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 		0, 0,
 		(GLsizei) width, (GLsizei) height,
 		GL_RGBA, GL_UNSIGNED_BYTE,
-		(const void *) data
+		(const Void *) data
 	);
 
 	result.u64[0] = (U64) texture;
@@ -465,7 +465,7 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 			(GLint) x, (GLint) y,
 			(GLsizei) width, (GLsizei) height,
 			GL_RGBA, GL_UNSIGNED_BYTE,
-			(const void *) memory
+			(const Void *) memory
 		);
 	}
 }

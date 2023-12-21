@@ -1,6 +1,6 @@
 global Win32_State win32_state;
 
-internal void
+internal Void
 win32_print_error_message(Void)
 {
 	DWORD error = GetLastError();
