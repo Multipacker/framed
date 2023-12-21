@@ -9,7 +9,7 @@ enum R_FontRenderMode
 	R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
 };
 
-#define R_USE_SUBPIXEL_RENDERING 1
+#define R_USE_SUBPIXEL_RENDERING 0
 
 typedef struct R_FontAtlasRegionNode R_FontAtlasRegionNode;
 struct R_FontAtlasRegionNode
@@ -61,10 +61,10 @@ struct R_Glyph
 	R_FontAtlasRegion font_atlas_region;
 };
 
-typedef struct R_GlyphNode R_GlyphNode;
-struct R_GlyphNode
+typedef struct R_GlyphIndexNode R_GlyphIndexNode;
+struct R_GlyphIndexNode
 {
-    R_GlyphNode *next;
+    R_GlyphIndexNode *next;
     U32 codepoint;
     U32 index; // NOTE(hampus): The index into the glyphs array in the font
 };
@@ -72,8 +72,8 @@ struct R_GlyphNode
 typedef struct R_GlyphBucket R_GlyphBucket;
 struct R_GlyphBucket
 {
-    R_GlyphNode *first;
-    R_GlyphNode *last;
+    R_GlyphIndexNode *first;
+    R_GlyphIndexNode *last;
 };
 
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
@@ -83,6 +83,7 @@ struct R_Font
 {
     R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
+    R_FontAtlasRegion empty_font_atlas_region;
 	F32 max_ascent;
 	F32 max_descent;
 

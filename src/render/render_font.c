@@ -1,13 +1,13 @@
 // TODO(hampus):
 	 // [x] - Subpixel rendering
 // [x] - Atlasing
-// [ ] - Icons
+// [x] - Icons
+// [x] - Unicode
 // [ ] - Caching
 // [ ] - Kerning
 // [ ] - Underline & strikethrough
 // [ ] - Bold & italic fonts
 // [ ] - Subpixel positioning
-// [ ] - Unicode
 
 // NOTE(hampus): Freetype have variables called 'internal' :(
 #undef internal
@@ -26,20 +26,42 @@ render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node
 	{
 		atlas->first_free_region->prev_free = node;
 	}
+
 	if (atlas->first_free_region == atlas->last_free_region)
 	{
 		atlas->last_free_region = node;
 	}
+
 	atlas->first_free_region = node;
 	node->used = false;
 	atlas->num_free_regions++;
+
+    RectU32 rect_region = node->region;
+
+    U32 width = rect_region.x1 - rect_region.x0;
+    U32 height = rect_region.y1 - rect_region.y0;
+
+    U8 *data = (U8 *)atlas->memory + (rect_region.min.x + rect_region.min.y * atlas->dim.x)*4;
+    U8 *dst = data;
+    for (U32 y = 0; y < height; ++y)
+    {
+        U32 *dst_row = (U32 *)dst;
+        for (U32 x = 0; x < width; ++x)
+        {
+            *dst_row++ = 0;
+        }
+
+        dst += (S32) (atlas->dim.x * 4);
+    }
 }
 
 internal void
 render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
 {
 	dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
-	node->used = true;
+    node->used = true;
+    node->next_free = 0;
+    node->prev_free = 0;
 	atlas->num_free_regions--;
 }
 
@@ -135,6 +157,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 	}
 
 	render_remove_free_region_from_atlas(atlas, node);
+
 	node->next_free = 0;
 	node->prev_free = 0;
 	R_FontAtlasRegion result = { node, node->region };
@@ -145,7 +168,8 @@ internal void
 render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 {
 	R_FontAtlasRegionNode *node = region.node;
-	R_FontAtlasRegionNode *parent = node->parent;
+	assert(node->used);
+    R_FontAtlasRegionNode *parent = node->parent;
 	render_push_free_region_to_atlas(atlas, node);
 	if (parent)
 	{
@@ -180,12 +204,15 @@ render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 internal void
 render_destroy_font(R_Context *renderer, R_Font *font)
 {
-	for (U64 glyph_index = 33; glyph_index < 128; ++glyph_index)
-	{
-		R_Glyph *glyph = font->glyphs + glyph_index;
-		render_free_atlas_region(renderer->font_atlas, glyph->font_atlas_region);
-	}
-	memory_zero_struct(font);
+    for (U64 i = 0; i < font->num_loaded_glyphs; ++i)
+    {
+        R_Glyph *glyph = font->glyphs + i;
+        if (glyph->font_atlas_region.node)
+        {
+            render_free_atlas_region(renderer->font_atlas, glyph->font_atlas_region);
+        }
+    }
+	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
 }
 
 internal Str8
@@ -210,8 +237,9 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 	RectU32 rect_region = { 0 };
 
     R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
-    R_GlyphNode *node = push_struct(renderer->permanent_arena, R_GlyphNode);
-    node->codepoint = codepoint;
+    R_GlyphIndexNode *node = push_struct(renderer->permanent_arena, R_GlyphIndexNode);
+
+node->codepoint = codepoint;
     node->index = index;
     sll_push_front(bucket->first, node);
 
@@ -219,137 +247,161 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 	Str8 error;
 	R_Glyph *glyph = font->glyphs + node->index;
 
-	// NOTE(hampus): Get the width of a space
-	FT_Int32 ft_load_flags = 0;
-	FT_Render_Mode ft_render_flags = 0;
-	switch (render_mode)
-	{
-		case R_FontRenderMode_Normal:
-		{
-			ft_load_flags = FT_LOAD_DEFAULT;
-			ft_render_flags = FT_RENDER_MODE_NORMAL;
-		} break;
+      // NOTE(hampus): Some codepoints may map to the same index
+    if (!glyph->font_atlas_region.node)
+    {
+        FT_Int32 ft_load_flags = 0;
+        FT_Render_Mode ft_render_flags = 0;
+        switch (render_mode)
+        {
+            case R_FontRenderMode_Normal:
+            {
+                ft_load_flags = FT_LOAD_DEFAULT;
+                ft_render_flags = FT_RENDER_MODE_NORMAL;
+            } break;
 
-		case R_FontRenderMode_LCD:
-		{
-			ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
-			ft_render_flags = FT_RENDER_MODE_LCD;
-		} break;
-		invalid_case;
-	}
-	FT_Error ft_load_glyph_error = FT_Load_Glyph(face, index, ft_load_flags);
-	if (!ft_load_glyph_error)
-	{
-		FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
-		if (!ft_render_glyph_error)
-		{
-			switch (render_mode)
-			{
-				case R_FontRenderMode_Normal:
-				{
-					bitmap_height = face->glyph->bitmap.rows;
-					bearing_left  = face->glyph->bitmap_left;
-					bearing_top   = face->glyph->bitmap_top;
-					bitmap_width  = face->glyph->bitmap.width;
+            case R_FontRenderMode_LCD:
+            {
+                ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
+                ft_render_flags = FT_RENDER_MODE_LCD;
+            } break;
+            invalid_case;
+        }
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+        B32 empty = false;
 
-					glyph->font_atlas_region = font_atlas_region;
+        FT_Error ft_load_glyph_error = FT_Load_Glyph(face, index, ft_load_flags);
+        if (!ft_load_glyph_error)
+        {
+            FT_Error ft_render_glyph_error = FT_Render_Glyph(face->glyph, ft_render_flags);
+            if (!ft_render_glyph_error)
+            {
+                switch (render_mode)
+                {
+                    case R_FontRenderMode_Normal:
+                    {
+                        empty = face->glyph->bitmap.buffer == 0;
+                        if (!empty)
+                        {
+                        bitmap_height = face->glyph->bitmap.rows;
+                        bearing_left  = face->glyph->bitmap_left;
+                        bearing_top   = face->glyph->bitmap_top;
+                        bitmap_width  = face->glyph->bitmap.width;
 
-					rect_region = font_atlas_region.region;
+                        R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
+                                                                                             v2u32(bitmap_width, bitmap_height));
 
-					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
-					// NOTE(hampus): Convert from 8 bit to 32 bit
-					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
-					U32 *dst = (U32 *)texture_data;
-					U8 *src = face->glyph->bitmap.buffer;
-					for (U32 y = 0; y < bitmap_height; ++y)
-					{
-						U32 *dst_row = dst;
-						for (U32 x = 0; x < bitmap_width; ++x)
-						{
-							U8 val = *src++;
-							*dst_row++ = (U32) ((0xff <<  0) |
-											(0xff <<  8) |
-											(0xff << 16) |
-											(val  << 24));
-						}
+                        glyph->font_atlas_region = font_atlas_region;
 
-						dst += renderer->font_atlas->dim.x;
-					}
+                        rect_region = font_atlas_region.region;
 
-				} break;
+                        // TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
+                        // NOTE(hampus): Convert from 8 bit to 32 bit
+                        texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
+                        U32 *dst = (U32 *)texture_data;
+                        U8 *src = face->glyph->bitmap.buffer;
+                        for (U32 y = 0; y < bitmap_height; ++y)
+                        {
+                            U32 *dst_row = dst;
+                            for (U32 x = 0; x < bitmap_width; ++x)
+                            {
+                                U8 val = *src++;
+                                *dst_row++ = ((0xff <<  0) |
+                                              (0xff <<  8) |
+                                              (0xff << 16) |
+                                              (val  << 24));
+                            }
 
-				case R_FontRenderMode_LCD:
-				{
-					bitmap_height = face->glyph->bitmap.rows;
-					bearing_left  = face->glyph->bitmap_left;
-					bearing_top   = face->glyph->bitmap_top;
-					// NOTE(hampus): We now have 3 "pixels" for each value.
-					bitmap_width = face->glyph->bitmap.width / 3;
+                            dst += renderer->font_atlas->dim.x;
+                            }
+                        }
+                        else
+                        {
+                            // NOTE(hampus): This was an empty glyph.
+                            glyph->font_atlas_region = font->empty_font_atlas_region;
+                        }
 
-					R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+                    } break;
 
-					glyph->font_atlas_region = font_atlas_region;
+                    case R_FontRenderMode_LCD:
+                    {
+                        empty = face->glyph->bitmap.buffer == 0;
+                        if (!empty)
+                        {
+                            bitmap_height = face->glyph->bitmap.rows;
+                            bitmap_width = face->glyph->bitmap.width / 3;
+                            bearing_left  = face->glyph->bitmap_left;
+                            bearing_top   = face->glyph->bitmap_top;
+                            // NOTE(hampus): We now have 3 "pixels" for each value.
 
-					rect_region = font_atlas_region.region;
+                            R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
-					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
-					// NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
-                    // We do not use the alpha here.
-					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
-					U8 *dst = texture_data;
-					U8 *src = face->glyph->bitmap.buffer;
-					for (U32 y = 0; y < bitmap_height; ++y)
-					{
-						U8 *dst_row = dst;
-						U8 *src_row = src;
-						for (U32 x = 0; x < bitmap_width; ++x)
-						{
-							U8 r = *src_row++;
-							U8 g = *src_row++;
-							U8 b = *src_row++;
-							*dst_row++ = r;
-							*dst_row++ = g;
-							*dst_row++ = b;
-							*dst_row++ = 0xff;
-						}
+                            glyph->font_atlas_region = font_atlas_region;
+                            rect_region = font_atlas_region.region;
 
-						dst += (S32) (renderer->font_atlas->dim.x * 4);
+                            // TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
+                            // NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
+                            // We do not use the alpha here.
+                            texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
+                            U8 *dst = texture_data;
+                            U8 *src = face->glyph->bitmap.buffer;
+                            for (U32 y = 0; y < bitmap_height; ++y)
+                            {
+                                U8 *dst_row = dst;
+                                U8 *src_row = src;
+                                for (U32 x = 0; x < bitmap_width; ++x)
+                                {
+                                    U8 r = *src_row++;
+                                    U8 g = *src_row++;
+                                    U8 b = *src_row++;
+                                    *dst_row++ = r;
+                                    *dst_row++ = g;
+                                    *dst_row++ = b;
+                                    *dst_row++ = 0xff;
+                                }
 
-						// NOTE(hampus): Freetype actually adds padding
-						// so the pitch is the correct width to increment
-						// by.
-						src += (S32) (face->glyph->bitmap.pitch);
-					}
+                                dst += (S32) (renderer->font_atlas->dim.x * 4);
 
-				} break;
-				invalid_case;
-			}
-		}
-		else
-		{
-		}
-	}
-	else
-	{
-	}
+                                // NOTE(hampus): Freetype actually adds padding
+                                // so the pitch is the correct width to increment
+                                // by.
+                                src += (S32) (face->glyph->bitmap.pitch);
+                            }
 
-	rect_region.max.x = rect_region.min.x + bitmap_width;
-	rect_region.max.y = rect_region.min.y + bitmap_height;
+                        }
+                        else
+                        {
+                            // NOTE(hampus): This was an empty glyph.
+                            glyph->font_atlas_region = font->empty_font_atlas_region;
+                        }
+                    } break;
+                    invalid_case;
+                }
+            }
+            else
+            {
+            }
+        }
+        else
+        {
+        }
 
-	RectF32 uv = rectf32_from_rectu32(rect_region);
+        rect_region.max.x = rect_region.min.x + bitmap_width;
+        rect_region.max.y = rect_region.min.y + bitmap_height;
 
-	uv.min.x /= (F32) renderer->font_atlas->dim.x;
-	uv.max.x /= (F32) renderer->font_atlas->dim.x;
+        RectF32 uv = rectf32_from_rectu32(rect_region);
 
-	uv.min.y /= (F32) renderer->font_atlas->dim.y;
-	uv.max.y /= (F32) renderer->font_atlas->dim.y;
+        uv.min.x /= (F32) renderer->font_atlas->dim.x;
+        uv.max.x /= (F32) renderer->font_atlas->dim.x;
 
-	glyph->slice             = render_slice_from_texture(renderer->font_atlas->texture, uv);
-	glyph->size_in_pixels    = v2f32((F32) bitmap_width, (F32) bitmap_height);
-	glyph->bearing_in_pixels = v2f32((F32) bearing_left, (F32) bearing_top);
-	glyph->advance_width     = (F32) (face->glyph->advance.x >> 6);
+        uv.min.y /= (F32) renderer->font_atlas->dim.y;
+        uv.max.y /= (F32) renderer->font_atlas->dim.y;
+
+        glyph->slice             = render_slice_from_texture(renderer->font_atlas->texture, uv);
+        glyph->size_in_pixels    = v2f32((F32) bitmap_width, (F32) bitmap_height);
+        glyph->bearing_in_pixels = v2f32((F32) bearing_left, (F32) bearing_top);
+        glyph->advance_width     = (F32) (face->glyph->advance.x >> 6);
+    }
 
 	return(result);
 }
@@ -405,9 +457,14 @@ result->line_height         = face->height             * pixels_per_font_unit;
 					result->style_name          = str8_copy_cstr(renderer->permanent_arena, (U8 *) face->style_name);
 					result->font_size           = (F32)font_size;
 
+                    // NOTE(hampus): Make an empty glyph that the spaces will use
+
+                    result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(1, 1));
+
                     // NOTE(hampus): Get the rectangle glyph which represents
-                    // an invalid charcter
+                    // an missing charcter
                     render_make_glyph(renderer, result, face, 0, 0, render_mode);
+                    result->num_loaded_glyphs++;
 
                     U32 index;
                     U32 charcode = (U32) FT_Get_First_Char(face, &index);
@@ -416,6 +473,10 @@ result->line_height         = face->height             * pixels_per_font_unit;
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
                             result->num_loaded_glyphs++;
+                            if (result->num_loaded_glyphs == 4096)
+                            {
+                                break;
+                            }
 							// TODO(hampus): We don't have the declaration for
 							// this function for some reason
 							// FT_Done_Glyph(face->glyph);
@@ -479,7 +540,7 @@ render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
     U32 index = 0;
     R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
 
-    for (R_GlyphNode *node = bucket->first;
+    for (R_GlyphIndexNode *node = bucket->first;
          node != 0;
          node = node->next)
     {
