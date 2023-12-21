@@ -31,7 +31,7 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_Font *font = render_make_font(renderer, 16, str8_lit("data/fonts/Inter-Regular.ttf"));
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
 	B32 show_log = false;
 
     B32 running = true;
