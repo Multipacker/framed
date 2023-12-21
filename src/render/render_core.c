@@ -115,3 +115,17 @@ render_init(Gfx_Context *gfx)
     renderer->font_cache = push_struct(arena, R_FontCache);
     return(renderer);
 }
+
+internal Void
+render_begin(R_Context *renderer)
+{
+    render_backend_begin(renderer);
+}
+
+internal Void
+render_end(R_Context *renderer)
+{
+    render_backend_end(renderer);
+    renderer->frame_index++;
+	arena_pop_to(renderer->frame_arena, 0);
+}

@@ -142,7 +142,7 @@ render_backend_init(R_Context *renderer)
 }
 
 internal Void
-render_begin(R_Context *renderer)
+render_backend_begin(R_Context *renderer)
 {
     R_BackendContext *backend = renderer->backend;
 	backend->client_area = gfx_get_window_client_area(renderer->gfx);
@@ -158,7 +158,7 @@ render_begin(R_Context *renderer)
 }
 
 internal Void
-render_end(R_Context *renderer)
+render_backend_end(R_Context *renderer)
 {
     R_BackendContext *backend = renderer->backend;
 	glDisable(GL_SCISSOR_TEST);
@@ -200,11 +200,9 @@ render_end(R_Context *renderer)
 	backend->batches.batch_count = 0;
 	backend->clip_stack          = 0;
 
-	arena_pop_to(renderer->frame_arena, 0);
 	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
 	gfx_swap_buffers(renderer->gfx);
-    renderer->frame_index++;
 }
 
 internal OpenGL_Batch *

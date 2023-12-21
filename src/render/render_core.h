@@ -118,4 +118,8 @@ internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
 internal F32     f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 
+internal Void render_backend_begin(R_Context *renderer);
+internal Void render_backend_end(R_Context *renderer);
+
+
 #endif //RENDER_CORE_H

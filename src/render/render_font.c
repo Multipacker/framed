@@ -3,13 +3,12 @@
 // [x] - Atlasing
 // [x] - Icons
 // [x] - Unicode
-// [ ] - Caching
-// [ ] - Kerning
-// [ ] - Underline & strikethrough
-// [ ] - Bold & italic fonts
-// [ ] - Subpixel positioning
-// [ ] - Specify min/max values for loading glyphs
+// [x] - Caching
 // [ ] - New lines
+// [ ] - Kerning
+// [ ] - Specify min/max codepoints for loading glyphs
+// [ ] - Subpixel positioning
+// [ ] - Underline & strikethrough
 
 // NOTE(hampus): Freetype have variables called 'internal' :(
 #undef internal
@@ -414,10 +413,12 @@ node->codepoint = codepoint;
             }
             else
             {
+                // TODO(hampus): Logging
             }
         }
         else
         {
+            // TODO(hampus): Logging
         }
 
         rect_region.max.x = rect_region.min.x + bitmap_width;

@@ -350,7 +350,7 @@ d3d11_push_batch(R_Context *renderer)
 }
 
 internal Void
-render_begin(R_Context *renderer)
+render_backend_begin(R_Context *renderer)
 {
 	// NOTE(hampus): Push clip rect
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
@@ -365,7 +365,7 @@ render_begin(R_Context *renderer)
 }
 
 internal Void
-render_end(R_Context *renderer)
+render_backend_end(R_Context *renderer)
 {
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
     R_BackendContext *backend = renderer->backend;
@@ -521,14 +521,11 @@ render_end(R_Context *renderer)
 
 	// NOTE(hampus): Reset state
 	render_pop_clip(renderer);
-	arena_pop_to(renderer->frame_arena, 0);
 	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
 	backend->batch_list.first = 0;
 	backend->batch_list.last  = 0;
 	backend->batch_list.batch_count  = 0;
-
-    renderer->frame_index++;
 }
 
 internal R_RectInstance *
