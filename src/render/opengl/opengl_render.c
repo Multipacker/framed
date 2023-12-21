@@ -204,6 +204,7 @@ render_end(R_Context *renderer)
 	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
 	gfx_swap_buffers(renderer->gfx);
+    renderer->frame_index++;
 }
 
 internal OpenGL_Batch *

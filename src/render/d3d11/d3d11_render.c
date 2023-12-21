@@ -527,6 +527,8 @@ render_end(R_Context *renderer)
 	backend->batch_list.first = 0;
 	backend->batch_list.last  = 0;
 	backend->batch_list.batch_count  = 0;
+
+    renderer->frame_index++;
 }
 
 internal R_RectInstance *
@@ -662,9 +664,9 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, 
 		.ArraySize = 1,
 		.Format = d3d11_format,
 		.SampleDesc = { 1, 0 },
-		.Usage = D3D11_USAGE_DEFAULT,
+		.Usage = D3D11_USAGE_DYNAMIC,
 		.BindFlags = D3D11_BIND_SHADER_RESOURCE,
-		// .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
+		.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE,
 	};
 
 	D3D11_SUBRESOURCE_DATA data =
@@ -736,7 +738,7 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 	S32 dst_width  = (S32) texture.u64[1];
 	S32 dst_height = (S32) texture.u64[2];
 	ID3D11Resource *resource = (ID3D11Resource *) ptr_from_int(texture.u64[3]);
-#if 1
+#if 0
 	D3D11_BOX box  = { 0 };
 	box.left       = offset   % dst_width;
 	box.top        = offset   / dst_width;
@@ -748,8 +750,8 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 																				0, &box, memory, (U32) width * 4, 0);
 #else
 	D3D11_MAPPED_SUBRESOURCE mapped;
-	ID3D11DeviceContext_Map(backend->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+	ID3D11DeviceContext_Map(renderer->backend->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
 	memory_copy_typed((U8 *) mapped.pData, (U8 *) memory, (width * height * 4));
-	ID3D11DeviceContext_Unmap(backend->context, resource, 0);
+	ID3D11DeviceContext_Unmap(renderer->backend->context, resource, 0);
 #endif
 }

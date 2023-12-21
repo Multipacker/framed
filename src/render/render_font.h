@@ -77,7 +77,7 @@ struct  R_GlyphBucket
 };
 
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
-#define R_FONT_CACHE_SIZE        16
+#define R_FONT_CACHE_SIZE        8
 
 typedef struct R_Font R_Font;
 struct R_Font

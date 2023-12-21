@@ -118,7 +118,7 @@ render_alloc_font_atlas_region(R_Context *renderer, Arena *arena, R_FontAtlas *a
         while (next)
         {
                 U32 next_region_size = next->region.max.x - next->region.min.x;
-                fits = next_region_size > required_size;
+                fits = next_region_size >= required_size;
                 if (fits)
                 {
                     if (next_region_size < region_size)
@@ -144,40 +144,47 @@ render_alloc_font_atlas_region(R_Context *renderer, Arena *arena, R_FontAtlas *a
 		// NOTE(hampus): Allocate 4 children to replace
 		// the parent
 
-		R_FontAtlasRegionNode *children = push_array(arena, R_FontAtlasRegionNode, Corner_COUNT);
+        if (!node->children[0])
+        {
+            R_FontAtlasRegionNode *children = push_array(arena, R_FontAtlasRegionNode, Corner_COUNT);
 
-		{
-			Vec2U32 bbox[Corner_COUNT] =
-			{
-				bbox[Corner_TopLeft] = node->region.min,
-				bbox[Corner_TopRight] = v2u32(node->region.max.x, node->region.min.y),
-				bbox[Corner_BottomLeft] = v2u32(node->region.min.x, node->region.max.y),
-				bbox[Corner_BottomRight] = node->region.max,
-			};
+            {
+                Vec2U32 bbox[Corner_COUNT] =
+                {
+                    bbox[Corner_TopLeft] = node->region.min,
+                    bbox[Corner_TopRight] = v2u32(node->region.max.x, node->region.min.y),
+                    bbox[Corner_BottomLeft] = v2u32(node->region.min.x, node->region.max.y),
+                    bbox[Corner_BottomRight] = node->region.max,
+                };
 
-			Vec2U32 middle = v2u32_div_u32(v2u32_add_v2u32(bbox[Corner_BottomRight], bbox[Corner_TopLeft]), 2);
+                Vec2U32 middle = v2u32_div_u32(v2u32_add_v2u32(bbox[Corner_BottomRight], bbox[Corner_TopLeft]), 2);
 
-			children[Corner_TopLeft].region     = rectu32(bbox[Corner_TopLeft], middle);
+                children[Corner_TopLeft].region     = rectu32(bbox[Corner_TopLeft], middle);
 
-			children[Corner_TopRight].region.min = v2u32(middle.x, bbox[Corner_TopRight].y);
-			children[Corner_TopRight].region.max = v2u32(bbox[Corner_TopRight].x, middle.y);
+                children[Corner_TopRight].region.min = v2u32(middle.x, bbox[Corner_TopRight].y);
+                children[Corner_TopRight].region.max = v2u32(bbox[Corner_TopRight].x, middle.y);
 
-			children[Corner_BottomLeft].region.min = v2u32(bbox[Corner_TopLeft].x, middle.y);
-			children[Corner_BottomLeft].region.max = v2u32(middle.x, bbox[Corner_BottomRight].y);
+                children[Corner_BottomLeft].region.min = v2u32(bbox[Corner_TopLeft].x, middle.y);
+                children[Corner_BottomLeft].region.max = v2u32(middle.x, bbox[Corner_BottomRight].y);
 
-			children[Corner_BottomRight].region = rectu32(middle, bbox[Corner_BottomRight]);
-		}
+                children[Corner_BottomRight].region = rectu32(middle, bbox[Corner_BottomRight]);
+            }
 
-		// NOTE(hampus): Push back the new children to
-		// the free list and link them into the quad-tree.
-		for (U64 i = 0; i < Corner_COUNT; ++i)
-		{
-			children[i].parent = node;
-			node->children[i] = &children[i];
-			render_push_free_region_to_atlas(atlas, children + 3 - i);
-		}
+            // NOTE(hampus): Push back the new children to
+            // the free list and link them into the quad-tree.
+            for (U64 i = 0; i < Corner_COUNT; ++i)
+            {
+                children[i].parent = node;
+                node->children[i] = &children[i];
+            }
+        }
 
-		node = &children[0];
+        for (U64 i = 0; i < Corner_COUNT; ++i)
+        {
+            render_push_free_region_to_atlas(atlas, node->children[3 - i]);
+        }
+
+            node = node->children[0];
 
 		region_size = node->region.max.x - node->region.min.x;
 		can_halve_size = region_size >= (required_size*2);
@@ -316,7 +323,7 @@ node->codepoint = codepoint;
                         bearing_top   = face->glyph->bitmap_top;
                         bitmap_width  = face->glyph->bitmap.width;
 
-                        R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, font->arena, renderer->font_atlas,
+                        R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas,
                                                                                              v2u32(bitmap_width, bitmap_height));
                         glyph->font_atlas_region = font_atlas_region;
 
@@ -361,7 +368,7 @@ node->codepoint = codepoint;
                             bearing_top   = face->glyph->bitmap_top;
                             // NOTE(hampus): We now have 3 "pixels" for each value.
 
-                            R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, font->arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+                            R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
                             glyph->font_atlas_region = font_atlas_region;
                             rect_region = font_atlas_region.region;
@@ -464,7 +471,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                 result = push_struct(arena, R_Font);
                 result->arena = arena;
                 result->glyphs = push_array(result->arena, R_Glyph, face->num_glyphs);
-                FT_Select_Charmap(face , ft_encoding_unicode);
+                FT_Select_Charmap(face, ft_encoding_unicode);
 				result->num_glyphs = (U32) face->num_glyphs;
                 result->path = path;
                 // TODO(hampus): Get the monitor's DPI
@@ -489,7 +496,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 
                     // NOTE(hampus): Make an empty glyph that the spaces will use
 
-                    result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, result->arena, renderer->font_atlas, v2u32(1, 1));
+                    result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas, v2u32(1, 1));
 
                     // NOTE(hampus): Get the rectangle glyph which represents
                     // an missing charcter
@@ -586,9 +593,63 @@ render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
 internal R_Font *
 render_font_from_key(R_Context *renderer, R_FontKey font_key)
 {
+    R_Font *result = 0;
+     S32 empty_slot = -1;
+     S32 unused_slot = -1;
+    for (S32 i = 0; i < R_FONT_CACHE_SIZE; ++i)
+    {
+        R_Font *font = renderer->font_cache->fonts[i];
+        if (font)
+        {
+            if (str8_equal(font->path, font_key.path) &&
+                font->font_size == font_key.font_size)
+            {
+                result = font;
+                break;
+            }
+
+            if (font->last_frame_index_used < renderer->frame_index)
+            {
+                if (unused_slot == -1)
+                {
+                unused_slot = i;
+                }
+            }
+        }
+        else
+        {
+            if (empty_slot == -1)
+            {
+                empty_slot = i;
+            }
+        }
+    }
+
+    if (!result)
+    {
+        // NOTE(hampus): Cache miss
+        if (empty_slot == -1)
+        {
+            // NOTE(hampus): The cache is full. Try to
+            // find a font we can evict
+            assert(unused_slot != -1 && "Cache is hot and full");
+            render_destroy_font(renderer, renderer->font_cache->fonts[unused_slot]);
+            renderer->font_cache->fonts[unused_slot] = render_make_font(renderer, font_key.font_size, font_key.path);
+            result = renderer->font_cache->fonts[unused_slot];
+        }
+        else
+        {
+            renderer->font_cache->fonts[empty_slot] = render_make_font(renderer, font_key.font_size, font_key.path);
+            result = renderer->font_cache->fonts[empty_slot];
+            renderer->font_cache->slots_used++;
+        }
+    }
+
+    #if 0
     R_FontHash hash = {hash_str8(str8_cstr((CStr)&font_key))};
     U64 slot_index = hash.hash % R_FONT_CACHE_SIZE;
     R_Font *font = renderer->font_cache->fonts[slot_index];
+
      while (font)
     {
         if (str8_equal(font->path, font_key.path) &&
@@ -642,8 +703,8 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
         }
         renderer->font_cache->slots_used++;
     }
-
-    R_Font *result = font;
+    #endif
+    result->last_frame_index_used = renderer->frame_index;
 
     return(result);
 }
