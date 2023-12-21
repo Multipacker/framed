@@ -1,4 +1,4 @@
-#include "base/base_inc.h".
+#include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "logging/logging_inc.h"
 #include "gfx/gfx_inc.h"
@@ -10,26 +10,12 @@
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
-#if !BUILD_MODE_RELEASE
-#    define LOG(...) printf(__VA_ARGS__)
-#else
-#    define LOG(...)
-#endif
-
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
 
 internal S32
 os_main(Str8List arguments)
 {
-#if 0
-	log_init(str8_lit(""));
-
-	U32 test = 32;
-	log_info("Test: %u", test);
-
-	log_flush();
-	return 0;
-#endif
+	log_init(str8_lit("log"));
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
@@ -45,7 +31,8 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_Font *font  = render_make_font(renderer, 10, str8_lit("data/fonts/arial.ttf"));
+	R_Font *font = render_make_font(renderer, 16, str8_lit("data/fonts/Inter-Regular.ttf"));
+	B32 show_log = false;
 
     B32 running = true;
 	while (running)
@@ -67,31 +54,35 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyPress:
 				{
-					LOG("Gfx_EventKind_KeyPress: %d\n", event->key);
+					log_info("Gfx_EventKind_KeyPress: %d", event->key);
 					if (event->key == Gfx_Key_F11)
 					{
 						gfx_toggle_fullscreen(&gfx);
+					}
+					else if (event->key == Gfx_Key_F1)
+					{
+						show_log = !show_log;
 					}
 				} break;
 
 				case Gfx_EventKind_KeyRelease:
 				{
-					LOG("Gfx_EventKind_KeyRelease: %d\n", event->key);
+					log_info("Gfx_EventKind_KeyRelease: %d", event->key);
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
-					LOG("Gfx_EventKind_Char\n");
+					log_info("Gfx_EventKind_Char");
 				} break;
 
 				case Gfx_EventKind_Scroll:
 				{
-					LOG("Gfx_EventKind_Scroll: %d\n", (U32) event->scroll.y);
+					log_info("Gfx_EventKind_Scroll: %d", (U32) event->scroll.y);
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
-					LOG("Gfx_EventKind_Resize\n");
+					log_info("Gfx_EventKind_Resize");
 				} break;
 
 				invalid_case;
@@ -109,28 +100,39 @@ os_main(Str8List arguments)
 		render_text(renderer, v2f32(300, 300), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
 		render_text(renderer, v2f32(400, 400), str8_lit("123456789_[]()"), font, v4f32(1, 0, 0, 0.5));
 
-		render_push_clip(renderer, v2f32(0, 0), v2f32(150, 150), false);
-		// NOTE(simon): Giving true here should only allow a 50x50 rectangle to
-		// show, false should give a 100x100.
-		render_rect(renderer, v2f32(10, 10), v2f32(20, 20), .softness = 1);
-
 		render_rect(renderer, v2f32(64, 64), v2f32(128, 128), .slice = texture, .radius = 10, .softness = 1);
 
-		render_push_clip(renderer, v2f32(50, 50), v2f32(150, 150), false);
+		if (show_log)
+		{
+			Vec2U32 client_area = gfx_get_window_client_area(&gfx);
 
-		render_rect(renderer, v2f32_sub_f32(mouse, 30.0f), v2f32_add_f32(mouse, 30.0f));
+			Vec2F32 log_pos  = v2f32(0.0, 0.0);
+			Vec2F32 log_size = v2f32((F32) client_area.width, 200.0);
 
-		R_RenderStats stats = render_get_stats(renderer);
-#if 0
-		LOG("Stats:\n");
-		LOG("\tRect count:  %"PRIU64"\n", stats.rect_count);
-		LOG("\tBatch count: %"PRIU64"\n", stats.batch_count);
-#endif
+			render_rect(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
+			render_push_clip(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), false);
+
+			Log_EntryList log_entries = log_get_entries(current_arena);
+
+			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
+
+			F32 y_offset = log_size.height;
+			for (Log_Entry *entry = log_entries.last; entry; entry = entry->prev)
+			{
+				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), entry->message, font, v4f32(1, 1, 1, 1));
+				y_offset -= 20;
+			}
+
+			render_pop_clip(renderer);
+		}
+
 		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
+
+	log_flush();
 
 	return(0);
 }
