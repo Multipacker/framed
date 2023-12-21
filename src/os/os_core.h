@@ -15,6 +15,12 @@ enum OS_FileMode
 	OS_FileMode_COUNT,
 };
 
+typedef struct OS_File OS_File;
+struct OS_File
+{
+	U64 u64[1];
+};
+
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
@@ -45,6 +51,10 @@ internal Void              os_circular_buffer_free(OS_CircularBuffer circular_bu
 
 internal B32 os_file_read(Arena *arena, Str8 path, Str8 *result);
 internal B32 os_file_write(Str8 path, Str8 data, OS_FileMode mode);
+
+internal B32 os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result);
+internal B32 os_file_stream_write(OS_File file, Str8 data);
+internal B32 os_file_stream_close(OS_File file);
 
 internal B32 os_file_delete(Str8 path);
 // NOTE(simon): Moves the file if necessary and replaces existing files.

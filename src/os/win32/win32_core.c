@@ -162,6 +162,25 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 	return(result);
 }
 
+// TODO(hampus): Implement this API.
+internal B32
+os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
+{
+	return(false);
+}
+
+internal B32
+os_file_stream_write(OS_File file, Str8 data)
+{
+	return(false);
+}
+
+internal B32
+os_file_stream_close(OS_File file)
+{
+	return(false);
+}
+
 internal B32
 os_file_delete(Str8 path)
 {

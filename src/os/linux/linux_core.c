@@ -280,6 +280,90 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 }
 
 internal B32
+os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
+{
+	B32 success = true;
+
+	Arena_Temporary scratch = arena_get_scratch(0, 0);
+
+	CStr cstr_path = cstr_from_str8(scratch.arena, path);
+
+	int mode_flags = 0;
+	switch (mode)
+	{
+		case OS_FileMode_Fail:    mode_flags = O_EXCL;   break;
+		case OS_FileMode_Replace: mode_flags = O_TRUNC;  break;
+		case OS_FileMode_Append:  mode_flags = O_APPEND; break;
+		invalid_case;
+	}
+	int file_descriptor = open(cstr_path, O_RDWR | mode_flags | O_CREAT, S_IRUSR | S_IWUSR);
+
+	if (file_descriptor == -1)
+	{
+		success = false;
+	}
+	else
+	{
+		result->u64[0] = (U64) file_descriptor;
+	}
+
+	arena_release_scratch(scratch);
+
+	return(success);
+}
+
+internal B32
+os_file_stream_write(OS_File file, Str8 data)
+{
+	B32 success = true;
+
+	int file_descriptor = (int) file.u64[0];
+	if (file_descriptor != -1)
+	{
+		U8 *ptr = data.data;
+		U8 *opl = data.data + data.size;
+
+		// NOTE(simon): `write` doesn't necessarily write all data in one
+		// call, so we need to loop until all data has been written.
+		while (ptr < opl)
+		{
+			U64 to_write = u64_min((U64) (opl - ptr), SSIZE_MAX);
+			errno = 0;
+			S64 actual_write = write(file_descriptor, ptr, to_write);
+			if (!(actual_write == -1 && errno == EINTR) && !(actual_write != -1))
+			{
+				success = false;
+				break;
+			}
+
+			ptr += actual_write;
+		}
+	}
+	else
+	{
+		success = false;
+	}
+
+	return(success);
+}
+
+internal B32
+os_file_stream_close(OS_File file)
+{
+	B32 success = false;
+
+	int file_descriptor = (int) file.u64[0];
+	if (file_descriptor != -1)
+	{
+		success = linux_sync_file_descriptor(file_descriptor);
+
+		close(file_descriptor);
+	}
+
+	return(success);
+}
+
+internal B32
 os_file_delete(Str8 path)
 {
 	S32 success = 0;
