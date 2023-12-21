@@ -31,7 +31,8 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_Font *font  = render_make_font(renderer, 10, str8_lit("data/fonts/arial.ttf"));
+	R_Font *font = render_make_font(renderer, 16, str8_lit("data/fonts/Inter-Regular.ttf"));
+	B32 show_log = false;
 
     B32 running = true;
 	while (running)
@@ -57,6 +58,10 @@ os_main(Str8List arguments)
 					if (event->key == Gfx_Key_F11)
 					{
 						gfx_toggle_fullscreen(&gfx);
+					}
+					else if (event->key == Gfx_Key_F1)
+					{
+						show_log = !show_log;
 					}
 				} break;
 
@@ -97,26 +102,29 @@ os_main(Str8List arguments)
 
 		render_rect(renderer, v2f32(64, 64), v2f32(128, 128), .slice = texture, .radius = 10, .softness = 1);
 
-		R_RenderStats stats = render_get_stats(renderer);
-#if 0
-		log_info("Stats:");
-		log_info("\tRect count:  %"PRIU64, stats.rect_count);
-		log_info("\tBatch count: %"PRIU64, stats.batch_count);
-#endif
-		Log_EntryList log_entries = log_get_entries(current_arena);
-
-		local Vec2F32 log_size = { 0 };
-		render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
-
-		F32 y_offset = 20;
-		for (Log_Entry *entry = log_entries.first; entry; entry = entry->next)
+		if (show_log)
 		{
-			render_text(renderer, v2f32(0, y_offset), entry->message, font, v4f32(1, 1, 1, 1));
-			Vec2F32 size = render_measure_text(font, entry->message);
-			y_offset += 20;
-			log_size.width = f32_max(log_size.width, size.width);
+			Vec2U32 client_area = gfx_get_window_client_area(&gfx);
+
+			Vec2F32 log_pos  = v2f32(0.0, 0.0);
+			Vec2F32 log_size = v2f32((F32) client_area.width, 200.0);
+
+			render_rect(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
+			render_push_clip(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), false);
+
+			Log_EntryList log_entries = log_get_entries(current_arena);
+
+			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
+
+			F32 y_offset = log_size.height;
+			for (Log_Entry *entry = log_entries.last; entry; entry = entry->prev)
+			{
+				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), entry->message, font, v4f32(1, 1, 1, 1));
+				y_offset -= 20;
+			}
+
+			render_pop_clip(renderer);
 		}
-		log_size.height = y_offset;
 
 		render_end(renderer);
 
