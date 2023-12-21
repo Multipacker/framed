@@ -332,10 +332,10 @@ node->codepoint = codepoint;
                             for (U32 x = 0; x < bitmap_width; ++x)
                             {
                                 U8 val = *src++;
-                                *dst_row++ = ((0xff <<  0) |
-                                              (0xff <<  8) |
-                                              (0xff << 16) |
-                                              (val  << 24));
+                                *dst_row++ = (U32) ((0xff <<  0) |
+                                                   (0xff <<  8) |
+                                                   (0xff << 16) |
+                                                   (val  << 24));
                             }
 
                             dst += renderer->font_atlas->dim.x;
