@@ -27,8 +27,10 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_Font *medium_font = render_make_font(renderer, 20, str8_lit("data/fonts/liberation-mono.ttf"));
-	R_Font *icon_font = render_make_font(renderer, 20, str8_lit("data/fonts/fontello.ttf"));
+	R_Font *medium_font = render_make_font(renderer, 16, str8_lit("data/fonts/segoeuib.ttf"));
+	R_Font *font2 = render_make_font(renderer, 16, str8_lit("data/fonts/liberation-mono.ttf"));
+	R_Font *font3 = render_make_font(renderer, 16, str8_lit("data/fonts/Inter-Regular.ttf"));
+	R_Font *icon_font = render_make_font(renderer, 12, str8_lit("data/fonts/fontello.ttf"));
 
 
 	gfx_show_window(&gfx);
@@ -67,7 +69,6 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 #if 1
-        #if 1
 		for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
 				 node != 0;
 				 node = node->next_free)
@@ -75,20 +76,15 @@ os_main(Str8List arguments)
 			RectU32 rect = node->region;
 			render_rect(renderer, v2f32_from_v2u32(rect.min), v2f32_from_v2u32(rect.max), .border_thickness = 1.0f, .color = v4f32(1.0f, 0, 0, 1.0f));
 		}
-        #endif
 		R_TextureSlice atlas_slice = render_slice_from_texture(renderer->font_atlas->texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
-		render_rect(renderer, v2f32(0, 0), v2f32(2048, 2048), .slice = atlas_slice);
-#endif
-
-        #if 0
+		render_rect(renderer, v2f32(0, 0), v2f32(2048, 2048), .slice = atlas_slice, .is_subpixel_text = true);
+#else
 		render_text(renderer, v2f32(100, 100), str8_lit("Hello, world!"), medium_font, v4f32(1, 1, 1, 1));
-		render_text16(renderer, v2f32(100, 200), str16_from_str8(current_arena, str8_lit("åäö!")), medium_font, v4f32(1, 1, 1, 1));
-        render_character(renderer, v2f32(400, 400), 0x5134, medium_font, v4f32(1, 1, 1, 1));
-        #endif
-        #if 0
-        render_rect(renderer, v2f32(100, 100), v2f32(200, 200), .color = v4f32(1, 0, 0, 0.5f));
-        render_rect(renderer, v2f32(100, 100), v2f32(150, 150), .color = v4f32(0, 1, 0, 0.5f));
-        render_rect(renderer, v2f32(100, 100), v2f32(300, 300), .color = v4f32(0, 0, 0.5f, 0.3f));
+		render_text16(renderer, v2f32(100, 125), str16_from_str8(current_arena, str8_lit("åäö!")), medium_font, v4f32(1, 1, 1, 1));
+        render_text(renderer, v2f32(100, 200), str8_lit("Hello, world!"), font2, v4f32(1, 1, 1, 1));
+		render_text16(renderer, v2f32(100, 225), str16_from_str8(current_arena, str8_lit("åäö!")), font2, v4f32(1, 1, 1, 1));
+        render_text(renderer, v2f32(100, 300), str8_lit("Hello, world!"), font3, v4f32(1, 1, 1, 1));
+		render_text16(renderer, v2f32(100, 325), str16_from_str8(current_arena, str8_lit("åäö!")), font3, v4f32(1, 1, 1, 1));
         #endif
 		render_end(renderer);
 

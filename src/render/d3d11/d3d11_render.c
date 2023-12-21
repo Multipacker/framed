@@ -434,7 +434,7 @@ render_end(R_Context *renderer)
 		};
 
 		R_RenderStats *stats = d3d11_get_current_stats(renderer);
-		Vec4F32 bg_color = linear_from_srgb(v4f32(0.5f, 0.5f, 0.5f, 1.f));
+		Vec4F32 bg_color = linear_from_srgb(v4f32(0.1f, 0.2f, 0.3f, 1.f));
 
 		FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
 		ID3D11DeviceContext_ClearRenderTargetView(backend->context, backend->render_target_view, color);

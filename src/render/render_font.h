@@ -9,7 +9,7 @@ enum R_FontRenderMode
 	R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
 };
 
-#define R_USE_SUBPIXEL_RENDERING 0
+#define R_USE_SUBPIXEL_RENDERING 1
 
 typedef struct R_FontAtlasRegionNode R_FontAtlasRegionNode;
 struct R_FontAtlasRegionNode

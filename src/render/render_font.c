@@ -8,6 +8,7 @@
 // [ ] - Underline & strikethrough
 // [ ] - Bold & italic fonts
 // [ ] - Subpixel positioning
+// [ ] - Specify min/max values for loading glyphs
 
 // NOTE(hampus): Freetype have variables called 'internal' :(
 #undef internal
@@ -92,6 +93,8 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 	U32 region_size = node->region.max.x - node->region.min.x;
 	B32 can_halve_size = region_size >= (required_size*2);
 	B32 fits = region_size >= required_size;
+
+    // NOTE(hampus): Find the first that fits
 	while (!fits)
 	{
 		if (!node->next_free)
@@ -103,9 +106,32 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 		}
 		node = node->next_free;
 		region_size = node->region.max.x - node->region.min.x;
-		can_halve_size = region_size >= (required_size*2);
 		fits = region_size > required_size;
 	}
+
+    // NOTE(hampus): Find the best that fit
+    B32 find_best_fit = true;
+    if (find_best_fit)
+    {
+        R_FontAtlasRegionNode *next = node->next_free;
+        while (next)
+        {
+                U32 next_region_size = next->region.max.x - next->region.min.x;
+                fits = next_region_size > required_size;
+                if (fits)
+                {
+                    if (next_region_size < region_size)
+                    {
+                        node = next;
+                        region_size = node->region.max.x - node->region.min.x;
+                    }
+            }
+
+            next = next->next_free;
+        }
+    }
+
+                        can_halve_size = region_size >= (required_size*2);
 
 	while (can_halve_size)
 	{
@@ -468,7 +494,7 @@ result->line_height         = face->height             * pixels_per_font_unit;
 
                     U32 index;
                     U32 charcode = (U32) FT_Get_First_Char(face, &index);
-                    while (charcode != 0)
+                    while (index != 0)
                     {
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
