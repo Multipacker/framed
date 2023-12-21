@@ -1,15 +1,19 @@
 // NOTE(simon): Deliberately using small values to test the circular buffer
 #define LOGGER_MINIMUM_BUFFER_SIZE megabytes(1)
 #define LOGGER_MINIMUM_FLUSH_SIZE  kilobytes(4)
-#define LOGGER_MINIMUM_GRAB_SIZE   kilobytes(1)
 
 typedef struct Logger Logger;
 struct Logger
 {
+	Arena *arena;
+
 	OS_CircularBuffer buffer;
 	U8 *data;
 	U64 write_index;
-	U64 read_index;
+	U64 oldest_entry;
+
+	U64 flush_start;
+	U64 next_flush_mark;
 
 	OS_File log_file;
 };
@@ -21,8 +25,10 @@ log_init(Str8 log_file)
 {
 	Logger *logger = &global_logger;
 
+	logger->arena = arena_create();
 	logger->buffer = os_circular_buffer_allocate(LOGGER_MINIMUM_BUFFER_SIZE, 3);
 	logger->data = logger->buffer.data + logger->buffer.size;
+	logger->next_flush_mark = LOGGER_MINIMUM_FLUSH_SIZE;
 	os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
 }
 
@@ -37,13 +43,18 @@ log_flush(Void)
 		return;
 	}
 
-	U8 *start = &logger->data[logger->read_index % logger->buffer.size];
+	U8 *start = &logger->data[logger->flush_start % logger->buffer.size];
 	U8 *opl   = &logger->data[logger->write_index % logger->buffer.size];
+	if (opl < start)
+	{
+		opl += logger->buffer.size;
+	}
 
 	os_file_stream_write(logger->log_file, str8_range(start, opl));
 
 	os_file_stream_close(logger->log_file);
 	os_circular_buffer_free(logger->buffer);
+	arena_destroy(logger->arena);
 }
 
 internal Void
@@ -57,14 +68,14 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 		return;
 	}
 
-	DateTime time = os_now_local_time();
+	Arena_Temporary scratch = arena_begin_temporary(logger->arena);
 
-	Arena *arena = arena_create();
+	DateTime time = os_now_local_time();
 
 	// NOTE(simon): Format the users message.
 	va_list args;
 	va_start(args, format);
-	Str8 message = str8_pushfv(arena, format, args);
+	Str8 message = str8_pushfv(scratch.arena, format, args);
 	va_end(args);
 
 	CStr cstr_level = "";
@@ -78,7 +89,7 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	}
 
 	Str8 log_entry = str8_pushf(
-		arena,
+		scratch.arena,
 		"[%s] %d-%.2u-%.2u %.2u:%.2u:%.2u.%u %s:%u: %"PRISTR8"\n",
 		cstr_level,
 		time.year, time.month + 1, time.day + 1,
@@ -92,26 +103,32 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	U64 write_index = logger->write_index;
 	logger->write_index += log_entry.size;
 
+	if (logger->write_index - logger->oldest_entry > logger->buffer.size)
+	{
+		while (logger->oldest_entry < logger->write_index && logger->data[logger->oldest_entry % logger->buffer.size - 1] != '\n')
+		{
+			++logger->oldest_entry;
+		}
+	}
+
 	memory_copy(&logger->data[write_index % logger->buffer.size], log_entry.data, log_entry.size);
 
-	if (logger->write_index - logger->read_index > LOGGER_MINIMUM_FLUSH_SIZE)
+	if (log_entry.size > logger->next_flush_mark - write_index)
 	{
-		U8 *start = &logger->data[logger->read_index % logger->buffer.size];
-		U8 *opl = start + LOGGER_MINIMUM_FLUSH_SIZE;
-		U8 *end = start + logger->write_index;
-
-		// NOTE(simon): We might be midway through an entry, search for the end of it.
-		while (opl < end && opl[-1] != '\n')
+		U8 *start = &logger->data[logger->flush_start % logger->buffer.size];
+		U8 *opl   = &logger->data[(write_index + log_entry.size) % logger->buffer.size];
+		if (opl < start)
 		{
-			++opl;
+			opl += logger->buffer.size;
 		}
 
 		os_file_stream_write(logger->log_file, str8_range(start, opl));
 
-		logger->read_index += (U64) (opl - start);
+		logger->flush_start     = write_index + log_entry.size;
+		logger->next_flush_mark = logger->flush_start + LOGGER_MINIMUM_FLUSH_SIZE;
 	}
 
-	arena_destroy(arena);
+	arena_end_temporary(scratch);
 }
 
 internal Log_EntryList
@@ -121,38 +138,29 @@ log_get_entries(Arena *arena)
 
 	Logger *logger = &global_logger;
 
-	U8 *opl   = &logger->data[logger->write_index % logger->buffer.size];
-	U8 *read  = &logger->data[logger->read_index  % logger->buffer.size];
-	U8 *ptr = opl - LOGGER_MINIMUM_GRAB_SIZE;
-
-	if (ptr < read)
+	U8 *oldest = &logger->data[logger->oldest_entry % logger->buffer.size];
+	U8 *opl    = &logger->data[logger->write_index  % logger->buffer.size];
+	if (oldest > opl)
 	{
-		ptr = read;
-	}
-	else
-	{
-		while (ptr > read && ptr[-1] != '\n')
-		{
-			--ptr;
-		}
+		oldest -= logger->buffer.size;
 	}
 
-	while (ptr < opl)
+	while (opl > oldest)
 	{
-		U8 *start = ptr;
-		while (ptr < opl && *ptr != '\n')
+		U8 *start = opl - 1;
+		while (start > oldest && start[-1] != '\n')
 		{
-			++ptr;
+			--start;
 		}
 
-		if (start < ptr)
+		if (start >= oldest)
 		{
 			Log_Entry *entry = push_struct_zero(arena, Log_Entry);
-			entry->message = str8_copy(arena, str8_range(start, ptr));
+			entry->message = str8_copy(arena, str8_range(start, opl - 1));
 			dll_push_back(entries.first, entries.last, entry);
 		}
 
-		++ptr;
+		opl = start;
 	}
 
 	return(entries);

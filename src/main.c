@@ -117,7 +117,7 @@ os_main(Str8List arguments)
 			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
 
 			F32 y_offset = log_size.height;
-			for (Log_Entry *entry = log_entries.last; entry; entry = entry->prev)
+			for (Log_Entry *entry = log_entries.first; entry; entry = entry->next)
 			{
 				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), entry->message, font, v4f32(1, 1, 1, 1));
 				y_offset -= 20;
