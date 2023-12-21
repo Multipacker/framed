@@ -383,8 +383,8 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 			{
                 FT_Select_Charmap(face , ft_encoding_unicode);
 				result = push_struct(renderer->permanent_arena, R_Font);
-                result->glyphs = push_array(renderer->permanent_arena, R_Glyph, face->num_glyphs);
-				result->num_glyphs = face->num_glyphs;
+                result->glyphs = push_array(renderer->permanent_arena, R_Glyph, (U64) face->num_glyphs);
+				result->num_glyphs = (U32) face->num_glyphs;
                 // TODO(hampus): Get the monitor's DPI
 				F32 dpi = 72;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
@@ -410,7 +410,7 @@ result->line_height         = face->height             * pixels_per_font_unit;
                     render_make_glyph(renderer, result, face, 0, 0, render_mode);
 
                     U32 index;
-                    U32 charcode = FT_Get_First_Char(face, &index);
+                    U32 charcode = (U32) FT_Get_First_Char(face, &index);
                     while (charcode != 0)
                     {
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
@@ -425,7 +425,7 @@ result->line_height         = face->height             * pixels_per_font_unit;
 							// TODO(hampus): Logging
 						}
 
-                        charcode = FT_Get_Next_Char(face, charcode, &index);
+                        charcode = (U32) FT_Get_Next_Char(face, charcode, &index);
                     }
 				}
 				else
