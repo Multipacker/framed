@@ -18,7 +18,11 @@ internal Void log_flush(Void);
 #define log_info(...)    log_message(Log_Level_Info,    __FILE__, __LINE__, __VA_ARGS__)
 #define log_warning(...) log_message(Log_Level_Warning, __FILE__, __LINE__, __VA_ARGS__)
 #define log_error(...)   log_message(Log_Level_Error,   __FILE__, __LINE__, __VA_ARGS__)
+#if !BUILD_MODE_RELEASE
 #define log_trace(...)   log_message(Log_Level_Trace,   __FILE__, __LINE__, __VA_ARGS__)
+#else
+#define log_trace(...)
+#endif
 
 internal Void log_message(Log_Level level, CStr file, U32 line, CStr format, ...);
 
