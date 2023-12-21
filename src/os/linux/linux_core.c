@@ -228,25 +228,29 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 
 // TODO(simon): What should we do if we can't write the entire file?
 internal B32
-os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
+os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 {
 	B32 success = true;
 	Arena_Temporary scratch = arena_get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
-	S32 file_descriptor = open(
-		cstr_path,
-		O_WRONLY | O_CREAT | (overwrite_existing ? 0 : O_EXCL),
-		S_IRUSR | S_IWUSR
-	);
+	int mode_flags = 0;
+	switch (mode)
+	{
+		case OS_FileMode_Fail:    mode_flags = O_EXCL;   break;
+		case OS_FileMode_Replace: mode_flags = O_TRUNC;  break;
+		case OS_FileMode_Append:  mode_flags = O_APPEND; break;
+		invalid_case;
+	}
+	S32 file_descriptor = open(cstr_path, O_WRONLY | mode_flags | O_CREAT, S_IRUSR | S_IWUSR);
 
 	if (file_descriptor != -1)
 	{
 		U8 *ptr = data.data;
 		U8 *opl = data.data + data.size;
 
-		// NOTE(simon): `write` doesn't neccessarily write all data in one
+		// NOTE(simon): `write` doesn't necessarily write all data in one
 		// call, so we need to loop until all data has been written.
 		while (ptr < opl)
 		{

@@ -3,6 +3,18 @@
 
 // TODO(simon): File properties
 
+// NOTE(simon): Determines what happens if a file already exists when trying to
+// create a new one with the same name.
+typedef enum OS_FileMode OS_FileMode;
+enum OS_FileMode
+{
+	OS_FileMode_Fail,
+	OS_FileMode_Replace,
+	OS_FileMode_Append,
+
+	OS_FileMode_COUNT,
+};
+
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
@@ -32,15 +44,10 @@ internal OS_CircularBuffer os_circular_buffer_allocate(U64 minimum_size, U64 rep
 internal Void              os_circular_buffer_free(OS_CircularBuffer circular_buffer);
 
 internal B32 os_file_read(Arena *arena, Str8 path, Str8 *result);
-
-/*
- * If overwrite_existing is false, the file is only written if it doesn't
- * already exist. If overwrite_existing is true, the file is always written.
- */
-internal B32 os_file_write(Str8 path, Str8 data, B32 overwrite_existing);
+internal B32 os_file_write(Str8 path, Str8 data, OS_FileMode mode);
 
 internal B32 os_file_delete(Str8 path);
-// NOTE(simon): Moves the file if neccessary and replaces existing files.
+// NOTE(simon): Moves the file if necessary and replaces existing files.
 internal B32 os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing);
 // NOTE(hampus): Only renames if new_path doesn't already exist
 internal B32 os_file_rename(Str8 old_path, Str8 new_path);

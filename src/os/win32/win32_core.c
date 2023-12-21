@@ -114,8 +114,9 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	return(result);
 }
 
+// TODO(hampus): Implement OS_FileMode properly.
 internal B32
-os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
+os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 {
 	assert(path.size < MAX_PATH);
 
@@ -125,7 +126,7 @@ os_file_write(Str8 path, Str8 data, B32 overwrite_existing)
 
 	// NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
 	DWORD create_file_flags = OPEN_ALWAYS;
-	if (overwrite_existing)
+	if (mode == OS_FileMode_Replace)
 	{
 		create_file_flags = CREATE_ALWAYS;
 	}
