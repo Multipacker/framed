@@ -111,6 +111,6 @@ render_init(Gfx_Context *gfx)
 	renderer->permanent_arena       = arena;
 	renderer->frame_arena = arena_create();
     renderer->backend = render_backend_init(renderer);
-	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(1024, 1024));
+	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
     return(renderer);
 }

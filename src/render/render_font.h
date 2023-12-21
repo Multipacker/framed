@@ -82,15 +82,17 @@ typedef struct R_Font R_Font;
 struct R_Font
 {
     R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
-	R_Glyph glyphs[1024];
-	U32 num_loaded_glyphs;
-    F32 font_size;
-	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
-	F32 underline_position; // NOTE(hampus): Relative to the baseline
-	F32 max_advance_width;
+	R_Glyph *glyphs;
 	F32 max_ascent;
 	F32 max_descent;
-	B32 has_kerning;
+
+	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
+	F32 max_advance_width;
+    F32 font_size;
+	F32 underline_position; // NOTE(hampus): Relative to the baseline
+    B32 has_kerning;
+	U32 num_glyphs;
+	U32 num_loaded_glyphs;
 	Str8 family_name;
 	Str8 style_name;
 };

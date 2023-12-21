@@ -296,6 +296,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 
 					// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
 					// NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
+                    // We do not use the alpha here.
 					texture_data = (U8 *) renderer->font_atlas->memory + (rect_region.min.x + rect_region.min.y * renderer->font_atlas->dim.x)*4;
 					U8 *dst = texture_data;
 					U8 *src = face->glyph->bitmap.buffer;
@@ -382,7 +383,9 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 			{
                 FT_Select_Charmap(face , ft_encoding_unicode);
 				result = push_struct(renderer->permanent_arena, R_Font);
-				// TODO(hampus): Get the monitor's DPI
+                result->glyphs = push_array(renderer->permanent_arena, R_Glyph, face->num_glyphs);
+				result->num_glyphs = face->num_glyphs;
+                // TODO(hampus): Get the monitor's DPI
 				F32 dpi = 72;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
 				if (!ft_set_pixel_sizes_error)
@@ -402,6 +405,10 @@ result->line_height         = face->height             * pixels_per_font_unit;
 					result->style_name          = str8_copy_cstr(renderer->permanent_arena, (U8 *) face->style_name);
 					result->font_size           = (F32)font_size;
 
+                    // NOTE(hampus): Get the rectangle glyph which represents
+                    // an invalid charcter
+                    render_make_glyph(renderer, result, face, 0, 0, render_mode);
+
                     U32 index;
                     U32 charcode = FT_Get_First_Char(face, &index);
                     while (charcode != 0)
@@ -409,10 +416,6 @@ result->line_height         = face->height             * pixels_per_font_unit;
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
                             result->num_loaded_glyphs++;
-                            if (result->num_loaded_glyphs == 1024)
-                            {
-                                break;
-                            }
 							// TODO(hampus): We don't have the declaration for
 							// this function for some reason
 							// FT_Done_Glyph(face->glyph);
@@ -527,7 +530,6 @@ render_text16(R_Context *renderer, Vec2F32 min, Str16 text, R_Font *font, Vec4F3
 
             U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-            assert(index != 0);
 			R_Glyph *glyph = font->glyphs + index;
 
 			F32 xpos = min.x + glyph->bearing_in_pixels.x;
@@ -552,7 +554,6 @@ render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, 
 {
         U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-        assert(index != 0);
         R_Glyph *glyph = font->glyphs + index;
 
         F32 xpos = min.x + glyph->bearing_in_pixels.x;
