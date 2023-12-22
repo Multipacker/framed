@@ -100,12 +100,11 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 		success &= (page_size != -1);
 	}
 
-	// TODO(simon): Rounding could be optimized if `page_size` is guaranteed to
-	// be a power of 2.
+	// NOTE(simon): Assumes that the `page_size` is a power of 2.
 	U64 size = 0;
 	if (success)
 	{
-		size = (minimum_size + (U64) page_size - 1) / (U64) page_size * (U64) page_size;
+		size = u64_round_up_to_power_of_2(minimum_size, (U64) page_size);
 	}
 
 	U8 *reserved_addresses = MAP_FAILED;
