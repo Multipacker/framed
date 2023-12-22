@@ -33,11 +33,13 @@ struct OS_Library
 	U64 u64[1];
 };
 
-typedef struct {
+typedef struct OS_CircularBuffer OS_CircularBuffer;
+struct OS_CircularBuffer
+{
 	U8 *data;
 	U64 size;
 	U64 repeat_count;
-} OS_CircularBuffer;
+};
 
 #define os_handle_is_valid(handle) (!type_is_zero(handle))
 
