@@ -78,9 +78,9 @@ os_main(Str8List arguments)
 		render_rect(renderer, v2f32(0, 0), v2f32(2048, 2048), .slice = atlas_slice, .is_subpixel_text = true);
 #endif
 
-        Str8 string = str8_lit("Hello, world!");
+        Str8 string = str8_lit("Hello, world!\nHello, world!");
 
-        Vec2F32 dim = render_measure_text(render_font_from_key(renderer, font), string);
+        Vec2F32 dim = render_measure_multiline_text(render_font_from_key(renderer, font), string);
         render_rect(renderer, v2f32(100, 100), v2f32_add_v2f32(v2f32(100, 100), dim));
 
         render_multiline_text(renderer, v2f32(100, 100), string, font, v4f32(1, 0, 0, 1));

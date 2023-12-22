@@ -121,12 +121,6 @@ struct R_FontKey
 	Str8 path;
 };
 
-typedef struct R_FontHash R_FontHash;
-struct R_FontHash
-{
-    U64 hash;
-};
-
 internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 
 internal R_Font *render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode);
