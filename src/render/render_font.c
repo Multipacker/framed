@@ -489,9 +489,8 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 				result->num_glyphs = (U32) face->num_glyphs;
                 result->path = path;
                 result->render_mode = render_mode;
-                // TODO(hampus): Get the monitor's DPI
-				F32 dpi = 72;
-				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
+                Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
+				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi.x, (U32) dpi.y);
 				if (!ft_set_pixel_sizes_error)
 				{
                     result->line_height         = (F32)render_pixels_from_font_unit(face->height, face->size->metrics.y_scale);
@@ -649,65 +648,6 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
         result = renderer->font_cache->fonts[slot_index_to_fill];
     }
 
-    #if 0
-    R_FontHash hash = {hash_str8(str8_cstr((CStr)&font_key))};
-    U64 slot_index = hash.hash % R_FONT_CACHE_SIZE;
-    R_Font *font = renderer->font_cache->fonts[slot_index];
-
-     while (font)
-    {
-        if (str8_equal(font->path, font_key.path) &&
-            font->font_size == font_key.font_size)
-        {
-            break;
-        }
-
-        slot_index += 1;
-        slot_index %= R_FONT_CACHE_SIZE;
-        font = renderer->font_cache->fonts[slot_index];
-    }
-
-    if (!font)
-    {
-         // NOTE(hampus): Cache miss. Load in the font
-        if (renderer->font_cache->slots_used == (R_FONT_CACHE_SIZE * 3) / 4)
-        {
-            B32 evicted = false;
-            U64 i;
-            for (i = 0; i < R_FONT_CACHE_SIZE; ++i)
-            {
-                if (renderer->font_cache->fonts[i])
-                {
-                    if (renderer->font_cache->fonts[i]->last_frame_index_used < renderer->frame_index)
-                    {
-                        render_destroy_font(renderer, renderer->font_cache->fonts[i]);
-                        renderer->font_cache->slots_used--;
-                        renderer->font_cache->fonts[i] = 0;
-                        evicted = true;
-                        break;
-                    }
-                }
-            }
-            assert(evicted);
-            renderer->font_cache->fonts[i] = render_make_font(renderer, font_key.font_size, font_key.path);
-            font = renderer->font_cache->fonts[i];
-        }
-        else
-        {
-            for (U64 i = slot_index; i < (slot_index+R_FONT_CACHE_SIZE); ++i)
-            {
-                U32 index = i % R_FONT_CACHE_SIZE;
-                if (!renderer->font_cache->fonts[index])
-                {
-                    renderer->font_cache->fonts[index] = render_make_font(renderer, font_key.font_size, font_key.path);
-                    font = renderer->font_cache->fonts[index];
-                    break;
-                }
-            }
-        }
-        renderer->font_cache->slots_used++;
-    }
-    #endif
     result->last_frame_index_used = renderer->frame_index;
 
     return(result);
