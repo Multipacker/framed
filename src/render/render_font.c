@@ -4,7 +4,7 @@
 // [x] - Icons
 // [x] - Unicode
 // [x] - Caching
-// [ ] - New lines
+// [x] - New lines
 // [ ] - Kerning
 // [ ] - Specify min/max codepoints for loading glyphs
 // [ ] - Subpixel positioning
@@ -237,12 +237,15 @@ render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 internal Void
 render_destroy_font(R_Context *renderer, R_Font *font)
 {
-    for (U64 i = 0; i < font->num_loaded_glyphs; ++i)
+    for (U64 i = 0; i < font->num_glyphs; ++i)
     {
         R_Glyph *glyph = font->glyphs + i;
         if (glyph->font_atlas_region.node)
         {
+            if (glyph->font_atlas_region.node->used)
+            {
             render_free_atlas_region(renderer->font_atlas, glyph->font_atlas_region);
+            }
         }
     }
     arena_destroy(font->arena);
@@ -516,7 +519,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                         if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
                             result->num_loaded_glyphs++;
-                            if (result->num_loaded_glyphs == 4096)
+                            if (result->num_loaded_glyphs == 128)
                             {
                                 break;
                             }
@@ -612,10 +615,7 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 
             if (font->last_frame_index_used < renderer->frame_index)
             {
-                if (unused_slot == -1)
-                {
                 unused_slot = i;
-                }
             }
         }
         else
@@ -637,6 +637,7 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
             // find a font we can evict
             assert(unused_slot != -1 && "Cache is hot and full");
             slot_index_to_fill = unused_slot;
+            render_destroy_font(renderer, renderer->font_cache->fonts[slot_index_to_fill]);
         }
         else
         {
