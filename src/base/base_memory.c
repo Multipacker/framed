@@ -8,9 +8,6 @@
 #	include <sanitizer/asan_interface.h>
 #endif
 
-#define THREAD_SCRATCH_ARENA_POOL_SIZE 4
-global Arena *thread_scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
-
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);
 internal Void  os_memory_decommit(Void *ptr, U64 size);
@@ -149,51 +146,4 @@ internal Void
 arena_end_temporary(Arena_Temporary temporary)
 {
 	arena_pop_to(temporary.arena, temporary.pos);
-}
-
-internal Void
-arena_init_scratch(Void)
-{
-	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
-	{
-		thread_scratch_arenas[i] = arena_create();
-	}
-}
-
-internal Void
-arena_destroy_scratch(Void)
-{
-	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
-	{
-		arena_destroy(thread_scratch_arenas[i]);
-	}
-}
-
-internal Arena_Temporary
-arena_get_scratch(Arena **conflicts, U32 count)
-{
-	Arena *selected = 0;
-
-	for (U32 i = 0; i < array_count(thread_scratch_arenas); ++i)
-	{
-		Arena *arena = thread_scratch_arenas[i];
-
-		B32 is_non_conflicting = true;
-		for (U32 j = 0; j < count; ++j)
-		{
-			if (arena == conflicts[j])
-			{
-				is_non_conflicting = false;
-				break;
-			}
-		}
-
-		if (is_non_conflicting)
-		{
-			selected = arena;
-			break;
-		}
-	}
-
-	return arena_begin_temporary(selected);
 }

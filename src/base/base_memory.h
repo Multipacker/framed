@@ -38,12 +38,6 @@ internal Void arena_align_zero(Arena *arena, U64 power);
 internal Arena_Temporary arena_begin_temporary(Arena *arena);
 internal Void            arena_end_temporary(Arena_Temporary temporary);
 
-internal Void            arena_create_scratch(Void);
-internal Void            arena_destroy_scratch(Void);
-internal Arena_Temporary arena_get_scratch(Arena **conflicts, U32 count);
-
-#define arena_release_scratch(scratch) arena_end_temporary(scratch);
-
 #define push_struct(arena, type)            ((type *) arena_push(arena, sizeof(type)))
 #define push_struct_zero(arena, type)       ((type *) arena_push_zero(arena, sizeof(type)))
 #define push_array(arena, type, count)      ((type *) arena_push(arena, sizeof(type)*(count)))

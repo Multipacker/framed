@@ -48,6 +48,9 @@ internal Void  os_memory_commit(Void *ptr, U64 size);
 internal Void  os_memory_decommit(Void *ptr, U64 size);
 internal Void  os_memory_release(Void *ptr, U64 size);
 
+internal Void  os_set_tls(Void *memory);
+internal Void *os_get_tls(Void);
+
 internal OS_CircularBuffer os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count);
 internal Void              os_circular_buffer_free(OS_CircularBuffer circular_buffer);
 

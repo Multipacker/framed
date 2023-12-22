@@ -35,6 +35,20 @@ os_memory_release(Void *ptr, U64 size)
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
+
+internal Void
+os_set_tls(Void *memory)
+{
+    TlsSetValue(win32_state.tls_index, memory);
+}
+
+internal Void *
+os_get_tls(Void)
+{
+    Void *result = TlsGetValue(win32_state.tls_index);
+    return(result);
+}
+
 internal OS_CircularBuffer
 os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 {
@@ -460,7 +474,11 @@ win32_common_main(Void)
 	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);
 	win32_state.permanent_arena = arena_create();
-	arena_init_scratch();
+    
+    win32_state.tls_index = TlsAlloc();
+    ThreadContext context = thread_ctx_alloc();
+    set_thread_ctx(&context);
+    
 	// NOTE(hampus): 'command_line' handed to WinMain doesn't include the program name
 	LPSTR command_line_with_exe_path = GetCommandLineA();
 	Str8List argument_list = str8_split_by_codepoints(win32_state.permanent_arena, str8_cstr(command_line_with_exe_path), str8_lit(" "));
@@ -470,7 +488,7 @@ win32_common_main(Void)
 
 #if BUILD_MODE_RELEASE
 S32 APIENTRY
-WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
 	S32 exit_code = win32_common_main();
 	ExitProcess(exit_code);
