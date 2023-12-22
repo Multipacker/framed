@@ -197,7 +197,7 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 	HANDLE file_handle = CreateFile((LPCWSTR) path16.data, GENERIC_WRITE | GENERIC_READ,
 																	0, 0, creation_flags, 0, 0);
 
-	if (file_handle)
+	if (file_handle != INVALID_HANDLE_VALUE)
 	{
 		if (mode & OS_FileMode_Append)
 		{
@@ -221,29 +221,49 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 internal B32
 os_file_stream_write(OS_File file, Str8 data)
 {
+	B32 success = true;
 	HANDLE file_handle = ptr_from_int(file.u64[0]);
-	if (x)
+	if (file_handle != INVALID_HANDLE_VALUE && file_handle != 0)
 	{
-
+		DWORD bytes_written = 0;
+		assert(data.size <= U32_MAX);
+		// TODO(hampus): Does this actually write it all at once?
+		BOOL write_file_result = WriteFile(file_handle, data.data, (DWORD)data.size, &bytes_written, 0);
+		if (bytes_written != data.size)
+		{
+			success = false;
+		}
 	}
-	return(false);
+	else
+	{
+		success = false;
+	}
+	return(success);
 }
 
 internal B32
 os_file_stream_close(OS_File file)
 {
-	return(false);
+	B32 success = true;
+	HANDLE file_handle = ptr_from_int(file.u64[0]);
+	if (file_handle != INVALID_HANDLE_VALUE && file_handle != 0)
+	{
+		CloseHandle(file_handle);
+	}
+	else
+	{
+		success = false;
+	}
+	return(success);
 }
 
 internal B32
 os_file_delete(Str8 path)
 {
 	assert(path.size < MAX_PATH);
-
 	Arena_Temporary scratch = get_scratch(0, 0);
 	B32 result = DeleteFile(cstr16_from_str8(scratch.arena, path).data);
 	release_scratch(scratch);
-
 	return(result);
 }
 
