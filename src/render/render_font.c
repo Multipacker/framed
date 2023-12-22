@@ -458,7 +458,7 @@ internal R_Font *
 render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
     R_Font *result = 0;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	FT_Library ft;
 	// NOTE(hampus): 0 indicates a success in freetype, otherwise error
@@ -564,7 +564,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 
 	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
     return(result);
 }
 

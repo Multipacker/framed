@@ -15,8 +15,8 @@ internal Void           thread_ctx_release(ThreadContext *tctx);
 internal Void           set_thread_ctx(ThreadContext *tctx);
 internal ThreadContext *get_thread_ctx(Void);
 
-#define arena_release_scratch(scratch) arena_end_temporary(scratch);
+#define release_scratch(scratch) arena_end_temporary(scratch);
 
-internal Arena_Temporary arena_get_scratch(Arena **conflicts, U32 count);
+internal Arena_Temporary get_scratch(Arena **conflicts, U32 count);
 
 #endif //BASE_THREAD_CTX_H

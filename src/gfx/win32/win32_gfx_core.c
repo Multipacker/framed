@@ -10,7 +10,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	Gfx_Context *context = (Gfx_Context *) GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	Gfx_EventList fallback_event_list = { 0 };
 	if (win32_gfx_state.event_arena == 0)
 	{
@@ -185,7 +185,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		dll_push_back(event_list->first, event_list->last, event);
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	if (win32_gfx_state.event_list == &fallback_event_list)
 	{
@@ -200,7 +200,7 @@ internal Gfx_Context
 gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
 	Gfx_Context result = { 0 };
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	win32_gfx_state.context = &result;
 
@@ -243,7 +243,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 		win32_print_error_message();
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 #if defined(RENDERER_OPENGL)
 	win32_init_opengl(&result);
@@ -255,13 +255,13 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	Gfx_EventList events = { 0 };
 	win32_gfx_state.event_list = &events;
 	win32_gfx_state.event_arena = scratch.arena;
 	ShowWindow(gfx->hwnd, SW_SHOW);
 	UpdateWindow(gfx->hwnd);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 }
 
 internal Gfx_EventList

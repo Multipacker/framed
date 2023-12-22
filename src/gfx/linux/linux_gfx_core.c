@@ -5,7 +5,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
 	Gfx_Context gfx = { 0 };
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_title = cstr_from_str8(scratch.arena, title);
 
@@ -66,7 +66,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 		// TODO(simon): Could not initialize SDL
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(gfx);
 }
 

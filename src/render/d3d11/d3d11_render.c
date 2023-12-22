@@ -182,7 +182,7 @@ render_backend_init(R_Context *renderer)
 		flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
-		Arena_Temporary scratch = arena_get_scratch(0, 0);
+		Arena_Temporary scratch = get_scratch(0, 0);
 
 		Str8 hlsl = { 0 };
 		B32 hlsl_file_read_result = os_file_read(scratch.arena, str8_lit("src/render/d3d11/d3d11_shader.hlsl"), &hlsl);
@@ -213,7 +213,7 @@ render_backend_init(R_Context *renderer)
 		ID3D10Blob_Release(pblob);
 		ID3D10Blob_Release(vblob);
 
-		arena_release_scratch(scratch);
+		release_scratch(scratch);
 	}
 
 	{
@@ -689,7 +689,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 	Str8 file  = { 0 };
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	if (os_file_read(scratch.arena, path, &file))
 	{
 		S32 width, height, channels;
@@ -718,7 +718,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 	{
 		// TODO(hampus): Logging
 	}
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 

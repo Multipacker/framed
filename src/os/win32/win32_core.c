@@ -72,7 +72,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 
 	B32 result = false;
 
-	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
+	Arena_Temporary scratch = get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
 														 GENERIC_READ,
@@ -82,7 +82,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 														 FILE_ATTRIBUTE_NORMAL,
 														 0);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
@@ -136,7 +136,7 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 
 	B32 result = false;
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	// NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
 	DWORD create_file_flags = OPEN_ALWAYS;
@@ -172,7 +172,7 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 		win32_print_error_message();
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 
@@ -200,9 +200,9 @@ os_file_delete(Str8 path)
 {
 	assert(path.size < MAX_PATH);
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	B32 result = DeleteFile(cstr16_from_str8(scratch.arena, path).data);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	return(result);
 }
@@ -213,11 +213,11 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 	assert(old_path.size < MAX_PATH);
 	assert(new_path.size < MAX_PATH);
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	Str16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
 	Str16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
 	B32 result = CopyFile(old_path16.data, new_path16.data, overwrite_existing);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	return(result);
 }
@@ -228,11 +228,11 @@ os_file_rename(Str8 old_path, Str8 new_path)
 	assert(old_path.size < MAX_PATH);
 	assert(new_path.size < MAX_PATH);
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	Str16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
 	Str16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
 	B32 result = MoveFile(old_path16.data, new_path16.data);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	return(result);
 }
@@ -241,9 +241,9 @@ internal B32
 os_file_create_directory(Str8 path)
 {
 	assert(path.size < MAX_PATH);
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	B32 result = CreateDirectory(cstr16_from_str8(scratch.arena, path).data, 0);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 
@@ -251,9 +251,9 @@ internal B32
 os_file_delete_directory(Str8 path)
 {
 	assert(path.size < MAX_PATH);
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	B32 result = RemoveDirectory(cstr16_from_str8(scratch.arena, path).data);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 
@@ -277,13 +277,13 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 	Str8List list = { 0 };
 	str8_list_push_explicit(&list, path, nodes + 0);
 	str8_list_push_explicit(&list, str8_lit("\\*"), nodes + 1);
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 	Str8 path_star = str8_join(scratch.arena, &list);
 	Str16 path16 = cstr16_from_str8(scratch.arena, path_star);
 	memory_zero_struct(iterator);
 	Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
 	win32_iter->handle = FindFirstFile(path16.data, &win32_iter->find_data);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 }
 
 internal B32
@@ -426,7 +426,7 @@ internal OS_Library
 os_library_open(Str8 path)
 {
 	OS_Library result = { 0 };
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	Str8List part_list = { 0 };
 	Str8Node parts[2];
@@ -436,7 +436,7 @@ os_library_open(Str8 path)
 	Str8 full_path = str8_join(scratch.arena, &part_list);
 
 	HMODULE lib = LoadLibrary(cstr16_from_str8(scratch.arena, full_path).data);
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	if (lib)
 	{
 		result.u64[0] = int_from_ptr(lib);
@@ -461,9 +461,9 @@ os_library_load_function(OS_Library library, Str8 name)
 	if (library.u64[0])
 	{
 		HMODULE lib = ptr_from_int(library.u64[0]);
-		Arena_Temporary scratch = arena_get_scratch(0, 0);
+		Arena_Temporary scratch = get_scratch(0, 0);
 		result = (VoidFunction *) GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
-		arena_release_scratch(scratch);
+		release_scratch(scratch);
 	}
 	return(result);
 }

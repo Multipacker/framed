@@ -65,7 +65,7 @@ win32_debug_output(GLenum source,
 internal Void
 win32_get_wgl_functions(Void)
 {
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	HWND dummy = CreateWindowEx(0,
 																(LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")).data,
@@ -146,7 +146,7 @@ win32_get_wgl_functions(Void)
 		assert(!"OpenGL does not support required WGL extensions for modern context!");
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	wglMakeCurrent(NULL, NULL);
 	wglDeleteContext(rc);

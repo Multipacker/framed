@@ -32,7 +32,7 @@ get_thread_ctx(Void)
 }
 
 internal Arena_Temporary
-arena_get_scratch(Arena **conflicts, U32 count)
+get_scratch(Arena **conflicts, U32 count)
 {
 	Arena *selected = 0;
 

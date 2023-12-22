@@ -171,7 +171,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 
 	B32 success = true;
 
-	Arena_Temporary scratch = arena_get_scratch(&arena, 1);
+	Arena_Temporary scratch = get_scratch(&arena, 1);
 	Arena_Temporary restore_point = arena_begin_temporary(arena);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
@@ -222,7 +222,7 @@ os_file_read(Arena *arena, Str8 path, Str8 *result)
 		arena_end_temporary(restore_point);
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success);
 }
 
@@ -231,7 +231,7 @@ internal B32
 os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 {
 	B32 success = true;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
@@ -275,7 +275,7 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 		success = false;
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success);
 }
 
@@ -284,7 +284,7 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 {
 	B32 success = true;
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
@@ -307,7 +307,7 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 		result->u64[0] = (U64) file_descriptor;
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 
 	return(success);
 }
@@ -367,7 +367,7 @@ internal B32
 os_file_delete(Str8 path)
 {
 	S32 success = 0;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
@@ -379,7 +379,7 @@ os_file_delete(Str8 path)
 		success = unlink(cstr_path);
 	} while (success == -1 && errno == EIO);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success == 0);
 }
 
@@ -389,7 +389,7 @@ internal B32
 os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 {
 	S32 success = 0;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_old_path = cstr_from_str8(scratch.arena, old_path);
 	CStr cstr_new_path = cstr_from_str8(scratch.arena, new_path);
@@ -455,7 +455,7 @@ os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 		return(false);
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(true);
 }
 
@@ -465,14 +465,14 @@ internal B32
 os_file_rename(Str8 old_path, Str8 new_path)
 {
 	B32 success = true;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_old_path = cstr_from_str8(scratch.arena, old_path);
 	CStr cstr_new_path = cstr_from_str8(scratch.arena, new_path);
 
 	success = (renameat2(AT_FDCWD, cstr_old_path, AT_FDCWD, cstr_new_path, RENAME_NOREPLACE) == 0);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success);
 }
 
@@ -480,13 +480,13 @@ internal B32
 os_file_create_directory(Str8 path)
 {
 	B32 success = true;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
 	success = (mkdir(cstr_path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success);
 }
 
@@ -494,13 +494,13 @@ internal B32
 os_file_delete_directory(Str8 path)
 {
 	B32 success = true;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
 
 	success = (rmdir(cstr_path) == 0);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(success);
 }
 
@@ -509,7 +509,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
 	assert(sizeof(Linux_FileIterator) <= sizeof(OS_FileIterator));
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	Linux_FileIterator *linux_iterator = (Linux_FileIterator *) iterator;
 	CStr cstr_path = cstr_from_str8(scratch.arena, path);
@@ -520,7 +520,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 		linux_iterator->done = true;
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 }
 
 internal B32
@@ -768,7 +768,7 @@ internal OS_Library
 os_library_open(Str8 path)
 {
 	OS_Library result = { 0 };
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	Str8List part_list = { 0 };
 	Str8Node parts[3];
@@ -784,7 +784,7 @@ os_library_open(Str8 path)
 
 	result.u64[0] = int_from_ptr(library);
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 
@@ -802,7 +802,7 @@ internal VoidFunction *
 os_library_load_function(OS_Library library, Str8 name)
 {
 	VoidFunction *result = 0;
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	if (library.u64[0])
 	{
@@ -812,7 +812,7 @@ os_library_load_function(OS_Library library, Str8 name)
 		result = dlsym(handle, cstr_name);
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 

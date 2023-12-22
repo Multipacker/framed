@@ -48,7 +48,7 @@ internal DateTime
 build_date_from_context(Void)
 {
 	DateTime result = { 0 };
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	// NOTE(hampus): Date is in the format "M D Y"
 	// Example: "Dec 15 2023"
@@ -86,7 +86,7 @@ build_date_from_context(Void)
 		time = str8_skip(time, len+1);
 		u8_from_str8(time, &result.second);
 	}
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 

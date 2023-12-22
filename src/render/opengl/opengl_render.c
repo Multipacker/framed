@@ -2,7 +2,7 @@ internal GLuint
 opengl_create_shader(Str8 path, GLenum shader_type)
 {
 	GLuint shader = glCreateShader(shader_type);
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	Str8 source = { 0 };
 	if (os_file_read(scratch.arena, path, &source))
@@ -40,7 +40,7 @@ opengl_create_shader(Str8 path, GLenum shader_type)
 		shader = 0;
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(shader);
 }
 
@@ -64,7 +64,7 @@ opengl_create_program(GLuint *shaders, U32 shader_count)
 	glGetProgramiv(program, GL_LINK_STATUS, &link_status);
 	if (!link_status)
 	{
-		Arena_Temporary scratch = arena_get_scratch(0, 0);
+		Arena_Temporary scratch = get_scratch(0, 0);
 
 		GLint log_length = 0;
 		glGetProgramiv(program, GL_INFO_LOG_LENGTH, &log_length);
@@ -79,7 +79,7 @@ opengl_create_program(GLuint *shaders, U32 shader_count)
 		glDeleteProgram(program);
 		program = 0;
 
-		arena_release_scratch(scratch);
+		release_scratch(scratch);
 	}
 
 	return (program);
@@ -332,7 +332,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 {
 	R_Texture result = { 0 };
 
-	Arena_Temporary scratch = arena_get_scratch(0, 0);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
 	Str8 contents = { 0 };
 	if (os_file_read(scratch.arena, path, &contents))
@@ -400,7 +400,7 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 		// TODO(simon): Could not read file.
 	}
 
-	arena_release_scratch(scratch);
+	release_scratch(scratch);
 	return(result);
 }
 
