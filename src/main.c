@@ -34,7 +34,7 @@ os_main(Str8List arguments)
 	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
 	B32 show_log = false;
 
-    B32 running = true;
+	B32 running = true;
 	while (running)
 	{
 		Arena *current_arena  = frame_arenas[0];

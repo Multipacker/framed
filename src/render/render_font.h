@@ -55,25 +55,25 @@ struct R_Glyph
 	R_TextureSlice slice;
 	// NOTE(hampus): This is needed here so we can easily
 	// free the region again
-    // TODO(hampus): Remove this. Only actually
-    // keep the stuff that the renderer needs to
-    // render a glyph
+		// TODO(hampus): Remove this. Only actually
+		// keep the stuff that the renderer needs to
+		// render a glyph
 	R_FontAtlasRegion font_atlas_region;
 };
 
 typedef struct R_GlyphIndexNode R_GlyphIndexNode;
 struct R_GlyphIndexNode
 {
-    R_GlyphIndexNode *next;
-    U32 codepoint;
-    U32 index; // NOTE(hampus): The index into the glyphs array in the font
+	R_GlyphIndexNode *next;
+	U32 codepoint;
+	U32 index; // NOTE(hampus): The index into the glyphs array in the font
 };
 
 typedef struct R_GlyphBucket R_GlyphBucket;
 struct  R_GlyphBucket
 {
-    R_GlyphIndexNode *first;
-    R_GlyphIndexNode *last;
+	R_GlyphIndexNode *first;
+	R_GlyphIndexNode *last;
 };
 
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
@@ -82,42 +82,42 @@ struct  R_GlyphBucket
 typedef struct R_Font R_Font;
 struct R_Font
 {
-    Arena *arena;
-    R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
+	Arena *arena;
+	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
-    R_FontAtlasRegion empty_font_atlas_region;
+	R_FontAtlasRegion empty_font_atlas_region;
 	F32 max_ascent;
 	F32 max_descent;
 
 	F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
 	F32 max_advance_width;
 	F32 underline_position; // NOTE(hampus): Relative to the baseline
-    B32 has_kerning;
+	B32 has_kerning;
 	U32 num_glyphs;
 	U32 num_loaded_glyphs;
 
-     U32 font_size;
-    // TODO(hampus): Collapse these somehow
-    Str8 family_name;
+	U32 font_size;
+	// TODO(hampus): Collapse these somehow
+	Str8 family_name;
 	Str8 style_name;
-    Str8 path;
+	Str8 path;
 
-    R_FontRenderMode render_mode;
+	R_FontRenderMode render_mode;
 
-    U64 last_frame_index_used;
+	U64 last_frame_index_used;
 };
 
 typedef struct R_FontCache R_FontCache;
 struct R_FontCache
 {
-    U32 slots_used;
-    R_Font *fonts[R_FONT_CACHE_SIZE];
+	U32 slots_used;
+	R_Font *fonts[R_FONT_CACHE_SIZE];
 };
 
 typedef struct R_FontKey R_FontKey;
 struct R_FontKey
 {
-    U32 font_size;
+	U32 font_size;
 	Str8 path;
 };
 

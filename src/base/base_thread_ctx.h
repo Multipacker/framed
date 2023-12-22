@@ -6,8 +6,8 @@
 typedef struct ThreadContext ThreadContext;
 struct ThreadContext
 {
-    Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
-    char name[512];
+	Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
+	char name[512];
 };
 
 internal ThreadContext  thread_ctx_alloc(Void);

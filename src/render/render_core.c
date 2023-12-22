@@ -110,22 +110,22 @@ render_init(Gfx_Context *gfx)
 	renderer->gfx = gfx;
 	renderer->permanent_arena       = arena;
 	renderer->frame_arena = arena_create();
-    renderer->backend = render_backend_init(renderer);
+	renderer->backend = render_backend_init(renderer);
 	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
-    renderer->font_cache = push_struct(arena, R_FontCache);
-    return(renderer);
+	renderer->font_cache = push_struct(arena, R_FontCache);
+	return(renderer);
 }
 
 internal Void
 render_begin(R_Context *renderer)
 {
-    render_backend_begin(renderer);
+	render_backend_begin(renderer);
 }
 
 internal Void
 render_end(R_Context *renderer)
 {
-    render_backend_end(renderer);
-    renderer->frame_index++;
+	render_backend_end(renderer);
+	renderer->frame_index++;
 	arena_pop_to(renderer->frame_arena, 0);
 }

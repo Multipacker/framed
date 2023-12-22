@@ -35,18 +35,17 @@ os_memory_release(Void *ptr, U64 size)
 	VirtualFree(ptr, 0, MEM_RELEASE);
 }
 
-
 internal Void
 os_set_tls(Void *memory)
 {
-    TlsSetValue(win32_state.tls_index, memory);
+	TlsSetValue(win32_state.tls_index, memory);
 }
 
 internal Void *
 os_get_tls(Void)
 {
-    Void *result = TlsGetValue(win32_state.tls_index);
-    return(result);
+	Void *result = TlsGetValue(win32_state.tls_index);
+	return(result);
 }
 
 internal OS_CircularBuffer
@@ -180,12 +179,53 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 internal B32
 os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 {
-	return(false);
+	assert(path.size < MAX_PATH);
+	B32 success = true;
+	Arena_Temporary scratch = get_scratch(0, 0);
+
+	DWORD creation_flags = 0;
+	switch (mode)
+	{
+		case OS_FileMode_Fail:    creation_flags = CREATE_NEW; break;
+		case OS_FileMode_Replace: creation_flags = CREATE_ALWAYS; break;
+		case OS_FileMode_Append:  creation_flags = OPEN_ALWAYS; break;
+			invalid_case;
+	}
+
+	Str16 path16 = cstr16_from_str8(scratch.arena, path);
+
+	HANDLE file_handle = CreateFile((LPCWSTR) path16.data, GENERIC_WRITE | GENERIC_READ,
+																	0, 0, creation_flags, 0, 0);
+
+	if (file_handle)
+	{
+		if (mode & OS_FileMode_Append)
+		{
+			// NOTE(hampus): Set the cursor position to the end of
+			// the file.
+			SetFilePointer(file_handle, 0, 0, FILE_END);
+
+		}
+
+		result->u64[0] = int_from_ptr(file_handle);
+	}
+	else
+	{
+		success = false;
+	}
+
+	release_scratch(scratch);
+	return(success);
 }
 
 internal B32
 os_file_stream_write(OS_File file, Str8 data)
 {
+	HANDLE file_handle = ptr_from_int(file.u64[0]);
+	if (x)
+	{
+
+	}
 	return(false);
 }
 
@@ -475,11 +515,11 @@ win32_common_main(Void)
 	QueryPerformanceFrequency(&win32_state.frequency);
 	win32_state.permanent_arena = arena_create();
 
-    win32_state.tls_index = TlsAlloc();
-    ThreadContext context = thread_ctx_alloc();
-    set_thread_ctx(&context);
+	win32_state.tls_index = TlsAlloc();
+	ThreadContext context = thread_ctx_alloc();
+	set_thread_ctx(&context);
 
-    set_thread_name(str8_lit("Main"));
+	set_thread_name(str8_lit("Main"));
 
 	// NOTE(hampus): 'command_line' handed to WinMain doesn't include the program name
 	LPSTR command_line_with_exe_path = GetCommandLineA();
@@ -490,7 +530,7 @@ win32_common_main(Void)
 
 #if BUILD_MODE_RELEASE
 S32 APIENTRY
-WinMainCRTStartup(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
+WinMain(HINSTANCE instance, HINSTANCE prev_instance, PSTR command_line, int show_code)
 {
 	S32 exit_code = win32_common_main();
 	ExitProcess(exit_code);

@@ -23,7 +23,7 @@ struct Win32_State
 {
 	LARGE_INTEGER frequency;
 	Arena *permanent_arena;
-    DWORD tls_index;
+	DWORD tls_index;
 };
 
 #endif // WIN32_ESSENTIAL_H

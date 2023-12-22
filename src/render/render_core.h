@@ -69,9 +69,9 @@ struct R_Context
 	Gfx_Context *gfx;
 	R_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
 	R_FontAtlas *font_atlas;
-    R_FontCache *font_cache;
-    U64 frame_index;
-    R_BackendContext *backend;
+	R_FontCache *font_cache;
+	U64 frame_index;
+	R_BackendContext *backend;
 };
 
 // NOTE(simon): This might not always be fully cleared to 0.

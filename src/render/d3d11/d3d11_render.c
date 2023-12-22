@@ -41,10 +41,10 @@ d3d11_get_current_stats(R_Context *renderer)
 internal R_BackendContext *
 render_backend_init(R_Context *renderer)
 {
-    Gfx_Context *gfx = renderer->gfx;
+	Gfx_Context *gfx = renderer->gfx;
 
-    renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
-    R_BackendContext *backend = renderer->backend;
+	renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
+	R_BackendContext *backend = renderer->backend;
 
 	HRESULT hr;
 
@@ -61,7 +61,7 @@ render_backend_init(R_Context *renderer)
 #endif
 		D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_0 };
 		hr = D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, flags, levels, ARRAYSIZE(levels),
-                               D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
+															 D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
 		assert_hr(hr);
 	}
 
@@ -368,7 +368,7 @@ internal Void
 render_backend_end(R_Context *renderer)
 {
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
-    R_BackendContext *backend = renderer->backend;
+	R_BackendContext *backend = renderer->backend;
 	HRESULT hr;
 	if (backend->render_target_view == 0 || backend->current_width != client_area.width || backend->current_height != client_area.height)
 	{
@@ -531,7 +531,7 @@ render_backend_end(R_Context *renderer)
 internal R_RectInstance *
 render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
-    R_BackendContext *backend = renderer->backend;
+	R_BackendContext *backend = renderer->backend;
 	if (params->slice.texture.u64[0] == 0)
 	{
 		params->slice.texture = backend->white_texture;
