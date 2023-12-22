@@ -1,12 +1,12 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
-#include "logging/logging_inc.h"
+#include "log/log_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
-#include "logging/logging_inc.c"
+#include "log/log_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
