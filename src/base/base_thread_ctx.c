@@ -31,6 +31,27 @@ get_thread_ctx(Void)
     return(result);
 }
 
+internal Void
+set_thread_name(Str8 string)
+{
+    ThreadContext *ctx = get_thread_ctx();
+    U64 i;
+    for (i = 0; i < string.size; ++i)
+    {
+        ctx->name[i] = string.data[i];
+    }
+    ctx->name[i] = 0;
+}
+
+internal Str8
+get_thread_name(Void)
+{
+    ThreadContext *ctx = get_thread_ctx();
+    Str8 result = str8_cstr(ctx->name);
+    return(result);
+}
+
+
 internal Arena_Temporary
 get_scratch(Arena **conflicts, U32 count)
 {

@@ -7,13 +7,16 @@ typedef struct ThreadContext ThreadContext;
 struct ThreadContext
 {
     Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
-    char thread_name[512];
+    char name[512];
 };
 
 internal ThreadContext  thread_ctx_alloc(Void);
 internal Void           thread_ctx_release(ThreadContext *tctx);
 internal Void           set_thread_ctx(ThreadContext *tctx);
 internal ThreadContext *get_thread_ctx(Void);
+
+internal Void           set_thread_name(Str8 string);
+internal Str8           get_thread_name(Void);
 
 #define release_scratch(scratch) arena_end_temporary(scratch);
 

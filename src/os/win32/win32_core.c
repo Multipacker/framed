@@ -474,11 +474,13 @@ win32_common_main(Void)
 	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);
 	win32_state.permanent_arena = arena_create();
-    
+
     win32_state.tls_index = TlsAlloc();
     ThreadContext context = thread_ctx_alloc();
     set_thread_ctx(&context);
-    
+
+    set_thread_name(str8_lit("Main"));
+
 	// NOTE(hampus): 'command_line' handed to WinMain doesn't include the program name
 	LPSTR command_line_with_exe_path = GetCommandLineA();
 	Str8List argument_list = str8_split_by_codepoints(win32_state.permanent_arena, str8_cstr(command_line_with_exe_path), str8_lit(" "));
