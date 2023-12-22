@@ -81,7 +81,7 @@ render_make_font_atlas(R_Context *renderer, Vec2U32 dim)
 }
 
 internal R_FontAtlasRegion
-render_alloc_font_atlas_region(R_Context *renderer, Arena *arena, R_FontAtlas *atlas, Vec2U32 dim)
+render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim)
 {
     assert(atlas->num_free_regions > 0);
 	// TODO(hampus): Benchmark and eventually optimize.
@@ -145,7 +145,7 @@ render_alloc_font_atlas_region(R_Context *renderer, Arena *arena, R_FontAtlas *a
 
         if (!node->children[0])
         {
-            R_FontAtlasRegionNode *children = push_array(arena, R_FontAtlasRegionNode, Corner_COUNT);
+            R_FontAtlasRegionNode *children = push_array(renderer->permanent_arena, R_FontAtlasRegionNode, Corner_COUNT);
 
             {
                 Vec2U32 bbox[Corner_COUNT] =
@@ -325,7 +325,7 @@ node->codepoint = codepoint;
                         bearing_top   = face->glyph->bitmap_top;
                         bitmap_width  = face->glyph->bitmap.width;
 
-                        R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas,
+                        R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
                                                                                              v2u32(bitmap_width, bitmap_height));
                         glyph->font_atlas_region = font_atlas_region;
 
@@ -370,7 +370,7 @@ node->codepoint = codepoint;
                             bearing_top   = face->glyph->bitmap_top;
                             // NOTE(hampus): We now have 3 "pixels" for each value.
 
-                            R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+                            R_FontAtlasRegion font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
 
                             glyph->font_atlas_region = font_atlas_region;
                             rect_region = font_atlas_region.region;
@@ -505,7 +505,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 					result->font_size           = (U32) font_size;
 
                     // NOTE(hampus): Make an empty glyph that the empty glyphs will use
-                    result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas, v2u32(1, 1));
+                    result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(1, 1));
 
                     // NOTE(hampus): Get the rectangle glyph which represents
                     // an missing charcter
