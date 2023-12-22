@@ -4,11 +4,15 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <time.h>
+#include <pthread.h>
 #include <unistd.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+
+global Arena *linux_permanent_arena;
+global pthread_key_t linux_tls_key;
 
 // NOTE(simon): Don't attempt to close file descriptors multiple times as per `man close.2`.
 
@@ -86,6 +90,21 @@ internal Void
 os_memory_release(Void *ptr, U64 size)
 {
 	munmap(ptr, size);
+}
+
+internal Void
+os_set_tls(Void *memory)
+{
+	// TODO(simon): Check return value.
+	pthread_setspecific(linux_tls_key, memory);
+}
+
+internal Void *
+os_get_tls(Void)
+{
+	// TODO(simon): Check return value.
+	Void *result = pthread_getspecific(linux_tls_key);
+	return(result);
 }
 
 internal OS_CircularBuffer
@@ -815,13 +834,17 @@ os_library_load_function(OS_Library library, Str8 name)
 	return(result);
 }
 
-global Arena *linux_permanent_arena;
-
 int
 main(int argument_count, char *arguments[])
 {
 	linux_permanent_arena = arena_create();
-	arena_init_scratch();
+
+	// TODO(simon): Check the return value.
+	pthread_key_create(&linux_tls_key, 0);
+	ThreadContext context = thread_ctx_alloc();
+	set_thread_ctx(&context);
+
+	set_thread_name(str8_lit("Main"));
 
 	Str8List argument_list = { 0 };
 	for (int i = 0; i < argument_count; ++i)

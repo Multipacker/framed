@@ -6,7 +6,7 @@ mkdir -p build
 
 src_files="src/main.c"
 errors="-Werror -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable"
-common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1"
+common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-lm -lSDL2 build/freetype/freetype"
 
 if [ "$mode" == "debug" ]; then
