@@ -291,3 +291,11 @@ gfx_swap_buffers(Gfx_Context *gfx)
 {
 	SDL_GL_SwapWindow(gfx->window);
 }
+
+internal Vec2F32
+gfx_get_dpi(Gfx_Context *ctx)
+{
+	Vec2F32 dpi = v2f32(96, 96);
+	// TODO(simon): Implement this properly.
+	return(dpi);
+}
