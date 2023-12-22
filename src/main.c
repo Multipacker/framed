@@ -116,11 +116,13 @@ os_main(Str8List arguments)
 
 			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
 
-			F32 y_offset = log_size.height;
+			R_Font *real_font = render_font_from_key(renderer, font);
+			F32 y_offset = log_size.height - real_font->line_height;
 			for (Log_Entry *entry = log_entries.first; entry; entry = entry->next)
 			{
 				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), entry->message, font, v4f32(1, 1, 1, 1));
-				y_offset -= 20;
+				Vec2F32 size = render_measure_text(real_font, entry->message);
+				y_offset -= size.height;
 			}
 
 			render_pop_clip(renderer);
