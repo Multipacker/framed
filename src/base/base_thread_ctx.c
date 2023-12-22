@@ -35,19 +35,18 @@ internal Void
 set_thread_name(Str8 string)
 {
 	ThreadContext *ctx = get_thread_ctx();
-	U64 i;
-	for (i = 0; i < string.size; ++i)
-	{
-		ctx->name[i] = string.data[i];
-	}
-	ctx->name[i] = 0;
+
+	assert(string.size + 1 <= array_count(ctx.name));
+
+	memory_copy(ctx->name, string.data, string.size);
+	ctx->name[string.size] = 0;
 }
 
 internal Str8
 get_thread_name(Void)
 {
 	ThreadContext *ctx = get_thread_ctx();
-	Str8 result = str8_cstr(ctx->name);
+	Str8 result = str8_cstr((CStr) ctx->name);
 	return(result);
 }
 
