@@ -441,6 +441,16 @@ node->codepoint = codepoint;
 	return(result);
 }
 
+internal S32
+render_pixels_from_font_unit(S32 funit, S32 scale)
+{
+    S32 result = 0;
+
+    result = (S32)(funit * (scale / 65536.0f)) >> 6;
+
+    return(result);
+}
+
 internal R_Font *
 render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
@@ -475,28 +485,23 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                 FT_Select_Charmap(face, ft_encoding_unicode);
 				result->num_glyphs = (U32) face->num_glyphs;
                 result->path = path;
+                result->render_mode = render_mode;
                 // TODO(hampus): Get the monitor's DPI
 				F32 dpi = 72;
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi, (U32) dpi);
 				if (!ft_set_pixel_sizes_error)
 				{
-					F32 points_per_inch = 72;
-					F32 em_per_font_unit = 1.0f / (F32) face->units_per_EM;
-					F32 points_per_font_unit = em_per_font_unit / (F32) font_size;
-					F32 inches_per_font_unit = points_per_font_unit / points_per_inch;
-					F32 pixels_per_font_unit = inches_per_font_unit * (F32) dpi;
-                    result->line_height         = face->height             * pixels_per_font_unit;
-					result->underline_position  = face->underline_position * pixels_per_font_unit;
-					result->max_advance_width   = face->max_advance_width  * pixels_per_font_unit;
-					result->max_ascent          = face->ascender           * pixels_per_font_unit;
-					result->max_descent         = face->descender          * pixels_per_font_unit;
+                    result->line_height         = (F32)render_pixels_from_font_unit(face->height, face->size->metrics.y_scale);
+					result->underline_position  = (F32)render_pixels_from_font_unit(face->underline_position, face->size->metrics.y_scale);
+					result->max_advance_width   = (F32)render_pixels_from_font_unit(face->max_advance_width, face->size->metrics.x_scale);
+					   result->max_ascent          = (F32)render_pixels_from_font_unit(face->ascender, face->size->metrics.y_scale);
+					result->max_descent         = (F32)render_pixels_from_font_unit(face->descender, face->size->metrics.y_scale);
 					result->has_kerning         = FT_HAS_KERNING(face);
 					result->family_name         = str8_copy_cstr(result->arena, (U8 *) face->family_name);
 					result->style_name          = str8_copy_cstr(result->arena, (U8 *) face->style_name);
 					result->font_size           = (U32) font_size;
 
-                    // NOTE(hampus): Make an empty glyph that the spaces will use
-
+                    // NOTE(hampus): Make an empty glyph that the empty glyphs will use
                     result->empty_font_atlas_region = render_alloc_font_atlas_region(renderer, renderer->permanent_arena, renderer->font_atlas, v2u32(1, 1));
 
                     // NOTE(hampus): Get the rectangle glyph which represents
@@ -561,14 +566,10 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 }
 
 internal R_Font *
-render_make_font(R_Context *renderer, S32 font_size, Str8 path)
+render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
 	// TODO(hampus): Check the pixel orientation of the monitor.
-	#if R_USE_SUBPIXEL_RENDERING
-	R_Font *font = render_make_font_freetype(renderer, font_size, path, R_FontRenderMode_LCD);
-#else
-	R_Font *font =  render_make_font_freetype(renderer, font_size, path, R_FontRenderMode_Normal);
-#endif
+	R_Font *font = render_make_font_freetype(renderer, font_size, path, render_mode);
     return(font);
 }
 
@@ -629,21 +630,22 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
     if (!result)
     {
         // NOTE(hampus): Cache miss
+        S32 slot_index_to_fill = 0;
         if (empty_slot == -1)
         {
             // NOTE(hampus): The cache is full. Try to
             // find a font we can evict
             assert(unused_slot != -1 && "Cache is hot and full");
-            render_destroy_font(renderer, renderer->font_cache->fonts[unused_slot]);
-            renderer->font_cache->fonts[unused_slot] = render_make_font(renderer, (S32) font_key.font_size, font_key.path);
-            result = renderer->font_cache->fonts[unused_slot];
+            slot_index_to_fill = unused_slot;
         }
         else
         {
-            renderer->font_cache->fonts[empty_slot] = render_make_font(renderer, (S32) font_key.font_size, font_key.path);
-            result = renderer->font_cache->fonts[empty_slot];
-            renderer->font_cache->slots_used++;
+            slot_index_to_fill = empty_slot;
+        renderer->font_cache->slots_used++;
         }
+
+        renderer->font_cache->fonts[slot_index_to_fill] = render_make_font(renderer, (S32) font_key.font_size, font_key.path, R_FontRenderMode_LCD);
+        result = renderer->font_cache->fonts[slot_index_to_fill];
     }
 
     #if 0
@@ -750,36 +752,48 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec
 }
 
 internal Void
-render_text16(R_Context *renderer, Vec2F32 min, Str16 text, R_Font *font, Vec4F32 color)
+render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color)
 {
+    R_Font *font = render_font_from_key(renderer, font_key);
+    Vec2F32 origin = min;
 	for (U64 i = 0; i < text.size; ++i)
 	{
-            U32 codepoint = text.data[i];
+        U32 codepoint = text.data[i];
 
+        if (codepoint == '\n')
+        {
+            min.x = origin.x;
+            min.y += font->line_height;
+        }
+        else
+        {
             U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-			R_Glyph *glyph = font->glyphs + index;
+            assert(index != 0);
+            R_Glyph *glyph = font->glyphs + index;
 
-			F32 xpos = min.x + glyph->bearing_in_pixels.x;
-			F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
+            F32 xpos = min.x + glyph->bearing_in_pixels.x;
+            F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-			F32 width = (F32) glyph->size_in_pixels.x;
-			F32 height = (F32) glyph->size_in_pixels.y;
+            F32 width = (F32) glyph->size_in_pixels.x;
+            F32 height = (F32) glyph->size_in_pixels.y;
 
-			render_rect(renderer,
+            render_rect(renderer,
                         v2f32(xpos, ypos),
                         v2f32(xpos + width,
                               ypos + height),
                         .slice = glyph->slice,
-						.color = color,
-						.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
-			min.x += (glyph->advance_width);
-	}
+                        .color = color,
+                        .is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
+            min.x += (glyph->advance_width);
+        }
+    }
 }
 
 internal Void
-render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color)
+render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font_key, Vec4F32 color)
 {
+    R_Font *font = render_font_from_key(renderer, font_key);
         U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
         R_Glyph *glyph = font->glyphs + index;
@@ -802,12 +816,44 @@ render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, 
 internal Vec2F32
 render_measure_text(R_Font *font, Str8 text)
 {
+    S32 length = (S32)text.size;
 	Vec2F32 result = { 0 };
-	for (U64 i = 0; i < text.size; ++i)
+	for (S32 i = 0; i < (length-1); ++i)
 	{
 			R_Glyph *glyph = font->glyphs + text.data[i];
-			result.x += (glyph->advance_width);
+        result.x += (glyph->advance_width);
 	}
+
 	result.y = font->line_height;
+	return(result);
+}
+
+internal Vec2F32
+render_measure_multiline_text(R_Font *font, Str8 text)
+{
+    S32 length = (S32)text.size;
+	Vec2F32 result = { 0 };
+    F32 max_row_width = 0;
+    F32 row_width = 0;
+    F32 current_width = 0;
+	for (S32 i = 0; i < (length-1); ++i)
+	{
+        if (text.data[i] == '\n')
+        {
+            row_width -= current_width;
+            max_row_width = f32_max(row_width, max_row_width);
+            row_width = 0;
+            result.y += font->line_height;
+        }
+        else
+        {
+            R_Glyph *glyph = font->glyphs + text.data[i];
+            row_width += (glyph->advance_width);
+            current_width = glyph->advance_width;
+        }
+	}
+
+	result.y += font->line_height;
+    result.x = max_row_width;
 	return(result);
 }

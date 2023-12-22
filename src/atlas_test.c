@@ -27,7 +27,9 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-    U32 index = 0;
+    U32 frame_index = 0;
+
+    R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 20);
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -64,7 +66,7 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-#if 1
+#if 0
 		for (R_FontAtlasRegionNode *node = renderer->font_atlas->first_free_region;
 				 node != 0;
 				 node = node->next_free)
@@ -76,43 +78,20 @@ os_main(Str8List arguments)
 		render_rect(renderer, v2f32(0, 0), v2f32(2048, 2048), .slice = atlas_slice, .is_subpixel_text = true);
 #endif
 
-        R_FontKey key0 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 20);
-        R_FontKey key1 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 6);
-        R_FontKey key2 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 7);
-        R_FontKey key3 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 8);
-        R_FontKey key4 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 9);
-        R_FontKey key5 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 10);
-        R_FontKey key8 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 11);
-        R_FontKey key9 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 12);
-        R_FontKey key10 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 13);
+        Str8 string = str8_lit("Hello, world!\nHello, world!");
 
-		render_text(renderer, v2f32(100, 100), str8_lit("Hello, world!"), key0, v4f32(1, 1, 1, 1));
+        Vec2F32 dim = render_measure_multiline_text(render_font_from_key(renderer, font), string);
 
-        #if 0
-		render_text(renderer, v2f32(100, 120), str8_lit("Hello, world!"), key1, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 140), str8_lit("Hello, world!"), key2, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 160), str8_lit("Hello, world!"), key3, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 180), str8_lit("Hello, world!"), key4, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 200), str8_lit("Hello, world!"), key5, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 220), str8_lit("Hello, world!"), key9, v4f32(1, 1, 1, 1));
-		render_text(renderer, v2f32(100, 240), str8_lit("Hello, world!"), key10, v4f32(1, 1, 1, 1));
-        #endif
-        #if 0
-        if (index > 3)
-        {
-		render_text(renderer, v2f32(100, 260), str8_lit("Hello, world!"), key8, v4f32(1, 1, 1, 1));
-        }
-        R_Font *font = render_make_font(renderer, 20, str8_lit("data/fonts/liberation-mono.ttf"));
-        render_destroy_font(renderer, font);
-        #endif
-        #if 0
-        #endif
+        render_rect(renderer, v2f32(100, 100), v2f32_add_v2f32(v2f32(100, 100), dim));
+
+        render_multiline_text(renderer, v2f32(100, 100), string, font, v4f32(1, 0, 0, 1));
+
         render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 
-        ++index;
+        ++frame_index;
 	}
 	return(0);
 }
