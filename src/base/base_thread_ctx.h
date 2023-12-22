@@ -12,11 +12,11 @@ struct ThreadContext
 
 internal ThreadContext  thread_ctx_alloc(Void);
 internal Void           thread_ctx_release(ThreadContext *tctx);
-internal Void           set_thread_ctx(ThreadContext *tctx);
-internal ThreadContext *get_thread_ctx(Void);
+internal Void           thread_set_ctx(ThreadContext *tctx);
+internal ThreadContext *thread_get_ctx(Void);
 
-internal Void           set_thread_name(Str8 string);
-internal Str8           get_thread_name(Void);
+internal Void           thread_set_name(Str8 string);
+internal Str8           thread_get_name(Void);
 
 #define release_scratch(scratch) arena_end_temporary(scratch);
 

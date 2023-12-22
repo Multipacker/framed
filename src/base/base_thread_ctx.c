@@ -19,22 +19,22 @@ thread_ctx_release(ThreadContext *tctx)
 }
 
 internal Void
-set_thread_ctx(ThreadContext *tctx)
+thread_set_ctx(ThreadContext *tctx)
 {
 	os_set_tls(tctx);
 }
 
 internal ThreadContext *
-get_thread_ctx(Void)
+thread_get_ctx(Void)
 {
 	ThreadContext *result = os_get_tls();
 	return(result);
 }
 
 internal Void
-set_thread_name(Str8 string)
+thread_set_name(Str8 string)
 {
-	ThreadContext *ctx = get_thread_ctx();
+	ThreadContext *ctx = thread_get_ctx();
 
 	assert(string.size + 1 <= array_count(ctx.name));
 
@@ -43,9 +43,9 @@ set_thread_name(Str8 string)
 }
 
 internal Str8
-get_thread_name(Void)
+thread_get_name(Void)
 {
-	ThreadContext *ctx = get_thread_ctx();
+	ThreadContext *ctx = thread_get_ctx();
 	Str8 result = str8_cstr((CStr) ctx->name);
 	return(result);
 }
@@ -56,7 +56,7 @@ get_scratch(Arena **conflicts, U32 count)
 {
 	Arena *selected = 0;
 
-	ThreadContext *tctx = get_thread_ctx();
+	ThreadContext *tctx = thread_get_ctx();
 
 	for (U32 i = 0; i < array_count(tctx->scratch_arenas); ++i)
 	{

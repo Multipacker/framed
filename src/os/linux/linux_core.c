@@ -842,9 +842,9 @@ main(int argument_count, char *arguments[])
 	// TODO(simon): Check the return value.
 	pthread_key_create(&linux_tls_key, 0);
 	ThreadContext context = thread_ctx_alloc();
-	set_thread_ctx(&context);
+	thread_set_ctx(&context);
 
-	set_thread_name(str8_lit("Main"));
+	thread_set_name(str8_lit("Main"));
 
 	Str8List argument_list = { 0 };
 	for (int i = 0; i < argument_count; ++i)
