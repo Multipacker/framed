@@ -819,9 +819,10 @@ render_measure_text(R_Font *font, Str8 text)
 {
     S32 length = (S32)text.size;
 	Vec2F32 result = { 0 };
-	for (S32 i = 0; i < (length-1); ++i)
+	for (S32 i = 0; i < length; ++i)
 	{
-			R_Glyph *glyph = font->glyphs + text.data[i];
+        U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
+			R_Glyph *glyph = font->glyphs + index;
         result.x += (glyph->advance_width);
 	}
 
@@ -836,21 +837,19 @@ render_measure_multiline_text(R_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
     F32 max_row_width = 0;
     F32 row_width = 0;
-    F32 current_width = 0;
-	for (S32 i = 0; i < (length-1); ++i)
+	for (S32 i = 0; i < length; ++i)
 	{
         if (text.data[i] == '\n')
         {
-            row_width -= current_width;
             max_row_width = f32_max(row_width, max_row_width);
             row_width = 0;
             result.y += font->line_height;
         }
         else
         {
-            R_Glyph *glyph = font->glyphs + text.data[i];
+            U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
+            R_Glyph *glyph = font->glyphs + index;
             row_width += (glyph->advance_width);
-            current_width = glyph->advance_width;
         }
 	}
 
