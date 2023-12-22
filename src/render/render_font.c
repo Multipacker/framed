@@ -445,11 +445,11 @@ node->codepoint = codepoint;
 }
 
 internal S32
-render_pixels_from_font_unit(S32 funit, S32 scale)
+render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 {
     S32 result = 0;
 
-    result = (S32)(funit * (scale / 65536.0f)) >> 6;
+    result = (S32) ((F32) funit * ((F32) scale / 65536.0f)) >> 6;
 
     return(result);
 }
@@ -497,7 +497,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
                     result->line_height         = (F32)render_pixels_from_font_unit(face->height, face->size->metrics.y_scale);
 					result->underline_position  = (F32)render_pixels_from_font_unit(face->underline_position, face->size->metrics.y_scale);
 					result->max_advance_width   = (F32)render_pixels_from_font_unit(face->max_advance_width, face->size->metrics.x_scale);
-					   result->max_ascent          = (F32)render_pixels_from_font_unit(face->ascender, face->size->metrics.y_scale);
+					result->max_ascent          = (F32)render_pixels_from_font_unit(face->ascender, face->size->metrics.y_scale);
 					result->max_descent         = (F32)render_pixels_from_font_unit(face->descender, face->size->metrics.y_scale);
 					result->has_kerning         = FT_HAS_KERNING(face);
 					result->family_name         = str8_copy_cstr(result->arena, (U8 *) face->family_name);
