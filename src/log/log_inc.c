@@ -5,8 +5,6 @@
 typedef struct Logger Logger;
 struct Logger
 {
-	Arena *arena;
-
 	OS_CircularBuffer buffer;
 	U8 *data;
 	U64 write_index;
@@ -25,7 +23,6 @@ log_init(Str8 log_file)
 {
 	Logger *logger = &global_logger;
 
-	logger->arena = arena_create();
 	logger->buffer = os_circular_buffer_allocate(LOGGER_MINIMUM_BUFFER_SIZE, 3);
 	logger->data = logger->buffer.data + logger->buffer.size;
 	logger->next_flush_mark = LOGGER_MINIMUM_FLUSH_SIZE;
@@ -54,7 +51,6 @@ log_flush(Void)
 
 	os_file_stream_close(logger->log_file);
 	os_circular_buffer_free(logger->buffer);
-	arena_destroy(logger->arena);
 }
 
 internal Void
@@ -68,8 +64,9 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 		return;
 	}
 
-	Arena_Temporary scratch = arena_begin_temporary(logger->arena);
+	Arena_Temporary scratch = get_scratch(0, 0);
 
+	Str8 thread_name = thread_get_name();
 	DateTime time = os_now_local_time();
 
 	// NOTE(simon): Format the users message.
@@ -90,10 +87,11 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 
 	Str8 log_entry = str8_pushf(
 		scratch.arena,
-		"[%s] %d-%.2u-%.2u %.2u:%.2u:%.2u.%u %s:%u: %"PRISTR8"\n",
+		"[%s] %d-%.2u-%.2u %.2u:%.2u:%.2u.%u %"PRISTR8"@%s:%u: %"PRISTR8"\n",
 		cstr_level,
 		time.year, time.month + 1, time.day + 1,
 		time.hour, time.minute, time.second, time.millisecond,
+		str8_expand(thread_name),
 		file, line,
 		str8_expand(message)
 	);
@@ -128,7 +126,7 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 		logger->next_flush_mark = logger->flush_start + LOGGER_MINIMUM_FLUSH_SIZE;
 	}
 
-	arena_end_temporary(scratch);
+	release_scratch(scratch);
 }
 
 internal Log_EntryList
