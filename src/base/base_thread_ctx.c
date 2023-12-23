@@ -1,4 +1,13 @@
 internal ThreadContext
+thread_ctx_init(Str8 name)
+{
+	ThreadContext context = thread_ctx_alloc();
+	thread_set_ctx(&context);
+	thread_set_name(name);
+	return(context);
+}
+
+internal ThreadContext
 thread_ctx_alloc(Void)
 {
 	ThreadContext result = { 0 };
@@ -36,7 +45,7 @@ thread_set_name(Str8 string)
 {
 	ThreadContext *ctx = thread_get_ctx();
 
-	assert(string.size + 1 <= array_count(ctx.name));
+	assert(string.size + 1 <= array_count(ctx->name));
 
 	memory_copy(ctx->name, string.data, string.size);
 	ctx->name[string.size] = 0;

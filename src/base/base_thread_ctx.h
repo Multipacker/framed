@@ -10,6 +10,8 @@ struct ThreadContext
 	U8 name[512];
 };
 
+internal ThreadContext  thread_ctx_init(Str8 name);
+
 internal ThreadContext  thread_ctx_alloc(Void);
 internal Void           thread_ctx_release(ThreadContext *tctx);
 internal Void           thread_set_ctx(ThreadContext *tctx);
