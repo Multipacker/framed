@@ -5,204 +5,55 @@
 
 global Win32_Gfx_State win32_gfx_state;
 
+DWORD main_thread_id;
+
 internal LRESULT CALLBACK
 win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
 	Gfx_Context *context = (Gfx_Context *) GetWindowLongPtrW(hwnd, GWLP_USERDATA);
-
 	Arena_Temporary scratch = get_scratch(0, 0);
-	Gfx_EventList fallback_event_list = { 0 };
-	if (win32_gfx_state.event_arena == 0)
-	{
-		win32_gfx_state.event_arena = scratch.arena;
-		win32_gfx_state.event_list = &fallback_event_list;
-	}
-	Arena *event_arena = win32_gfx_state.event_arena;
-	Gfx_EventList *event_list = win32_gfx_state.event_list;
-	Gfx_Event *event = push_struct_zero(event_arena, Gfx_Event);
-	event->kind = Gfx_EventKind_Null;
+	Gfx_Event event;
 	LRESULT result = 0;
-	switch (message)
+	if (message == WM_SIZE ||
+		message == WM_KEYDOWN ||
+		message == WM_KEYUP ||
+		message == WM_SYSKEYDOWN ||
+		message == WM_SYSKEYUP ||
+		message == WM_QUIT ||
+		message == WM_DESTROY ||
+		message == WM_CLOSE)
 	{
-		case WM_CLOSE:
-		{
-			event->kind = Gfx_EventKind_Quit;
-		} break;
-
-		case WM_QUIT:
-		{
-			event->kind = Gfx_EventKind_Quit;
-		} break;
-
-		case WM_DESTROY:
-		{
-			event->kind = Gfx_EventKind_Quit;
-		} break;
-
-		case WM_CHAR:
-		{
-			event->kind = Gfx_EventKind_Char;
-			event->character = (char) wparam;
-		} break;
-
-		case WM_SIZE:
-		{
-			event->kind = Gfx_EventKind_Resize;
-		} break;
-
-		case WM_PAINT:
-		{
-			PAINTSTRUCT ps;
-			HDC hdc = BeginPaint(hwnd, &ps);
-			EndPaint(hwnd, &ps);
-			result = DefWindowProcW(hwnd, message, wparam, lparam);
-		} break;
-
-		case WM_MOUSEWHEEL:
-		{
-			event->kind = Gfx_EventKind_Scroll;
-			event->scroll.y = (F32) (GET_WHEEL_DELTA_WPARAM(wparam) / WHEEL_DELTA);
-		} break;
-
-		case WM_LBUTTONDBLCLK:
-		{
-			event->kind = Gfx_EventKind_KeyPress;
-			event->key = Gfx_Key_MouseLeftDouble;
-		} break;
-
-		case WM_MBUTTONDBLCLK:
-		{
-			event->kind = Gfx_EventKind_KeyPress;
-			event->key = Gfx_Key_MouseRightDouble;
-		} break;
-
-		case WM_RBUTTONDBLCLK:
-		{
-			event->kind = Gfx_EventKind_KeyPress;
-			event->key = Gfx_Key_MouseMiddleDouble;
-		} break;
-
-		case WM_MBUTTONUP:
-		case WM_MBUTTONDOWN:
-		{
-			event->key = Gfx_Key_MouseMiddle;
-			goto key_begin;
-		}
-		case WM_RBUTTONUP:
-		case WM_RBUTTONDOWN:
-		{
-			event->key = Gfx_Key_MouseRight;
-			goto key_begin;
-		}
-		case WM_LBUTTONUP:
-		case WM_LBUTTONDOWN:
-		{
-			event->key = Gfx_Key_MouseLeft;
-			goto key_begin;
-		}
-		case WM_SYSKEYUP:
-		case WM_SYSKEYDOWN:
-		case WM_KEYUP:
-		case WM_KEYDOWN:
-		{
-		key_begin:
-			U32 vk_code = (U32) wparam;
-			B32 was_down = ((lparam & (1 << 30)) != 0);
-			B32 is_down = ((lparam & (1 << 31)) == 0);
-			B32 alt_key_was_down = ((lparam & (1 << 29)));
-
-			local B32 key_table_initialized = false;
-
-			local char key_table[128] = { 0 };
-
-			if (!key_table_initialized)
-			{
-				for (U64 i = 0; i < 10; ++i)
-				{
-					key_table[0x30 + i] = (char) (Gfx_Key_0 + i);
-				}
-
-				for (U64 i = 0; i < 26; ++i)
-				{
-					key_table[0x41 + i] = (char) (Gfx_Key_A + i);
-				}
-
-				for (U64 i = 0; i < 12; ++i)
-				{
-					key_table[VK_F1 + i] = (char) (Gfx_Key_F1 + i);
-				}
-
-				key_table[VK_BACK]    = Gfx_Key_Backspace;
-				key_table[VK_SPACE]   = Gfx_Key_Space;
-				key_table[VK_MENU]    = Gfx_Key_Alt;
-				key_table[VK_LWIN]    = Gfx_Key_OS;
-				key_table[VK_RWIN]    = Gfx_Key_OS;
-				key_table[VK_TAB]     = Gfx_Key_Tab;
-				key_table[VK_RETURN]  = Gfx_Key_Return;
-				key_table[VK_SHIFT]   = Gfx_Key_Shift;
-				key_table[VK_CONTROL] = Gfx_Key_Control;
-				key_table[VK_ESCAPE]  = Gfx_Key_Escape;
-				key_table[VK_PRIOR]   = Gfx_Key_PageUp;
-				key_table[VK_NEXT]    = Gfx_Key_PageDown;
-				key_table[VK_END]     = Gfx_Key_End;
-				key_table[VK_HOME]    = Gfx_Key_Home;
-				key_table[VK_LEFT]    = Gfx_Key_Left;
-				key_table[VK_RIGHT]   = Gfx_Key_Right;
-				key_table[VK_UP]      = Gfx_Key_Up;
-				key_table[VK_DOWN]    = Gfx_Key_Down;
-				key_table[VK_DELETE]  = Gfx_Key_Delete;
-				key_table[VK_LBUTTON] = Gfx_Key_MouseLeft;
-				key_table[VK_RBUTTON] = Gfx_Key_MouseRight;
-				key_table[VK_MBUTTON] = Gfx_Key_MouseMiddle;
-
-				key_table_initialized = true;
-			}
-
-			// NOTE(hampus): Don't repeat key down/up messages
-			if (was_down != is_down)
-			{
-				// NOTE(hampus): The event->key may already be set
-				// by the mouse.
-				if (event->key == Gfx_Key_Null)
-				{
-					event->key = key_table[vk_code];
-				}
-
-				B32 up_message = (message == WM_SYSKEYUP || message == WM_KEYUP || message == WM_LBUTTONUP || message == WM_RBUTTONUP || message == WM_MBUTTONUP);
-				event->kind = up_message ? Gfx_EventKind_KeyRelease : Gfx_EventKind_KeyPress;
-			}
-
-		} break;
-
-		default:
-		{
-			result = DefWindowProcW(hwnd, message, wparam, lparam);
-		} break;
+		PostThreadMessage(main_thread_id, message, wparam, lparam);
 	}
-
-	if (event->kind != Gfx_EventKind_Null)
+	else
 	{
-		dll_push_back(event_list->first, event_list->last, event);
+	result = DefWindowProcW(hwnd, message, wparam, lparam);
 	}
-
 	release_scratch(scratch);
-
-	if (win32_gfx_state.event_list == &fallback_event_list)
-	{
-		win32_gfx_state.event_arena = 0;
-		win32_gfx_state.event_list = 0;
-	}
-
 	return(result);
 }
 
-internal Gfx_Context
-gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
+typedef struct Win32_WindowCreationData Win32_WindowCreationData;
+struct Win32_WindowCreationData
 {
+	U32 x;
+	U32 y;
+	U32 width;
+	U32 height;
+	Str8 title;
+};
+
+ DWORD WINAPI
+win32_gfx_startup_thread(Void *data)
+{
+	ThreadContext context = thread_ctx_alloc();
+	thread_set_ctx(&context);
+	thread_set_name(str8_lit("Events"));
+
+	Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *)data;
+
 	Gfx_Context result = { 0 };
 	Arena_Temporary scratch = get_scratch(0, 0);
-
-	win32_gfx_state.context = &result;
 
 	HINSTANCE instance = GetModuleHandle(0);
 
@@ -221,17 +72,15 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 	{
 		DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
 
-		Str16 title_s16 = cstr16_from_str8(scratch.arena, title);
+		Str16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
 		result.hwnd = CreateWindow(window_class.lpszClassName, (LPCWSTR) title_s16.data,
 															 create_window_flags,
-															 x, y,
-															 width, height,
+								   window_creation_data->x, window_creation_data->y,
+								   window_creation_data->width, window_creation_data->height,
 															 0, 0, instance, 0);
 		if (result.hwnd)
 		{
 			result.hdc = GetDC(result.hwnd);
-
-
 		}
 		else
 		{
@@ -248,39 +97,197 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 #if defined(RENDERER_OPENGL)
 	win32_init_opengl(&result);
 #endif
+	win32_gfx_state.context = result;
 
+	for (MSG message; GetMessage(&message, 0, 0, 0);)
+	{
+		TranslateMessage(&message);
+		DispatchMessage(&message);
+	}
+
+	return(0);
+}
+
+internal Gfx_Context
+gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
+{
+	main_thread_id = GetThreadId(GetCurrentThread());
+	Win32_WindowCreationData data = {x, y, width, height, title};
+	CreateThread(0, 0, win32_gfx_startup_thread, &data, 0, 0);
+	while (!win32_gfx_state.context.hwnd);
+	Gfx_Context result = win32_gfx_state.context;
 	return(result);
 }
 
 internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
-	Arena_Temporary scratch = get_scratch(0, 0);
-	Gfx_EventList events = { 0 };
-	win32_gfx_state.event_list = &events;
-	win32_gfx_state.event_arena = scratch.arena;
 	ShowWindow(gfx->hwnd, SW_SHOW);
 	UpdateWindow(gfx->hwnd);
-	release_scratch(scratch);
 }
 
 internal Gfx_EventList
 gfx_get_events(Arena *arena, Gfx_Context *gfx)
 {
-	Gfx_EventList event_list = { 0 };
-	win32_gfx_state.event_arena = arena;
-	win32_gfx_state.event_list = &event_list;
+	Gfx_EventList result = {0};
 
 	for (MSG message; PeekMessage(&message, 0, 0, 0, PM_REMOVE);)
 	{
-		TranslateMessage(&message);
-		DispatchMessage(&message);
+		Gfx_Event *event = push_struct_zero(arena, Gfx_Event);
+		event->kind = Gfx_EventKind_Null;
+		switch (message.message)
+		{
+			case WM_CLOSE:
+			{
+				event->kind = Gfx_EventKind_Quit;
+			} break;
+
+			case WM_QUIT:
+			{
+				event->kind = Gfx_EventKind_Quit;
+			} break;
+
+			case WM_DESTROY:
+			{
+				event->kind = Gfx_EventKind_Quit;
+			} break;
+
+			case WM_CHAR:
+			{
+				event->kind = Gfx_EventKind_Char;
+				event->character = (char) message.wParam;
+			} break;
+
+			case WM_SIZE:
+			{
+				event->kind = Gfx_EventKind_Resize;
+			} break;
+
+			case WM_MOUSEWHEEL:
+			{
+				event->kind = Gfx_EventKind_Scroll;
+				event->scroll.y = (F32) (GET_WHEEL_DELTA_WPARAM(message.wParam) / WHEEL_DELTA);
+			} break;
+
+			case WM_LBUTTONDBLCLK:
+			{
+				event->kind = Gfx_EventKind_KeyPress;
+				event->key = Gfx_Key_MouseLeftDouble;
+			} break;
+
+			case WM_MBUTTONDBLCLK:
+			{
+				event->kind = Gfx_EventKind_KeyPress;
+				event->key = Gfx_Key_MouseRightDouble;
+			} break;
+
+			case WM_RBUTTONDBLCLK:
+			{
+				event->kind = Gfx_EventKind_KeyPress;
+				event->key = Gfx_Key_MouseMiddleDouble;
+			} break;
+
+			case WM_MBUTTONUP:
+			case WM_MBUTTONDOWN:
+			{
+				event->key = Gfx_Key_MouseMiddle;
+				goto key_begin;
+			}
+
+			case WM_RBUTTONUP:
+			case WM_RBUTTONDOWN:
+			{
+				event->key = Gfx_Key_MouseRight;
+				goto key_begin;
+			}
+
+			case WM_LBUTTONUP:
+			case WM_LBUTTONDOWN:
+			{
+				event->key = Gfx_Key_MouseLeft;
+				goto key_begin;
+			}
+
+			case WM_SYSKEYUP:
+			case WM_SYSKEYDOWN:
+			case WM_KEYUP:
+			case WM_KEYDOWN:
+			{
+				key_begin:
+				U32 vk_code = (U32) message.wParam;
+				B32 was_down = ((message.lParam & (1 << 30)) != 0);
+				B32 is_down = ((message.lParam & (1 << 31)) == 0);
+				B32 alt_key_was_down = ((message.lParam & (1 << 29)));
+
+				local B32 key_table_initialized = false;
+
+				local char key_table[128] = { 0 };
+
+				if (!key_table_initialized)
+				{
+					for (U64 i = 0; i < 10; ++i)
+					{
+						key_table[0x30 + i] = (char) (Gfx_Key_0 + i);
+					}
+
+					for (U64 i = 0; i < 26; ++i)
+					{
+						key_table[0x41 + i] = (char) (Gfx_Key_A + i);
+					}
+
+					for (U64 i = 0; i < 12; ++i)
+					{
+						key_table[VK_F1 + i] = (char) (Gfx_Key_F1 + i);
+					}
+
+					key_table[VK_BACK]    = Gfx_Key_Backspace;
+					key_table[VK_SPACE]   = Gfx_Key_Space;
+					key_table[VK_MENU]    = Gfx_Key_Alt;
+					key_table[VK_LWIN]    = Gfx_Key_OS;
+					key_table[VK_RWIN]    = Gfx_Key_OS;
+					key_table[VK_TAB]     = Gfx_Key_Tab;
+					key_table[VK_RETURN]  = Gfx_Key_Return;
+					key_table[VK_SHIFT]   = Gfx_Key_Shift;
+					key_table[VK_CONTROL] = Gfx_Key_Control;
+					key_table[VK_ESCAPE]  = Gfx_Key_Escape;
+					key_table[VK_PRIOR]   = Gfx_Key_PageUp;
+					key_table[VK_NEXT]    = Gfx_Key_PageDown;
+					key_table[VK_END]     = Gfx_Key_End;
+					key_table[VK_HOME]    = Gfx_Key_Home;
+					key_table[VK_LEFT]    = Gfx_Key_Left;
+					key_table[VK_RIGHT]   = Gfx_Key_Right;
+					key_table[VK_UP]      = Gfx_Key_Up;
+					key_table[VK_DOWN]    = Gfx_Key_Down;
+					key_table[VK_DELETE]  = Gfx_Key_Delete;
+					key_table[VK_LBUTTON] = Gfx_Key_MouseLeft;
+					key_table[VK_RBUTTON] = Gfx_Key_MouseRight;
+					key_table[VK_MBUTTON] = Gfx_Key_MouseMiddle;
+
+					key_table_initialized = true;
+				}
+
+				// NOTE(hampus): Don't repeat key down/up messages
+				if (was_down != is_down)
+				{
+					// NOTE(hampus): The event->key may already be set
+					// by the mouse.
+					if (event->key == Gfx_Key_Null)
+					{
+						event->key = key_table[vk_code];
+					}
+
+					B32 up_message = (message.message == WM_SYSKEYUP || message.message == WM_KEYUP || message.message == WM_LBUTTONUP || message.message == WM_RBUTTONUP || message.message == WM_MBUTTONUP);
+					event->kind = up_message ? Gfx_EventKind_KeyRelease : Gfx_EventKind_KeyPress;
+				}
+			} break;
+		}
+
+		if (event->kind != Gfx_EventKind_Null)
+		{
+			dll_push_back(result.first, result.last, event);
+		}
 	}
-
-	win32_gfx_state.event_arena = 0;
-	win32_gfx_state.event_list = 0;
-
-	return(event_list);
+	return(result);
 }
 
 internal Vec2F32

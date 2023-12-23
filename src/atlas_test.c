@@ -54,6 +54,7 @@ os_main(Str8List arguments)
 			}
 		}
 
+		#if 1
 		render_begin(renderer);
 
 #if 0
@@ -77,9 +78,14 @@ os_main(Str8List arguments)
 													 "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.");
 
 		Vec2F32 dim = render_measure_multiline_text(render_font_from_key(renderer, font), string);
-
 		render_multiline_text(renderer, v2f32(100, 100), string, font, v4f32(0.9f, 0.9f, 0.9f, 1));
+
+		Vec2F32 min = v2f32(500, 500);
+		render_rect(renderer, min, v2f32_add_v2f32(min, v2f32(200, 100)), .radius = 10, .softness = 1);
+		render_rect(renderer, min, v2f32_add_v2f32(min, v2f32(200, 100)), .color = vec4f32_srgb_to_linear(v4f32(1, 0, 0, 1)), .radius = 10, .softness = 1, .border_thickness = 1);
+
 		render_end(renderer);
+#endif
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);

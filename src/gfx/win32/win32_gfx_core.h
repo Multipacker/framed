@@ -11,10 +11,8 @@ struct Gfx_Context
 typedef struct Win32_Gfx_State Win32_Gfx_State;
 struct Win32_Gfx_State
 {
-	Gfx_Context *context;
+	Gfx_Context context;
 	U32 placeholder;
-	Arena *event_arena;
-	Gfx_EventList *event_list;
 };
 
 #endif // WIN32_GFX_CORE_H
