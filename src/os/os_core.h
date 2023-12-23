@@ -39,6 +39,7 @@ struct OS_CircularBuffer
 	U8 *data;
 	U64 size;
 	U64 repeat_count;
+	U64 handle;
 };
 
 #define os_handle_is_valid(handle) (!type_is_zero(handle))

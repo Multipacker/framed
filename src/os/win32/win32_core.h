@@ -8,6 +8,7 @@
 #include <Windows.h>
 #include <timeapi.h>
 #include <shellscalingapi.h>
+#include <winnt.h>
 #pragma warning(pop)
 
 typedef struct Win32_FileIterator Win32_FileIterator;

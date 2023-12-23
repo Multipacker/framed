@@ -48,20 +48,120 @@ os_get_tls(Void)
 	return(result);
 }
 
+#ifndef MEM_REPLACE_PLACEHOLDER
+
+#define MEM_REPLACE_PLACEHOLDER 0x4000
+#define MEM_RESERVE_PLACEHOLDER 0x40000
+#define MEM_PRESERVE_PLACEHOLDER 0x2
+#define MEM_EXTENDED_PARAMETER_ADDRESS_REQUIREMENTS 1
+
+#endif
+
+typedef struct MEM_EXTENDED_PARAMTER MEM_EXTENDED_PARAMTER;
+
+typedef PVOID VirtualAlloc2Proc(HANDLE, PVOID, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMTER *, ULONG);
+typedef PVOID MapViewOfFile3Proc(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T, ULONG, ULONG, MEM_EXTENDED_PARAMTER *, ULONG);
+
 internal OS_CircularBuffer
 os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 {
 	OS_CircularBuffer result = { 0 };
+	Arena_Temporary scratch = get_scratch(0, 0);
 
-	// TODO(simon): Implement.
+	SYSTEM_INFO info;
+	GetSystemInfo(&info);
+	U64 size = u64_round_up_to_power_of_2(minimum_size, info.dwAllocationGranularity);
+	U64 total_repeated_size = repeat_count * size;
 
+	HANDLE file_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, 0,
+											PAGE_READWRITE, (DWORD)(size >> 32),
+											(DWORD)(size & 0xffffffff), 0);
+
+	result.handle = int_from_ptr(file_mapping);
+	result.repeat_count = repeat_count;
+
+	if (file_mapping != INVALID_HANDLE_VALUE)
+	{
+		HMODULE kernel = LoadLibrary(cstr16_from_str8(scratch.arena, str8_lit("kernelbase.dll")).data);
+		VirtualAlloc2Proc *VirtualAlloc2 = (VirtualAlloc2Proc *)GetProcAddress(kernel, "VirtualAlloc2");
+		MapViewOfFile3Proc *MapViewOfFile3 = (MapViewOfFile3Proc *)GetProcAddress(kernel, "MapViewOfFile3");
+
+		if (VirtualAlloc2 && MapViewOfFile3)
+		{
+			U8 *base = (U8 *)VirtualAlloc2(0, 0, total_repeated_size, MEM_RESERVE|MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS, 0, 0);
+
+			B32 mapped = true;
+			for (U64 i = 0; i < repeat_count; ++i)
+			{
+				VirtualFree(base + i*size, size, MEM_RELEASE|MEM_PRESERVE_PLACEHOLDER);
+				if (!MapViewOfFile3(file_mapping, 0, base + i*size, 0, size, MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, 0, 0))
+					{
+					mapped = false;
+					}
+			}
+			if (mapped)
+			{
+				result.data = base;
+				result.size = size;
+			}
+		}
+		else
+		{
+			for (U32 i = 0; i < 100; ++i)
+			{
+				U8 *base = (U8 *)VirtualAlloc(0, total_repeated_size, MEM_RESERVE, PAGE_NOACCESS);
+				if (base)
+				{
+					VirtualFree(base, 0, MEM_RELEASE);
+					B32 mapped = true;
+					for (U32 j = 0; j < i; ++j)
+					{
+						if (!MapViewOfFileEx(file_mapping, FILE_MAP_ALL_ACCESS, 0, 0, size, base + j * size))
+						{
+							mapped = false;
+							break;
+						}
+					}
+
+					if (mapped)
+					{
+						result.data = base;
+						result.size = size;
+						break;
+					}
+					else
+					{
+						os_circular_buffer_free(result);
+					}
+				}
+			}
+		}
+	}
+
+	if (!result.data)
+	{
+		os_circular_buffer_free(result);
+	}
+
+	release_scratch(scratch);
 	return(result);
 }
 
 internal Void
 os_circular_buffer_free(OS_CircularBuffer circular_buffer)
 {
-	// TODO(simon): Implement.
+	HANDLE file_mapping_handle = ptr_from_int(circular_buffer.handle);
+	if (file_mapping_handle != INVALID_HANDLE_VALUE)
+	{
+		if (circular_buffer.data)
+		{
+			for (U32 i = 0; i < circular_buffer.repeat_count; ++i)
+			{
+				UnmapViewOfFile(circular_buffer.data + i*circular_buffer.size);
+			}
+		}
+		CloseHandle(file_mapping_handle);
+	}
 }
 
 internal B32
