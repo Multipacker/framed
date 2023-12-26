@@ -254,6 +254,7 @@ typedef Void VoidFunction(Void);
 #	define assert(expr)
 #endif
 
+#define assert_not_implemented() debug_break()
 #define assert_not_reached() debug_break()
 #define invalid_case default: debug_break(); break;
 
