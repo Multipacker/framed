@@ -10,9 +10,9 @@ common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-lm -lSDL2 build/freetype/freetype"
 
 if [ "$mode" == "debug" ]; then
-	compiler_flags="-g -fsanitize=address -DBUILD_MODE_DEBUG=1"
+	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
 elif [ "$mode" == "optimized" ]; then
-	compiler_flags="-g -fsanitize=address -DBUILD_MODE_OPTIMIZED=1"
+	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_OPTIMIZED=1"
 elif [ "$mode" == "release" ]; then
 	compiler_flags="-DBUILD_MODE_RELEASE=1"
 else
