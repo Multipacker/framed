@@ -181,10 +181,10 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 
 	Str8 log_entry = str8_pushf(
 		scratch.arena,
-		"[%s] %d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %"PRISTR8" %s:%u: %"PRISTR8"\n",
-		cstr_level,
+		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %"PRISTR8" %s:%u: %"PRISTR8"\n",
 		time.year, time.month + 1, time.day + 1,
 		time.hour, time.minute, time.second, time.millisecond,
+		cstr_level,
 		str8_expand(thread_name),
 		file, line,
 		str8_expand(message)
