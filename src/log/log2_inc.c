@@ -1,9 +1,3 @@
-#define LOG_QUEUE_SIZE (1 << 9)
-#define LOG_QUEUE_MASK (LOG_QUEUE_SIZE - 1)
-
-#define LOG_BUFFER_SIZE (1 << 13)
-#define LOG_BUFFER_MASK (LOG_BUFFER_SIZE - 1)
-
 #include <stdatomic.h>
 #include <semaphore.h>
 
@@ -44,27 +38,6 @@ os_semaphore_wait(OS_Semaphore *handle)
 	} while (success == -1 && errno == EINTR);
 }
 
-
-
-typedef struct Logger Logger;
-struct Logger
-{
-	Arena *arena;
-	OS_File log_file;
-
-	OS_Semaphore semaphore;
-
-	Log_QueueEntry *buffer;
-	U32 volatile buffer_write_index;
-	U32 volatile buffer_read_index;
-
-	Log_QueueEntry *queue;
-	U32 volatile queue_write_index;
-	U32 volatile queue_read_index;
-};
-
-global Logger global_logger;
-
 typedef Void *ThreadProc(Void *);
 
 internal Void
@@ -93,6 +66,33 @@ u32_atomic_add(U32 volatile *location, U32 amount)
 #else
 #error "There isn't a memory fence defined for this compiler."
 #endif
+
+
+
+#define LOG_QUEUE_SIZE (1 << 9)
+#define LOG_QUEUE_MASK (LOG_QUEUE_SIZE - 1)
+
+#define LOG_BUFFER_SIZE (1 << 13)
+#define LOG_BUFFER_MASK (LOG_BUFFER_SIZE - 1)
+
+typedef struct Logger Logger;
+struct Logger
+{
+	Arena *arena;
+	OS_File log_file;
+
+	OS_Semaphore semaphore;
+
+	Log_QueueEntry *buffer;
+	U32 volatile buffer_write_index;
+	U32 volatile buffer_read_index;
+
+	Log_QueueEntry *queue;
+	U32 volatile queue_write_index;
+	U32 volatile queue_read_index;
+};
+
+global Logger global_logger;
 
 internal Void *
 log_flusher_proc(Void *argument)
