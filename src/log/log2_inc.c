@@ -94,6 +94,33 @@ struct Logger
 
 global Logger global_logger;
 
+internal Str8
+log_format_entry(Arena *arena, DateTime time, Log_Level level, Str8 thread_name, CStr file, U32 line, Str8 message)
+{
+	CStr cstr_level = "";
+	switch (level)
+	{
+		case Log_Level_Info:    cstr_level = "INFO";    break;
+		case Log_Level_Warning: cstr_level = "WARNING"; break;
+		case Log_Level_Error:   cstr_level = "ERROR";   break;
+		case Log_Level_Trace:   cstr_level = "TRACE";   break;
+		invalid_case;
+	}
+
+	Str8 result = str8_pushf(
+		arena,
+		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %"PRISTR8" %s:%u: %"PRISTR8"\n",
+		time.year, time.month + 1, time.day + 1,
+		time.hour, time.minute, time.second, time.millisecond,
+		cstr_level,
+		str8_expand(thread_name),
+		file, line,
+		str8_expand(message)
+	);
+
+	return(result);
+}
+
 internal Void *
 log_flusher_proc(Void *argument)
 {
@@ -164,26 +191,7 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	Str8 message = str8_pushfv(scratch.arena, format, args);
 	va_end(args);
 
-	CStr cstr_level = "";
-	switch (level)
-	{
-		case Log_Level_Info:    cstr_level = "INFO";    break;
-		case Log_Level_Warning: cstr_level = "WARNING"; break;
-		case Log_Level_Error:   cstr_level = "ERROR";   break;
-		case Log_Level_Trace:   cstr_level = "TRACE";   break;
-		invalid_case;
-	}
-
-	Str8 log_entry = str8_pushf(
-		scratch.arena,
-		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %"PRISTR8" %s:%u: %"PRISTR8"\n",
-		time.year, time.month + 1, time.day + 1,
-		time.hour, time.minute, time.second, time.millisecond,
-		cstr_level,
-		str8_expand(thread_name),
-		file, line,
-		str8_expand(message)
-	);
+	Str8 log_entry = log_format_entry(scratch.arena, time, level, thread_name, file, line, message);
 
 	U32 queue_index = u32_atomic_add(&logger->queue_write_index, 1);
 	while (queue_index - logger->queue_read_index >= LOG_QUEUE_SIZE)
