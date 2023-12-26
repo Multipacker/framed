@@ -149,11 +149,6 @@ log_init(Str8 log_file)
 }
 
 internal Void
-log_flush(Void)
-{
-}
-
-internal Void
 log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 {
 	Logger *logger = &global_logger;

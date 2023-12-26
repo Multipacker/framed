@@ -20,7 +20,6 @@ struct Log_QueueEntry
 };
 
 internal Void log_init(Str8 log_file);
-internal Void log_flush(Void);
 
 #define log_info(...)    log_message(Log_Level_Info,    __FILE__, __LINE__, __VA_ARGS__)
 #define log_warning(...) log_message(Log_Level_Warning, __FILE__, __LINE__, __VA_ARGS__)

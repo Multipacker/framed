@@ -168,7 +168,5 @@ os_main(Str8List arguments)
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
 
-	log_flush();
-
 	return(0);
 }
