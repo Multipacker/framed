@@ -112,7 +112,13 @@
 #	define ARCH_ARM64 0
 #endif
 
-#if defined(__SANITIZE_ADDRESS__)
+#if COMPILER_CLANG
+#	if defined(__has_feature) && __has_feature(address_sanitizer)
+#		define SANITIZER_ENABLED 1
+#	else
+#		define SANITIZER_ENABLED 0
+#	endif
+#elif defined(__SANITIZE_ADDRESS__)
 #	define SANITIZER_ENABLED 1
 #else
 #	define SANITIZER_ENABLED 0
