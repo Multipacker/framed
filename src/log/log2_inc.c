@@ -69,6 +69,15 @@ u32_atomic_add(U32 volatile *location, U32 amount)
 
 
 
+/*
+ * TODO(simon):
+ *  [ ] Store the raw data in the user availible buffer and convert it to a
+ *      string on demand. Note that this currently crashes inside of
+ *      stb_vsnprintf and that thread names need to a deep copy.
+ *  [ ] Only wait on the semaphore when it is strictly needed, like when we
+ *      have run out of entries.
+ */
+
 #define LOG_QUEUE_SIZE (1 << 9)
 #define LOG_QUEUE_MASK (LOG_QUEUE_SIZE - 1)
 
