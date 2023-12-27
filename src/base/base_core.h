@@ -112,7 +112,13 @@
 #	define ARCH_ARM64 0
 #endif
 
-#if defined(__SANITIZE_ADDRESS__)
+#if COMPILER_CLANG
+#	if defined(__has_feature) && __has_feature(address_sanitizer)
+#		define SANITIZER_ENABLED 1
+#	else
+#		define SANITIZER_ENABLED 0
+#	endif
+#elif defined(__SANITIZE_ADDRESS__)
 #	define SANITIZER_ENABLED 1
 #else
 #	define SANITIZER_ENABLED 0
@@ -248,6 +254,8 @@ typedef Void VoidFunction(Void);
 #	define assert(expr)
 #endif
 
+// TODO(simon): What about when ENABLE_ASSERT == 0?
+#define assert_not_implemented() debug_break()
 #define assert_not_reached() debug_break()
 #define invalid_case default: debug_break(); break;
 

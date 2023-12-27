@@ -145,9 +145,9 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 
 #if SANITIZER_ENABLED
 	// NOTE(hampus): The sanitizer does not like stbsp_vsnprintf
-#define vsnprintf(data, size, cstring, args) vsnprintf(data, size, cstring, args);
+#define vsnprintf(data, size, cstring, args) vsnprintf(data, (size_t) (size), cstring, args);
 #else
-#define vsnprintf(data, size, cstring, args) stbsp_vsnprintf(data, size, cstring, args);
+#define vsnprintf(data, size, cstring, args) stbsp_vsnprintf(data, (int) (size), cstring, args);
 	#endif
 
 	U64 needed_size = (U64) vsnprintf(0, 0, cstr, args);
@@ -155,7 +155,7 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 	result.data = push_array(arena, U8, needed_size + 1);
 	result.size = needed_size;
 
-	vsnprintf((CStr) result.data, (int) (needed_size + 1), cstr, format_args);
+	vsnprintf((CStr) result.data, needed_size + 1, cstr, format_args);
 
 	va_end(format_args);
 	return(result);
@@ -768,7 +768,7 @@ s8_from_str8(Str8 string, S8 *destination)
 internal F64
 f64_from_str8(Str8 string, F64 *destination)
 {
-	assert(!"Not implemented!");
+	assert_not_implemented();
 	return 0.0;
 }
 

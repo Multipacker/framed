@@ -652,7 +652,7 @@ os_now_universal_time(Void)
 	// NOTE(simon): According to `man gettimeofday.2` this syscall should not fail.
 	struct timeval time = { 0 };
 	S32 return_code = gettimeofday(&time, 0);
-	assert(return_code == -1);
+	assert(return_code == 0);
 
 	struct tm deconstructed_time = { 0 };
 	if (gmtime_r(&time.tv_sec, &deconstructed_time) == &deconstructed_time)
@@ -679,7 +679,7 @@ os_now_local_time(Void)
 	// NOTE(simon): According to `man gettimeofday.2` this syscall should not fail.
 	struct timeval time = { 0 };
 	S32 return_code = gettimeofday(&time, 0);
-	assert(return_code == -1);
+	assert(return_code == 0);
 
 	struct tm deconstructed_time = { 0 };
 	if (localtime_r(&time.tv_sec, &deconstructed_time) == &deconstructed_time)
