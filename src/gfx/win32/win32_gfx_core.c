@@ -18,7 +18,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		message == WM_KEYDOWN ||
 		message == WM_KEYUP ||
 		message == WM_SYSKEYDOWN ||
-		message == WM_SYSKEYUP ||
+		 message == WM_SYSKEYUP ||
 		message == WM_QUIT ||
 		message == WM_DESTROY ||
 		message == WM_CLOSE)
@@ -43,7 +43,7 @@ struct Win32_WindowCreationData
 	Str8 title;
 };
 
- DWORD WINAPI
+  DWORD
 win32_gfx_startup_thread(Void *data)
 {
 	ThreadContext context = thread_ctx_alloc();
@@ -219,51 +219,47 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				B32 is_down = ((message.lParam & (1 << 31)) == 0);
 				B32 alt_key_was_down = ((message.lParam & (1 << 29)));
 
-				local B32 key_table_initialized = false;
-
-				local char key_table[128] = { 0 };
-
-				if (!key_table_initialized)
+				if (!win32_gfx_state.key_table_initialized)
 				{
 					for (U64 i = 0; i < 10; ++i)
 					{
-						key_table[0x30 + i] = (char) (Gfx_Key_0 + i);
+						win32_gfx_state.key_table[0x30 + i] = (char) (Gfx_Key_0 + i);
 					}
 
 					for (U64 i = 0; i < 26; ++i)
 					{
-						key_table[0x41 + i] = (char) (Gfx_Key_A + i);
+						win32_gfx_state.key_table[0x41 + i] = (char) (Gfx_Key_A + i);
 					}
 
 					for (U64 i = 0; i < 12; ++i)
 					{
-						key_table[VK_F1 + i] = (char) (Gfx_Key_F1 + i);
+						win32_gfx_state.key_table[VK_F1 + i] = (char) (Gfx_Key_F1 + i);
 					}
 
-					key_table[VK_BACK]    = Gfx_Key_Backspace;
-					key_table[VK_SPACE]   = Gfx_Key_Space;
-					key_table[VK_MENU]    = Gfx_Key_Alt;
-					key_table[VK_LWIN]    = Gfx_Key_OS;
-					key_table[VK_RWIN]    = Gfx_Key_OS;
-					key_table[VK_TAB]     = Gfx_Key_Tab;
-					key_table[VK_RETURN]  = Gfx_Key_Return;
-					key_table[VK_SHIFT]   = Gfx_Key_Shift;
-					key_table[VK_CONTROL] = Gfx_Key_Control;
-					key_table[VK_ESCAPE]  = Gfx_Key_Escape;
-					key_table[VK_PRIOR]   = Gfx_Key_PageUp;
-					key_table[VK_NEXT]    = Gfx_Key_PageDown;
-					key_table[VK_END]     = Gfx_Key_End;
-					key_table[VK_HOME]    = Gfx_Key_Home;
-					key_table[VK_LEFT]    = Gfx_Key_Left;
-					key_table[VK_RIGHT]   = Gfx_Key_Right;
-					key_table[VK_UP]      = Gfx_Key_Up;
-					key_table[VK_DOWN]    = Gfx_Key_Down;
-					key_table[VK_DELETE]  = Gfx_Key_Delete;
-					key_table[VK_LBUTTON] = Gfx_Key_MouseLeft;
-					key_table[VK_RBUTTON] = Gfx_Key_MouseRight;
-					key_table[VK_MBUTTON] = Gfx_Key_MouseMiddle;
+					win32_gfx_state.key_table[VK_BACK]    = Gfx_Key_Backspace;
+					win32_gfx_state.key_table[VK_SPACE]   = Gfx_Key_Space;
+					win32_gfx_state.key_table[VK_MENU]    = Gfx_Key_Alt;
+					win32_gfx_state.key_table[VK_LWIN]    = Gfx_Key_OS;
+					win32_gfx_state.key_table[VK_RWIN]    = Gfx_Key_OS;
+					win32_gfx_state.key_table[VK_TAB]     = Gfx_Key_Tab;
+					win32_gfx_state.key_table[VK_RETURN]  = Gfx_Key_Return;
+					win32_gfx_state.key_table[VK_SHIFT]   = Gfx_Key_Shift;
+					win32_gfx_state.key_table[VK_CONTROL] = Gfx_Key_Control;
+					win32_gfx_state.key_table[VK_ESCAPE]  = Gfx_Key_Escape;
+					win32_gfx_state.key_table[VK_PRIOR]   = Gfx_Key_PageUp;
+					win32_gfx_state.key_table[VK_NEXT]    = Gfx_Key_PageDown;
+					win32_gfx_state.key_table[VK_END]     = Gfx_Key_End;
+					win32_gfx_state.key_table[VK_HOME]    = Gfx_Key_Home;
+					win32_gfx_state.key_table[VK_LEFT]    = Gfx_Key_Left;
+					win32_gfx_state.key_table[VK_RIGHT]   = Gfx_Key_Right;
+					win32_gfx_state.key_table[VK_UP]      = Gfx_Key_Up;
+					win32_gfx_state.key_table[VK_DOWN]    = Gfx_Key_Down;
+					win32_gfx_state.key_table[VK_DELETE]  = Gfx_Key_Delete;
+					win32_gfx_state.key_table[VK_LBUTTON] = Gfx_Key_MouseLeft;
+					win32_gfx_state.key_table[VK_RBUTTON] = Gfx_Key_MouseRight;
+					win32_gfx_state.key_table[VK_MBUTTON] = Gfx_Key_MouseMiddle;
 
-					key_table_initialized = true;
+					win32_gfx_state.key_table_initialized = true;
 				}
 
 				// NOTE(hampus): Don't repeat key down/up messages
@@ -273,7 +269,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 					// by the mouse.
 					if (event->key == Gfx_Key_Null)
 					{
-						event->key = key_table[vk_code];
+						event->key = win32_gfx_state.key_table[vk_code];
 					}
 
 					B32 up_message = (message.message == WM_SYSKEYUP || message.message == WM_KEYUP || message.message == WM_LBUTTONUP || message.message == WM_RBUTTONUP || message.message == WM_MBUTTONUP);

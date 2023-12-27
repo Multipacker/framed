@@ -420,7 +420,7 @@ os_file_delete_directory(Str8 path)
 internal Str16
 win32_str16_from_wchar(WCHAR *wide_char)
 {
-	Str16 result = { 0 };
+	Str16 result = {0};
 	result.data = wide_char;
 	while (*wide_char++)
 	{

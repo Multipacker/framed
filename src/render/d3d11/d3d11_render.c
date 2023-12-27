@@ -7,25 +7,6 @@
 
 #include <intrin.h>
 
-internal F32
-f32_pow_intrin(F32 a, F32 b)
-{
-	F32 result = _mm_cvtss_f32(_mm_pow_ps(_mm_set1_ps(a), _mm_set1_ps(b)));
-	return(result);
-}
-
-internal Vec4F32
-linear_from_srgb(Vec4F32 c)
-{
-	F32 gamma = 2.2f;
-	Vec4F32 result = c;
-	result.r = f32_pow_intrin(c.r, gamma);
-	result.g = f32_pow_intrin(c.g, gamma);
-	result.b = f32_pow_intrin(c.b, gamma);
-	result.a = c.a;
-	return(result);
-}
-
 internal D3D11_ClipRect *
 d3d11_top_clip(R_Context *renderer)
 {
@@ -434,7 +415,7 @@ render_backend_end(R_Context *renderer)
 		};
 
 		R_RenderStats *stats = d3d11_get_current_stats(renderer);
-		Vec4F32 bg_color = linear_from_srgb(v4f32(0.1f, 0.2f, 0.3f, 1.f));
+		Vec4F32 bg_color = vec4f32_srgb_to_linear(v4f32(0.1f, 0.2f, 0.3f, 1.f));
 
 		FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
 		ID3D11DeviceContext_ClearRenderTargetView(backend->context, backend->render_target_view, color);

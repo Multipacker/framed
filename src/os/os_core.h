@@ -89,6 +89,4 @@ internal VoidFunction *os_library_load_function(OS_Library library, Str8 name);
 
 internal S32 os_main(Str8List arguments);
 
-
-
 #endif // OS_ESSENTIAL_H

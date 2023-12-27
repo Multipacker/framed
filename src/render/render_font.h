@@ -53,12 +53,6 @@ struct R_Glyph
 	Vec2F32 bearing_in_pixels;
 	F32 advance_width;
 	R_TextureSlice slice;
-	// NOTE(hampus): This is needed here so we can easily
-	// free the region again
-		// TODO(hampus): Remove this. Only actually
-		// keep the stuff that the renderer needs to
-		// render a glyph
-	R_FontAtlasRegion font_atlas_region;
 };
 
 typedef struct R_GlyphIndexNode R_GlyphIndexNode;
@@ -70,7 +64,7 @@ struct R_GlyphIndexNode
 };
 
 typedef struct R_GlyphBucket R_GlyphBucket;
-struct  R_GlyphBucket
+struct R_GlyphBucket
 {
 	R_GlyphIndexNode *first;
 	R_GlyphIndexNode *last;
@@ -85,6 +79,9 @@ struct R_Font
 	Arena *arena;
 	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
+	// NOTE(hampus): This is needed here so we can easily
+	// free the region again
+	R_FontAtlasRegion *font_atlas_regions;
 	R_FontAtlasRegion empty_font_atlas_region;
 	F32 max_ascent;
 	F32 max_descent;

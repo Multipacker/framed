@@ -12,7 +12,8 @@ typedef struct Win32_Gfx_State Win32_Gfx_State;
 struct Win32_Gfx_State
 {
 	Gfx_Context context;
-	U32 placeholder;
+	B32 key_table_initialized;
+	U8  key_table[128];
 };
 
 #endif // WIN32_GFX_CORE_H
