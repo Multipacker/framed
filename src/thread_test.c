@@ -56,7 +56,7 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 	B32 show_log = false;
 	F32 log_offset = 0;
 
@@ -80,7 +80,7 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyPress:
 				{
-					log_info("Gfx_EventKind_KeyPress: %d", event->key);
+					//log_info("Gfx_EventKind_KeyPress: %d", event->key);
 					if (event->key == Gfx_Key_F11)
 					{
 						gfx_toggle_fullscreen(&gfx);
@@ -93,23 +93,26 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_KeyRelease:
 				{
-					log_info("Gfx_EventKind_KeyRelease: %d", event->key);
+					//log_info("Gfx_EventKind_KeyRelease: %d", event->key);
 				} break;
 
 				case Gfx_EventKind_Char:
 				{
-					log_info("Gfx_EventKind_Char");
+					//log_info("Gfx_EventKind_Char");
 				} break;
 
 				case Gfx_EventKind_Scroll:
 				{
 					//log_info("Gfx_EventKind_Scroll: %d", (U32) event->scroll.y);
-					log_offset = f32_max(0, log_offset + 10 * event->scroll.y);
+					if (show_log)
+					{
+						log_offset = f32_max(0, log_offset + 10 * event->scroll.y);
+					}
 				} break;
 
 				case Gfx_EventKind_Resize:
 				{
-					log_info("Gfx_EventKind_Resize");
+					//log_info("Gfx_EventKind_Resize");
 				} break;
 
 				invalid_case;
@@ -151,6 +154,8 @@ os_main(Str8List arguments)
 		}
 
 		log_update_entries(1000);
+
+		render_text(renderer, v2f32(100, 100), str8_lit("Hello,\nworld!"), font, v4f32(1, 1, 1, 1));
 
 		render_end(renderer);
 
