@@ -108,7 +108,7 @@ log_init(Str8 log_file)
 	logger->queue = push_array_zero(logger->arena, Log_QueueEntry, LOG_QUEUE_SIZE);
 	os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
 
-	os_create_thread(log_flusher_proc, 0);
+	os_thread_create(log_flusher_proc, 0);
 }
 
 internal Void

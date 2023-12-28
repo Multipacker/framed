@@ -877,7 +877,7 @@ linux_thread_proc(Void *raw_arguments)
 }
 
 internal Void
-os_create_thread(ThreadProc *proc, Void *data)
+os_thread_create(ThreadProc *proc, Void *data)
 {
 	Linux_ThreadArguments *arguments = os_memory_reserve(sizeof(Linux_ThreadArguments));
 	os_memory_commit(arguments, sizeof(Linux_ThreadArguments));

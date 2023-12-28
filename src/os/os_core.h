@@ -96,7 +96,7 @@ internal Void os_semaphore_destroy(OS_Semaphore *handle);
 internal Void os_semaphore_signal(OS_Semaphore *handle);
 internal Void os_semaphore_wait(OS_Semaphore *handle);
 
-internal Void os_create_thread(ThreadProc *proc, Void *data);
+internal Void os_thread_create(ThreadProc *proc, Void *data);
 
 internal S32 os_main(Str8List arguments);
 
