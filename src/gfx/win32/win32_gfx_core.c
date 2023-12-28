@@ -3,7 +3,7 @@
 // - Stop the program from pausing during resize
 // - Test on laptop
 
-global Win32_Gfx_State win32_gfx_state;
+global volatile Win32_Gfx_State win32_gfx_state;
 
 DWORD main_thread_id;
 
