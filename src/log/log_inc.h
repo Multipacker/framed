@@ -12,26 +12,14 @@ enum Log_Level
 	Log_Level_COUNT,
 };
 
-typedef struct Log_Entry Log_Entry;
-struct Log_Entry
+typedef struct Log_QueueEntry Log_QueueEntry;
+struct Log_QueueEntry
 {
-	Log_Entry *next;
-	Log_Entry *prev;
-	Log_Level level;
-	DateTime time;
-	Str8 message;
-};
-
-typedef struct Log_EntryList Log_EntryList;
-struct Log_EntryList
-{
-	Log_Entry *first;
-	Log_Entry *last;
-	U64 count;
+	B32 volatile is_valid;
+	U8 message[512];
 };
 
 internal Void log_init(Str8 log_file);
-internal Void log_flush(Void);
 
 #define log_info(...)    log_message(Log_Level_Info,    __FILE__, __LINE__, __VA_ARGS__)
 #define log_warning(...) log_message(Log_Level_Warning, __FILE__, __LINE__, __VA_ARGS__)
@@ -44,6 +32,7 @@ internal Void log_flush(Void);
 
 internal Void log_message(Log_Level level, CStr file, U32 line, CStr format, ...);
 
-internal Log_EntryList log_get_entries(Arena *arena);
+internal Log_QueueEntry *log_get_entries(U32 *entry_count);
+internal Void log_update_entries(U32 keep_count);
 
 #endif // LOGGING_INC_H

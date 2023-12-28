@@ -33,6 +33,7 @@ os_main(Str8List arguments)
 
 	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
 	B32 show_log = false;
+	F32 log_offset = 0;
 
 	B32 running = true;
 	while (running)
@@ -77,7 +78,8 @@ os_main(Str8List arguments)
 
 				case Gfx_EventKind_Scroll:
 				{
-					log_info("Gfx_EventKind_Scroll: %d", (U32) event->scroll.y);
+					//log_info("Gfx_EventKind_Scroll: %d", (U32) event->scroll.y);
+					log_offset = f32_max(0, log_offset + 10 * event->scroll.y);
 				} break;
 
 				case Gfx_EventKind_Resize:
@@ -107,34 +109,37 @@ os_main(Str8List arguments)
 			Vec2U32 client_area = gfx_get_window_client_area(&gfx);
 
 			Vec2F32 log_pos  = v2f32(0.0, 0.0);
-			Vec2F32 log_size = v2f32((F32) client_area.width, 200.0);
+			Vec2F32 log_size = v2f32((F32) client_area.width, 300.0);
 
 			render_rect(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
 			render_push_clip(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), false);
-
-			Log_EntryList log_entries = log_get_entries(current_arena);
-
 			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
 
 			R_Font *real_font = render_font_from_key(renderer, font);
-			F32 y_offset = log_size.height - real_font->line_height;
-			for (Log_Entry *entry = log_entries.first; entry; entry = entry->next)
+			F32 y_offset = log_size.height - real_font->line_height + log_offset;
+
+			U32 entry_count = 0;
+			Log_QueueEntry *entries = log_get_entries(&entry_count);
+			for (S32 i = (S32) entry_count - 1; i >= 0; --i)
 			{
-				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), entry->message, font, v4f32(1, 1, 1, 1));
-				Vec2F32 size = render_measure_text(real_font, entry->message);
+				Str8 message = str8_cstr((CStr) entries[i].message);
+				--message.size; // NOTE(simon): Remove the newline.
+
+				render_text(renderer, v2f32_add_v2f32(log_pos, v2f32(0, y_offset)), message, font, v4f32(1, 1, 1, 1));
+				Vec2F32 size = render_measure_text(real_font, message);
 				y_offset -= size.height;
 			}
 
 			render_pop_clip(renderer);
 		}
 
+		log_update_entries(1000);
+
 		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 	}
-
-	log_flush();
 
 	return(0);
 }

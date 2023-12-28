@@ -1,68 +1,122 @@
-// NOTE(simon): Deliberately using small values to test the circular buffer
-#define LOGGER_MINIMUM_BUFFER_SIZE megabytes(1)
-#define LOGGER_MINIMUM_FLUSH_SIZE  kilobytes(4)
+/*
+ * TODO(simon):
+ *  [ ] Store the raw data in the user availible buffer and convert it to a
+ *      string on demand. Note that this currently crashes inside of
+ *      stb_vsnprintf and that thread names need to a deep copy.
+ *  [ ] Only wait on the semaphore when it is strictly needed, like when we
+ *      have run out of entries.
+ */
+
+#define LOG_QUEUE_SIZE (1 << 9)
+#define LOG_QUEUE_MASK (LOG_QUEUE_SIZE - 1)
+
+#define LOG_BUFFER_SIZE (1 << 13)
+#define LOG_BUFFER_MASK (LOG_BUFFER_SIZE - 1)
 
 typedef struct Logger Logger;
 struct Logger
 {
-	OS_CircularBuffer buffer;
-	U8 *data;
-	U64 write_index;
-	U64 oldest_entry;
-
-	U64 flush_start;
-	U64 next_flush_mark;
-
+	Arena *arena;
 	OS_File log_file;
+
+	OS_Semaphore semaphore;
+
+	Log_QueueEntry *buffer;
+	U32 volatile buffer_write_index;
+	U32 volatile buffer_read_index;
+
+	Log_QueueEntry *queue;
+	U32 volatile queue_write_index;
+	U32 volatile queue_read_index;
 };
 
 global Logger global_logger;
+
+internal Str8
+log_format_entry(Arena *arena, DateTime time, Log_Level level, Str8 thread_name, CStr file, U32 line, Str8 message)
+{
+	CStr cstr_level = "";
+	switch (level)
+	{
+		case Log_Level_Info:    cstr_level = "INFO";    break;
+		case Log_Level_Warning: cstr_level = "WARNING"; break;
+		case Log_Level_Error:   cstr_level = "ERROR";   break;
+		case Log_Level_Trace:   cstr_level = "TRACE";   break;
+		invalid_case;
+	}
+
+	Str8 result = str8_pushf(
+		arena,
+		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %"PRISTR8" %s:%u: %"PRISTR8"\n",
+		time.year, time.month + 1, time.day + 1,
+		time.hour, time.minute, time.second, time.millisecond,
+		cstr_level,
+		str8_expand(thread_name),
+		file, line,
+		str8_expand(message)
+	);
+
+	return(result);
+}
+
+internal Void *
+log_flusher_proc(Void *argument)
+{
+	Logger *logger = &global_logger;
+
+	for (;;)
+	{
+		// TODO(simon): Only wait if we don't have an entries to do.
+		os_semaphore_wait(&logger->semaphore);
+
+		if (logger->queue_write_index - logger->queue_read_index != 0)
+		{
+			Log_QueueEntry *waiting_entry = &logger->queue[logger->queue_read_index & LOG_QUEUE_MASK];
+			while (!waiting_entry->is_valid)
+			{
+				// NOTE(simon): Busy wait for the entry to become valid.
+			}
+			waiting_entry->is_valid = false;
+			Log_QueueEntry entry = *waiting_entry;
+			memory_fence();
+			++logger->queue_read_index;
+
+			// NOTE(simon): Potentially save the entry for later retrieval.
+			if (logger->buffer_write_index < LOG_BUFFER_SIZE)
+			{
+				logger->buffer[logger->buffer_write_index] = entry;
+				memory_fence();
+				// TODO(simon): There is a possibility that
+				// `log_update_entries` is called *here*, causing the increment
+				// to point one past the valid entries.
+				++logger->buffer_write_index;
+			}
+
+			os_file_stream_write(logger->log_file, str8_cstr((CStr) entry.message));
+		}
+	}
+
+	return(0);
+}
 
 internal Void
 log_init(Str8 log_file)
 {
 	Logger *logger = &global_logger;
 
-	logger->buffer = os_circular_buffer_allocate(LOGGER_MINIMUM_BUFFER_SIZE, 3);
-	logger->data = logger->buffer.data + logger->buffer.size;
-	logger->next_flush_mark = LOGGER_MINIMUM_FLUSH_SIZE;
+	logger->arena = arena_create();
+	os_semaphore_create(&logger->semaphore, 0);
+	logger->buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);
+	logger->queue = push_array_zero(logger->arena, Log_QueueEntry, LOG_QUEUE_SIZE);
 	os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
-}
 
-internal Void
-log_flush(Void)
-{
-	Logger *logger = &global_logger;
-
-	// NOTE(simon): Do we anything to flush?
-	if (!logger->buffer.data)
-	{
-		return;
-	}
-
-	U8 *start = &logger->data[logger->flush_start % logger->buffer.size];
-	U8 *opl   = &logger->data[logger->write_index % logger->buffer.size];
-	if (opl < start)
-	{
-		opl += logger->buffer.size;
-	}
-
-	os_file_stream_write(logger->log_file, str8_range(start, opl));
-
-	os_file_stream_close(logger->log_file);
-	os_circular_buffer_free(logger->buffer);
+	os_create_thread(log_flusher_proc);
 }
 
 internal Void
 log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 {
 	Logger *logger = &global_logger;
-
-	// NOTE(simon): Can we log anything?
-	if (!logger->buffer.data)
-	{
-		return;
-	}
 
 	Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -75,91 +129,51 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	Str8 message = str8_pushfv(scratch.arena, format, args);
 	va_end(args);
 
-	CStr cstr_level = "";
-	switch (level)
+	Str8 log_entry = log_format_entry(scratch.arena, time, level, thread_name, file, line, message);
+
+	U32 queue_index = u32_atomic_add(&logger->queue_write_index, 1);
+	while (queue_index - logger->queue_read_index >= LOG_QUEUE_SIZE)
 	{
-		case Log_Level_Info:    cstr_level = "INFO";    break;
-		case Log_Level_Warning: cstr_level = "WARNING"; break;
-		case Log_Level_Error:   cstr_level = "ERROR";   break;
-		case Log_Level_Trace:   cstr_level = "TRACE";   break;
-		invalid_case;
+		// NOTE(simon): The queue is full, so busy wait. This should not be
+		// that common.
 	}
 
-	Str8 log_entry = str8_pushf(
-		scratch.arena,
-		"[%s] %d-%.2u-%.2u %.2u:%.2u:%.2u.%u %"PRISTR8"@%s:%u: %"PRISTR8"\n",
-		cstr_level,
-		time.year, time.month + 1, time.day + 1,
-		time.hour, time.minute, time.second, time.millisecond,
-		str8_expand(thread_name),
-		file, line,
-		str8_expand(message)
-	);
+	Log_QueueEntry *entry = &logger->queue[queue_index & LOG_QUEUE_MASK];
 
-	assert(log_entry.size < logger->buffer.size);
+	assert(log_entry.size + 1 <= array_count(entry->message));
 
-	U64 write_index = logger->write_index;
-	logger->write_index += log_entry.size;
+	memory_copy(entry->message, log_entry.data, log_entry.size);
+	entry->message[log_entry.size] = 0;
 
-	if (logger->write_index - logger->oldest_entry > logger->buffer.size)
-	{
-		while (logger->oldest_entry < logger->write_index && logger->data[logger->oldest_entry % logger->buffer.size - 1] != '\n')
-		{
-			++logger->oldest_entry;
-		}
-	}
+	// NOTE(simon): Make sure all the data of the log entry is written before
+	// we mark it as valid.
+	memory_fence();
 
-	memory_copy(&logger->data[write_index % logger->buffer.size], log_entry.data, log_entry.size);
-
-	if (log_entry.size > logger->next_flush_mark - write_index)
-	{
-		U8 *start = &logger->data[logger->flush_start % logger->buffer.size];
-		U8 *opl   = &logger->data[(write_index + log_entry.size) % logger->buffer.size];
-		if (opl < start)
-		{
-			opl += logger->buffer.size;
-		}
-
-		os_file_stream_write(logger->log_file, str8_range(start, opl));
-
-		logger->flush_start     = write_index + log_entry.size;
-		logger->next_flush_mark = logger->flush_start + LOGGER_MINIMUM_FLUSH_SIZE;
-	}
+	entry->is_valid = true;
+	os_semaphore_signal(&logger->semaphore);
 
 	release_scratch(scratch);
 }
 
-internal Log_EntryList
-log_get_entries(Arena *arena)
+internal Log_QueueEntry *
+log_get_entries(U32 *entry_count)
 {
-	Log_EntryList entries = { 0 };
-
 	Logger *logger = &global_logger;
 
-	U8 *oldest = &logger->data[logger->oldest_entry % logger->buffer.size];
-	U8 *opl    = &logger->data[logger->write_index  % logger->buffer.size];
-	if (oldest > opl)
-	{
-		oldest -= logger->buffer.size;
-	}
+	*entry_count = logger->buffer_write_index;
 
-	while (opl > oldest)
-	{
-		U8 *start = opl - 1;
-		while (start > oldest && start[-1] != '\n')
-		{
-			--start;
-		}
+	return(logger->buffer);
+}
 
-		if (start >= oldest)
-		{
-			Log_Entry *entry = push_struct_zero(arena, Log_Entry);
-			entry->message = str8_copy(arena, str8_range(start, opl - 1));
-			dll_push_back(entries.first, entries.last, entry);
-		}
+internal Void
+log_update_entries(U32 keep_count)
+{
+	Logger *logger = &global_logger;
 
-		opl = start;
-	}
+	U32 current_count = logger->buffer_write_index;
+	U32 to_keep = u32_min(keep_count, current_count);
 
-	return(entries);
+	memory_move(logger->buffer, &logger->buffer[current_count - to_keep], to_keep * sizeof(*logger->buffer));
+	memory_fence();
+	logger->buffer_write_index = to_keep;
 }
