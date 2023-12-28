@@ -841,8 +841,8 @@ main(int argument_count, char *arguments[])
 
 	// TODO(simon): Check the return value.
 	pthread_key_create(&linux_tls_key, 0);
-	ThreadContext context = thread_ctx_alloc();
-	thread_set_ctx(&context);
+	ThreadContext *context = thread_ctx_alloc();
+	thread_set_ctx(context);
 
 	thread_set_name(str8_lit("Main"));
 
