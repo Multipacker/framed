@@ -865,11 +865,27 @@ os_semaphore_wait(OS_Semaphore *handle)
 	} while (success == -1 && errno == EINTR);
 }
 
+internal Void *
+linux_thread_proc(Void *raw_arguments)
+{
+	Linux_ThreadArguments arguments = *(Linux_ThreadArguments *) raw_arguments;
+	os_memory_release(raw_arguments, sizeof(Linux_ThreadArguments));
+
+	arguments.proc(arguments.data);
+
+	return(0);
+}
+
 internal Void
 os_create_thread(ThreadProc *proc, Void *data)
 {
+	Linux_ThreadArguments *arguments = os_memory_reserve(sizeof(Linux_ThreadArguments));
+	os_memory_commit(arguments, sizeof(Linux_ThreadArguments));
+	arguments->proc = proc;
+	arguments->data = data;
+
 	pthread_t thread;
-	pthread_create(&thread, 0, proc, 0);
+	pthread_create(&thread, 0, linux_thread_proc, arguments);
 }
 
 int

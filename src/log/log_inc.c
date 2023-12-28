@@ -59,7 +59,7 @@ log_format_entry(Arena *arena, DateTime time, Log_Level level, Str8 thread_name,
 	return(result);
 }
 
-internal Void *
+internal Void
 log_flusher_proc(Void *argument)
 {
 	Logger *logger = &global_logger;
@@ -95,8 +95,6 @@ log_flusher_proc(Void *argument)
 			os_file_stream_write(logger->log_file, str8_cstr((CStr) entry.message));
 		}
 	}
-
-	return(0);
 }
 
 internal Void
@@ -110,7 +108,7 @@ log_init(Str8 log_file)
 	logger->queue = push_array_zero(logger->arena, Log_QueueEntry, LOG_QUEUE_SIZE);
 	os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
 
-	os_create_thread(log_flusher_proc);
+	os_create_thread(log_flusher_proc, 0);
 }
 
 internal Void

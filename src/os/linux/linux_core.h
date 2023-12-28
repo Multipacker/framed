@@ -29,6 +29,13 @@ struct Linux_FileIterator
 	U32 write_index;
 };
 
+typedef struct Linux_ThreadArguments Linux_ThreadArguments;
+struct Linux_ThreadArguments
+{
+	ThreadProc *proc;
+	Void       *data;
+};
+
 struct OS_Semaphore
 {
 	sem_t semaphore;
