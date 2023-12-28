@@ -501,9 +501,9 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 				Arena *arena               = arena_create();
 				result                     = push_struct(arena, R_Font);
 				result->arena              = arena;
-				result->glyphs             = push_array(result->arena, R_Glyph,           face->num_glyphs);
-				result->font_atlas_regions = push_array(result->arena, R_FontAtlasRegion, face->num_glyphs);
-				result->kerning_pairs      = push_array(result->arena, R_KerningPair, face->num_glyphs*face->num_glyphs);
+				result->glyphs             = push_array(result->arena, R_Glyph,           (U64) face->num_glyphs);
+				result->font_atlas_regions = push_array(result->arena, R_FontAtlasRegion, (U64) face->num_glyphs);
+				result->kerning_pairs      = push_array(result->arena, R_KerningPair,     (U64) (face->num_glyphs*face->num_glyphs));
 				result->num_glyphs         = (U32) face->num_glyphs;
 				result->path               = path;
 				result->render_mode        = render_mode;
