@@ -1,19 +1,21 @@
-internal ThreadContext
+internal ThreadContext *
 thread_ctx_init(Str8 name)
 {
-	ThreadContext context = thread_ctx_alloc();
-	thread_set_ctx(&context);
+	ThreadContext *context = thread_ctx_alloc();
+	thread_set_ctx(context);
 	thread_set_name(name);
 	return(context);
 }
 
-internal ThreadContext
+internal ThreadContext *
 thread_ctx_alloc(Void)
 {
-	ThreadContext result = { 0 };
-	for (U32 i = 0; i < array_count(result.scratch_arenas); ++i)
+	Arena *arena = arena_create();
+	ThreadContext *result = push_struct(arena, ThreadContext);
+	result->permanent_arena = arena;
+	for (U32 i = 0; i < array_count(result->scratch_arenas); ++i)
 	{
-		result.scratch_arenas[i] = arena_create();
+		result->scratch_arenas[i] = arena_create();
 	}
 	return(result);
 }

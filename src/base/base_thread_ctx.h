@@ -6,13 +6,14 @@
 typedef struct ThreadContext ThreadContext;
 struct ThreadContext
 {
+	Arena *permanent_arena;
 	Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
 	U8 name[512];
 };
 
-internal ThreadContext  thread_ctx_init(Str8 name);
+internal ThreadContext *thread_ctx_init(Str8 name);
 
-internal ThreadContext  thread_ctx_alloc(Void);
+internal ThreadContext *thread_ctx_alloc(Void);
 internal Void           thread_ctx_release(ThreadContext *tctx);
 internal Void           thread_set_ctx(ThreadContext *tctx);
 internal ThreadContext *thread_get_ctx(Void);
