@@ -8,7 +8,7 @@ struct ThreadContext
 {
 	Arena *permanent_arena;
 	Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
-	U8 name[512];
+	U8 name[32];
 };
 
 internal ThreadContext *thread_ctx_init(Str8 name);
