@@ -5,7 +5,7 @@
 // [x] - Unicode
 // [x] - Caching
 // [x] - New lines
-// [ ] - Kerning
+// [x] - Kerning
 // [ ] - Specify min/max codepoints for loading glyphs
 // [ ] - Subpixel positioning
 // [ ] - Underline & strikethrough
@@ -237,6 +237,9 @@ render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 internal Void
 render_destroy_font(R_Context *renderer, R_Font *font)
 {
+	assert(font);
+	assert(renderer);
+
 	for (U64 i = 0; i < font->num_glyphs; ++i)
 	{
 		R_FontAtlasRegion font_atlas_region = font->font_atlas_regions[i];
@@ -250,6 +253,7 @@ render_destroy_font(R_Context *renderer, R_Font *font)
 	}
 	arena_destroy(font->arena);
 	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
+	log_info("Destroyed font: %"PRISTR8, str8_expand(font->path));
 }
 
 internal Str8
@@ -266,6 +270,9 @@ render_get_ft_error_message(FT_Error err)
 internal B32
 render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U32 codepoint, R_FontRenderMode render_mode)
 {
+	assert(renderer);
+	assert(font);
+
 	U32 bitmap_height = 0;
 	S32 bearing_left  = 0;
 	S32 bearing_top   = 0;
@@ -280,11 +287,9 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 	node->index = index;
 	sll_push_front(bucket->first, node);
 
-	B32 result = true;
-	Str8 error;
+	Str8 error = {0};
 	R_Glyph *glyph = font->glyphs + node->index;
 	R_FontAtlasRegion *atlas_region = font->font_atlas_regions + node->index;
-
 	// NOTE(hampus): Some codepoints may map to the same index
 	if (!atlas_region->node)
 	{
@@ -394,7 +399,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 									*dst_row++ = 0xff;
 								}
 
-								dst += (S32) (renderer->font_atlas->dim.x * 4);
+								 dst += (S32) (renderer->font_atlas->dim.x * 4);
 
 								// NOTE(hampus): Freetype actually adds padding
 								// so the pitch is the correct width to increment
@@ -414,12 +419,16 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 			}
 			else
 			{
-				// TODO(hampus): Logging
+				error = render_get_ft_error_message(ft_render_glyph_error);
+				log_warning("Freetype: %"PRISTR8, str8_expand(error));
+				// TODO(hampus): What to do here?
 			}
 		}
 		else
 		{
-			// TODO(hampus): Logging
+			error = render_get_ft_error_message(ft_load_glyph_error);
+			log_warning("Freetype: %"PRISTR8, str8_expand(error));
+				// TODO(hampus): What to do here?
 		}
 
 		// NOTE(hampus): Adjust the rect region to only cover the bitmap
@@ -447,6 +456,8 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 		glyph->advance_width     = (F32) (face->glyph->advance.x >> 6);
 	}
 
+	B32 result = error.size == 0;
+
 	return(result);
 }
 
@@ -454,9 +465,7 @@ internal S32
 render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 {
 	S32 result = 0;
-
 	result = (S32) ((F32) funit * ((F32) scale / 65536.0f)) >> 6;
-
 	return(result);
 }
 
@@ -468,7 +477,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 
 	FT_Library ft;
 	// NOTE(hampus): 0 indicates a success in freetype, otherwise error
-	Str8 error;
+	Str8 error = {0};
 	FT_Error ft_init_error = FT_Init_FreeType(&ft);
 	if (!ft_init_error)
 	{
@@ -487,15 +496,18 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 			FT_Error ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
 			if (!ft_open_face_error)
 			{
-				Arena *arena = arena_create();
-				result = push_struct(arena, R_Font);
-				result->arena = arena;
-				result->glyphs = push_array(result->arena, R_Glyph, (U64) face->num_glyphs);
-				result->font_atlas_regions = push_array(result->arena, R_FontAtlasRegion, (U64) face->num_glyphs);
 				FT_Select_Charmap(face, ft_encoding_unicode);
-				result->num_glyphs = (U32) face->num_glyphs;
-				result->path = path;
-				result->render_mode = render_mode;
+				U64 num_glyphs_to_load = 128;
+				Arena *arena               = arena_create();
+				result                     = push_struct(arena, R_Font);
+				result->arena              = arena;
+				result->glyphs             = push_array(result->arena, R_Glyph,           face->num_glyphs);
+				result->font_atlas_regions = push_array(result->arena, R_FontAtlasRegion, face->num_glyphs);
+				result->kerning_pairs      = push_array(result->arena, R_KerningPair, face->num_glyphs*face->num_glyphs);
+				result->num_glyphs         = (U32) face->num_glyphs;
+				result->path               = path;
+				result->render_mode        = render_mode;
+
 				Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) font_size << 6, (U32) font_size << 6, (U32) dpi.x, (U32) dpi.y);
 				if (!ft_set_pixel_sizes_error)
@@ -525,7 +537,7 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 						if (render_make_glyph(renderer, result, face, index, charcode, render_mode))
 						{
 							result->num_loaded_glyphs++;
-							if (result->num_loaded_glyphs == 128)
+							if (result->num_loaded_glyphs == num_glyphs_to_load)
 							{
 								break;
 							}
@@ -533,42 +545,72 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 							// this function for some reason
 							// FT_Done_Glyph(face->glyph);
 						}
-						else
-						{
-							// TODO(hampus): Logging
-						}
 
 						charcode = (U32) FT_Get_Next_Char(face, charcode, &index);
 					}
 				}
 				else
 				{
-					// TODO(hampus): Logging
 					error = render_get_ft_error_message(ft_set_pixel_sizes_error);
+					log_error("Freetype: %"PRISTR8, str8_expand(error));
+					// TODO(hampus): What to do here?
+				}
+
+				if (result->has_kerning)
+				{
+					// NOTE(hampus): Get all the kerning pairs
+					U32 index0 = 0;
+					U32 c0 = (U32) FT_Get_First_Char(face, &index0);
+					for (U32 i = 0; i < 128; ++i)
+					{
+						U32 index1 = 0;
+						U32 c1 = (U32) FT_Get_First_Char(face, &index1);
+						for (U32 j = 0; j < 128; ++j)
+						{
+							c1 = (U32) FT_Get_Next_Char(face, c1, &index1);
+							FT_Vector kerning;
+							FT_Get_Kerning(face, index0, index1, FT_KERNING_DEFAULT, &kerning);
+							R_KerningPair *kerning_pair = result->kerning_pairs + c0*128 + c1;
+							kerning_pair->value = (F32)(kerning.x >> 6);
+						}
+						c0 = (U32) FT_Get_Next_Char(face, c0, &index0);
+					}
 				}
 
 				FT_Done_Face(face);
 			}
 			else
 			{
-				// TODO(hampus): Logging
 				error = render_get_ft_error_message(ft_open_face_error);
+				log_error("Freetype: %"PRISTR8, str8_expand(error));
+				// TODO(hampus): What to do here?
 			}
 		}
 		else
 		{
-			// TODO(hampus): Logging
+			log_error("Failed to load font file `%"PRISTR8"`", str8_expand(path));
+			// TODO(hampus): What to do here?
 		}
 
 		FT_Done_FreeType(ft);
 	}
 	else
 	{
-		// TODO(hampus): Logging
 		error = render_get_ft_error_message(ft_init_error);
+		// TODO(hampus): What to do here?
+		log_error("Freetype: %"PRISTR8, str8_expand(error));
 	}
 
 	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
+
+	if (result)
+	{
+		log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(path));
+	}
+	else
+	{
+		log_warning("Failed to load font `%"PRISTR8"`", str8_expand(path));
+	}
 
 	release_scratch(scratch);
 	return(result);
@@ -577,6 +619,9 @@ render_make_font_freetype(R_Context *renderer, S32 font_size, Str8 path, R_FontR
 internal R_Font *
 render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
+	assert(renderer);
+	assert(font_size > 0);
+	assert(path.size > 0);
 	// TODO(hampus): Check the pixel orientation of the monitor.
 	R_Font *font = render_make_font_freetype(renderer, font_size, path, render_mode);
 	return(font);
@@ -585,6 +630,7 @@ render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode
 internal U32
 render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
 {
+	assert(font);
 	U32 index = 0;
 	R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
 
@@ -604,6 +650,12 @@ render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
 internal R_Font *
 render_font_from_key(R_Context *renderer, R_FontKey font_key)
 {
+	assert(renderer);
+	assert(font_key.font_size > 0);
+	assert(font_key.path.size > 0);
+	// TODO(hampus): Iterate the keys instead of the whole fonts
+	// for better cache locality. Will this function be called
+	// many times?
 	R_Font *result = 0;
 	S32 empty_slot = -1;
 	S32 unused_slot = -1;
@@ -644,6 +696,7 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 			assert(unused_slot != -1 && "Cache is hot and full");
 			slot_index_to_fill = unused_slot;
 			render_destroy_font(renderer, renderer->font_cache->fonts[slot_index_to_fill]);
+			log_info("Evicted font `%"PRISTR8"` from the font cache", str8_expand(renderer->font_cache->fonts[slot_index_to_fill]->path));
 		}
 		else
 		{
@@ -653,6 +706,8 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 
 		renderer->font_cache->fonts[slot_index_to_fill] = render_make_font(renderer, (S32) font_key.font_size, font_key.path, R_FontRenderMode_LCD);
 		result = renderer->font_cache->fonts[slot_index_to_fill];
+
+		log_info("Added font `%"PRISTR8"` to the font cache", str8_expand(font_key.path));
 	}
 
 	result->last_frame_index_used = renderer->frame_index;
@@ -679,8 +734,15 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec
 
 		U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-		assert(index != 0);
 		R_Glyph *glyph = font->glyphs + index;
+
+		// TODO(hampus): Remove this if
+		if ((i+1) < text.size)
+		{
+			U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+			R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
+			min.x += kerning_pair->value;
+		}
 
 		F32 xpos = min.x + glyph->bearing_in_pixels.x;
 		F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
@@ -717,8 +779,15 @@ render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey fon
 		{
 			U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-			assert(index != 0);
 			R_Glyph *glyph = font->glyphs + index;
+
+			// TODO(hampus): Remove this if
+			if ((i+1) < text.size)
+			{
+				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+				R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
+				min.x -= kerning_pair->value;
+			}
 
 			F32 xpos = min.x + glyph->bearing_in_pixels.x;
 			F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);

@@ -622,6 +622,15 @@ render_pop_clip(R_Context *renderer)
 	stack_pop(renderer->backend->clip_rect_stack.first);
 }
 
+typedef struct R_D3D11_Texture R_D3D11_Texture;
+struct R_D3D11_Texture
+{
+	ID3D11ShaderResourceView *texture_view;
+	U64 width;
+	U64 height;
+	ID3D11Texture2D *texture;
+};
+
 internal R_Texture
 render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, U32 height, R_ColorSpace color_space)
 {
@@ -706,17 +715,19 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 internal Void
 render_destroy_texture(R_Context *renderer, R_Texture texture)
 {
+	R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *)texture.u64;
 	// TODO(hampus): How to release texture view?
 }
 
 internal Void
 render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
+	R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *)texture.u64;
 	// TODO(hampus): Benchmark these
-	S32 dst_width  = (S32) texture.u64[1];
-	S32 dst_height = (S32) texture.u64[2];
-	ID3D11Resource *resource = (ID3D11Resource *) ptr_from_int(texture.u64[3]);
+	ID3D11Resource *resource = (ID3D11Resource *)d3d11_texture->texture;
 #if 0
+	S32 dst_width  = (S32) d3d11_texture->width;
+	S32 dst_height = (S32) d3d11_texture->height;
 	D3D11_BOX box  = { 0 };
 	box.left       = offset   % dst_width;
 	box.top        = offset   / dst_width;

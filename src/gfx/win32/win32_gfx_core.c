@@ -5,8 +5,6 @@
 
 global volatile Win32_Gfx_State win32_gfx_state;
 
-DWORD main_thread_id;
-
 internal LRESULT CALLBACK
 win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -21,13 +19,24 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		 message == WM_SYSKEYUP ||
 		message == WM_QUIT ||
 		message == WM_DESTROY ||
-		message == WM_CLOSE)
+		message == WM_CLOSE ||
+		message == WM_CHAR ||
+		message == WM_MOUSEWHEEL ||
+		message == WM_LBUTTONDBLCLK ||
+		message == WM_MBUTTONDBLCLK ||
+		message == WM_RBUTTONDBLCLK ||
+		message == WM_MBUTTONUP ||
+		message == WM_MBUTTONDOWN ||
+		message == WM_RBUTTONUP ||
+		message == WM_RBUTTONDOWN ||
+		message == WM_LBUTTONUP ||
+		message == WM_LBUTTONDOWN)
 	{
-		PostThreadMessage(main_thread_id, message, wparam, lparam);
+		PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam);
 	}
 	else
 	{
-	result = DefWindowProcW(hwnd, message, wparam, lparam);
+	result = DefWindowProc(hwnd, message, wparam, lparam);
 	}
 	release_scratch(scratch);
 	return(result);
@@ -46,11 +55,9 @@ struct Win32_WindowCreationData
   DWORD
 win32_gfx_startup_thread(Void *data)
 {
-	ThreadContext context = thread_ctx_alloc();
-	thread_set_ctx(&context);
-	thread_set_name(str8_lit("Events"));
-
 	Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *)data;
+
+	ThreadContext *context = thread_ctx_init(str8_lit("Events"));
 
 	Gfx_Context result = { 0 };
 	Arena_Temporary scratch = get_scratch(0, 0);
@@ -111,10 +118,10 @@ win32_gfx_startup_thread(Void *data)
 internal Gfx_Context
 gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
-	main_thread_id = GetThreadId(GetCurrentThread());
+	win32_gfx_state.main_thread_id = GetThreadId(GetCurrentThread());
 	Win32_WindowCreationData data = {x, y, width, height, title};
 	CreateThread(0, 0, win32_gfx_startup_thread, &data, 0, 0);
-	while (!win32_gfx_state.context.hwnd);
+	while (!win32_gfx_state.context.hwnd && !win32_gfx_state.context.hdc);
 	Gfx_Context result = win32_gfx_state.context;
 	return(result);
 }
@@ -269,7 +276,10 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 					// by the mouse.
 					if (event->key == Gfx_Key_Null)
 					{
+						if (win32_gfx_state.key_table[vk_code] != 0)
+						{
 						event->key = win32_gfx_state.key_table[vk_code];
+						}
 					}
 
 					B32 up_message = (message.message == WM_SYSKEYUP || message.message == WM_KEYUP || message.message == WM_LBUTTONUP || message.message == WM_RBUTTONUP || message.message == WM_MBUTTONUP);

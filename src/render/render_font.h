@@ -73,14 +73,24 @@ struct R_GlyphBucket
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
 #define R_FONT_CACHE_SIZE        8
 
+typedef struct R_KerningPair R_KerningPair;
+struct R_KerningPair
+{
+	F32 value;
+};
+
 typedef struct R_Font R_Font;
 struct R_Font
 {
+	// TODO(hampus): Remove the arena from here and
+	// try to allocate from the renderer arena
 	Arena *arena;
 	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
+	R_KerningPair *kerning_pairs;
+
 	// NOTE(hampus): This is needed here so we can easily
-	// free the region again
+	// free the region again.
 	R_FontAtlasRegion *font_atlas_regions;
 	R_FontAtlasRegion empty_font_atlas_region;
 	F32 max_ascent;
@@ -123,7 +133,7 @@ internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 internal R_Font *render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode);
 internal Void    render_destroy_font(R_Context *renderer, R_Font *font);
 
-internal Void arender_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);
+internal Void render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);
 internal Vec2F32 render_measure_text(R_Font *font, Str8 text);
 
 #endif

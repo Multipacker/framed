@@ -1,16 +1,20 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
+#include "log/log_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
+#include "log/log_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
 internal S32
 os_main(Str8List arguments)
 {
+	log_init(str8_lit("log.txt"));
+
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
 	R_Context *renderer = render_init(&gfx);
@@ -18,6 +22,8 @@ os_main(Str8List arguments)
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
+
+	log_info("Hello");
 
 	U32 frame_index = 0;
 
@@ -69,7 +75,7 @@ os_main(Str8List arguments)
 		render_rect(renderer, v2f32(0, 0), v2f32(2048, 2048), .slice = atlas_slice, .is_subpixel_text = true);
 #endif
 
-		R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 25);
+		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 20);
 
 		Str8 string = str8_lit("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
 													 "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n"
@@ -80,10 +86,13 @@ os_main(Str8List arguments)
 		Vec2F32 dim = render_measure_multiline_text(render_font_from_key(renderer, font), string);
 		render_multiline_text(renderer, v2f32(100, 100), string, font, v4f32(0.9f, 0.9f, 0.9f, 1));
 
+		render_text(renderer, v2f32(500, 500), str8_lit("W.Y.T.F.V.7.9.0."), font, v4f32(1, 1, 1, 1));
+
 		Vec2F32 min = v2f32(500, 500);
+		#if 0
 		render_rect(renderer, min, v2f32_add_v2f32(min, v2f32(200, 100)), .radius = 10, .softness = 1);
 		render_rect(renderer, min, v2f32_add_v2f32(min, v2f32(200, 100)), .color = vec4f32_srgb_to_linear(v4f32(1, 0, 0, 1)), .radius = 10, .softness = 1, .border_thickness = 1);
-
+		#endif
 		render_end(renderer);
 #endif
 
@@ -92,5 +101,8 @@ os_main(Str8List arguments)
 
 		++frame_index;
 	}
+
+	log_flush();
+
 	return(0);
 }

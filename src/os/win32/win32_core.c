@@ -636,8 +636,8 @@ win32_common_main(Void)
 	win32_state.permanent_arena = arena_create();
 
 	win32_state.tls_index = TlsAlloc();
-	ThreadContext context = thread_ctx_alloc();
-	thread_set_ctx(&context);
+	ThreadContext *context = thread_ctx_alloc();
+	thread_set_ctx(context);
 
 	thread_set_name(str8_lit("Main"));
 
