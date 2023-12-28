@@ -42,6 +42,10 @@ struct OS_CircularBuffer
 	U64 handle;
 };
 
+typedef struct OS_Semaphore OS_Semaphore;
+
+typedef Void ThreadProc(Void *);
+
 #define os_handle_is_valid(handle) (!type_is_zero(handle))
 
 internal Void *os_memory_reserve(U64 size);
@@ -86,6 +90,13 @@ internal Void os_sleep_milliseconds(U64 time);
 internal OS_Library    os_library_open(Str8 path);
 internal Void          os_library_close(OS_Library library);
 internal VoidFunction *os_library_load_function(OS_Library library, Str8 name);
+
+internal Void os_semaphore_create(OS_Semaphore *handle, U32 initial_value);
+internal Void os_semaphore_destroy(OS_Semaphore *handle);
+internal Void os_semaphore_signal(OS_Semaphore *handle);
+internal Void os_semaphore_wait(OS_Semaphore *handle);
+
+internal Void os_create_thread(ThreadProc *proc, Void *data);
 
 internal S32 os_main(Str8List arguments);
 

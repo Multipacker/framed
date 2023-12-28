@@ -834,6 +834,44 @@ os_library_load_function(OS_Library library, Str8 name)
 	return(result);
 }
 
+internal Void
+os_semaphore_create(OS_Semaphore *handle, U32 initial_value)
+{
+	assert(initial_value < SEM_VALUE_MAX);
+
+	sem_init(&handle->semaphore, 0, initial_value);
+}
+
+internal Void
+os_semaphore_destroy(OS_Semaphore *handle)
+{
+	sem_destroy(&handle->semaphore);
+}
+
+internal Void
+os_semaphore_signal(OS_Semaphore *handle)
+{
+	sem_post(&handle->semaphore);
+}
+
+internal Void
+os_semaphore_wait(OS_Semaphore *handle)
+{
+	int success = 0;
+	do
+	{
+		errno = 0;
+		success = sem_wait(&handle->semaphore);
+	} while (success == -1 && errno == EINTR);
+}
+
+internal Void
+os_create_thread(ThreadProc *proc, Void *data)
+{
+	pthread_t thread;
+	pthread_create(&thread, 0, proc, 0);
+}
+
 int
 main(int argument_count, char *arguments[])
 {

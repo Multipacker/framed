@@ -1,6 +1,8 @@
 #ifndef LINUX_ESSENTIAL_H
 #define LINUX_ESSENTIAL_H
 
+#include <semaphore.h>
+
 // TODO(simon): Query this on startup, even though this is the most common
 // maximum limit for file name lengths.
 #define LINUX_NAME_MAX 255
@@ -25,6 +27,11 @@ struct Linux_FileIterator
 	U8 buffer[sizeof(Linux_Dirent64) + LINUX_NAME_MAX];
 	U32 read_index;
 	U32 write_index;
+};
+
+struct OS_Semaphore
+{
+	sem_t semaphore;
 };
 
 #endif // LINUX_ESSENTIAL_H
