@@ -160,6 +160,18 @@ render_backend_begin(R_Context *renderer)
 internal Void
 render_backend_end(R_Context *renderer)
 {
+	R_DirtyFontRegionQueue *dirty_font_region_queue = renderer->dirty_font_region_queue;
+	if ((dirty_font_region_queue->queue_read_index - dirty_font_region_queue->queue_write_index) != 0)
+	{
+		RectU32 *entry = &dirty_font_region_queue->queue[dirty_font_region_queue->queue_read_index & FONT_QUEUE_MASK];
+
+		render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
+
+		memory_fence();
+
+		++dirty_font_region_queue->queue_read_index;
+	}
+
     R_BackendContext *backend = renderer->backend;
 	glDisable(GL_SCISSOR_TEST);
 	glClear(GL_COLOR_BUFFER_BIT);

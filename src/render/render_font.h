@@ -114,6 +114,7 @@ struct R_Font
 	U64 last_frame_index_used;
 
 	B32 loaded;
+	B32 loading;
 };
 
 typedef struct R_FontCache R_FontCache;
@@ -133,16 +134,27 @@ struct R_FontKey
 typedef struct R_FontQueueEntry R_FontQueueEntry;
 struct R_FontQueueEntry
 {
-	R_FontQueueEntry *next;
 	R_FontRenderMode render_mode;
 	R_Font *font;
 };
 
+#define FONT_QUEUE_SIZE (1 << 6)
+#define FONT_QUEUE_MASK (FONT_QUEUE_SIZE - 1)
+
 typedef struct R_FontQueue R_FontQueue;
 struct R_FontQueue
 {
-	R_FontQueueEntry *first;
-	R_FontQueueEntry *last;
+	R_FontQueueEntry *queue;
+	U32 volatile queue_write_index;
+	U32 volatile queue_read_index;
+};
+
+typedef struct R_DirtyFontRegionQueue R_DirtyFontRegionQueue;
+struct R_DirtyFontRegionQueue
+{
+	RectU32 *queue;
+	U32 volatile queue_write_index;
+	U32 volatile queue_read_index;
 };
 
 internal Void render_font_loader_thread(Void *data);

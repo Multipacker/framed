@@ -1,8 +1,8 @@
 #ifndef RENDER_ICON_CODEPOINTS_H
 #define RENDER_ICON_CODEPOINTS_H
 
-#define R_ICON_STAR              0xF800
-#define R_ICON_STAR_EMPTY        0x0061
+#define R_ICON_STAR              0xE800
+#define R_ICON_STAR_EMPTY        0xE801
 #define R_ICON_CHECK             0xE802
 #define R_ICON_CROSS             0xE80F
 #define R_ICON_PLUS              0xE810

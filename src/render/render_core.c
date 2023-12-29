@@ -101,7 +101,6 @@ render_get_stats(R_Context *renderer)
 	return(renderer->render_stats[1]);
 }
 
-
 internal R_Context *
 render_init(Gfx_Context *gfx)
 {
@@ -122,7 +121,12 @@ render_init(Gfx_Context *gfx)
 	}
 
 	renderer->font_queue = push_struct(arena, R_FontQueue);
-	renderer->finished_font_queue = push_struct(arena, R_FontQueue);
+	renderer->font_queue->queue = push_array(arena, R_FontQueueEntry, FONT_QUEUE_SIZE);
+
+#if defined(RENDERER_OPENGL)
+	renderer->dirty_font_region_queue = push_struct(arena, R_DirtyFontRegionQueue);
+	renderer->dirty_font_region_queue->queue = push_array(arena, RectU32, FONT_QUEUE_SIZE);
+	#endif
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
 
@@ -140,18 +144,6 @@ render_begin(R_Context *renderer)
 internal Void
 render_end(R_Context *renderer)
 {
-	for (R_FontQueueEntry *entry = renderer->finished_font_queue->first;
-		 entry != 0;
-		 entry = entry->next)
-	{
-
-		render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
-		entry->font->loaded = true;
-	}
-
-	renderer->finished_font_queue->first = 0;
-	renderer->finished_font_queue->last = 0;
-
 	render_backend_end(renderer);
 	renderer->frame_index++;
 	arena_pop_to(renderer->frame_arena, 0);

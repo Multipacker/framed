@@ -25,7 +25,8 @@ os_main(Str8List arguments)
 
 	U32 frame_index = 0;
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -62,7 +63,12 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-		render_text(renderer, v2f32(200, 200), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
+		Str8 string = str8_lit("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
+							   "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n");
+
+		render_character(renderer, v2f32(500, 500), R_ICON_STAR, icon_font, v4f32(1, 1, 1, 1));
+
+		render_text(renderer, v2f32(200, 200), str8_lit("qu"), font, v4f32(1, 1, 1, 1));
 
 		render_end(renderer);
 

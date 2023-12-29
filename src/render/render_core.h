@@ -61,6 +61,7 @@ typedef struct R_BackendContext    R_BackendContext;
 typedef struct R_FontAtlas         R_FontAtlas;
 typedef struct R_FontCache         R_FontCache;
 typedef struct R_FontQueue         R_FontQueue;
+typedef struct R_DirtyFontRegionQueue R_DirtyFontRegionQueue;
 
 typedef struct R_Context R_Context;
 struct R_Context
@@ -73,7 +74,9 @@ struct R_Context
 	R_FontAtlas *font_atlas;
 	R_FontCache *font_cache;
 	R_FontQueue *font_queue;
-	R_FontQueue *finished_font_queue;
+#if defined(RENDERER_OPENGL)
+	R_DirtyFontRegionQueue *dirty_font_region_queue;
+	#endif
 	OS_Semaphore font_loader_semaphore;
 
 	U64 frame_index;
