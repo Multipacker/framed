@@ -104,6 +104,7 @@ struct R_Font
 	U32 num_loaded_glyphs;
 
 	U32 font_size;
+
 	// TODO(hampus): Collapse these somehow
 	Str8 family_name;
 	Str8 style_name;
@@ -117,8 +118,8 @@ struct R_Font
 typedef struct R_FontCache R_FontCache;
 struct R_FontCache
 {
-	U32 slots_used;
-	R_Font *fonts[R_FONT_CACHE_SIZE];
+	U32 entries_used;
+	R_Font entries[R_FONT_CACHE_SIZE];
 };
 
 typedef struct R_FontKey R_FontKey;
@@ -130,7 +131,7 @@ struct R_FontKey
 
 internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 
-internal R_Font *render_make_font(R_Context *renderer, S32 font_size, Str8 path, R_FontRenderMode render_mode);
+internal Void    render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path, R_FontRenderMode render_mode);
 internal Void    render_destroy_font(R_Context *renderer, R_Font *font);
 
 internal Void render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);

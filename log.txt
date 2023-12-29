@@ -1,0 +1,2 @@
+[INFO] 2023-13-30 09:41:25.852 Main@D:\Programmering\profiler\src\render\render_font.c:603: Successfully loaded font `data/fonts/Inter-Regular.ttf`
+[INFO] 2023-13-30 09:41:25.852 Main@D:\Programmering\profiler\src\render\render_font.c:679: Added font `data/fonts/Inter-Regular.ttf` to the font cache

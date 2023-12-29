@@ -75,7 +75,7 @@ arena_push(Arena *arena, U64 size)
 internal Void
 arena_pop_to(Arena *arena, U64 pos)
 {
-	// NOTE(simon): Don't pop the arean state from the arena.
+	// NOTE(simon): Don't pop the arena state from the arena.
 	pos = u64_max(pos, sizeof(Arena));
 
 	if (pos < arena->pos)

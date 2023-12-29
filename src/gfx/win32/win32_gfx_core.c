@@ -1,8 +1,3 @@
-// TODO(hampus):
-// - Window resizing glitching (showing an ancient window for some reason)
-// - Stop the program from pausing during resize
-// - Test on laptop
-
 global volatile Win32_Gfx_State win32_gfx_state;
 
 internal LRESULT CALLBACK

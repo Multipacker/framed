@@ -61,6 +61,16 @@ typedef struct R_BackendContext    R_BackendContext;
 typedef struct R_FontAtlas         R_FontAtlas;
 typedef struct R_FontCache         R_FontCache;
 
+#if 0
+typedef struct R_LoadingFont R_LoadingFont;
+struct R_LoadingFont
+{
+	R_LoadingFont *next;
+	R_FontKey key;
+	R_Font *font;
+};
+#endif
+
 typedef struct R_Context R_Context;
 struct R_Context
 {
@@ -70,6 +80,7 @@ struct R_Context
 	R_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
 	R_FontAtlas *font_atlas;
 	R_FontCache *font_cache;
+	//R_LoadingFont *first_loading_font;
 	U64 frame_index;
 	R_BackendContext *backend;
 };
