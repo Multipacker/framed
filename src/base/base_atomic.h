@@ -7,6 +7,8 @@ internal U32 u32_atomic_add(U32 volatile *location, U32 amount);
 // point this is used.
 #if COMPILER_CLANG || COMPILER_GCC
 #define memory_fence() asm("" ::: "memory")
+#elif COMPILER_CL
+#define  memory_fence()
 #else
 #error "There isn't a memory fence defined for this compiler."
 #endif

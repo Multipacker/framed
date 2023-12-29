@@ -628,6 +628,36 @@ os_library_load_function(OS_Library library, Str8 name)
 	return(result);
 }
 
+internal Void
+os_semaphore_create(OS_Semaphore *handle, U32 initial_value)
+{
+
+}
+
+internal Void
+os_semaphore_destroy(OS_Semaphore *handle)
+{
+
+}
+
+internal Void
+os_semaphore_signal(OS_Semaphore *handle)
+{
+
+}
+
+internal Void
+os_semaphore_wait(OS_Semaphore *handle)
+{
+
+}
+
+internal Void
+os_thread_create(ThreadProc *proc, Void *data)
+{
+
+}
+
 internal S32
 win32_common_main(Void)
 {

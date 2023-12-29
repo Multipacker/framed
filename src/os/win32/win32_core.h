@@ -27,4 +27,9 @@ struct Win32_State
 	DWORD tls_index;
 };
 
+struct OS_Semaphore
+{
+	 U32 semaphore;
+};
+
 #endif // WIN32_ESSENTIAL_H

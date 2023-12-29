@@ -72,7 +72,5 @@ os_main(Str8List arguments)
 		++frame_index;
 	}
 
-	log_flush();
-
 	return(0);
 }
