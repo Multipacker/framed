@@ -3,12 +3,14 @@
 #include "log/log_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
+#include "ui/ui_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 #include "log/log_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
+#include "ui/ui_inc.c"
 
 internal S32
 os_main(Str8List arguments)
@@ -23,10 +25,10 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	U32 frame_index = 0;
-
 	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
+
+	UI_Context *ui = ui_init();
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -63,12 +65,23 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-		Str8 string = str8_lit("Lorem ipsum dolor sit amet, consectetur adipiscing elit.\n"
-							   "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.\n");
+		ui_begin(ui, &events, renderer, font);
 
-		render_character(renderer, v2f32(500, 500), R_ICON_STAR, icon_font, v4f32(1, 1, 1, 1));
+		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+								  UI_BoxFlag_DrawBorder,
+								  str8_lit("Box"));
 
-		render_text(renderer, v2f32(200, 200), str8_lit("qu"), font, v4f32(1, 1, 1, 1));
+		box->semantic_size[Axis2_X] = ui_pixels(50, 1);
+		box->semantic_size[Axis2_Y] = ui_pixels(100, 1);
+
+		UI_Box *box2 = ui_box_make(UI_BoxFlag_DrawBackground |
+								  UI_BoxFlag_DrawBorder,
+								  str8_lit("Box2"));
+
+		box2->semantic_size[Axis2_X] = ui_pixels(50, 1);
+		box2->semantic_size[Axis2_Y] = ui_pixels(50, 1);
+
+		ui_end();
 
 		render_end(renderer);
 
@@ -76,8 +89,6 @@ os_main(Str8List arguments)
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
-
-		++frame_index;
 	}
 
 	return(0);
