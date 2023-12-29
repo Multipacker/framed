@@ -61,7 +61,6 @@ thread_get_name(Void)
 	return(result);
 }
 
-
 internal Arena_Temporary
 get_scratch(Arena **conflicts, U32 count)
 {

@@ -1,24 +1,22 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
-#include "log/log2_inc.h"
+#include "log/log_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
-#include "log/log2_inc.c"
+#include "log/log_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 
-#include <pthread.h>
-
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
 
-internal Void *
+internal Void
 thread_work(Void *arguments)
 {
-	ThreadContext context = thread_ctx_alloc();
-	thread_set_ctx(&context);
+	ThreadContext *context = thread_ctx_alloc();
+	thread_set_ctx(context);
 
 	U32 thread_index = (U32) int_from_ptr(arguments);
 
@@ -32,8 +30,6 @@ thread_work(Void *arguments)
 	}
 
 	release_scratch(scratch);
-
-	return 0;
 }
 
 internal S32
@@ -41,15 +37,9 @@ os_main(Str8List arguments)
 {
 	log_init(str8_lit("log"));
 
-	pthread_t threads[4];
-	for (U32 i = 0; i < array_count(threads); ++i)
+	for (U32 i = 0; i < 4; ++i)
 	{
-		pthread_create(&threads[i], 0, thread_work, ptr_from_int(i));
-	}
-
-	for (U32 i = 0; i < array_count(threads); ++i)
-	{
-		pthread_join(threads[i], 0);
+		os_thread_create(thread_work, ptr_from_int(i));
 	}
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
