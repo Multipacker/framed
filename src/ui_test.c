@@ -25,7 +25,7 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuibi.ttf"), 16);
 	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
 	UI_Context *ui = ui_init();
@@ -65,31 +65,55 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-		ui_begin(ui, &events, renderer, font);
+		ui_begin(ui, &events, renderer);
 
 		ui_next_size(Axis2_X, ui_pixels(50, 1));
 		ui_next_size(Axis2_Y, ui_pixels(50, 1));
-		ui_box_make(UI_BoxFlag_DrawBackground |
-								  UI_BoxFlag_DrawBorder,
+		UI_Box *test_comm = ui_box_make(UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_DrawBorder |
+					UI_BoxFlag_HotAnimation |
+					UI_BoxFlag_ActiveAnimation,
 								  str8_lit("Box"));
+
+		UI_Comm comm = ui_comm_from_box(test_comm);
+
+		if (comm.pressed)
+		{
+			printf("Hello");
+		}
+
+		ui_next_size(Axis2_X, ui_pixels(100, 1));
+		ui_next_size(Axis2_Y, ui_pixels(100, 1));
+		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+								  UI_BoxFlag_DrawBorder |
+								  UI_BoxFlag_DrawText,
+					str8_lit("Box2"));
+
+		ui_box_equip_display_string(box, str8_lit("Hello!"));
+
+		ui_next_size(Axis2_X, ui_pixels(300, 1));
+		ui_next_size(Axis2_Y, ui_pixels(300, 1));
+		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
+									 UI_BoxFlag_DrawBorder |
+									 UI_BoxFlag_DrawDropShadow,
+									 str8_lit("Parent"));
+#if 1
+
+		ui_push_parent(parent);
+
+		parent->layout_style.child_layout_axis = Axis2_X;
 
 		ui_next_size(Axis2_X, ui_pixels(100, 1));
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
 		ui_box_make(UI_BoxFlag_DrawBackground |
 					UI_BoxFlag_DrawBorder,
-					str8_lit("Box2"));
+								  str8_lit(""));
 
-		ui_next_size(Axis2_X, ui_pixels(300, 1));
-		ui_next_size(Axis2_Y, ui_pixels(300, 1));
-		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
-									 UI_BoxFlag_DrawBorder,
-									 str8_lit("Parent"));
-
-#if 0
-
-		ui_push_parent(parent);
-
-
+		ui_next_size(Axis2_X, ui_pixels(100, 1));
+		ui_next_size(Axis2_Y, ui_pixels(100, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_DrawBorder,
+					str8_lit(""));
 
 		ui_pop_parent();
 		#endif

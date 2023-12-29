@@ -299,6 +299,7 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
 	Vec2F32 result = { 0 };
 	POINT point = { 0 };
 	GetCursorPos(&point);
+	ScreenToClient(gfx->hwnd, &point);
 	result.x = (F32) point.x;
 	result.y = (F32) point.y;
 	return(result);

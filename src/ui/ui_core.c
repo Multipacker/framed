@@ -4,6 +4,9 @@
 // [] - More layout sizes
 // [] - Basic widgets
 // [] - Hover cursor
+// [] - Size violations & strictness
+// [] - Animations
+// [] - Icons
 // [] - Context menu
 // [] - Tooltip
 // [] - Custom draw functions
@@ -230,11 +233,11 @@ ui_init(Void)
 }
 
 internal Void
-ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, R_FontKey font)
+ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 {
 	g_ui_ctx = ui_ctx;
 	g_ui_ctx->renderer = renderer;
-	g_ui_ctx->font = font;
+	g_ui_ctx->event_list = event_list;
 
 	B32 left_mouse_released = false;
 	for (Gfx_Event *node = event_list->first;
@@ -307,26 +310,26 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, R_F
 	}
 
 	// NOTE(hampus): Setup default styling
-
-	Vec4F32 default_color = v4f32(1, 1, 1, 1);
-
 	UI_RectStyle *rect_style = ui_push_rect_style();
-	rect_style->color[0] = default_color;
-	rect_style->color[1] = default_color;
-	rect_style->color[2] = default_color;
-	rect_style->color[3] = default_color;
+	rect_style->color[Corner_TopLeft]     = v4f32(0.2f, 0.2f, 0.2f, 1);
+	rect_style->color[Corner_TopRight]    = v4f32(0.2f, 0.2f, 0.2f, 1);
+	rect_style->color[Corner_BottomLeft]  = v4f32(0.2f, 0.2f, 0.2f, 1);
+	rect_style->color[Corner_BottomRight] = v4f32(0.2f, 0.2f, 0.2f, 1);;
+	rect_style->border_color = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
 	rect_style->border_thickness = 1;
 	rect_style->radies = v4f32(5, 5, 5, 5);
 	rect_style->softness = 1;
 
 	UI_TextStyle *text_style = ui_push_text_style();
-	text_style->color = v4f32(0, 0, 0, 0);
-	text_style->font_size = 15;
+	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
+	text_style->font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->size[Axis2_X] = ui_text_content(1);
 	layout_style->size[Axis2_Y] = ui_text_content(1);
 	layout_style->child_layout_axis = Axis2_Y;
+
+	g_ui_ctx->hot_key = ui_key_null();
 
 	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
 
@@ -356,7 +359,7 @@ ui_text_content(F32 strictness)
 internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, g_ui_ctx->font);
+	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
 	switch (root->layout_style.size[axis].kind)
 	{
 		case UI_SizeKind_Null:
@@ -393,9 +396,8 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	{
 		if (axis == root->parent->layout_style.child_layout_axis)
 		{
-			for (UI_Box *prev = root->prev;
-				 prev != 0;
-				 prev = prev->prev)
+			UI_Box *prev = root->prev;
+			if (prev)
 			{
 				root->computed_rel_position[axis] = prev->computed_rel_position[axis] + prev->computed_size[axis];
 			}
@@ -427,30 +429,98 @@ ui_layout(UI_Box *root)
 	}
 }
 
+internal Vec2F32
+ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign align)
+{
+	Vec2F32 result = {0};
+
+	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
+
+	Vec2F32 text_dim = render_measure_text(font, string);
+
+	switch (align)
+	{
+		case UI_TextAlign_Center:
+		{
+			result = v2f32_div_f32(v2f32_sub_v2f32(rect_dim, text_dim), 2.0f);
+		} break;
+
+		case UI_TextAlign_Right:
+		{
+			result.y = (rect_dim.y - text_dim.y) / 2;
+			result.x = rect_dim.x - text_dim.x;
+		} break;
+
+		case UI_TextAlign_Left:
+		{
+			result.y = (rect_dim.y - text_dim.y) / 2;
+			result.x = rect_dim.x;
+		} break;
+
+		invalid_case;
+	}
+
+	result = v2f32_add_v2f32(result, rect.min);
+
+	return(result);
+}
+
 internal Void
 ui_draw(UI_Box *root)
 {
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
 
+	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 	{
+		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
+		Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
+		R_RectInstance *instance = render_rect(g_ui_ctx->renderer,
+											   min,
+											   max,
+											   .softness = 15, .color = v4f32(0, 0, 0, 1));
+		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 	{
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness);
+		R_RectInstance *instance = 0;
+		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
+			ui_box_is_active(root))
+		{
+			F32 d = 0.4f;
+			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																 v4f32(d, d, d, 0));
+
+		}
+		else if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation) &&
+				 ui_box_is_hot(root))
+		{
+			F32 d = 0.2f;
+			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																 v4f32(d, d, d, 0));
+		}
+		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness);
 		memory_copy_array(instance->colors, rect_style->color);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
-		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
 	{
+		Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, UI_TextAlign_Center);
+		render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 	}
 
 	for (UI_Box *child = root->first;
@@ -484,6 +554,59 @@ internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
 	UI_Comm result = {0};
+	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+
+	if (rectf32_contains_v2f32(box->rect, mouse_pos))
+	{
+		g_ui_ctx->hot_key = box->key;
+		Gfx_EventList *event_list = g_ui_ctx->event_list;
+		for (Gfx_Event *node = event_list->first;
+			 node != 0;
+			 node = node->next)
+		{
+			switch (node->kind)
+			{
+				case Gfx_EventKind_KeyRelease:
+				{
+					switch (node->key)
+					{
+						case Gfx_Key_MouseLeft:
+						{
+							result.released = true;
+							dll_remove(event_list->first, event_list->last, node);
+						} break;
+
+						default:
+						{
+						} break;
+					}
+				} break;
+
+				case Gfx_EventKind_KeyPress:
+				{
+					switch (node->key)
+					{
+						case Gfx_Key_MouseLeft:
+						{
+							result.pressed = true;
+							g_ui_ctx->active_key = box->key;
+							dll_remove(event_list->first, event_list->last, node);
+
+						} break;
+
+						default:
+						{
+						} break;
+					}
+				} break;
+
+				default:
+				{
+				} break;
+			}
+		}
+	}
+
 	return(result);
 }
 
@@ -596,7 +719,10 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->parent = parent;
 	result->flags = flags;
-	result->string = string;
+
+#if !BUILD_MODE_RELEASE
+	result->debug_string = string;
+#endif
 
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();

@@ -65,10 +65,10 @@ struct UI_TextStyle
 	UI_TextStyle *stack_next;
 
 	Vec4F32 color;
-	S32 font_size;
 	UI_TextAlign text_align;
 	F32 text_padding[Axis2_COUNT];
 	U64 icon;
+	 R_FontKey font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
@@ -122,7 +122,10 @@ struct UI_Box
 	RectF32 rect;
 
 	UI_BoxFlags flags;
-	 Str8        string;
+	Str8        string;
+#if !BUILD_MODE_RELEASE
+	Str8        debug_string;
+	#endif
 
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
@@ -138,11 +141,10 @@ struct UI_Comm
 	UI_Box *widget;
 	Vec2F32 mouse;
 	Vec2F32 drag_delta;
-	B8 clicked;
-	B8 double_clicked;
-	B8 right_clicked;
 	B8 pressed;
 	B8 released;
+	B8 double_clicked;
+	B8 right_clicked;
 	B8 dragging;
 	B8 hovering;
 };
@@ -204,8 +206,6 @@ struct UI_Context
 	UI_Key active_key;
 	UI_Key hot_key;
 
-	R_FontKey font;
-
 	Gfx_EventList *event_list;
 	R_Context *renderer;
 
@@ -214,7 +214,7 @@ struct UI_Context
 
 internal UI_Context *ui_init(Void);
 
-internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, R_FontKey font);
+internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer);
 internal Void ui_end(Void);
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);

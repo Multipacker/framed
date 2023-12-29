@@ -786,9 +786,8 @@ render_glyph(R_Context *renderer, Vec2F32 min, U32 index, R_Font *font, Vec4F32 
 }
 
 internal Void
-render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color)
+render_text_internal(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color)
 {
-	R_Font *font = render_font_from_key(renderer, font_key);
 	if (font->loaded)
 	{
 		for (U64 i = 0; i < text.size; ++i)
@@ -808,6 +807,13 @@ render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec
 			min.x += (font->glyphs[index].advance_width);
 		}
 	}
+}
+
+internal Void
+render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color)
+{
+	R_Font *font = render_font_from_key(renderer, font_key);
+	render_text_internal(renderer, min, text, font, color);
 }
 
 internal Void
@@ -875,43 +881,49 @@ render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font
 internal Vec2F32
 render_measure_text(R_Font *font, Str8 text)
 {
-	S32 length = (S32) text.size;
 	Vec2F32 result = { 0 };
-	for (S32 i = 0; i < length; ++i)
+	if (font->loaded)
 	{
-		U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-		R_Glyph *glyph = font->glyphs + index;
-		result.x += (glyph->advance_width);
-	}
+		S32 length = (S32) text.size;
+		for (S32 i = 0; i < length; ++i)
+		{
+			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
+			R_Glyph *glyph = font->glyphs + index;
+			result.x += (glyph->advance_width);
+		}
 
-	result.y = font->line_height;
+		result.y = font->line_height;
+	}
 	return(result);
 }
 
 internal Vec2F32
 render_measure_multiline_text(R_Font *font, Str8 text)
 {
-	S32 length = (S32) text.size;
 	Vec2F32 result = { 0 };
-	F32 max_row_width = 0;
-	F32 row_width = 0;
-	for (S32 i = 0; i < length; ++i)
+	if (font->loaded)
 	{
-		if (text.data[i] == '\n')
+		S32 length = (S32) text.size;
+		F32 max_row_width = 0;
+		F32 row_width = 0;
+		for (S32 i = 0; i < length; ++i)
 		{
-			max_row_width = f32_max(row_width, max_row_width);
-			row_width = 0;
-			result.y += font->line_height;
+			if (text.data[i] == '\n')
+			{
+				max_row_width = f32_max(row_width, max_row_width);
+				row_width = 0;
+				result.y += font->line_height;
+			}
+			else
+			{
+				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
+				R_Glyph *glyph = font->glyphs + index;
+				row_width += (glyph->advance_width);
+			}
 		}
-		else
-		{
-			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-			R_Glyph *glyph = font->glyphs + index;
-			row_width += (glyph->advance_width);
-		}
-	}
 
-	result.y += font->line_height;
-	result.x = max_row_width;
+		result.y += font->line_height;
+		result.x = max_row_width;
+	}
 	return(result);
 }
