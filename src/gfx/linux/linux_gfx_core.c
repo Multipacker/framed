@@ -272,7 +272,7 @@ gfx_get_window_client_area(Gfx_Context *gfx)
 {
 	int width  = 0;
 	int height = 0;
-	SDL_GetWindowSize(gfx->window, &width, &height);
+	SDL_GL_GetDrawableSize(gfx->window, &width, &height);
 	Vec2U32 result = v2u32((U32) width, (U32) height);
 	return(result);
 }
