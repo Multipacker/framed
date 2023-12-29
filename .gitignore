@@ -3,3 +3,4 @@
 /project.4coder
 **/*.h.gch
 /log
+/log.txt
