@@ -67,19 +67,31 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, font);
 
-		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+		ui_next_size(Axis2_X, ui_pixels(50, 1));
+		ui_next_size(Axis2_Y, ui_pixels(50, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder,
 								  str8_lit("Box"));
 
-		box->semantic_size[Axis2_X] = ui_pixels(50, 1);
-		box->semantic_size[Axis2_Y] = ui_pixels(100, 1);
-
-		UI_Box *box2 = ui_box_make(UI_BoxFlag_DrawBackground |
+		ui_next_size(Axis2_X, ui_pixels(100, 1));
+		ui_next_size(Axis2_Y, ui_pixels(100, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder,
-								  str8_lit("Box2"));
+								   str8_lit("Box2"));
 
-		box2->semantic_size[Axis2_X] = ui_pixels(50, 1);
-		box2->semantic_size[Axis2_Y] = ui_pixels(50, 1);
+		ui_next_size(Axis2_X, ui_pixels(300, 1));
+		ui_next_size(Axis2_Y, ui_pixels(300, 1));
+		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
+									 UI_BoxFlag_DrawBorder,
+									 str8_lit("Parent"));
+		#if 0
+
+		ui_push_parent(parent);
+
+
+
+		ui_pop_parent();
+		#endif
 
 		ui_end();
 

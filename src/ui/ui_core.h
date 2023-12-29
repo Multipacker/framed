@@ -53,30 +53,30 @@ struct UI_RectStyle
 	UI_RectStyle *stack_next;
 
 	Vec4F32 color[4];
-	Vec4F32 border_color[4];
+	Vec4F32 border_color;
 	F32 border_thickness;
-	Vec4F32 corner_radius;
-	F32 edge_softness;
+	Vec4F32 radies;
+	F32 softness;
 };
 
 typedef struct UI_TextStyle UI_TextStyle;
 struct UI_TextStyle
 {
-	UI_RectStyle *stack_next;
+	UI_TextStyle *stack_next;
 
 	Vec4F32 color;
 	S32 font_size;
 	UI_TextAlign text_align;
-	Vec2F32 text_padding;
+	F32 text_padding[Axis2_COUNT];
 	U64 icon;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
 struct UI_LayoutStyle
 {
-	UI_RectStyle *stack_next;
+	UI_LayoutStyle *stack_next;
 
-	UI_Size pref_size[Axis2_COUNT];
+	UI_Size size[Axis2_COUNT];
 	F32 relative_pos[Axis2_COUNT];
 	Axis2 child_layout_axis;
 	};
@@ -115,17 +115,18 @@ struct UI_Box
 	UI_Box *hash_prev;
 
 	UI_Key key;
-	U64 last_frame_touched_index;
+	U64    last_frame_touched_index;
 
 	F32 computed_rel_position[Axis2_COUNT];
 	F32 computed_size[Axis2_COUNT];
 	RectF32 rect;
 
 	UI_BoxFlags flags;
-	 Str8 string;
-	UI_Size semantic_size[Axis2_COUNT];
+	 Str8        string;
 
-	Axis2 child_layout_axis;
+	UI_RectStyle   rect_style;
+	UI_TextStyle   text_style;
+	UI_LayoutStyle layout_style;
 
 	F32 hot_t;
 	F32 active_t;
@@ -194,9 +195,9 @@ struct UI_Context
 	UI_ParentStackNode *parent_stack;
 	UI_KeyStackNode    *seed_stack;
 
-	UI_RectStyleStack rect_style_stack;
-	UI_TextStyleStack text_style_stack;
-	UI_LayoutStyleStack layout_style_stack;
+	UI_RectStyleStack  rect_stack;
+	UI_TextStyleStack  text_stack;
+	UI_LayoutStyleStack layout_stack;
 
 	UI_Box *root;
 
@@ -217,6 +218,7 @@ internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context 
 internal Void ui_end(Void);
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
+internal UI_Size ui_text_content(F32 strictness);
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 
@@ -239,5 +241,9 @@ internal UI_Box *ui_pop_parent(Void);
 internal UI_Key ui_top_seed(Void);
 internal UI_Key ui_push_seed(UI_Key key);
 internal UI_Key ui_pop_seed(Void);
+
+#define ui_next_size(axis, sz)         (ui_get_auto_pop_layout_style()->size[axis] = sz)
+#define ui_push_size(axis, sz)         (ui_push_layout_style()->size[axis] = sz)
+#define ui_pop_size()                    (ui_pop_layout_style())
 
 #endif //UI_CORE_H

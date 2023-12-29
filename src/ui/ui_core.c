@@ -76,6 +76,125 @@ ui_box_has_flag(UI_Box *box, UI_BoxFlags flag)
 	return(result);
 }
 
+internal UI_RectStyle *
+ui_top_rect_style(Void)
+{
+	UI_RectStyle *result = g_ui_ctx->rect_stack.first;
+	return(result);
+}
+
+internal UI_RectStyle *
+ui_push_rect_style(Void)
+{
+	UI_RectStyle *rect_style = push_struct(ui_frame_arena(), UI_RectStyle);
+	UI_RectStyle *first = ui_top_rect_style();
+	if (first)
+	{
+		memory_copy_struct(rect_style, first);
+	}
+	rect_style->stack_next = first;
+	g_ui_ctx->rect_stack.first = rect_style;
+
+	return(rect_style);
+}
+
+internal void
+ui_pop_rect_style(Void)
+{
+	g_ui_ctx->rect_stack.first = g_ui_ctx->rect_stack.first->stack_next;
+}
+
+internal UI_RectStyle *
+ui_get_auto_pop_rect_style(Void)
+{
+	UI_RectStyle *rect_style = ui_top_rect_style();
+	if (!g_ui_ctx->rect_stack.auto_pop)
+	{
+		rect_style = ui_push_rect_style();
+		g_ui_ctx->rect_stack.auto_pop = true;
+	}
+	return(rect_style);
+}
+
+internal UI_TextStyle *
+ui_top_text_style(Void)
+{
+	UI_TextStyle *result = g_ui_ctx->text_stack.first;
+	return(result);
+}
+
+internal UI_TextStyle *
+ui_push_text_style(Void)
+{
+	UI_TextStyle *text_style = push_struct(ui_frame_arena(), UI_TextStyle);
+	UI_TextStyle *first = ui_top_text_style();
+	if (first)
+	{
+		memory_copy_struct(text_style, first);
+	}
+	text_style->stack_next = first;
+	g_ui_ctx->text_stack.first = text_style;
+
+	return(text_style);
+}
+
+internal UI_TextStyle *
+ui_pop_text_style(Void)
+{
+	g_ui_ctx->text_stack.first = g_ui_ctx->text_stack.first->stack_next;
+	return(g_ui_ctx->text_stack.first);
+}
+
+internal UI_TextStyle *
+ui_get_auto_pop_text_style(Void)
+{
+	UI_TextStyle *text_style = ui_top_text_style();
+	if (!g_ui_ctx->text_stack.auto_pop)
+	{
+		text_style = ui_push_text_style();
+		g_ui_ctx->text_stack.auto_pop = true;
+	}
+	return(text_style);
+}
+
+internal UI_LayoutStyle *
+ui_top_layout_style(Void)
+{
+	return(g_ui_ctx->layout_stack.first);
+}
+
+internal UI_LayoutStyle *
+ui_push_layout_style(Void)
+{
+	UI_LayoutStyle *layout = push_struct(ui_frame_arena(), UI_LayoutStyle);
+	if (g_ui_ctx->layout_stack.first)
+	{
+		memory_copy_struct(layout, g_ui_ctx->layout_stack.first);
+	}
+	layout->stack_next = g_ui_ctx->layout_stack.first;
+	g_ui_ctx->layout_stack.first = layout;
+
+	return(layout);
+}
+
+internal void
+ui_pop_layout_style(Void)
+{
+	g_ui_ctx->layout_stack.first = g_ui_ctx->layout_stack.first->stack_next;
+}
+
+internal UI_LayoutStyle *
+ui_get_auto_pop_layout_style(Void)
+{
+	UI_LayoutStyle *layout = ui_top_layout_style();
+	if (!g_ui_ctx->layout_stack.auto_pop)
+	{
+		layout = ui_push_layout_style();
+		g_ui_ctx->layout_stack.auto_pop = true;
+	}
+	return(layout);
+}
+
 internal UI_Context *
 ui_init(Void)
 {
@@ -183,10 +302,29 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, R_F
 		}
 	}
 
-	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
+	// NOTE(hampus): Setup default styling
 
-	g_ui_ctx->root->semantic_size[Axis2_X] = ui_pixels(200, 1);
-	g_ui_ctx->root->semantic_size[Axis2_Y] = ui_pixels(200, 1);
+	Vec4F32 default_color = v4f32(1, 1, 1, 1);
+
+	UI_RectStyle *rect_style = ui_push_rect_style();
+	rect_style->color[0] = default_color;
+	rect_style->color[1] = default_color;
+	rect_style->color[2] = default_color;
+	rect_style->color[3] = default_color;
+	rect_style->border_thickness = 1;
+	rect_style->radies = v4f32(5, 5, 5, 5);
+	rect_style->softness = 1;
+
+	UI_TextStyle *text_style = ui_push_text_style();
+	text_style->color = v4f32(0, 0, 0, 0);
+	text_style->font_size = 15;
+
+	UI_LayoutStyle *layout_style = ui_push_layout_style();
+	layout_style->size[Axis2_X] = ui_text_content(1);
+	layout_style->size[Axis2_Y] = ui_text_content(1);
+	layout_style->child_layout_axis = Axis2_Y;
+
+	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
@@ -202,11 +340,20 @@ ui_pixels(F32 value, F32 strictness)
 	return(result);
 }
 
+internal UI_Size
+ui_text_content(F32 strictness)
+{
+	UI_Size result = {0};
+	result.kind = UI_SizeKind_TextContent;
+	result.strictness = strictness;
+	return(result);
+}
+
 internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, g_ui_ctx->font);
-	switch (root->semantic_size[axis].kind)
+	switch (root->layout_style.size[axis].kind)
 	{
 		case UI_SizeKind_Null:
 		{
@@ -215,7 +362,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_Pixels:
 		{
-			root->computed_size[axis] = root->semantic_size[axis].value;
+			root->computed_size[axis] = root->layout_style.size[axis].value;
 		} break;
 
 		case UI_SizeKind_TextContent:
@@ -240,7 +387,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
 	if (root->parent)
 	{
-		if (axis == root->parent->child_layout_axis)
+		if (axis == root->parent->layout_style.child_layout_axis)
 		{
 			for (UI_Box *prev = root->prev;
 				 prev != 0;
@@ -279,18 +426,23 @@ ui_layout(UI_Box *root)
 internal Void
 ui_draw(UI_Box *root)
 {
+	UI_RectStyle *rect_style = &root->rect_style;
+	UI_TextStyle *text_style = &root->text_style;
+
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 	{
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 	{
-		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .color = v4f32(1, 1, 1, 1));
+		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness);
+		memory_copy_array(instance->colors, rect_style->color);
+		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
-		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(0.5f, 0.5f, 0.5f, 1));
+		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
@@ -318,6 +470,9 @@ ui_end(Void)
 	g_ui_ctx->seed_stack = 0;
 	g_ui_ctx->frame_index++;
 	arena_pop_to(ui_frame_arena(), 0);
+	g_ui_ctx->rect_stack.first = 0;
+	g_ui_ctx->text_stack.first = 0;
+	g_ui_ctx->layout_stack.first = 0;
 	g_ui_ctx = 0;
 }
 
@@ -439,6 +594,10 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->flags = flags;
 
+	result->rect_style   = *ui_top_rect_style();
+	result->text_style   = *ui_top_text_style();
+	result->layout_style = *ui_top_layout_style();
+
 	result->last_frame_touched_index = g_ui_ctx->frame_index;
 	return(result);
 }
@@ -466,7 +625,7 @@ ui_box_equip_display_string(UI_Box *box, Str8 string)
 internal Void
 ui_box_equip_child_layout_axis(UI_Box *box, Axis2 axis)
 {
-	box->child_layout_axis = axis;
+	box->layout_style.child_layout_axis = axis;
 }
 
 internal UI_Box *
