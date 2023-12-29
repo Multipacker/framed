@@ -85,14 +85,13 @@ struct R_Font
 	// TODO(hampus): Remove the arena from here and
 	// try to allocate from the renderer arena
 	Arena *arena;
+
 	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
 	R_KerningPair *kerning_pairs;
 
-	// NOTE(hampus): This is needed here so we can easily
-	// free the region again.
+	U32 num_font_atlas_regions;
 	R_FontAtlasRegion *font_atlas_regions;
-	R_FontAtlasRegion empty_font_atlas_region;
 	F32 max_ascent;
 	F32 max_descent;
 
@@ -113,6 +112,8 @@ struct R_Font
 	R_FontRenderMode render_mode;
 
 	U64 last_frame_index_used;
+
+	B32 loaded;
 };
 
 typedef struct R_FontCache R_FontCache;
@@ -128,6 +129,23 @@ struct R_FontKey
 	U32 font_size;
 	Str8 path;
 };
+
+typedef struct R_FontQueueEntry R_FontQueueEntry;
+struct R_FontQueueEntry
+{
+	R_FontQueueEntry *next;
+	R_FontRenderMode render_mode;
+	R_Font *font;
+};
+
+typedef struct R_FontQueue R_FontQueue;
+struct R_FontQueue
+{
+	R_FontQueueEntry *first;
+	R_FontQueueEntry *last;
+};
+
+internal Void render_font_loader_thread(Void *data);
 
 internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 

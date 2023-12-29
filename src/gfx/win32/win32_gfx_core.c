@@ -96,9 +96,8 @@ win32_gfx_startup_thread(Void *data)
 
 	release_scratch(scratch);
 
-#if defined(RENDERER_OPENGL)
-	win32_init_opengl(&result);
-#endif
+	memory_fence();
+
 	win32_gfx_state.context = result;
 
 	for (MSG message; GetMessage(&message, 0, 0, 0);)
@@ -118,6 +117,9 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 	CreateThread(0, 0, win32_gfx_startup_thread, &data, 0, 0);
 	while (!win32_gfx_state.context.hwnd && !win32_gfx_state.context.hdc);
 	Gfx_Context result = win32_gfx_state.context;
+#if defined(RENDERER_OPENGL)
+	win32_init_opengl(&result);
+#endif
 	return(result);
 }
 
