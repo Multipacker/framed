@@ -509,8 +509,8 @@ render_make_font_freetype(R_Context *renderer, R_Font *out_font, S32 font_size, 
 				FT_Select_Charmap(face, ft_encoding_unicode);
 				U64 num_glyphs_to_load = 128;
 				out_font->font_atlas_regions = push_array(out_font->arena, R_FontAtlasRegion, num_glyphs_to_load+1);
-				out_font->glyphs             = push_array(out_font->arena, R_Glyph, face->num_glyphs);
-				out_font->kerning_pairs      = push_array(out_font->arena, R_KerningPair, face->num_glyphs*face->num_glyphs);
+				out_font->glyphs             = push_array(out_font->arena, R_Glyph, (U64) face->num_glyphs);
+				out_font->kerning_pairs      = push_array(out_font->arena, R_KerningPair, (U64) (face->num_glyphs*face->num_glyphs));
 				out_font->num_glyphs         = (U32) face->num_glyphs;
 				out_font->path               = path;
 				out_font->render_mode        = render_mode;
@@ -645,7 +645,7 @@ render_font_loader_thread(Void *data)
 		{
 			R_FontQueueEntry *entry = &font_queue->queue[font_queue->queue_read_index & FONT_QUEUE_MASK];
 
-			render_make_font_freetype(renderer, entry->font, entry->font->font_size, entry->font->path, entry->render_mode);
+			render_make_font_freetype(renderer, entry->font, (S32) entry->font->font_size, entry->font->path, entry->render_mode);
 
 			memory_fence();
 
@@ -680,7 +680,7 @@ render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path
 	R_FontQueueEntry *entry = &font_queue->queue[queue_index & LOG_QUEUE_MASK];
 	entry->font = out_font;
 	entry->render_mode = render_mode;
-	out_font->font_size = font_size;
+	out_font->font_size = (U32) font_size;
 	out_font->path = path;
 	out_font->loading = true;
 
