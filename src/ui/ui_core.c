@@ -38,11 +38,13 @@ ui_box_alloc(Void)
 {
 	assert(g_ui_ctx->box_storage.num_free_boxes > 0);
 	UI_Box *result = (UI_Box *)g_ui_ctx->box_storage.first_free_box;
+	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_FreeBox));
 	g_ui_ctx->box_storage.first_free_box = g_ui_ctx->box_storage.first_free_box->next;
 
 	memory_zero_struct(result);
 
 	g_ui_ctx->box_storage.num_free_boxes--;
+
 	return(result);
 }
 
@@ -53,6 +55,8 @@ ui_box_free(UI_Box *box)
 	free_box->next = g_ui_ctx->box_storage.first_free_box;
 	g_ui_ctx->box_storage.first_free_box = free_box;
 	g_ui_ctx->box_storage.num_free_boxes++;
+
+	ASAN_POISON_MEMORY_REGION(free_box, sizeof(UI_FreeBox));
 }
 
 internal Arena *
@@ -266,37 +270,37 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, R_F
 		while (box)
 		{
 			UI_Box *next = box->hash_next;
-				if (ui_box_is_active(box))
+			if (ui_box_is_active(box))
+			{
+				if (left_mouse_released)
 				{
-					if (left_mouse_released)
-					{
-						g_ui_ctx->active_key = ui_key_null();
-					}
+					g_ui_ctx->active_key = ui_key_null();
+				}
 			}
 
 			B32 evict = box->last_frame_touched_index < (g_ui_ctx->frame_index - 1) ||
 				ui_key_is_null(box->key);
-				if (evict)
+			if (evict)
+			{
+				if (box == g_ui_ctx->box_hash_map[i])
 				{
-					if (box == g_ui_ctx->box_hash_map[i])
-					{
 					g_ui_ctx->box_hash_map[i] = box->hash_next;
-					}
-
-					if (box->hash_next)
-					{
-						box->hash_next->hash_prev = box->hash_prev;
-					}
-
-					if (box->hash_prev)
-					{
-						box->hash_prev->hash_next = box->hash_next;
-					}
-
-					box->hash_next = 0;
-					box->hash_prev = 0;
-					ui_box_free(box);
 				}
+
+				if (box->hash_next)
+				{
+					box->hash_next->hash_prev = box->hash_prev;
+				}
+
+				if (box->hash_prev)
+				{
+					box->hash_prev->hash_next = box->hash_next;
+				}
+
+				box->hash_next = 0;
+				box->hash_prev = 0;
+				ui_box_free(box);
+			}
 
 			box = next;
 		}
@@ -367,7 +371,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_TextContent:
 		{
-	Vec2F32 text_dim = render_measure_text(font, root->string);
+			Vec2F32 text_dim = render_measure_text(font, root->string);
 			root->computed_size[axis] = text_dim.v[axis];
 		} break;
 
@@ -582,17 +586,17 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->first = 0;
 	result->last = 0;
-		UI_Box *parent = ui_top_parent();
+	UI_Box *parent = ui_top_parent();
 
-		if (parent)
-		{
-			// NOTE(hampus): This would not be the case for the root.
-			dll_push_back(parent->first, parent->last, result);
-		}
+	if (parent)
+	{
+		// NOTE(hampus): This would not be the case for the root.
+		dll_push_back(parent->first, parent->last, result);
+	}
 
-		result->parent = parent;
-
+	result->parent = parent;
 	result->flags = flags;
+	result->string = string;
 
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();

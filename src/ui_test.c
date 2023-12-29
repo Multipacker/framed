@@ -76,15 +76,16 @@ os_main(Str8List arguments)
 		ui_next_size(Axis2_X, ui_pixels(100, 1));
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
 		ui_box_make(UI_BoxFlag_DrawBackground |
-								  UI_BoxFlag_DrawBorder,
-								   str8_lit("Box2"));
+					UI_BoxFlag_DrawBorder,
+					str8_lit("Box2"));
 
 		ui_next_size(Axis2_X, ui_pixels(300, 1));
 		ui_next_size(Axis2_Y, ui_pixels(300, 1));
 		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
 									 UI_BoxFlag_DrawBorder,
 									 str8_lit("Parent"));
-		#if 0
+
+#if 0
 
 		ui_push_parent(parent);
 
