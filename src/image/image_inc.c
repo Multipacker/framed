@@ -6,6 +6,14 @@
 //#define PNG_CHUNK_ANCILLARY_BIT (0x20 << 24)
 #define PNG_TYPE(tag) (((tag)[0]) << 0 | ((tag)[1]) << 8 | ((tag)[2]) << 16 | ((tag)[3]) << 24)
 #define PNG_CHUNK_IHDR_SIZE 13
+#define PNG_CHUNK_TYPE_TO_CSTR(type) ((char[5]) { \
+		(char) ((type) >>  0),                    \
+		(char) ((type) >>  8),                    \
+		(char) ((type) >> 16),                    \
+		(char) ((type) >> 24),                    \
+		0,                                        \
+	})
+#define PNG_TYPE_INVALID 0
 
 global U8 png_magic[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, };
 
@@ -13,7 +21,7 @@ typedef struct PNG_Chunk PNG_Chunk;
 struct PNG_Chunk
 {
 	U32 type;
-	Str8 contents;
+	Str8 data;
 	U32 crc;
 };
 
@@ -30,11 +38,13 @@ png_parse_chunk(Str8 *contents)
 		chunk.type = *(U32 *) contents->data;
 		*contents = str8_skip(*contents, sizeof(U32));
 
+		// TODO(simon): Verify type is valid.
+
 		assert(length < S32_MAX);
 
 		if (contents->size >= length + sizeof(U32))
 		{
-			chunk.contents = str8(contents->data, length);
+			chunk.data = str8(contents->data, length);
 			*contents = str8_skip(*contents, length);
 
 			chunk.crc = u32_big_to_local_endian(*(U32 *) contents->data);
@@ -56,110 +66,150 @@ png_parse_chunk(Str8 *contents)
 	return(chunk);
 }
 
-internal Void
-image_maybe_log_unrecognized_chunk(PNG_Chunk chunk)
+typedef struct PNG_IDATNode PNG_IDATNode;
+struct PNG_IDATNode
 {
-	if (!(chunk.type & PNG_CHUNK_ANCILLARY_BIT))
-	{
-		if (chunk.type & PNG_CHUNK_PRIVATE_BIT)
-		{
-			log_error("Unrecognized critical private chunk '%.4s'", (CStr) &chunk.type);
-		}
-		else
-		{
-			log_error("Unrecognized critical public chunk '%.4s'", (CStr) &chunk.type);
-		}
-	}
+	PNG_IDATNode *next;
+	Str8 data;
+};
 
-	if (chunk.type & PNG_CHUNK_RESERVED_BIT)
-	{
-		log_error("Chunk type '%.4s' is reserved", (CStr) &chunk.type);
-	}
-}
+typedef struct PNG_State PNG_State;
+struct PNG_State
+{
+	U32 width;
+	U32 height;
+	PNG_IDATNode *idats;
+};
 
 internal B32
-png_is_valid_IHDR_chunk(PNG_Chunk chunk)
+image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 {
-	if (chunk.type != PNG_TYPE("IHDR"))
+	if (!(contents.size >= sizeof(png_magic) && memory_match(contents.data, png_magic, sizeof(png_magic))))
 	{
-		log_error("Expected 'IHDR' chunk but got '%.4s'", (CStr) &chunk.type);
+		log_error("Invalid magic number");
 		return(false);
 	}
 
-	B32 success = true;
+	contents = str8_skip(contents, sizeof(png_magic));
 
-	if (chunk.contents.size == PNG_CHUNK_IHDR_SIZE)
+	PNG_IDATNode *nodes_first = 0;
+	PNG_IDATNode *nodes_last = 0;
+
+	B32 seen_ihdr = false;
+	for (;;)
 	{
-		U32 width             = u32_big_to_local_endian(*(U32 *) &chunk.contents.data[0]);
-		U32 height            = u32_big_to_local_endian(*(U32 *) &chunk.contents.data[4]);
-		U8 bit_depth          = chunk.contents.data[8];
-		U8 color_type         = chunk.contents.data[9];
-		U8 compression_method = chunk.contents.data[10];
-		U8 filter_method      = chunk.contents.data[11];
-		U8 interlace_method   = chunk.contents.data[12];
-
-		if (!(0 < width && width <= S32_MAX))
+		PNG_Chunk chunk = png_parse_chunk(&contents);
+		switch (chunk.type)
 		{
-			log_error("Width is outside of the permitted range");
-			success = false;
-		}
+			case PNG_TYPE_INVALID:
+			{
+				// NOTE(simon): Either the chunk data was invalid or we
+				// reached the end of the buffer enexpectedly. Both are
+				// signs of data corruption.
+				return(false);
+			} break;
+			case PNG_TYPE("IHDR"):
+			{
+				if (seen_ihdr)
+				{
+					log_error("Duplicate 'IHDR' chunk, corrupted PNG");
+					return(false);
+				}
 
-		if (!(0 < height && height <= S32_MAX))
-		{
-			log_error("Height is outside of the permitted range");
-			success = false;
+				if (chunk.data.size != PNG_CHUNK_IHDR_SIZE)
+				{
+					log_error("Not enough data for 'IHDR' chunk, corrupted PNG");
+					return(false);
+				}
+
+				U32 width             = u32_big_to_local_endian(*(U32 *) &chunk.data.data[0]);
+				U32 height            = u32_big_to_local_endian(*(U32 *) &chunk.data.data[4]);
+				U8 bit_depth          = chunk.data.data[8];
+				U8 color_type         = chunk.data.data[9];
+				U8 compression_method = chunk.data.data[10];
+				U8 filter_method      = chunk.data.data[11];
+				U8 interlace_method   = chunk.data.data[12];
+
+				if (!(0 < width && width <= S32_MAX))
+				{
+					log_error("Width is outside of the permitted range");
+					return(false);
+				}
+
+				if (!(0 < height && height <= S32_MAX))
+				{
+					log_error("Height is outside of the permitted range");
+					return(false);
+				}
+
+				// TODO(simon): Verify other paramters are in range.
+
+				state->width  = width;
+				state->height = height;
+
+				seen_ihdr = true;
+			} break;
+			case PNG_TYPE("IDAT"):
+			{
+				if (!seen_ihdr)
+				{
+					log_error("Expected 'IHDR' chunk but got 'IDAT'.");
+					return(false);
+				}
+
+				PNG_IDATNode *node = push_struct(arena, PNG_IDATNode);
+				node->data = chunk.data;
+
+				queue_push(nodes_first, nodes_last, node);
+			} break;
+			case PNG_TYPE("IEND"):
+			{
+				if (!seen_ihdr)
+				{
+					log_error("Expected 'IHDR' chunk but got 'IEND'.");
+					return(false);
+				}
+
+				if (!nodes_first)
+				{
+					log_error("No image data, corrupted PNG.");
+					return(false);
+				}
+
+				image_data_nodes = nodes_first;
+				return(true);
+			} break;
+			default:
+			{
+				if (!(chunk.type & PNG_CHUNK_ANCILLARY_BIT))
+				{
+					if (chunk.type & PNG_CHUNK_PRIVATE_BIT)
+					{
+						log_error("Unrecognized critical private chunk '%s'.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
+						return(false);
+					}
+					else
+					{
+						log_error("Unrecognized critical public chunk '%s'.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
+						return(false);
+					}
+				}
+
+				if (chunk.type & PNG_CHUNK_RESERVED_BIT)
+				{
+					log_error("Chunk type '%s' is reserved.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
+					return(false);
+				}
+			} break;
 		}
 	}
-	else
-	{
-		log_error("Not enough data for 'IHDR' chunk", (CStr) &chunk.type);
-		success = false;
-	}
-
-	return(success);
 }
 
 internal Void
 image_load(Arena *arena, Str8 contents)
 {
-	if (contents.size >= sizeof(png_magic) && memory_match(contents.data, png_magic, sizeof(png_magic)))
+	if (!image_parse_png_chunks(arena, contents))
 	{
-		contents = str8_skip(contents, sizeof(png_magic));
-
-		PNG_Chunk chunk = png_parse_chunk(&contents);
-		if (png_is_valid_IHDR_chunk(chunk))
-		{
-			for (;;)
-			{
-				chunk = png_parse_chunk(&contents);
-
-				if (chunk.type == 0 || chunk.type == PNG_TYPE("IDAT") || chunk.type == PNG_TYPE("IEND"))
-				{
-					break;
-				}
-				else if (!(chunk.type & PNG_CHUNK_ANCILLARY_BIT))
-				{
-					// TODO(simon): Break out if we find a critical chunk.
-					image_maybe_log_unrecognized_chunk(chunk);
-				}
-			}
-
-			for (; chunk.type == PNG_TYPE("IDAT"); chunk = png_parse_chunk(&contents))
-			{
-				// TODO(simon):
-			}
-
-			if (chunk.type == PNG_TYPE("IEND"))
-			{
-			}
-			else
-			{
-				log_error("Expected 'IEND' chunk but got '%.4s'", (CStr) &chunk.type);
-			}
-		}
-	}
-	else
-	{
-		log_error("Invalid magic number");
+		return;
 	}
 }
