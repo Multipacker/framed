@@ -295,7 +295,8 @@ gfx_swap_buffers(Gfx_Context *gfx)
 internal Vec2F32
 gfx_get_dpi(Gfx_Context *ctx)
 {
-	Vec2F32 dpi = v2f32(96, 96);
-	// TODO(simon): Implement this properly.
+	Vec2F32 dpi = { 0 };
+	int display_index = SDL_GetWindowDisplayIndex(ctx->window);
+	SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
 	return(dpi);
 }
