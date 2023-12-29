@@ -64,6 +64,8 @@ os_main(Str8List arguments)
 
 		render_text(renderer, v2f32(200, 200), str8_lit("Hello, world!"), font, v4f32(1, 1, 1, 1));
 
+		log_update_entries(1000);
+
 		render_end(renderer);
 
 		arena_pop_to(previous_arena, 0);

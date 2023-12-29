@@ -631,31 +631,57 @@ os_library_load_function(OS_Library library, Str8 name)
 internal Void
 os_semaphore_create(OS_Semaphore *handle, U32 initial_value)
 {
-
+	assert(handle);
+	LPCWSTR name = 0;
+	handle->handle = CreateSemaphore(0, initial_value, S32_MAX, name);
 }
 
 internal Void
 os_semaphore_destroy(OS_Semaphore *handle)
 {
-
+	assert(handle);
+	assert(handle->handle != INVALID_HANDLE_VALUE);
+	CloseHandle(handle->handle);
 }
 
 internal Void
 os_semaphore_signal(OS_Semaphore *handle)
 {
-
+	assert(handle);
+	assert(handle->handle != INVALID_HANDLE_VALUE);
+	  LONG previous_count = 0;
+	ReleaseSemaphore(handle->handle, 1, &previous_count);
 }
 
 internal Void
 os_semaphore_wait(OS_Semaphore *handle)
 {
+	assert(handle);
+	assert(handle->handle != INVALID_HANDLE_VALUE);
+	WaitForSingleObject(handle->handle, INFINITE);
+}
 
+DWORD
+win32_thread_proc(Void *raw_arguments)
+{
+	Win32_ThreadArguments arguments = *(Win32_ThreadArguments *) raw_arguments;
+	os_memory_release(raw_arguments, sizeof(Win32_ThreadArguments));
+
+	arguments.proc(arguments.data);
+
+	return(0);
 }
 
 internal Void
 os_thread_create(ThreadProc *proc, Void *data)
 {
+	Win32_ThreadArguments *arguments = os_memory_reserve(sizeof(Win32_ThreadArguments));
+	os_memory_commit(arguments, sizeof(Win32_ThreadArguments));
+	arguments->proc = proc;
+	arguments->data = data;
 
+	 DWORD thread_id;
+	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
 }
 
 internal S32

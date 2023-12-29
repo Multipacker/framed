@@ -27,9 +27,16 @@ struct Win32_State
 	DWORD tls_index;
 };
 
+typedef struct Win32_ThreadArguments Win32_ThreadArguments;
+struct Win32_ThreadArguments
+{
+	ThreadProc *proc;
+	Void       *data;
+};
+
 struct OS_Semaphore
 {
-	 U32 semaphore;
+	 HANDLE handle;
 };
 
 #endif // WIN32_ESSENTIAL_H

@@ -9,7 +9,8 @@ u32_atomic_add(U32 volatile *location, U32 amount)
 #if COMPILER_CLANG || COMPILER_GCC
 	U32 result = __atomic_fetch_add(location, amount, memory_order_acq_rel);
 #elif COMPILER_CL
-	U32 result = 0;
+	// TODO(hampus): Is this cast safe?
+	U32 result = InterlockedExchange((LONG *)location, amount);
 	#else
 #error "There isn't a u32_atomic_add for your compiler."
 #endif
