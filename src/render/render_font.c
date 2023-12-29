@@ -60,7 +60,6 @@ internal Void
 render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
 {
 	dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
-	node->used = true;
 	node->next_free = 0;
 	node->prev_free = 0;
 	atlas->num_free_regions--;
@@ -135,6 +134,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 
 	while (can_halve_size)
 	{
+		node->used = true;
 		// NOTE(hampus): Remove the current node, it will no longer
 		// be free to take because one of its descendants will
 		// be taken.
@@ -193,6 +193,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 
 	node->next_free = 0;
 	node->prev_free = 0;
+	node->used = true;
 	R_FontAtlasRegion result = { node, node->region };
 	return(result);
 }
