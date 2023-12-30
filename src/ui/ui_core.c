@@ -5,7 +5,7 @@
 // [x] - EM sizing
 // [x] - Animations
 // [x] - Icons
-// [x]  - Scrolling
+// [x] - Scrolling
 // []  - Slider, checkbox
 // []  - Clipping rects
 // []  - Size violations & strictness
@@ -21,6 +21,20 @@
 #define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
 
 global UI_Context *g_ui_ctx;
+
+internal Arena *
+ui_permanent_arena(Void)
+{
+	Arena *result = g_ui_ctx->permanent_arena;
+	return(result);
+}
+
+internal Arena *
+ui_frame_arena(Void)
+{
+	Arena *result = g_ui_ctx->frame_arena;
+	return(result);
+}
 
 internal B32
 ui_animations_enabled(Void)
@@ -84,25 +98,26 @@ ui_box_free(UI_Box *box)
 	ASAN_POISON_MEMORY_REGION(free_box, sizeof(UI_FreeBox));
 }
 
-internal Arena *
-ui_permanent_arena(Void)
-{
-	Arena *result = g_ui_ctx->permanent_arena;
-	return(result);
-}
-
-internal Arena *
-ui_frame_arena(Void)
-{
-	Arena *result = g_ui_ctx->frame_arena;
-	return(result);
-}
-
 internal B32
 ui_box_has_flag(UI_Box *box, UI_BoxFlags flag)
 {
 	B32 result = (box->flags & flag) != 0;
 	return(result);
+}
+
+internal Void
+ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent)
+{
+	UI_ClipRectStackNode *node = push_struct(ui_frame_arena(), UI_ClipRectStackNode);
+	node->rect = rect;
+	node->clip_to_parent = clip_to_parent;
+	stack_push(g_ui_ctx->clip_rect_stack.first, node);
+}
+
+internal Void
+ui_pop_clip_rect(Void)
+{
+	stack_pop(g_ui_ctx->clip_rect_stack.first);
 }
 
 internal UI_RectStyle *
@@ -364,6 +379,16 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	g_ui_ctx->hot_key = ui_key_null();
 
+	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
+	Vec2F32 max_clip;
+	max_clip.x = (F32) client_area.x;
+	max_clip.y = (F32) client_area.y;
+
+	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
+	clip_rect->max = max_clip;
+
+	ui_push_clip_rect(clip_rect, false);
+
 	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
@@ -551,6 +576,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 						break;
 					}
 				}
+
 				if (prev)
 				{
 					root->calc_rel_pos[axis] = prev->calc_rel_pos[axis] + prev->calc_size[axis];
@@ -695,6 +721,7 @@ ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAli
 internal Void
 ui_draw(UI_Box *root)
 {
+	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 2.0f*-ui_animation_speed() * g_ui_ctx->dt));
 	if (ui_box_is_active(root))
 	{
@@ -777,6 +804,8 @@ ui_draw(UI_Box *root)
 		}
 	}
 
+	render_pop_clip(g_ui_ctx->renderer);
+
 	for (UI_Box *child = root->first;
 		 child != 0;
 		 child = child->next)
@@ -788,6 +817,7 @@ ui_draw(UI_Box *root)
 internal Void
 ui_end(Void)
 {
+	ui_pop_clip_rect();
 	ui_pop_seed();
 	ui_pop_parent();
 
@@ -796,11 +826,12 @@ ui_end(Void)
 
 	g_ui_ctx->parent_stack = 0;
 	g_ui_ctx->seed_stack = 0;
-	g_ui_ctx->frame_index++;
 	arena_pop_to(ui_frame_arena(), 0);
 	g_ui_ctx->rect_style_stack.first = 0;
 	g_ui_ctx->text_style_stack.first = 0;
 	g_ui_ctx->layout_style_stack.first = 0;
+	g_ui_ctx->clip_rect_stack.first = 0;
+	g_ui_ctx->frame_index++;
 	g_ui_ctx = 0;
 }
 
@@ -893,7 +924,7 @@ ui_comm_from_box(UI_Box *box)
 				{
 					if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
 					{
-						result.scroll.y = -node->scroll.y;
+						result.scroll.y = node->scroll.y;
 						dll_remove(event_list->first, event_list->last, node);
 					}
 				} break;
@@ -1052,6 +1083,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
 
+	result->clip_rect = g_ui_ctx->clip_rect_stack.first;
+
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
 
@@ -1127,12 +1160,22 @@ ui_push_parent(UI_Box *box)
 	UI_ParentStackNode *node = push_struct(ui_frame_arena(), UI_ParentStackNode);
 	node->box = box;
 	stack_push(g_ui_ctx->parent_stack, node);
+	if (ui_box_has_flag(box, UI_BoxFlag_Clip))
+	{
+		// TODO(hampus): Add an option to clip to parent
+		ui_push_clip_rect(&box->rect, false);
+	}
 	return(ui_top_parent());
 }
 
 internal UI_Box *
 ui_pop_parent(Void)
 {
+	UI_Box *parent = ui_top_parent();
+	if (ui_box_has_flag(parent, UI_BoxFlag_Clip))
+	{
+		ui_pop_clip_rect();
+	}
 	stack_pop(g_ui_ctx->parent_stack);
 	return(ui_top_parent());
 }

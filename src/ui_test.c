@@ -165,7 +165,8 @@ os_main(Str8List arguments)
 								 UI_BoxFlag_DrawDropShadow |
 								 UI_BoxFlag_AnimateDim |
 								 UI_BoxFlag_AnimatePos |
-								 UI_BoxFlag_ViewScroll,
+								 UI_BoxFlag_ViewScroll |
+								 UI_BoxFlag_Clip,
 								 str8_lit("Parent"));
 			UI_Comm parent_comm = ui_comm_from_box(parent);
 			parent->scroll.y += parent_comm.scroll.y;
@@ -186,16 +187,17 @@ os_main(Str8List arguments)
 			ui_next_hori_corner_radius(20, 0);
 			ui_next_text_color(v4f32(0, 0, 0.9f, 1));
 			ui_next_text_align(UI_TextAlign_Left);
-			ui_next_width(ui_em(20, 1));
-			ui_next_height(ui_em(30, 1));
+			ui_next_width(ui_em(1, 1));
+			ui_next_height(ui_em(60, 1));
 			ui_next_border_color(v4f32(1, 0, 0, 1));
 			UI_Box *box2 = ui_box_make(UI_BoxFlag_DrawBackground |
 									   UI_BoxFlag_DrawBorder |
-									   UI_BoxFlag_DrawText,
+									   UI_BoxFlag_DrawText |
+									   UI_BoxFlag_FloatingPos,
 									   str8_lit(""));
 			ui_box_equip_display_string(box2, str8_lit("Text color"));
 		}
-
+#if 0
 		ui_row()
 		{
 			for (U64 i = 0; i < 5; ++i)
@@ -216,6 +218,7 @@ os_main(Str8List arguments)
 				ui_spacer(ui_em(0.25f, 1));
 			}
 		}
+#endif
 		ui_end();
 
 		render_end(renderer);

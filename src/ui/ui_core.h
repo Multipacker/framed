@@ -149,6 +149,23 @@ struct UI_LayoutStyleStack
 };
 
 typedef struct UI_Box UI_Box;
+
+typedef struct UI_ClipRectStackNode UI_ClipRectStackNode;
+struct UI_ClipRectStackNode
+{
+	UI_ClipRectStackNode *next;
+	RectF32 *rect;
+	B32 clip_to_parent;
+};
+
+typedef struct UI_ClipBoxStack UI_ClipBoxStack;
+struct UI_ClipBoxStack
+{
+	UI_ClipRectStackNode *first;
+	UI_ClipRectStackNode *last;
+};
+
+typedef struct UI_Box UI_Box;
 struct UI_Box
 {
 	UI_Box *first;
@@ -183,6 +200,8 @@ struct UI_Box
 	UI_LayoutStyle layout_style;
 
 	Vec2F32 scroll;
+
+	UI_ClipRectStackNode *clip_rect;
 
 	F32 hot_t;
 	F32 active_t;
@@ -255,6 +274,8 @@ struct UI_Context
 	UI_RectStyleStack   rect_style_stack;
 	UI_TextStyleStack   text_style_stack;
 	UI_LayoutStyleStack layout_style_stack;
+
+	UI_ClipBoxStack clip_rect_stack;
 
 	UI_Box *root;
 
