@@ -19,26 +19,26 @@ os_main(Str8List arguments)
 {
 	log_init(str8_lit("log"));
 
-	Arena *arena = arena_create();
-
-	Str8 path = str8_lit("data/beeg_test.png");
-
-	Str8 image_contents = { 0 };
-	if (os_file_read(arena, path, &image_contents))
-	{
-		image_load(arena, image_contents);
-	}
-	else
-	{
-		log_error("Could not load file '%"PRISTR8"'", path);
-	}
-
-
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
 	gfx_show_window(&gfx);
 
 	R_Context *renderer = render_init(&gfx);
+
+	Arena *arena = arena_create();
+	Str8 path = str8_lit("data/beeg_test.png");
+	B32 loaded_image = false;
+	R_TextureSlice image_texture = { 0 };
+
+	Str8 image_contents = { 0 };
+	if (os_file_read(arena, path, &image_contents))
+	{
+		loaded_image = image_load(arena, renderer, image_contents, &image_texture);
+	}
+	else
+	{
+		log_error("Could not load file '%"PRISTR8"'", path);
+	}
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
@@ -115,6 +115,11 @@ os_main(Str8List arguments)
 
 		Vec2U32 screen_area = gfx_get_window_client_area(&gfx);
 		render_rect(renderer, v2f32(0, 0), v2f32((F32) screen_area.width, (F32) screen_area.height), .color = v4f32(0.25, 0.25, 0.25, 1.0));
+
+		if (loaded_image)
+		{
+		render_rect(renderer, v2f32(0, 0), v2f32((F32) screen_area.width, (F32) screen_area.height), .slice = image_texture);
+		}
 
 		if (show_log)
 		{

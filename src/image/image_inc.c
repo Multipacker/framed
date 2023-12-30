@@ -1,3 +1,8 @@
+// NOTE(simon): Specifications used:
+//   * [PNG](https://www.w3.org/TR/png-3/#10Compression)
+//   * [ZLIB](https://www.rfc-editor.org/rfc/rfc1950)
+//   * [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951)
+
 #define PNG_CHUNK_MIN_SIZE (4 + 4 + 4)
 #define PNG_CHUNK_ANCILLARY_BIT (0x20 <<  0)
 #define PNG_CHUNK_PRIVATE_BIT   (0x20 <<  8)
@@ -100,10 +105,91 @@ struct PNG_State
 	PNG_ColorType color_type;
 	U8 bit_depth;
 	PNG_InterlaceMethod interlace_method;
+
+	// NOTE(simon): Bit level reading
+	U64 bit_buffer;
+	U32 bit_count;
+
+	PNG_IDATNode *current_node;
+	U64 current_offset;
+
+	U8 *zlib_output;
+	U8 *zlib_ptr;
+	U8 *zlib_opl;
 };
 
+internal U8
+png_get_byte(PNG_State *state)
+{
+	U8 result = 0;
+
+	while (state->current_node && state->current_offset >= state->current_node->data.size)
+	{
+		state->current_node = state->current_node->next;
+		state->current_offset = 0;
+	}
+
+	if (state->current_node)
+	{
+		result = state->current_node->data.data[state->current_offset];
+		++state->current_offset;
+	}
+
+	return(result);
+}
+
 internal B32
-image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
+png_is_end(PNG_State *state)
+{
+	B32 is_end = (state->current_node == 0);
+	return(is_end);
+}
+
+// NOTE(simon): LSB order
+internal Void
+png_refill_bits(PNG_State *state, U32 count)
+{
+	assert(0 <= count && count <= 57);
+	while (state->bit_count < count)
+	{
+		state->bit_buffer |= (U64) png_get_byte(state) << state->bit_count;
+		state->bit_count += 8;
+	}
+}
+
+internal U64
+png_peek_bits(PNG_State *state, U32 count)
+{
+	assert(state->bit_count >= count);
+	U64 result = state->bit_buffer & ((1ULL << count) - 1);
+	return(result);
+}
+
+internal Void
+png_consume_bits(PNG_State *state, U32 count)
+{
+	assert(state->bit_count >= count);
+	state->bit_buffer >>= count;
+	state->bit_count   -= count;
+}
+
+internal U64
+png_get_bits_no_refill(PNG_State *state, U32 count)
+{
+	U64 result = png_peek_bits(state, count);
+	png_consume_bits(state, count);
+	return(result);
+}
+
+internal Void
+png_align_to_byte(PNG_State *state)
+{
+	U32 bits_to_discard = state->bit_count & 0x07;
+	png_consume_bits(state, bits_to_discard);
+}
+
+internal B32
+png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 {
 	if (!(contents.size >= sizeof(png_magic) && memory_match(contents.data, png_magic, sizeof(png_magic))))
 	{
@@ -279,12 +365,242 @@ image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 	}
 }
 
-internal Void
-image_load(Arena *arena, Str8 contents)
+internal B32
+png_zlib_inflate(PNG_State *state)
+{
+	png_refill_bits(state, 16);
+
+	U16 cmf_flg = u16_big_to_local_endian((U16) png_peek_bits(state, 16));
+
+	U8 compression_method = (U8) png_get_bits_no_refill(state, 4);
+	U8 compression_info   = (U8) png_get_bits_no_refill(state, 4);
+
+	U8 header_check       = (U8) png_get_bits_no_refill(state, 5);
+	U8 preset_dictionary  = (U8) png_get_bits_no_refill(state, 1);
+	U8 compression_level  = (U8) png_get_bits_no_refill(state, 2);
+
+	if (png_is_end(state))
+	{
+		log_error("Unexpected end of ZLIB stream, missing header, corrupted PNG");
+		return(false);
+	}
+
+	if (cmf_flg % 31 != 0)
+	{
+		log_error("ZLIB header check failed, corrupted PNG");
+		return(false);
+	}
+
+	if (compression_method != 8)
+	{
+		log_error("Unknown compression method (%"PRIU8"), corrupted PNG", compression_method);
+		return(false);
+	}
+
+	// NOTE(simon): This check is only valid when compression_method == 8.
+	if (compression_info > 7)
+	{
+		log_error("Window size is too big (2^%"PRIU8"), corrupted PNG", compression_info + 8);
+		return(false);
+	}
+
+	if (preset_dictionary)
+	{
+		log_error("ZLIB stream contains a preset dictionary, corrupted PNG");
+		return(false);
+	}
+
+	B32 is_final_block = true;
+	do
+	{
+		png_refill_bits(state, 3);
+		is_final_block = (U8) png_get_bits_no_refill(state, 1);
+		U8 block_type  = (U8) png_get_bits_no_refill(state, 2);
+
+		if (block_type == 0)
+		{
+			// NOTE(simon): No compression.
+			png_align_to_byte(state);
+			png_refill_bits(state, 32);
+			U32 length   = (U32) png_get_bits_no_refill(state, 16);
+			U32 n_length = (U32) png_get_bits_no_refill(state, 16);
+
+			if ((U16) ~length != (U16) n_length)
+			{
+				log_info("ZLIB Uncompressed block length is corrupted, corrupted PNG");
+				return(false);
+			}
+
+			// TODO(simon): Check for end of input buffer.
+
+			if (length > state->zlib_opl - state->zlib_ptr)
+			{
+				log_info("ZLIB Uncompressed block contains too much data, corruped PNG");
+				return(false);
+			}
+
+			while (state->bit_count)
+			{
+				*state->zlib_ptr++ = (U8) png_get_bits_no_refill(state, 8);
+				--length;
+			}
+
+			for (U32 i = 0; i < length; ++i)
+			{
+				*state->zlib_ptr++ = png_get_byte(state);
+			}
+		}
+		else if (block_type == 1)
+		{
+			// NOTE(simon): Fixed Huffman codes
+			log_error("Fixed Huffman codes are not supported yet!");
+			return(false);
+		}
+		else if (block_type == 2)
+		{
+			// NOTE(simon): Dynamic Huffman codes
+			log_error("Dynamic Huffman codes are not supported yet!");
+			return(false);
+		}
+		else
+		{
+			log_error("ZLIB invalid block type (%"PRIU8"), corrupted PNG", block_type);
+			return(false);
+		}
+	} while (!is_final_block);
+
+	// TODO(simon): Read adler-32 checksum
+
+	return(true);
+}
+
+internal U8
+png_paeth_predictor(S32 a, S32 b, S32 c)
+{
+	S32 p = a + b - c;
+	S32 pa = s32_abs(p - a);
+	S32 pb = s32_abs(p - b);
+	S32 pc = s32_abs(p - c);
+
+	U8 result = 0;
+	if (pa <= pb && pa <= pc)
+	{
+		result = (U8) a;
+	}
+	else if (pb <= pc)
+	{
+		result = (U8) b;
+	}
+	else
+	{
+		result = (U8) c;
+	}
+
+	return(result);
+}
+
+internal B32
+image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *texture_result)
 {
 	PNG_State state = { 0 };
-	if (!image_parse_png_chunks(arena, contents, &state))
+	if (!png_parse_chunks(arena, contents, &state))
 	{
-		return;
+		return(false);
 	}
+
+	state.current_node = state.first_idat;
+
+	// TODO(simon): Better approximation for the inflated stream.
+	U64 inflated_size = 4 * sizeof(U16) * state.width * state.height + state.height;
+	state.zlib_output = push_array(arena, U8, inflated_size);
+	state.zlib_ptr = state.zlib_output;
+	state.zlib_opl = state.zlib_ptr + inflated_size;
+
+	if (!png_zlib_inflate(&state))
+	{
+		return(false);
+	}
+
+	// TODO(simon): Better approximation for the unfiltered data
+	U64 unfiltered_size = 4 * state.width * state.height;
+	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
+	for (U32 y = 0; y < state.height; ++y)
+	{
+		U8 *row = state.zlib_output + y * (1 + state.width * 4);
+		U8 filter_type = *row++;
+		if (filter_type == 0 || (filter_type == 2 && y == 0))
+		{
+			// NOTE(simon): No filtering and up filtering at y == 0
+			memory_copy(&unfiltered_data[y * state.width * 4], row, state.width * 4);
+		}
+		else if (filter_type == 1)
+		{
+			// NOTE(simon): Sub filter
+			U64 previous = 0;
+			for (U32 x = 0; x < state.width * 4; ++x)
+			{
+				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
+				U8 new_value = row[x] + (U8) (previous >> 24);
+				unfiltered_data[x + y * state.width * 4] = new_value;
+				previous = previous << 8 | new_value;
+			}
+		}
+		else if (filter_type == 2)
+		{
+			// NOTE(simon): Up filter at y != 0
+			U8 *previous_scanline = &unfiltered_data[(y - 1) * state.width * 4];
+			for (U32 x = 0; x < state.width * 4; ++x)
+			{
+				U8 new_value = row[x] + *previous_scanline;
+				unfiltered_data[x + y * state.width * 4] = new_value;
+				++previous_scanline;
+			}
+		}
+		else if (filter_type == 3)
+		{
+			// NOTE(simon): Average filter
+			U8 zero = 0;
+			U8 *previous_scanline = (y == 0 ? &zero : &unfiltered_data[(y - 1) * state.width * 4]);
+			U64 previous = 0;
+			for (U32 x = 0; x < state.width * 4; ++x)
+			{
+				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
+				U8 previous_value = (U8) (previous >> 24);
+				U8 new_value = row[x] + (previous_value + *previous_scanline) / 2;
+				unfiltered_data[x + y * state.width * 4] = new_value;
+				previous_scanline += (y != 0);
+				previous = previous << 8 | new_value;
+			}
+		}
+		else if (filter_type == 4)
+		{
+			// NOTE(simon): Paeth filter
+			U8 zero = 0;
+			U8 *previous_scanline = (y == 0 ? &zero : &unfiltered_data[(y - 1) * state.width * 4]);
+			U64 previous_scanline_previous = 0;
+			U64 previous = 0;
+			for (U32 x = 0; x < state.width * 4; ++x)
+			{
+				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
+				U8 previous_value = (U8) (previous >> 24);
+				U8 previous_scanline_previous_value = (U8) (previous_scanline_previous >> 24);
+				U8 new_value = row[x] + png_paeth_predictor(previous_value, *previous_scanline, previous_scanline_previous_value);
+				unfiltered_data[x + y * state.width * 4] = new_value;
+
+				previous_scanline_previous = previous_scanline_previous << 8 | *previous_scanline;
+				previous_scanline += (y != 0);
+				previous = previous << 8 | new_value;
+			}
+		}
+		else
+		{
+			log_error("Unknown filter (%"PRIU8"), corrupted PNG", filter_type);
+			return(false);
+		}
+	}
+
+	R_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, R_ColorSpace_sRGB);
+	*texture_result = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
+
+	return(true);
 }
