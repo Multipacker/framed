@@ -120,6 +120,10 @@ struct UI_LayoutStyle
 	UI_Size size[Axis2_COUNT];
 	F32     relative_pos[Axis2_COUNT];
 	Axis2   child_layout_axis;
+	UI_Size     size[Axis2_COUNT];
+	F32         relative_pos[Axis2_COUNT];
+	Axis2       child_layout_axis;
+	UI_BoxFlags box_flags;
 };
 
 typedef struct UI_RectStyleStack UI_RectStyleStack;
@@ -408,5 +412,9 @@ style->radies.v[3] = r3; \
 #define ui_next_child_layout_axis(axis) stmnt(ui_get_auto_pop_layout_style()->child_layout_axis = axis;)
 #define ui_push_child_layout_axis(axis) stmnt(ui_push_layout_style()->child_layout_axis = axis;)
 #define ui_pop_child_layout_axis()      stmnt(ui_pop_layout_style();)
+
+#define ui_next_extra_box_flags(x) stmnt(ui_get_auto_pop_layout_style()->box_flags = x;)
+#define ui_push_extra_box_flags(x) stmnt(ui_push_layout_style()->box_flags = x;)
+#define ui_pop_extra_box_flags()   stmnt(ui_pop_layout_style();)
 
 #endif //UI_CORE_H

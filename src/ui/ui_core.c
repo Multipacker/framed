@@ -1,10 +1,11 @@
 // TODO(hampus):
 // [x] - Styling
-// [] - Input
+// [x] - Input
 // [x] - More layout sizes
 // [x] - Basic widgets
 // [] - Hover cursor
 // [] - Size violations & strictness
+// [] - EM sizing
 // [] - Animations
 // [] - Icons
 // [] - Context menu
@@ -867,9 +868,6 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 		dll_push_back(parent->first, parent->last, result);
 	}
 
-	result->parent = parent;
-	result->flags = flags;
-
 #if !BUILD_MODE_RELEASE
 	result->debug_string = string;
 #endif
@@ -878,6 +876,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
 
+	result->parent = parent;
+	result->flags = flags | result->layout_style.box_flags;
 	if (g_ui_ctx->rect_style_stack.auto_pop)
 	{
 		ui_pop_rect_style();
