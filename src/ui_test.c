@@ -31,6 +31,9 @@ os_main(Str8List arguments)
 
 	UI_Context *ui = ui_init();
 
+	U64 start_counter = os_now_nanoseconds();
+	F64 dt = 0;
+
 	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
@@ -66,7 +69,9 @@ os_main(Str8List arguments)
 
 		render_begin(renderer);
 
-		ui_begin(ui, &events, renderer);
+		ui_begin(ui, &events, renderer, dt);
+
+		printf("%.04f\n", dt);
 
 		U64 result = 0;
 
@@ -117,7 +122,9 @@ os_main(Str8List arguments)
 		ui_next_height(ui_em(10, 1));
 		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder |
-								  UI_BoxFlag_DrawText,
+								  UI_BoxFlag_DrawText |
+								  UI_BoxFlag_AnimateDim |
+								  UI_BoxFlag_AnimatePos,
 								  str8_lit("Box2"));
 
 		ui_box_equip_display_string(box, str8_lit("Hello!"));
@@ -127,7 +134,9 @@ os_main(Str8List arguments)
 		ui_next_child_layout_axis(Axis2_X);
 		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
 									 UI_BoxFlag_DrawBorder |
-									 UI_BoxFlag_DrawDropShadow,
+									 UI_BoxFlag_DrawDropShadow |
+									 UI_BoxFlag_AnimateDim |
+									 UI_BoxFlag_AnimatePos,
 									 str8_lit("Parent"));
 		ui_pop_color();
 #if 1
@@ -167,6 +176,10 @@ os_main(Str8List arguments)
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
+
+		U64 end_counter = os_now_nanoseconds();
+		dt = (end_counter - start_counter) / (F64)billion(1);
+		start_counter = end_counter;
 	}
 
 	return(0);

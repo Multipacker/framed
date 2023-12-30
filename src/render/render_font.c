@@ -887,7 +887,6 @@ render_measure_text(R_Font *font, Str8 text)
 		S32 length = (S32) text.size;
 		for (S32 i = 0; i < length; ++i)
 		{
-
 			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
 			R_Glyph *glyph = font->glyphs + index;
 			result.x += (glyph->advance_width);

@@ -3,17 +3,32 @@
 // [x] - Input
 // [x] - More layout sizes
 // [x] - Basic widgets
-// [] - Hover cursor
-// [] - Size violations & strictness
-// [] - EM sizing
-// [] - Animations
-// [] - Icons
-// [] - Context menu
-// [] - Tooltip
-// [] - Custom draw functions
-// [] - Keyboard navigation
+// [x] - EM sizing
+// [x] - Animations
+// []  - Hover cursor
+// []  - Size violations & strictness
+// []  - Icons
+// []  - Focused box
+// []  - Context menu
+// []  - Tooltip
+// []  - Custom draw functions
+// []  - Keyboard navigation
 
 global UI_Context *g_ui_ctx;
+
+internal B32
+ui_animations_enabled(Void)
+{
+	B32 result = g_ui_ctx->config.animations;
+	return(result);
+}
+
+internal F32
+ui_animation_speed(Void)
+{
+	F32 result = g_ui_ctx->config.animation_speed;
+	return(result);
+}
 
 internal B32
 ui_box_is_active(UI_Box *box)
@@ -234,11 +249,13 @@ ui_init(Void)
 }
 
 internal Void
-ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
+ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt)
 {
 	g_ui_ctx = ui_ctx;
+
 	g_ui_ctx->renderer = renderer;
 	g_ui_ctx->event_list = event_list;
+	g_ui_ctx->dt = dt;
 
 	B32 left_mouse_released = false;
 	for (Gfx_Event *node = event_list->first;
@@ -309,6 +326,10 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 			box = next;
 		}
 	}
+
+	// NOTE(hampus): Setup default config
+	g_ui_ctx->config.animations = true;
+	g_ui_ctx->config.animation_speed = 10;
 
 	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -414,13 +435,13 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_Pixels:
 		{
-			root->computed_size[axis] = size.value;
+			root->target_size[axis] = size.value;
 		} break;
 
 		case UI_SizeKind_TextContent:
 		{
 			Vec2F32 text_dim = render_measure_text(font, root->string);
-			root->computed_size[axis] = text_dim.v[axis] + root->text_style.padding[axis];
+			root->target_size[axis] = text_dim.v[axis] + root->text_style.padding[axis];
 		} break;
 
 		default: break;
@@ -447,8 +468,8 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
 			   "Cyclic sizing behaviour");
 
-		F32 parent_size = root->parent->computed_size[axis];
-		root->computed_size[axis] = parent_size * size.value;
+		F32 parent_size = root->parent->target_size[axis];
+		root->target_size[axis] = parent_size * size.value;
 	}
 
 	for (UI_Box *child = root->first;
@@ -481,7 +502,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 		{
 			if (!ui_box_has_flag(child, UI_BoxFlag_FloatingX << axis))
 			{
-				F32 child_size = child->computed_size[axis];
+				F32 child_size = child->target_size[axis];
 				if (axis == child_layout_axis)
 				{
 					children_total_size += child_size;
@@ -493,7 +514,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 			}
 		}
 
-		root->computed_size[axis] = children_total_size;
+		root->target_size[axis] = children_total_size;
 	}
 }
 
@@ -518,18 +539,51 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 				}
 				if (prev)
 				{
-					root->computed_rel_position[axis] = prev->computed_rel_position[axis] + prev->computed_size[axis];
+					root->target_rel_pos[axis] = prev->target_rel_pos[axis] + prev->target_size[axis];
 				}
 			}
 			else
 			{
-				root->computed_rel_position[axis] = 0;
+				root->target_rel_pos[axis] = 0;
 			}
 		}
 
-		root->rect.min.v[axis] = root->parent->rect.min.v[axis] + root->computed_rel_position[axis];
-		root->rect.max.v[axis] = root->rect.min.v[axis] + root->computed_size[axis];
+		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->target_rel_pos[axis];
 	}
+
+	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * g_ui_ctx->dt));
+
+	if (ui_box_has_flag(root, UI_BoxFlag_AnimateX << axis) &&
+		ui_animations_enabled())
+	{
+		root->calc_pos[axis] += (F32)(root->target_pos[axis] - root->calc_pos[axis]) * animation_delta;
+		if (f32_abs(root->calc_pos[axis] - root->target_pos[axis]) <= 1)
+		{
+			root->calc_pos[axis] = root->target_pos[axis];
+		}
+	}
+	else
+	{
+		root->calc_pos[axis]  = root->target_pos[axis];
+	}
+
+	if (ui_box_has_flag(root, UI_BoxFlag_AnimateWidth << axis) &&
+		ui_animations_enabled())
+	{
+		root->calc_size[axis] += (F32)(root->target_size[axis] - root->calc_size[axis]) * animation_delta;
+		if (f32_abs(root->calc_size[axis] - root->target_size[axis]) <= 1)
+		{
+			root->calc_size[axis] = root->target_size[axis];
+		}
+	}
+	else
+	{
+		root->calc_size[axis] = root->target_size[axis];
+	}
+
+
+	root->rect.min.v[axis] = root->calc_pos[axis];
+	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size[axis];
 
 	for (UI_Box *child = root->first;
 		 child != 0;
@@ -590,6 +644,28 @@ ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign alig
 internal Void
 ui_draw(UI_Box *root)
 {
+	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 2.0f*-ui_animation_speed() * g_ui_ctx->dt));
+	if (ui_box_is_active(root))
+	{
+		root->active_t += (1.0f - root->active_t) * animation_delta;
+	}
+	else
+	{
+		root->active_t += (0.0f - root->active_t) * animation_delta;
+	}
+
+	if (ui_box_is_hot(root))
+	{
+		root->hot_t += (1.0f - root->hot_t) * animation_delta;
+	}
+	else
+	{
+		root->hot_t += (0.0f - root->hot_t) * animation_delta;
+	}
+
+	root->active_t = f32_clamp(0, root->active_t, 1.0f);
+	root->hot_t = f32_clamp(0, root->hot_t, 1.0f);
+
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
 
@@ -610,24 +686,21 @@ ui_draw(UI_Box *root)
 	{
 		// TODO(hampus): Correct darkening/lightening
 		R_RectInstance *instance = 0;
-		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
-			ui_box_is_active(root))
+		F32 d = 0;
+		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
 		{
-			F32 d = 0.4f;
-			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-																v4f32(d, d, d, 0));
-			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-																 v4f32(d, d, d, 0));
+			d += 0.2f * root->active_t;
 		}
-		else if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation) &&
-				 ui_box_is_hot(root))
+
+		if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 		{
-			F32 d = 0.2f;
-			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-																v4f32(d, d, d, 0));
-			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-																 v4f32(d, d, d, 0));
+			d += 0.2f * root->hot_t;
 		}
+
+		rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+															v4f32(d, d, d, 0));
+		rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+															 v4f32(d, d, d, 0));
 		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness);
 		memory_copy_array(instance->colors, rect_style->color);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
@@ -916,12 +989,12 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
 	{
-		result->computed_rel_position[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
+		result->target_rel_pos[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
 	}
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingY))
 	{
-		result->computed_rel_position[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
+		result->target_rel_pos[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
 	}
 
 	if (g_ui_ctx->rect_style_stack.auto_pop)
@@ -950,6 +1023,8 @@ internal UI_Box *
 ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 {
 	UI_Box *result = {0};
+	// TODO(hampus): This won't work with debug_string
+	// since it needs to be persistent across the frame
 	Arena_Temporary scratch = get_scratch(0, 0);
 	va_list args;
 	va_start(args, fmt);

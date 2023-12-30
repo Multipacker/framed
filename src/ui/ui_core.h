@@ -1,6 +1,14 @@
 #ifndef UI_CORE_H
 #define UI_CORE_H
 
+typedef struct UI_Config UI_Config;
+struct UI_Config
+{
+	B32 animations;
+	F32 animation_speed;
+	R_FontKey icon_font;
+};
+
 typedef enum UI_BoxFlags UI_BoxFlags;
 enum UI_BoxFlags
 {
@@ -37,7 +45,6 @@ enum UI_BoxFlags
 	//
 	// Set the position with ui_push/next_relative_pos
 	// It will be relative to the parent.
-	// TODO(hampus): Implement this
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
 
@@ -159,8 +166,13 @@ struct UI_Box
 	UI_Key key;
 	U64    last_frame_touched_index;
 
-	F32 computed_rel_position[Axis2_COUNT];
-	F32 computed_size[Axis2_COUNT];
+	F32 calc_size[Axis2_COUNT];
+	F32 calc_pos[Axis2_COUNT];
+
+	F32 target_rel_pos[Axis2_COUNT];
+	F32 target_size[Axis2_COUNT];
+	F32 target_pos[Axis2_COUNT];
+
 	RectF32 rect;
 
 	UI_BoxFlags flags;
@@ -252,18 +264,22 @@ struct UI_Context
 	Gfx_EventList *event_list;
 	R_Context     *renderer;
 
+	UI_Config config;
+
+	F64 dt;
 	U64 frame_index;
 };
 
 internal UI_Context *ui_init(Void);
 
-internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer);
+internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt);
 internal Void ui_end(Void);
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
 internal UI_Size ui_text_content(F32 strictness);
 internal UI_Size ui_pct(F32 value, F32 strictness);
 internal UI_Size ui_children_sum(F32 strictness);
+internal UI_Size ui_em(F32 value, F32 strictness);
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 
