@@ -539,7 +539,7 @@ ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign alig
 		case UI_TextAlign_Left:
 		{
 			result.y = (rect_dim.y - text_dim.y) / 2;
-			result.x = rect_dim.x;
+			result.x = 0;
 		} break;
 
 		invalid_case;
@@ -571,6 +571,7 @@ ui_draw(UI_Box *root)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 	{
+		// TODO(hampus): Correct darkening/lightening
 		R_RectInstance *instance = 0;
 		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
 			ui_box_is_active(root))
@@ -604,7 +605,7 @@ ui_draw(UI_Box *root)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
 	{
-		Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, UI_TextAlign_Center);
+		Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, text_style->align);
 		render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 	}
 
