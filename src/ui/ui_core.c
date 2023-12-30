@@ -343,6 +343,14 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
 }
 
+internal S32
+ui_top_font_size(Void)
+{
+	UI_TextStyle *text_style = ui_top_text_style();
+	S32 result = text_style->font.font_size;
+	return(result);
+}
+
 internal UI_Size
 ui_pixels(F32 value, F32 strictness)
 {
@@ -377,6 +385,16 @@ ui_children_sum(F32 strictness)
 {
 	UI_Size result = {0};
 	result.kind = UI_SizeKind_ChildrenSum;
+	result.strictness = strictness;
+	return(result);
+}
+
+internal UI_Size
+ui_em(F32 value, F32 strictness)
+{
+	UI_Size result = {0};
+	result.kind = UI_SizeKind_Pixels;
+	result.value = ui_top_font_size() * value;
 	result.strictness = strictness;
 	return(result);
 }

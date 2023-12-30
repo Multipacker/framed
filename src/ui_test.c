@@ -113,8 +113,8 @@ os_main(Str8List arguments)
 		ui_text(str8_lit("Text!"));
 
 		ui_push_color(v4f32(1, 0, 0, 1));
-		ui_next_width(ui_pixels(100, 1));
-		ui_next_height(ui_pixels(100, 1));
+		ui_next_width(ui_em(10, 1));
+		ui_next_height(ui_em(10, 1));
 		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder |
 								  UI_BoxFlag_DrawText,
@@ -134,8 +134,8 @@ os_main(Str8List arguments)
 		ui_push_parent(parent);
 
 		ui_next_vert_corner_radius(20, 0);
-		ui_next_width(ui_pixels(150, 1));
-		ui_next_height(ui_pixels(150, 1));
+		ui_next_width(ui_em(15, 1));
+		ui_next_height(ui_em(15, 1));
 		ui_next_font(font2);
 		UI_Box *box1 = ui_box_make(UI_BoxFlag_DrawBackground |
 								   UI_BoxFlag_DrawBorder |
@@ -147,8 +147,8 @@ os_main(Str8List arguments)
 		ui_next_hori_corner_radius(20, 0);
 		ui_next_text_color(v4f32(0, 0, 0.9f, 1));
 		ui_next_text_align(UI_TextAlign_Left);
-		ui_next_width(ui_pixels(200, 1));
-		ui_next_height(ui_pixels(300, 1));
+		ui_next_width(ui_em(20, 1));
+		ui_next_height(ui_em(30, 1));
 		ui_next_border_color(v4f32(1, 0, 0, 1));
 		UI_Box *box2 = ui_box_make(UI_BoxFlag_DrawBackground |
 								   UI_BoxFlag_DrawBorder |
