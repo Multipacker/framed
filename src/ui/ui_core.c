@@ -559,6 +559,7 @@ ui_comm_from_box(UI_Box *box)
 	if (rectf32_contains_v2f32(box->rect, mouse_pos))
 	{
 		g_ui_ctx->hot_key = box->key;
+		result.hovering = true;
 		Gfx_EventList *event_list = g_ui_ctx->event_list;
 		for (Gfx_Event *node = event_list->first;
 			 node != 0;
@@ -572,10 +573,25 @@ ui_comm_from_box(UI_Box *box)
 					{
 						case Gfx_Key_MouseLeft:
 						{
-							result.released = true;
-							dll_remove(event_list->first, event_list->last, node);
+							// TODO(hampus): Do we want UI_BoxFlag_Clickable to
+							// work for release as well?
+							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+							{
+								result.released = true;
+								dll_remove(event_list->first, event_list->last, node);
+							}
 						} break;
-
+						
+						case Gfx_Key_MouseRight:
+						{
+							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+							{
+								result.right_released = true;
+								g_ui_ctx->active_key = box->key;
+								dll_remove(event_list->first, event_list->last, node);
+							}
+						} break;
+						
 						default:
 						{
 						} break;
@@ -588,12 +604,34 @@ ui_comm_from_box(UI_Box *box)
 					{
 						case Gfx_Key_MouseLeft:
 						{
-							result.pressed = true;
-							g_ui_ctx->active_key = box->key;
-							dll_remove(event_list->first, event_list->last, node);
-
+							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+							{
+								result.pressed = true;
+								g_ui_ctx->active_key = box->key;
+								dll_remove(event_list->first, event_list->last, node);
+							}
 						} break;
-
+						
+						case Gfx_Key_MouseRight:
+						{
+							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+							{
+								result.right_pressed = true;
+								g_ui_ctx->active_key = box->key;
+								dll_remove(event_list->first, event_list->last, node);
+							}
+						} break;
+							
+						case Gfx_Key_MouseLeftDouble:
+						{
+							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+							{
+								result.double_clicked = true;
+								g_ui_ctx->active_key = box->key;
+								dll_remove(event_list->first, event_list->last, node);
+							}
+						} break;
+						
 						default:
 						{
 						} break;

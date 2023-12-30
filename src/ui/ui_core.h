@@ -144,7 +144,8 @@ struct UI_Comm
 	B8 pressed;
 	B8 released;
 	B8 double_clicked;
-	B8 right_clicked;
+	B8 right_pressed;
+	B8 right_released;
 	B8 dragging;
 	B8 hovering;
 };

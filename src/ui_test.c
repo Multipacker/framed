@@ -67,20 +67,36 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer);
 
-		ui_next_size(Axis2_X, ui_pixels(50, 1));
-		ui_next_size(Axis2_Y, ui_pixels(50, 1));
-		UI_Box *test_comm = ui_box_make(UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_DrawBorder |
-					UI_BoxFlag_HotAnimation |
-					UI_BoxFlag_ActiveAnimation,
-								  str8_lit("Box"));
-
-		UI_Comm comm = ui_comm_from_box(test_comm);
+		UI_Comm comm = ui_button(str8_lit("Hello!"));
 
 		if (comm.pressed)
 		{
-			printf("Hello");
+			printf("Pressed\n");
 		}
+
+		if (comm.released)
+		{
+			printf("Released\n");
+		}
+
+		if (comm.double_clicked)
+		{
+			printf("Double clicked!\n");
+		}
+
+		if (comm.right_pressed)
+		{
+			printf("Right pressed!\n");
+		}
+
+		if (comm.right_released)
+		{
+			printf("Right released!\n");
+		}
+
+		ui_buttonf("Hehe%d", 5);
+
+		ui_text(str8_lit("Text!"));
 
 		ui_next_size(Axis2_X, ui_pixels(100, 1));
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
