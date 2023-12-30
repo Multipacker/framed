@@ -422,7 +422,7 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 		assert(root->parent &&
 			   "Percent of parent without a parent");
 
-		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_TextContent &&
+		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
 			   "Cyclic sizing behaviour");
 
 		F32 parent_size = root->parent->computed_size[axis];
