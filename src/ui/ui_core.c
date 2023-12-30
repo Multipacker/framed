@@ -411,7 +411,7 @@ internal S32
 ui_top_font_size(Void)
 {
 	UI_TextStyle *text_style = ui_top_text_style();
-	S32 result = text_style->font.font_size;
+	S32 result = (S32) text_style->font.font_size;
 	return(result);
 }
 
@@ -551,7 +551,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 			 child != 0;
 			 child = child->next)
 		{
-			if (!ui_box_has_flag(child, UI_BoxFlag_FloatingX << axis))
+			if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 			{
 				F32 child_size = child->target_size[axis];
 				if (axis == child_layout_axis)
@@ -574,7 +574,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
 	if (root->parent)
 	{
-		if (!ui_box_has_flag(root, UI_BoxFlag_FloatingX << axis))
+		if (!ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 		{
 			if (axis == root->parent->layout_style.child_layout_axis)
 			{
@@ -583,7 +583,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 					 prev != 0;
 					 prev = prev->prev)
 				{
-					if (!ui_box_has_flag(prev, UI_BoxFlag_FloatingX << axis))
+					if (!ui_box_has_flag(prev, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 					{
 						break;
 					}
@@ -605,7 +605,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * g_ui_ctx->dt));
 
-	if (ui_box_has_flag(root, UI_BoxFlag_AnimateX << axis) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 		ui_animations_enabled())
 	{
 		root->calc_pos[axis] += (F32)(root->target_pos[axis] - root->calc_pos[axis]) * animation_delta;
@@ -619,7 +619,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 		root->calc_pos[axis]  = root->target_pos[axis];
 	}
 
-	if (ui_box_has_flag(root, UI_BoxFlag_AnimateWidth << axis) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 		ui_animations_enabled())
 	{
 		root->calc_size[axis] += (F32)(root->target_size[axis] - root->calc_size[axis]) * animation_delta;

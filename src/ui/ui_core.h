@@ -403,7 +403,7 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_text_padding()          ui_pop_text_style()
 #define ui_text_padding(axis, x)       defer_loop(ui_push_text_padding(axis, x), ui_pop_text_padding())
 
-#define ui_next_icon(x)  ui_get_auto_pop_text_style()->icon = x; ui_next_font(render_key_from_font(str8_lit(UI_ICON_FONT_PATH), ui_top_font_size()))
+#define ui_next_icon(x)  ui_get_auto_pop_text_style()->icon = x; ui_next_font(render_key_from_font(str8_lit(UI_ICON_FONT_PATH), (U32) ui_top_font_size()))
 #define ui_push_icon(x)  ui_push_text_style()->icon = x; ui_push_font(render_key_from_font(str8_lit(UI_ICON_FONT_PATH), ui_top_font_size()))
 #define ui_pop_icon()    ui_pop_text_style(); ui_pop_font()
 #define ui_icon(x)       defer_loop(ui_push_icon(x), ui_pop_icon())

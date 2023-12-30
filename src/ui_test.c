@@ -237,7 +237,7 @@ os_main(Str8List arguments)
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 
 		U64 end_counter = os_now_nanoseconds();
-		dt = (end_counter - start_counter) / (F64)billion(1);
+		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 		start_counter = end_counter;
 	}
 
