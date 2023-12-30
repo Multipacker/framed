@@ -25,6 +25,23 @@ struct PNG_Chunk
 	U32 crc;
 };
 
+typedef enum PNG_ColorType PNG_ColorType;
+enum PNG_ColorType
+{
+	PNG_ColorType_Greyscale      = 0,
+	PNG_ColorType_Truecolor      = 2,
+	PNG_ColorType_IndexedColor   = 3,
+	PNG_ColorType_GreyscaleAlpha = 4,
+	PNG_ColorType_TruecolorAlpha = 6,
+};
+
+typedef enum PNG_InterlaceMethod PNG_InterlaceMethod;
+enum PNG_InterlaceMethod
+{
+	PNG_InterlaceMethod_None  = 0,
+	PNG_InterlaceMethod_Adam7 = 2,
+};
+
 internal PNG_Chunk
 png_parse_chunk(Str8 *contents)
 {
@@ -78,7 +95,11 @@ struct PNG_State
 {
 	U32 width;
 	U32 height;
-	PNG_IDATNode *idats;
+	PNG_IDATNode *first_idat;
+	PNG_IDATNode *last_idat;
+	PNG_ColorType color_type;
+	U8 bit_depth;
+	PNG_InterlaceMethod interlace_method;
 };
 
 internal B32
@@ -91,9 +112,6 @@ image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 	}
 
 	contents = str8_skip(contents, sizeof(png_magic));
-
-	PNG_IDATNode *nodes_first = 0;
-	PNG_IDATNode *nodes_last = 0;
 
 	B32 seen_ihdr = false;
 	for (;;)
@@ -142,10 +160,64 @@ image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 					return(false);
 				}
 
-				// TODO(simon): Verify other paramters are in range.
+				switch (color_type)
+				{
+					case PNG_ColorType_Greyscale:
+					{
+						if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8 || bit_depth == 16))
+						{
+							log_error("Incompatible color type (%"PRIU8") and bit depth (%"PRIU8"), corrupted PNG", color_type, bit_depth);
+							return(false);
+						}
+					} break;
+					case PNG_ColorType_IndexedColor:
+					{
+						if (!(bit_depth == 1 || bit_depth == 2 || bit_depth == 4 || bit_depth == 8))
+						{
+							log_error("Incompatible color type (%"PRIU8") and bit depth (%"PRIU8"), corrupted PNG", color_type, bit_depth);
+							return(false);
+						}
+					} break;
+					case PNG_ColorType_Truecolor:
+					case PNG_ColorType_GreyscaleAlpha:
+					case PNG_ColorType_TruecolorAlpha:
+					{
+						if (!(bit_depth == 8 || bit_depth == 16))
+						{
+							log_error("Incompatible color type (%"PRIU8") and bit depth (%"PRIU8"), corrupted PNG", color_type, bit_depth);
+							return(false);
+						}
+					} break;
+					default:
+					{
+						log_error("Invalid color type (%"PRIU8"), corrupted PNG", color_type);
+						return(false);
+					} break;
+				}
 
-				state->width  = width;
-				state->height = height;
+				if (compression_method != 0)
+				{
+					log_error("Invalid compression method (%"PRIU8"), corrupted PNG", compression_method);
+					return(false);
+				}
+
+				if (filter_method != 0)
+				{
+					log_error("Invalid filter method (%"PRIU8"), corrupted PNG", filter_method);
+					return(false);
+				}
+
+				if (!(interlace_method == PNG_InterlaceMethod_None || interlace_method == PNG_InterlaceMethod_Adam7))
+				{
+					log_error("Invalid interlace method (%"PRIU8"), corrupted PNG", interlace_method);
+					return(false);
+				}
+
+				state->width            = width;
+				state->height           = height;
+				state->color_type       = color_type;
+				state->bit_depth        = bit_depth;
+				state->interlace_method = interlace_method;
 
 				seen_ihdr = true;
 			} break;
@@ -153,52 +225,54 @@ image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 			{
 				if (!seen_ihdr)
 				{
-					log_error("Expected 'IHDR' chunk but got 'IDAT'.");
+					log_error("Expected 'IHDR' chunk but got 'IDAT'");
 					return(false);
 				}
 
 				PNG_IDATNode *node = push_struct(arena, PNG_IDATNode);
 				node->data = chunk.data;
 
-				queue_push(nodes_first, nodes_last, node);
+				queue_push(state->first_idat, state->last_idat, node);
 			} break;
 			case PNG_TYPE("IEND"):
 			{
 				if (!seen_ihdr)
 				{
-					log_error("Expected 'IHDR' chunk but got 'IEND'.");
+					log_error("Expected 'IHDR' chunk but got 'IEND'");
 					return(false);
 				}
 
-				if (!nodes_first)
+				if (!state->first_idat)
 				{
-					log_error("No image data, corrupted PNG.");
+					log_error("No image data, corrupted PNG");
 					return(false);
 				}
 
-				image_data_nodes = nodes_first;
+				if (chunk.data.size != 0)
+				{
+					log_error("'IEND' chunk has data, corrupted PNG");
+					return(false);
+				}
+
 				return(true);
 			} break;
 			default:
 			{
+				if (!seen_ihdr)
+				{
+					log_error("Expected 'IHDR' chunk but got 'IEND'");
+					return(false);
+				}
+
 				if (!(chunk.type & PNG_CHUNK_ANCILLARY_BIT))
 				{
-					if (chunk.type & PNG_CHUNK_PRIVATE_BIT)
-					{
-						log_error("Unrecognized critical private chunk '%s'.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
-						return(false);
-					}
-					else
-					{
-						log_error("Unrecognized critical public chunk '%s'.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
-						return(false);
-					}
+					log_error("Unrecognized critical chunk '%s'", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
+					return(false);
 				}
 
 				if (chunk.type & PNG_CHUNK_RESERVED_BIT)
 				{
-					log_error("Chunk type '%s' is reserved.", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
-					return(false);
+					log_warning("Chunk type '%s' is reserved", PNG_CHUNK_TYPE_TO_CSTR(chunk.type));
 				}
 			} break;
 		}
@@ -208,7 +282,8 @@ image_parse_png_chunks(Arena *arena, Str8 contents, PNG_State *state)
 internal Void
 image_load(Arena *arena, Str8 contents)
 {
-	if (!image_parse_png_chunks(arena, contents))
+	PNG_State state = { 0 };
+	if (!image_parse_png_chunks(arena, contents, &state))
 	{
 		return;
 	}

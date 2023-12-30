@@ -46,7 +46,7 @@ os_main(Str8List arguments)
 
 	Arena *arena = arena_create();
 
-	Str8 path = str8_lit("data/test.png");
+	Str8 path = str8_lit("data/beeg_test.png");
 
 	Str8 image_contents = { 0 };
 	if (os_file_read(arena, path, &image_contents))
@@ -73,7 +73,7 @@ os_main(Str8List arguments)
 
 	Arena *perm_arena = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 11);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 7);
 	B32 show_log = false;
 	F32 log_offset = 0;
 
@@ -140,18 +140,6 @@ os_main(Str8List arguments)
 
 		Vec2U32 screen_area = gfx_get_window_client_area(&gfx);
 		render_rect(renderer, v2f32(0, 0), v2f32((F32) screen_area.width, (F32) screen_area.height), .color = v4f32(0.25, 0.25, 0.25, 1.0));
-
-		U64 total_size = 0;
-		for (PNG_IDATNode *node = image_data_nodes; node; node = node->next) {
-			total_size += node->data.size;
-		}
-
-		Vec2F32 pos = v2f32(0, 0);
-		for (PNG_IDATNode *node = image_data_nodes; node; node = node->next) {
-			Vec2F32 size = v2f32((F32) screen_area.width * (F32) node->data.size / (F32) total_size, (F32) screen_area.height);
-			render_rect(renderer, pos, v2f32_add_v2f32(pos, size), .color = v4f32(1, 0, 0, 1), .border_thickness = 1);
-			pos.x += size.x;
-		}
 
 		if (show_log)
 		{
