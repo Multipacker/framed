@@ -12,11 +12,21 @@ enum UI_BoxFlags
 	UI_BoxFlag_HotAnimation    = (1 << 5),
 	UI_BoxFlag_ActiveAnimation = (1 << 6),
 	UI_BoxFlag_FocusAnimation  = (1 << 7),
+
+	// NOTE(hampus): This decides if the box
+	// should apply a scroll value to its children
 	UI_BoxFlag_ViewScroll      = (1 << 8),
+
+	// NOTE(hampus): This decides if the children
+	// of the box are allowed to go outside
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
+
 	UI_BoxFlag_Clip            = (1 << 11),
 
+	// NOTE(hampus): These makes the ui auto-layouting
+	// algorithm skip this box. Useful if you want
+	// the box to have an absolute position
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
 	UI_BoxFlag_FloatingPos     = (1 << 14),
@@ -375,6 +385,8 @@ style->radies.v[3] = r3; \
 #define ui_push_height(sz) ui_push_size(Axis2_Y, sz)
 #define ui_pop_height()    ui_pop_size()
 
+// NOTE(hampus): For these to work, the box *has* to have either
+// UI_BoxFlag_FloatingX and/or UI_BoxFlag_FloatingY flag
 #define ui_next_relative_pos(axis, p) stmnt(ui_get_auto_pop_layout_style()->relative_pos[axis] = p;)
 #define ui_push_relative_pos(axis, p) stmnt(ui_push_layout_style()->relative_pos[axis] = p;)
 #define ui_pop_relative_pos()         stmnt(ui_pop_layout_style();)
