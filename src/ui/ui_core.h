@@ -25,6 +25,10 @@ enum UI_BoxFlags
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
 
+	// NOTE(hampus): This decides if the box's
+	// rect should be pushed as a clip rect
+	// when it is pushed to the parent stack
+	// TODO(hampus): Implement this
 	UI_BoxFlag_Clip            = (1 << 11),
 
 	// NOTE(hampus): These makes the ui auto-layouting
@@ -36,17 +40,18 @@ enum UI_BoxFlags
 	// TODO(hampus): Implement this
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
-	UI_BoxFlag_FloatingPos     = (1 << 14),
 
 	// TODO(hampus): Implement this
-	UI_BoxFlag_AnimateX        = (1 << 15),
-	UI_BoxFlag_AnimateY        = (1 << 16),
-	UI_BoxFlag_AnimatePos      = (1 << 17),
+	UI_BoxFlag_AnimateX        = (1 << 14),
+	UI_BoxFlag_AnimateY        = (1 << 15),
 
 	// TODO(hampus): Implement this
-	UI_BoxFlag_AnimateWidth    = (1 << 18),
-	UI_BoxFlag_AnimateHeight   = (1 << 19),
-	UI_BoxFlag_AnimateDim      = (1 << 20),
+	UI_BoxFlag_AnimateWidth    = (1 << 16),
+	UI_BoxFlag_AnimateHeight   = (1 << 17),
+
+	UI_BoxFlag_FloatingPos     = UI_BoxFlag_FloatingX | UI_BoxFlag_FloatingY,
+	UI_BoxFlag_AnimatePos      = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
+	UI_BoxFlag_AnimateDim      = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
 };
 
 typedef enum UI_SizeKind UI_SizeKind;
