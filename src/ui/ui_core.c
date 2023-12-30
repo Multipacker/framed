@@ -86,7 +86,7 @@ ui_box_has_flag(UI_Box *box, UI_BoxFlags flag)
 internal UI_RectStyle *
 ui_top_rect_style(Void)
 {
-	UI_RectStyle *result = g_ui_ctx->rect_stack.first;
+	UI_RectStyle *result = g_ui_ctx->rect_style_stack.first;
 	return(result);
 }
 
@@ -100,7 +100,7 @@ ui_push_rect_style(Void)
 		memory_copy_struct(rect_style, first);
 	}
 	rect_style->stack_next = first;
-	g_ui_ctx->rect_stack.first = rect_style;
+	g_ui_ctx->rect_style_stack.first = rect_style;
 
 	return(rect_style);
 }
@@ -108,17 +108,17 @@ ui_push_rect_style(Void)
 internal void
 ui_pop_rect_style(Void)
 {
-	g_ui_ctx->rect_stack.first = g_ui_ctx->rect_stack.first->stack_next;
+	g_ui_ctx->rect_style_stack.first = g_ui_ctx->rect_style_stack.first->stack_next;
 }
 
 internal UI_RectStyle *
 ui_get_auto_pop_rect_style(Void)
 {
 	UI_RectStyle *rect_style = ui_top_rect_style();
-	if (!g_ui_ctx->rect_stack.auto_pop)
+	if (!g_ui_ctx->rect_style_stack.auto_pop)
 	{
 		rect_style = ui_push_rect_style();
-		g_ui_ctx->rect_stack.auto_pop = true;
+		g_ui_ctx->rect_style_stack.auto_pop = true;
 	}
 	return(rect_style);
 }
@@ -126,7 +126,7 @@ ui_get_auto_pop_rect_style(Void)
 internal UI_TextStyle *
 ui_top_text_style(Void)
 {
-	UI_TextStyle *result = g_ui_ctx->text_stack.first;
+	UI_TextStyle *result = g_ui_ctx->text_style_stack.first;
 	return(result);
 }
 
@@ -140,7 +140,7 @@ ui_push_text_style(Void)
 		memory_copy_struct(text_style, first);
 	}
 	text_style->stack_next = first;
-	g_ui_ctx->text_stack.first = text_style;
+	g_ui_ctx->text_style_stack.first = text_style;
 
 	return(text_style);
 }
@@ -148,18 +148,18 @@ ui_push_text_style(Void)
 internal UI_TextStyle *
 ui_pop_text_style(Void)
 {
-	g_ui_ctx->text_stack.first = g_ui_ctx->text_stack.first->stack_next;
-	return(g_ui_ctx->text_stack.first);
+	g_ui_ctx->text_style_stack.first = g_ui_ctx->text_style_stack.first->stack_next;
+	return(g_ui_ctx->text_style_stack.first);
 }
 
 internal UI_TextStyle *
 ui_get_auto_pop_text_style(Void)
 {
 	UI_TextStyle *text_style = ui_top_text_style();
-	if (!g_ui_ctx->text_stack.auto_pop)
+	if (!g_ui_ctx->text_style_stack.auto_pop)
 	{
 		text_style = ui_push_text_style();
-		g_ui_ctx->text_stack.auto_pop = true;
+		g_ui_ctx->text_style_stack.auto_pop = true;
 	}
 	return(text_style);
 }
@@ -167,19 +167,19 @@ ui_get_auto_pop_text_style(Void)
 internal UI_LayoutStyle *
 ui_top_layout_style(Void)
 {
-	return(g_ui_ctx->layout_stack.first);
+	return(g_ui_ctx->layout_style_stack.first);
 }
 
 internal UI_LayoutStyle *
 ui_push_layout_style(Void)
 {
 	UI_LayoutStyle *layout = push_struct(ui_frame_arena(), UI_LayoutStyle);
-	if (g_ui_ctx->layout_stack.first)
+	if (g_ui_ctx->layout_style_stack.first)
 	{
-		memory_copy_struct(layout, g_ui_ctx->layout_stack.first);
+		memory_copy_struct(layout, g_ui_ctx->layout_style_stack.first);
 	}
-	layout->stack_next = g_ui_ctx->layout_stack.first;
-	g_ui_ctx->layout_stack.first = layout;
+	layout->stack_next = g_ui_ctx->layout_style_stack.first;
+	g_ui_ctx->layout_style_stack.first = layout;
 
 	return(layout);
 }
@@ -187,17 +187,17 @@ ui_push_layout_style(Void)
 internal void
 ui_pop_layout_style(Void)
 {
-	g_ui_ctx->layout_stack.first = g_ui_ctx->layout_stack.first->stack_next;
+	g_ui_ctx->layout_style_stack.first = g_ui_ctx->layout_style_stack.first->stack_next;
 }
 
 internal UI_LayoutStyle *
 ui_get_auto_pop_layout_style(Void)
 {
 	UI_LayoutStyle *layout = ui_top_layout_style();
-	if (!g_ui_ctx->layout_stack.auto_pop)
+	if (!g_ui_ctx->layout_style_stack.auto_pop)
 	{
 		layout = ui_push_layout_style();
-		g_ui_ctx->layout_stack.auto_pop = true;
+		g_ui_ctx->layout_style_stack.auto_pop = true;
 	}
 	return(layout);
 }
@@ -319,7 +319,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
 	rect_style->border_thickness = 1;
-	rect_style->radies = v4f32(5, 5, 5, 5);
+	rect_style->radies = v4f32(3, 3, 3, 3);
 	rect_style->softness = 1;
 
 	UI_TextStyle *text_style = ui_push_text_style();
@@ -630,9 +630,9 @@ ui_end(Void)
 	g_ui_ctx->seed_stack = 0;
 	g_ui_ctx->frame_index++;
 	arena_pop_to(ui_frame_arena(), 0);
-	g_ui_ctx->rect_stack.first = 0;
-	g_ui_ctx->text_stack.first = 0;
-	g_ui_ctx->layout_stack.first = 0;
+	g_ui_ctx->rect_style_stack.first = 0;
+	g_ui_ctx->text_style_stack.first = 0;
+	g_ui_ctx->layout_style_stack.first = 0;
 	g_ui_ctx = 0;
 }
 
@@ -873,22 +873,22 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
 
-	if (g_ui_ctx->rect_stack.auto_pop)
+	if (g_ui_ctx->rect_style_stack.auto_pop)
 	{
 		ui_pop_rect_style();
-		g_ui_ctx->rect_stack.auto_pop = false;
+		g_ui_ctx->rect_style_stack.auto_pop = false;
 	}
 
-	if (g_ui_ctx->text_stack.auto_pop)
+	if (g_ui_ctx->text_style_stack.auto_pop)
 	{
 		ui_pop_text_style();
-		g_ui_ctx->text_stack.auto_pop = false;
+		g_ui_ctx->text_style_stack.auto_pop = false;
 	}
 
-	if (g_ui_ctx->layout_stack.auto_pop)
+	if (g_ui_ctx->layout_style_stack.auto_pop)
 	{
 		ui_pop_layout_style();
-		g_ui_ctx->layout_stack.auto_pop = false;
+		g_ui_ctx->layout_style_stack.auto_pop = false;
 	}
 
 	result->last_frame_touched_index = g_ui_ctx->frame_index;

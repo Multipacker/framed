@@ -229,9 +229,9 @@ struct UI_Context
 	UI_ParentStackNode *parent_stack;
 	UI_KeyStackNode    *seed_stack;
 
-	UI_RectStyleStack  rect_stack;
-	UI_TextStyleStack  text_stack;
-	UI_LayoutStyleStack layout_stack;
+	UI_RectStyleStack  rect_style_stack;
+	UI_TextStyleStack  text_style_stack;
+	UI_LayoutStyleStack layout_style_stack;
 
 	UI_Box *root;
 
