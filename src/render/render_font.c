@@ -851,9 +851,8 @@ render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey fon
 }
 
 internal Void
-render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font_key, Vec4F32 color)
+render_character_internal(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color)
 {
-	R_Font *font = render_font_from_key(renderer, font_key);
 	if (font->loaded)
 	{
 		U32 index = render_glyph_index_from_codepoint(font, codepoint);
@@ -874,6 +873,13 @@ render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font
 					.color = color,
 					.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
 	}
+}
+
+internal Void
+render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font_key, Vec4F32 color)
+{
+	R_Font *font = render_font_from_key(renderer, font_key);
+	render_character_internal(renderer, min, codepoint, font, color);
 }
 
 internal Vec2F32
@@ -897,6 +903,20 @@ render_measure_text(R_Font *font, Str8 text)
 			}
 		}
 
+		result.y = font->line_height;
+	}
+	return(result);
+}
+
+internal Vec2F32
+render_measure_character(R_Font *font, U32 codepoint)
+{
+	Vec2F32 result = { 0 };
+	if (font->loaded)
+	{
+		U32 index = render_glyph_index_from_codepoint(font, codepoint);
+		R_Glyph *glyph = font->glyphs + index;
+		result.x = (glyph->advance_width);
 		result.y = font->line_height;
 	}
 	return(result);

@@ -73,6 +73,29 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
+		local U32 icon = R_ICON_STAR;
+
+		ui_next_icon(icon);
+		UI_Comm star_comm = ui_comm_from_box(ui_box_make(UI_BoxFlag_DrawText |
+														 UI_BoxFlag_DrawBackground |
+														 UI_BoxFlag_Clickable |
+														 UI_BoxFlag_HotAnimation |
+														 UI_BoxFlag_ActiveAnimation |
+														 UI_BoxFlag_DrawBorder,
+														 str8_lit("Star")));
+
+		if (star_comm.pressed)
+		{
+			if (icon == R_ICON_STAR)
+			{
+				icon = R_ICON_STAR_EMPTY;
+			}
+			else
+			{
+				icon = R_ICON_STAR;
+			}
+		}
+
 		ui_next_relative_pos(Axis2_X, 500);
 		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
@@ -144,7 +167,6 @@ os_main(Str8List arguments)
 								 UI_BoxFlag_AnimatePos,
 								 str8_lit("Parent"));
 		}
-
 		ui_parent(parent)
 		{
 			ui_next_vert_corner_radius(20, 0);
@@ -191,7 +213,6 @@ os_main(Str8List arguments)
 				ui_spacer(ui_em(0.25f, 1));
 			}
 		}
-
 		ui_end();
 
 		render_end(renderer);

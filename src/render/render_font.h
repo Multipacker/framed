@@ -166,5 +166,6 @@ internal Void    render_destroy_font(R_Context *renderer, R_Font *font);
 
 internal Void render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);
 internal Vec2F32 render_measure_text(R_Font *font, Str8 text);
+internal Vec2F32 render_measure_character(R_Font *font, U32 codepoint);
 
 #endif

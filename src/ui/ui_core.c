@@ -5,15 +5,19 @@
 // [x] - Basic widgets
 // [x] - EM sizing
 // [x] - Animations
+// [x]  - Icons
+// []  - Clipping rects
 // []  - Hover cursor
 // []  - Size violations & strictness
-// []  - Icons
 // []  - Scrolling
 // []  - Focused box
 // []  - Context menu
 // []  - Tooltip
 // []  - Custom draw functions
 // []  - Keyboard navigation
+// []  - Fixup icon sizes
+
+#define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
 
 global UI_Context *g_ui_ctx;
 
@@ -441,7 +445,15 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_TextContent:
 		{
-			Vec2F32 text_dim = render_measure_text(font, root->string);
+			Vec2F32 text_dim = {0};
+			if (root->text_style.icon)
+			{
+				text_dim = render_measure_character(font, root->text_style.icon);
+			}
+			else
+			{
+				text_dim = render_measure_text(font, root->string);
+			}
 			root->target_size[axis] = text_dim.v[axis] + root->text_style.padding[axis];
 		} break;
 
@@ -642,6 +654,42 @@ ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign alig
 	return(result);
 }
 
+internal Vec2F32
+ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
+{
+	Vec2F32 result = {0};
+
+	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
+
+	Vec2F32 text_dim = render_measure_character(font, codepoint);
+
+	switch (align)
+	{
+		case UI_TextAlign_Center:
+		{
+			result = v2f32_div_f32(v2f32_sub_v2f32(rect_dim, text_dim), 2.0f);
+		} break;
+
+		case UI_TextAlign_Right:
+		{
+			result.y = (rect_dim.y - text_dim.y) / 2;
+			result.x = rect_dim.x - text_dim.x;
+		} break;
+
+		case UI_TextAlign_Left:
+		{
+			result.y = (rect_dim.y - text_dim.y) / 2;
+			result.x = 0;
+		} break;
+
+		invalid_case;
+	}
+
+	result = v2f32_add_v2f32(result, rect.min);
+
+	return(result);
+}
+
 internal Void
 ui_draw(UI_Box *root)
 {
@@ -715,8 +763,16 @@ ui_draw(UI_Box *root)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
 	{
-		Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, text_style->align);
-		render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+		if (text_style->icon)
+		{
+			Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->rect, text_style->align);
+			render_character_internal(g_ui_ctx->renderer, text_pos, text_style->icon, font, text_style->color);
+		}
+		else
+		{
+			Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, text_style->align);
+			render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+		}
 	}
 
 	for (UI_Box *child = root->first;
