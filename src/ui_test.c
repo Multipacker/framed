@@ -70,8 +70,9 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
+		ui_next_relative_pos(Axis2_X, 500);
+		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
-
 #if 1
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
 
@@ -130,7 +131,6 @@ os_main(Str8List arguments)
 									 str8_lit("Parent"));
 		ui_pop_color();
 #if 1
-
 		ui_push_parent(parent);
 
 		ui_next_vert_corner_radius(20, 0);

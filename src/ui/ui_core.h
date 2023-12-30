@@ -117,9 +117,6 @@ struct UI_LayoutStyle
 {
 	UI_LayoutStyle *stack_next;
 
-	UI_Size size[Axis2_COUNT];
-	F32     relative_pos[Axis2_COUNT];
-	Axis2   child_layout_axis;
 	UI_Size     size[Axis2_COUNT];
 	F32         relative_pos[Axis2_COUNT];
 	Axis2       child_layout_axis;

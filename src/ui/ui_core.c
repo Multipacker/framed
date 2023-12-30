@@ -318,14 +318,16 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 	rect_style->color[Corner_TopRight]    = color;
 	rect_style->color[Corner_BottomLeft]  = color;
 	rect_style->color[Corner_BottomRight] = color;
-	rect_style->border_color = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
+	rect_style->border_color     = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
 	rect_style->border_thickness = 1;
-	rect_style->radies = v4f32(3, 3, 3, 3);
-	rect_style->softness = 1;
+	// TODO(hampus): Make this EM
+	rect_style->radies           = v4f32(3, 3, 3, 3);
+	rect_style->softness         = 1;
 
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
 	text_style->font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	// TODO(hampus): Make this EM
 	text_style->padding[Axis2_X] = 10;
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
@@ -459,14 +461,17 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 			 child != 0;
 			 child = child->next)
 		{
-			F32 child_size = child->computed_size[axis];
-			if (axis == child_layout_axis)
+			if (!ui_box_has_flag(child, UI_BoxFlag_FloatingX << axis))
 			{
-				children_total_size += child_size;
-			}
-			else
-			{
-				children_total_size = f32_max(child_size, children_total_size);
+				F32 child_size = child->computed_size[axis];
+				if (axis == child_layout_axis)
+				{
+					children_total_size += child_size;
+				}
+				else
+				{
+					children_total_size = f32_max(child_size, children_total_size);
+				}
 			}
 		}
 
@@ -479,17 +484,29 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
 	if (root->parent)
 	{
-		if (axis == root->parent->layout_style.child_layout_axis)
+		if (!ui_box_has_flag(root, UI_BoxFlag_FloatingX << axis))
 		{
-			UI_Box *prev = root->prev;
-			if (prev)
+			if (axis == root->parent->layout_style.child_layout_axis)
 			{
-				root->computed_rel_position[axis] = prev->computed_rel_position[axis] + prev->computed_size[axis];
+				UI_Box *prev = 0;
+				for (prev = root->prev;
+					 prev != 0;
+					 prev = prev->prev)
+				{
+					if (!ui_box_has_flag(prev, UI_BoxFlag_FloatingX << axis))
+					{
+						break;
+					}
+				}
+				if (prev)
+				{
+					root->computed_rel_position[axis] = prev->computed_rel_position[axis] + prev->computed_size[axis];
+				}
 			}
-		}
-		else
-		{
-			root->computed_rel_position[axis] = 0;
+			else
+			{
+				root->computed_rel_position[axis] = 0;
+			}
 		}
 
 		root->rect.min.v[axis] = root->parent->rect.min.v[axis] + root->computed_rel_position[axis];
@@ -878,6 +895,17 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
+
+	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
+	{
+		result->computed_rel_position[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
+	}
+
+	if (ui_box_has_flag(result, UI_BoxFlag_FloatingY))
+	{
+		result->computed_rel_position[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
+	}
+
 	if (g_ui_ctx->rect_style_stack.auto_pop)
 	{
 		ui_pop_rect_style();
