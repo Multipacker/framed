@@ -482,10 +482,6 @@ render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 internal Void
 render_make_font_freetype(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
-	out_font->loading = true;
-
-	memory_fence();
-
 	assert(out_font);
 	Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -628,9 +624,10 @@ render_make_font_freetype(R_Context *renderer, R_Font *out_font, S32 font_size, 
 
 	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
 #endif
+
 	memory_fence();
 
-	out_font->loading = true;
+	out_font->loading = false;
 }
 
 internal Void
@@ -685,6 +682,7 @@ render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path
 	entry->render_mode = render_mode;
 	out_font->font_size = font_size;
 	out_font->path = path;
+	out_font->loading = true;
 
 	memory_fence();
 
@@ -733,7 +731,7 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 			break;
 		}
 
-		B32 slot_is_empty = font->last_frame_index_used < current_frame_index ||
+		B32 slot_is_empty = font->last_frame_index_used < (current_frame_index-1) ||
 			font->arena->pos == sizeof(Arena);
 
 		if (slot_is_empty && unused_slot == -1 && !font->loading)
