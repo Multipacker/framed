@@ -309,12 +309,14 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 		}
 	}
 
+	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
+
 	// NOTE(hampus): Setup default styling
 	UI_RectStyle *rect_style = ui_push_rect_style();
-	rect_style->color[Corner_TopLeft]     = v4f32(0.2f, 0.2f, 0.2f, 1);
-	rect_style->color[Corner_TopRight]    = v4f32(0.2f, 0.2f, 0.2f, 1);
-	rect_style->color[Corner_BottomLeft]  = v4f32(0.2f, 0.2f, 0.2f, 1);
-	rect_style->color[Corner_BottomRight] = v4f32(0.2f, 0.2f, 0.2f, 1);;
+	rect_style->color[Corner_TopLeft]     = color;
+	rect_style->color[Corner_TopRight]    = color;
+	rect_style->color[Corner_BottomLeft]  = color;
+	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
 	rect_style->border_thickness = 1;
 	rect_style->radies = v4f32(5, 5, 5, 5);
@@ -581,7 +583,7 @@ ui_comm_from_box(UI_Box *box)
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
-						
+
 						case Gfx_Key_MouseRight:
 						{
 							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -591,7 +593,7 @@ ui_comm_from_box(UI_Box *box)
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
-						
+
 						default:
 						{
 						} break;
@@ -611,7 +613,7 @@ ui_comm_from_box(UI_Box *box)
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
-						
+
 						case Gfx_Key_MouseRight:
 						{
 							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -621,7 +623,7 @@ ui_comm_from_box(UI_Box *box)
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
-							
+
 						case Gfx_Key_MouseLeftDouble:
 						{
 							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -631,7 +633,7 @@ ui_comm_from_box(UI_Box *box)
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
-						
+
 						default:
 						{
 						} break;
@@ -722,10 +724,34 @@ ui_box_from_key(UI_Key key)
 	return(result);
 }
 
+internal Str8
+ui_get_hash_part(Str8 string)
+{
+	Str8 result = string;
+	U64 index = 0;
+	if (str8_find_substr8(string, str8_lit("###"), &index))
+	{
+		result = str8_skip(string, index + 3);
+	}
+	return(result);
+}
+
+internal Str8
+ui_get_display_part(Str8 string)
+{
+	Str8 result = string;
+	U64 index = 0;
+	if (str8_find_substr8(string, str8_lit("##"), &index))
+	{
+		result = str8_chop(string, string.size - index);
+	}
+	return(result);
+}
+
 internal UI_Box *
 ui_box_make(UI_BoxFlags flags, Str8 string)
 {
-	UI_Key key = ui_key_from_string(ui_top_seed(), string);
+	UI_Key key = ui_key_from_string(ui_top_seed(), ui_get_hash_part(string));
 
 	UI_Box *result = ui_box_from_key(key);
 
@@ -787,7 +813,8 @@ ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 internal Void
 ui_box_equip_display_string(UI_Box *box, Str8 string)
 {
-	box->string = string;
+	Str8 display_string = ui_get_display_part(string);
+	box->string = display_string;
 }
 
 internal Void

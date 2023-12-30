@@ -12,13 +12,11 @@ internal UI_Comm
 ui_textf(CStr fmt, ...)
 {
 	UI_Comm comm = {0};
-	Arena_Temporary scratch = get_scratch(0, 0);
 	va_list args;
 	va_start(args, fmt);
-	Str8 string = str8_pushfv(scratch.arena, fmt, args);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	comm = ui_text(string);
 	va_end(args);
-	release_scratch(scratch);
 	return(comm);
 }
 
@@ -41,12 +39,10 @@ internal UI_Comm
 ui_buttonf(CStr fmt, ...)
 {
 	UI_Comm comm = {0};
-	Arena_Temporary scratch = get_scratch(0, 0);
 	va_list args;
 	va_start(args, fmt);
-	Str8 string = str8_pushfv(scratch.arena, fmt, args);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	comm = ui_button(string);
 	va_end(args);
-	release_scratch(scratch);
 	return(comm);
 }

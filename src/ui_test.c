@@ -67,7 +67,13 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer);
 
-		UI_Comm comm = ui_button(str8_lit("Hello!"));
+		U64 result = 0;
+
+		ui_buttonf("Num free boxes: %d###MyBoxaa", g_ui_ctx->box_storage.num_free_boxes);
+
+		#if 1
+		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
+		ui_button(str8_lit("Helloaa!##b"));
 
 		if (comm.pressed)
 		{
@@ -93,7 +99,7 @@ os_main(Str8List arguments)
 		{
 			printf("Right released!\n");
 		}
-
+		#endif
 		ui_buttonf("Hehe%d", 5);
 
 		ui_text(str8_lit("Text!"));
