@@ -164,8 +164,11 @@ os_main(Str8List arguments)
 								 UI_BoxFlag_DrawBorder |
 								 UI_BoxFlag_DrawDropShadow |
 								 UI_BoxFlag_AnimateDim |
-								 UI_BoxFlag_AnimatePos,
+								 UI_BoxFlag_AnimatePos |
+								 UI_BoxFlag_ViewScroll,
 								 str8_lit("Parent"));
+			UI_Comm parent_comm = ui_comm_from_box(parent);
+			parent->scroll.y += parent_comm.scroll.y;
 		}
 		ui_parent(parent)
 		{

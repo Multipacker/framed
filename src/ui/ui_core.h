@@ -23,7 +23,6 @@ enum UI_BoxFlags
 
 	// NOTE(hampus): This decides if the box
 	// should apply a scroll value to its children
-	// TODO(hampus): Implement this
 	UI_BoxFlag_ViewScroll      = (1 << 8),
 
 	// NOTE(hampus): This decides if the children
@@ -183,6 +182,8 @@ struct UI_Box
 	UI_TextStyle   text_style;
 	UI_LayoutStyle layout_style;
 
+	Vec2F32 scroll;
+
 	F32 hot_t;
 	F32 active_t;
 };
@@ -193,6 +194,7 @@ struct UI_Comm
 	UI_Box *widget;
 	Vec2F32 mouse;
 	Vec2F32 drag_delta;
+	Vec2F32 scroll;
 	B8 pressed;
 	B8 released;
 	B8 double_clicked;

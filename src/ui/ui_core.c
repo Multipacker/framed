@@ -2,20 +2,21 @@
 // [x] - Styling
 // [x] - Input
 // [x] - More layout sizes
-// [x] - Basic widgets
 // [x] - EM sizing
 // [x] - Animations
-// [x]  - Icons
+// [x] - Icons
+// [x]  - Scrolling
+// []  - Slider, checkbox
 // []  - Clipping rects
-// []  - Hover cursor
 // []  - Size violations & strictness
-// []  - Scrolling
+
+// []  - Hover cursor
 // []  - Focused box
 // []  - Context menu
 // []  - Tooltip
 // []  - Custom draw functions
-// []  - Keyboard navigation
 // []  - Fixup icon sizes
+// []  - Keyboard navigation
 
 #define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
 
@@ -594,6 +595,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 		root->calc_size[axis] = root->target_size[axis];
 	}
 
+	root->calc_pos[axis] -= root->scroll.v[axis];
 
 	root->rect.min.v[axis] = root->calc_pos[axis];
 	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size[axis];
@@ -884,6 +886,15 @@ ui_comm_from_box(UI_Box *box)
 						default:
 						{
 						} break;
+					}
+				} break;
+
+				case Gfx_EventKind_Scroll:
+				{
+					if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
+					{
+						result.scroll.y = -node->scroll.y;
+						dll_remove(event_list->first, event_list->last, node);
 					}
 				} break;
 
