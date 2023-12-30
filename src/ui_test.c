@@ -73,6 +73,7 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
+#if 0
 		local U32 icon = R_ICON_STAR;
 
 		ui_next_icon(icon);
@@ -95,7 +96,7 @@ os_main(Str8List arguments)
 				icon = R_ICON_STAR;
 			}
 		}
-
+#endif
 		ui_next_relative_pos(Axis2_X, 500);
 		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
@@ -130,6 +131,14 @@ os_main(Str8List arguments)
 		ui_next_corner_radius(0);
 		ui_next_vert_gradient(v4f32(0, 0, 0, 1), v4f32(0, 1, 0, 1));
 		ui_button(str8_lit("Helloaa!##b"));
+
+		local B32 test_bool = true;
+		ui_row()
+		{
+			ui_check(&test_bool, str8_lit("MyTestBool"));
+			ui_spacer(ui_em(0.4f, 1));
+			ui_text(str8_lit("Show debug lines"));
+		}
 
 		ui_next_softness(5);
 		ui_next_hori_gradient(v4f32(0, 1, 1, 1), v4f32(1, 1, 0, 1));

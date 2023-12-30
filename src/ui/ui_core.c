@@ -6,8 +6,8 @@
 // [x] - Animations
 // [x] - Icons
 // [x] - Scrolling
+// [x]  - Clipping rects
 // []  - Slider, checkbox
-// []  - Clipping rects
 // []  - Size violations & strictness
 
 // []  - Hover cursor
@@ -386,13 +386,25 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
 	clip_rect->max = max_clip;
-
 	ui_push_clip_rect(clip_rect, false);
 
 	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
+}
+
+internal F32
+ui_top_font_line_height(Void)
+{
+	UI_TextStyle *text_style = ui_top_text_style();
+	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	F32 result = 0;
+	if (font)
+	{
+		result = font->line_height;
+	}
+	return(result);
 }
 
 internal S32
@@ -446,7 +458,7 @@ ui_em(F32 value, F32 strictness)
 {
 	UI_Size result = {0};
 	result.kind = UI_SizeKind_Pixels;
-	result.value = ui_top_font_size() * value;
+	result.value = ui_top_font_line_height() * value;
 	result.strictness = strictness;
 	return(result);
 }
@@ -749,6 +761,13 @@ ui_draw(UI_Box *root)
 
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 
+	rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
+	rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
+	rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
+	rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
+
+	text_style->color = vec4f32_srgb_to_linear(text_style->color);
+
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 	{
 		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
@@ -774,6 +793,8 @@ ui_draw(UI_Box *root)
 		{
 			d += 0.2f * root->hot_t;
 		}
+
+		d = f32_srgb_to_linear(d);
 
 		rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 															v4f32(d, d, d, 0));
@@ -805,7 +826,7 @@ ui_draw(UI_Box *root)
 	}
 
 	render_pop_clip(g_ui_ctx->renderer);
-
+	render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 	for (UI_Box *child = root->first;
 		 child != 0;
 		 child = child->next)

@@ -47,6 +47,39 @@ ui_buttonf(CStr fmt, ...)
 	return(comm);
 }
 
+internal UI_Comm
+ui_check(B32 *value, Str8 string)
+{
+	UI_Comm comm = {0};
+
+	ui_next_width(ui_em(1.0f, 1));
+	ui_next_height(ui_em(1.0f, 1));
+	UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
+									UI_BoxFlag_Clickable |
+									UI_BoxFlag_HotAnimation |
+									UI_BoxFlag_ActiveAnimation |
+									UI_BoxFlag_DrawBorder,
+									string);
+	comm = ui_comm_from_box(container);
+	if (comm.pressed)
+	{
+		*value = !(*value);
+	}
+	ui_parent(container)
+	{
+		if (*value)
+		{
+			ui_next_icon(R_ICON_CHECK);
+		}
+		ui_next_width(ui_pct(1.0f, 1));
+		ui_next_height(ui_pct(1.0f, 1));
+		UI_Box *check = ui_box_make(UI_BoxFlag_DrawText,
+									str8_lit(""));
+	}
+
+	return(comm);
+}
+
 internal Void
 ui_spacer(UI_Size size)
 {
