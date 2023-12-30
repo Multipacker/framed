@@ -851,6 +851,11 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 		g_ui_ctx->box_hash_map[slot_index] = result;
 	}
+	else
+	{
+		assert(result->last_frame_touched_index != g_ui_ctx->frame_index &&
+			   "Hash collision!");
+	}
 
 	result->first = 0;
 	result->last = 0;
