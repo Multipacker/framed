@@ -57,4 +57,11 @@ internal Void            arena_end_temporary(Arena_Temporary temporary);
 #define memory_copy_array(destination, source) 	      memory_copy((destination), (source), u64_min(sizeof(destination), sizeof(source)))
 #define memory_copy_typed(destination, source, count) memory_copy((destination), (source), u64_min(sizeof(*(destination)), sizeof(*(source)))*(count))
 
+#define arena_temporary(a)                                             \
+	for (                                                              \
+		Arena_Temporary temp##__LINE__ = arena_begin_temporary(a);     \
+		temp##__LINE__.arena;                                          \
+		arena_end_temporary(temp##__LINE__), temp##__LINE__.arena = 0  \
+	)
+
 #endif // BASE_MEMORY_H

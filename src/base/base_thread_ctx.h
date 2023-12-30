@@ -21,7 +21,15 @@ internal ThreadContext *thread_get_ctx(Void);
 internal Void           thread_set_name(Str8 string);
 internal Str8           thread_get_name(Void);
 
-#define release_scratch(scratch) arena_end_temporary(scratch);
+#define release_scratch(scratch) arena_end_temporary(scratch)
+
+#define arena_scratch(conflicts, count)                             \
+	Arena_Temporary temp##__LINE__ = get_scratch(conflicts, count); \
+	for (                                                           \
+		Arena *scratch = temp##__LINE__.arena;                      \
+		scratch;                                                    \
+		release_scratch(temp##__LINE__), scratch = 0                \
+	)
 
 internal Arena_Temporary get_scratch(Arena **conflicts, U32 count);
 
