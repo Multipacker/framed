@@ -14,12 +14,12 @@ enum UI_BoxFlags
 };
 
 typedef enum UI_SizeKind UI_SizeKind;
- enum UI_SizeKind
+enum UI_SizeKind
 {
 	UI_SizeKind_Null,
 	UI_SizeKind_Pixels,
 	UI_SizeKind_TextContent,
-	UI_SizeKind_PercentOfParent,
+	UI_SizeKind_Pct,
 	UI_SizeKind_ChildrenSum,
 };
 
@@ -68,7 +68,7 @@ struct UI_TextStyle
 	UI_TextAlign text_align;
 	F32 text_padding[Axis2_COUNT];
 	U64 icon;
-	 R_FontKey font;
+	R_FontKey font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
@@ -79,7 +79,7 @@ struct UI_LayoutStyle
 	UI_Size size[Axis2_COUNT];
 	F32 relative_pos[Axis2_COUNT];
 	Axis2 child_layout_axis;
-	};
+};
 
 typedef struct UI_RectStyleStack UI_RectStyleStack;
 struct UI_RectStyleStack
@@ -125,7 +125,7 @@ struct UI_Box
 	Str8        string;
 #if !BUILD_MODE_RELEASE
 	Str8        debug_string;
-	#endif
+#endif
 
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
@@ -220,6 +220,8 @@ internal Void ui_end(Void);
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
 internal UI_Size ui_text_content(F32 strictness);
+internal UI_Size ui_pct(F32 value, F32 strictness);
+internal UI_Size ui_children_sum(F32 strictness);
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 
@@ -233,7 +235,6 @@ internal UI_Box *ui_box_make(UI_BoxFlags flags, Str8 string);
 internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
 
 internal Void ui_box_equip_display_string(UI_Box *widget, Str8 string);
-internal Void ui_box_equip_child_layout_axis(UI_Box *widget, Axis2 axis);
 
 internal UI_Box *ui_top_parent(Void);
 internal UI_Box *ui_push_parent(UI_Box *widget);
@@ -243,8 +244,24 @@ internal UI_Key ui_top_seed(Void);
 internal UI_Key ui_push_seed(UI_Key key);
 internal UI_Key ui_pop_seed(Void);
 
-#define ui_next_size(axis, sz)         (ui_get_auto_pop_layout_style()->size[axis] = sz)
-#define ui_push_size(axis, sz)         (ui_push_layout_style()->size[axis] = sz)
-#define ui_pop_size()                    (ui_pop_layout_style())
+// NOTE(hampus): Rect styling
+
+#define ui_next_color(corner, c) (ui_get_auto_pop_rect_style()->color[corner] = c)
+
+// NOTE(hampus): Text styling
+
+// NOTE(hampus): Layout styling
+
+#define ui_next_size(axis, sz)    (ui_get_auto_pop_layout_style()->size[axis] = sz)
+#define ui_push_size(axis, sz)    (ui_push_layout_style()->size[axis] = sz)
+#define ui_pop_size()             (ui_pop_layout_style())
+
+#define ui_next_width(sz)         (ui_next_size(Axis2_X, sz))
+#define ui_push_width(sz)         (ui_push_size(Axis2_X, sz))
+#define ui_pop_width()            (ui_pop_size())
+
+#define ui_next_height(sz)         (ui_next_size(Axis2_Y, sz))
+#define ui_push_height(sz)         (ui_push_size(Axis2_Y, sz))
+#define ui_pop_height()            (ui_pop_size())
 
 #endif //UI_CORE_H

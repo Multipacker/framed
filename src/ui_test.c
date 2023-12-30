@@ -69,9 +69,9 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
-		ui_buttonf("Num free boxes: %d###MyBoxaa", g_ui_ctx->box_storage.num_free_boxes);
+		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
 
-		#if 1
+#if 1
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
 		ui_button(str8_lit("Helloaa!##b"));
 
@@ -99,13 +99,14 @@ os_main(Str8List arguments)
 		{
 			printf("Right released!\n");
 		}
-		#endif
+#endif
 		ui_buttonf("Hehe%d", 5);
 
 		ui_text(str8_lit("Text!"));
 
-		ui_next_size(Axis2_X, ui_pixels(100, 1));
-		ui_next_size(Axis2_Y, ui_pixels(100, 1));
+		ui_next_width(ui_pixels(100, 1));
+		ui_next_height(ui_pixels(100, 1));
+		ui_next_color(Corner_TopLeft, v4f32(1, 0, 0, 1));
 		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder |
 								  UI_BoxFlag_DrawText,
@@ -113,17 +114,17 @@ os_main(Str8List arguments)
 
 		ui_box_equip_display_string(box, str8_lit("Hello!"));
 
-		ui_next_size(Axis2_X, ui_pixels(300, 1));
-		ui_next_size(Axis2_Y, ui_pixels(300, 1));
+		ui_next_width(ui_children_sum(1));
+		ui_next_height(ui_children_sum(1));
 		UI_Box *parent = ui_box_make(UI_BoxFlag_DrawBackground |
 									 UI_BoxFlag_DrawBorder |
 									 UI_BoxFlag_DrawDropShadow,
 									 str8_lit("Parent"));
 #if 1
 
-		ui_push_parent(parent);
-
 		parent->layout_style.child_layout_axis = Axis2_X;
+
+		ui_push_parent(parent);
 
 		ui_next_size(Axis2_X, ui_pixels(100, 1));
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
@@ -131,8 +132,8 @@ os_main(Str8List arguments)
 					UI_BoxFlag_DrawBorder,
 					str8_lit(""));
 
-		ui_next_size(Axis2_X, ui_pixels(100, 1));
-		ui_next_size(Axis2_Y, ui_pixels(100, 1));
+		ui_next_size(Axis2_X, ui_pixels(200, 1));
+		ui_next_size(Axis2_Y, ui_pixels(200, 1));
 		ui_box_make(UI_BoxFlag_DrawBackground |
 					UI_BoxFlag_DrawBorder,
 					str8_lit(""));

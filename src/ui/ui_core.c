@@ -358,11 +358,32 @@ ui_text_content(F32 strictness)
 	return(result);
 }
 
+internal UI_Size
+ui_pct(F32 value, F32 strictness)
+{
+	UI_Size result = {0};
+	result.kind = UI_SizeKind_Pct;
+	result.value = value;
+	result.strictness = strictness;
+	return(result);
+}
+
+internal UI_Size
+ui_children_sum(F32 strictness)
+{
+	UI_Size result = {0};
+	result.kind = UI_SizeKind_ChildrenSum;
+	result.strictness = strictness;
+	return(result);
+}
+
 internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
+	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
-	switch (root->layout_style.size[axis].kind)
+	UI_Size size = root->layout_style.size[axis];
+	switch (size.kind)
 	{
 		case UI_SizeKind_Null:
 		{
@@ -371,7 +392,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_Pixels:
 		{
-			root->computed_size[axis] = root->layout_style.size[axis].value;
+			root->computed_size[axis] = size.value;
 		} break;
 
 		case UI_SizeKind_TextContent:
@@ -388,6 +409,66 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 		 child = child->next)
 	{
 		ui_solve_independent_sizes(child, axis);
+	}
+}
+
+internal Void
+ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
+{
+	// NOTE(hampus): UI_SizeKind_Pct
+	UI_Size size = root->layout_style.size[axis];
+	if (size.kind == UI_SizeKind_Pct)
+	{
+		assert(root->parent &&
+			   "Percent of parent without a parent");
+
+		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_TextContent &&
+			   "Cyclic sizing behaviour");
+
+		F32 parent_size = root->parent->computed_size[axis];
+		root->computed_size[axis] = parent_size * size.value;
+	}
+
+	for (UI_Box *child = root->first;
+		 child != 0;
+		 child = child->next)
+	{
+		ui_solve_upward_dependent_sizes(child, axis);
+	}
+}
+
+internal Void
+ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
+{
+	// NOTE(hampus): UI_SizeKind_ChildrenSum
+	for (UI_Box *child = root->first;
+		 child != 0;
+		 child = child->next)
+	{
+		ui_solve_downward_dependent_sizes(child, axis);
+	}
+
+	UI_Size size = root->layout_style.size[axis];
+	if (size.kind == UI_SizeKind_ChildrenSum)
+	{
+		F32 children_total_size = 0;
+		Axis2 child_layout_axis = root->layout_style.child_layout_axis;
+		for (UI_Box *child = root->first;
+			 child != 0;
+			 child = child->next)
+		{
+			F32 child_size = child->computed_size[axis];
+			if (axis == child_layout_axis)
+			{
+				children_total_size += child_size;
+			}
+			else
+			{
+				children_total_size = f32_max(child_size, children_total_size);
+			}
+		}
+
+		root->computed_size[axis] = children_total_size;
 	}
 }
 
@@ -427,6 +508,8 @@ ui_layout(UI_Box *root)
 	for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
 	{
 		ui_solve_independent_sizes(root, axis);
+		ui_solve_upward_dependent_sizes(root, axis);
+		ui_solve_downward_dependent_sizes(root, axis);
 		ui_calculate_final_rect(root, axis);
 	}
 }
@@ -589,7 +672,6 @@ ui_comm_from_box(UI_Box *box)
 							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
 							{
 								result.right_released = true;
-								g_ui_ctx->active_key = box->key;
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
@@ -618,8 +700,6 @@ ui_comm_from_box(UI_Box *box)
 						{
 							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
 							{
-								result.right_pressed = true;
-								g_ui_ctx->active_key = box->key;
 								dll_remove(event_list->first, event_list->last, node);
 							}
 						} break;
@@ -725,7 +805,7 @@ ui_box_from_key(UI_Key key)
 }
 
 internal Str8
-ui_get_hash_part(Str8 string)
+ui_get_hash_part_from_string(Str8 string)
 {
 	Str8 result = string;
 	U64 index = 0;
@@ -737,7 +817,7 @@ ui_get_hash_part(Str8 string)
 }
 
 internal Str8
-ui_get_display_part(Str8 string)
+ui_get_display_part_from_string(Str8 string)
 {
 	Str8 result = string;
 	U64 index = 0;
@@ -751,7 +831,7 @@ ui_get_display_part(Str8 string)
 internal UI_Box *
 ui_box_make(UI_BoxFlags flags, Str8 string)
 {
-	UI_Key key = ui_key_from_string(ui_top_seed(), ui_get_hash_part(string));
+	UI_Key key = ui_key_from_string(ui_top_seed(), ui_get_hash_part_from_string(string));
 
 	UI_Box *result = ui_box_from_key(key);
 
@@ -792,6 +872,24 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
 
+	if (g_ui_ctx->rect_stack.auto_pop)
+	{
+		ui_pop_rect_style();
+		g_ui_ctx->rect_stack.auto_pop = false;
+	}
+
+	if (g_ui_ctx->text_stack.auto_pop)
+	{
+		ui_pop_text_style();
+		g_ui_ctx->text_stack.auto_pop = false;
+	}
+
+	if (g_ui_ctx->layout_stack.auto_pop)
+	{
+		ui_pop_layout_style();
+		g_ui_ctx->layout_stack.auto_pop = false;
+	}
+
 	result->last_frame_touched_index = g_ui_ctx->frame_index;
 	return(result);
 }
@@ -813,14 +911,8 @@ ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 internal Void
 ui_box_equip_display_string(UI_Box *box, Str8 string)
 {
-	Str8 display_string = ui_get_display_part(string);
+	Str8 display_string = ui_get_display_part_from_string(string);
 	box->string = display_string;
-}
-
-internal Void
-ui_box_equip_child_layout_axis(UI_Box *box, Axis2 axis)
-{
-	box->layout_style.child_layout_axis = axis;
 }
 
 internal UI_Box *
