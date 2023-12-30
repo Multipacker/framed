@@ -2,7 +2,7 @@ internal UI_Comm
 ui_text(Str8 string)
 {
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText,
-						   string);
+							  string);
 	ui_box_equip_display_string(box, string);
 	UI_Comm comm = ui_comm_from_box(box);
 	return(comm);

@@ -1,8 +1,8 @@
 // TODO(hampus):
-// [] - Styling
+// [x] - Styling
 // [] - Input
-// [] - More layout sizes
-// [] - Basic widgets
+// [x] - More layout sizes
+// [x] - Basic widgets
 // [] - Hover cursor
 // [] - Size violations & strictness
 // [] - Animations
@@ -325,6 +325,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer)
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
 	text_style->font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	text_style->padding[Axis2_X] = 10;
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->size[Axis2_X] = ui_text_content(1);
@@ -398,7 +399,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 		case UI_SizeKind_TextContent:
 		{
 			Vec2F32 text_dim = render_measure_text(font, root->string);
-			root->computed_size[axis] = text_dim.v[axis];
+			root->computed_size[axis] = text_dim.v[axis] + root->text_style.padding[axis];
 		} break;
 
 		default: break;
@@ -581,7 +582,6 @@ ui_draw(UI_Box *root)
 																v4f32(d, d, d, 0));
 			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 																 v4f32(d, d, d, 0));
-
 		}
 		else if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation) &&
 				 ui_box_is_hot(root))

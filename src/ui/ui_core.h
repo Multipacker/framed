@@ -15,11 +15,13 @@ enum UI_BoxFlags
 
 	// NOTE(hampus): This decides if the box
 	// should apply a scroll value to its children
+	// TODO(hampus): Implement this
 	UI_BoxFlag_ViewScroll      = (1 << 8),
 
 	// NOTE(hampus): This decides if the children
 	// of the box are allowed to go outside of
 	// the parent region
+	// TODO(hampus): Implement this
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
 
@@ -31,14 +33,17 @@ enum UI_BoxFlags
 	//
 	// Set the position with ui_push/next_relative_pos
 	// It will be relative to the parent.
+	// TODO(hampus): Implement this
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
 	UI_BoxFlag_FloatingPos     = (1 << 14),
 
+	// TODO(hampus): Implement this
 	UI_BoxFlag_AnimateX        = (1 << 15),
 	UI_BoxFlag_AnimateY        = (1 << 16),
 	UI_BoxFlag_AnimatePos      = (1 << 17),
 
+	// TODO(hampus): Implement this
 	UI_BoxFlag_AnimateWidth    = (1 << 18),
 	UI_BoxFlag_AnimateHeight   = (1 << 19),
 	UI_BoxFlag_AnimateDim      = (1 << 20),
@@ -223,14 +228,14 @@ struct UI_Context
 	Arena *frame_arena;
 
 	UI_BoxStorage box_storage;
-	UI_Box **box_hash_map;
-	U64 box_hash_map_count;
+	UI_Box      **box_hash_map;
+	U64           box_hash_map_count;
 
 	UI_ParentStackNode *parent_stack;
 	UI_KeyStackNode    *seed_stack;
 
-	UI_RectStyleStack  rect_style_stack;
-	UI_TextStyleStack  text_style_stack;
+	UI_RectStyleStack   rect_style_stack;
+	UI_TextStyleStack   text_style_stack;
 	UI_LayoutStyleStack layout_style_stack;
 
 	UI_Box *root;
@@ -239,7 +244,7 @@ struct UI_Context
 	UI_Key hot_key;
 
 	Gfx_EventList *event_list;
-	R_Context *renderer;
+	R_Context     *renderer;
 
 	U64 frame_index;
 };
