@@ -132,10 +132,9 @@ os_main(Str8List arguments)
 		ui_next_vert_gradient(v4f32(0, 0, 0, 1), v4f32(0, 1, 0, 1));
 		ui_button(str8_lit("Helloaa!##b"));
 
-		local B32 test_bool = true;
 		ui_row()
 		{
-			ui_check(&test_bool, str8_lit("MyTestBool"));
+			ui_check(&g_ui_ctx->show_debug_lines, str8_lit("MyTestBool"));
 			ui_spacer(ui_em(0.4f, 1));
 			ui_text(str8_lit("Show debug lines"));
 		}

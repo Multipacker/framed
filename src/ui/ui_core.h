@@ -20,24 +20,24 @@ enum UI_BoxFlags
 	UI_BoxFlag_HotAnimation    = (1 << 5),
 	UI_BoxFlag_ActiveAnimation = (1 << 6),
 	UI_BoxFlag_FocusAnimation  = (1 << 7),
-
+	
 	// NOTE(hampus): This decides if the box
 	// should apply a scroll value to its children
 	UI_BoxFlag_ViewScroll      = (1 << 8),
-
+	
 	// NOTE(hampus): This decides if the children
 	// of the box are allowed to go outside of
 	// the parent region
 	// TODO(hampus): Implement this
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
-
+	
 	// NOTE(hampus): This decides if the box's
 	// rect should be pushed as a clip rect
 	// when it is pushed to the parent stack
 	// TODO(hampus): Implement this
 	UI_BoxFlag_Clip            = (1 << 11),
-
+	
 	// NOTE(hampus): These makes the ui auto-layouting
 	// algorithm skip this box. Useful if you want
 	// the box to have an absolute position.
@@ -46,13 +46,13 @@ enum UI_BoxFlags
 	// It will be relative to the parent.
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
-
+	
 	UI_BoxFlag_AnimateX        = (1 << 14),
 	UI_BoxFlag_AnimateY        = (1 << 15),
-
+	
 	UI_BoxFlag_AnimateWidth    = (1 << 16),
 	UI_BoxFlag_AnimateHeight   = (1 << 17),
-
+	
 	UI_BoxFlag_FloatingPos     = UI_BoxFlag_FloatingX | UI_BoxFlag_FloatingY,
 	UI_BoxFlag_AnimatePos      = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
 	UI_BoxFlag_AnimateDim      = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
@@ -88,7 +88,7 @@ enum UI_TextAlign
 	UI_TextAlign_Center,
 	UI_TextAlign_Left,
 	UI_TextAlign_Right,
-
+	
 	UI_TextAlign_COUNT,
 };
 
@@ -96,7 +96,7 @@ typedef struct UI_RectStyle UI_RectStyle;
 struct UI_RectStyle
 {
 	UI_RectStyle *stack_next;
-
+	
 	Vec4F32 color[4];
 	Vec4F32 border_color;
 	F32     border_thickness;
@@ -108,7 +108,7 @@ typedef struct UI_TextStyle UI_TextStyle;
 struct UI_TextStyle
 {
 	UI_TextStyle *stack_next;
-
+	
 	Vec4F32      color;
 	UI_TextAlign align;
 	F32          padding[Axis2_COUNT];
@@ -120,7 +120,7 @@ typedef struct UI_LayoutStyle UI_LayoutStyle;
 struct UI_LayoutStyle
 {
 	UI_LayoutStyle *stack_next;
-
+	
 	UI_Size     size[Axis2_COUNT];
 	F32         relative_pos[Axis2_COUNT];
 	Axis2       child_layout_axis;
@@ -173,36 +173,36 @@ struct UI_Box
 	UI_Box *next;
 	UI_Box *prev;
 	UI_Box *parent;
-
+	
 	UI_Box *hash_next;
 	UI_Box *hash_prev;
-
+	
 	UI_Key key;
 	U64    last_frame_touched_index;
-
+	
 	F32 calc_rel_pos[Axis2_COUNT];
 	F32 calc_size[Axis2_COUNT];
 	F32 calc_pos[Axis2_COUNT];
-
+	
 	F32 target_size[Axis2_COUNT];
 	F32 target_pos[Axis2_COUNT];
-
+	
 	RectF32 rect;
-
+	
 	UI_BoxFlags flags;
 	Str8        string;
 #if !BUILD_MODE_RELEASE
 	Str8        debug_string;
 #endif
-
+	
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
 	UI_LayoutStyle layout_style;
-
+	
 	Vec2F32 scroll;
-
+	
 	UI_ClipRectStackNode *clip_rect;
-
+	
 	F32 hot_t;
 	F32 active_t;
 };
@@ -263,30 +263,32 @@ struct UI_Context
 {
 	Arena *permanent_arena;
 	Arena *frame_arena;
-
+	
 	UI_BoxStorage box_storage;
 	UI_Box      **box_hash_map;
 	U64           box_hash_map_count;
-
+	
 	UI_ParentStackNode *parent_stack;
 	UI_KeyStackNode    *seed_stack;
-
+	
 	UI_RectStyleStack   rect_style_stack;
 	UI_TextStyleStack   text_style_stack;
 	UI_LayoutStyleStack layout_style_stack;
-
+	
 	UI_ClipBoxStack clip_rect_stack;
-
+	
 	UI_Box *root;
-
+	
 	UI_Key active_key;
 	UI_Key hot_key;
-
+	
 	Gfx_EventList *event_list;
 	R_Context     *renderer;
-
+	
 	UI_Config config;
-
+	
+	B32 show_debug_lines;
+	
 	F64 dt;
 	U64 frame_index;
 };

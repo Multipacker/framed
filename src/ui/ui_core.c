@@ -826,7 +826,10 @@ ui_draw(UI_Box *root)
 	}
 
 	render_pop_clip(g_ui_ctx->renderer);
-	render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+	if (g_ui_ctx->show_debug_lines)
+	{
+		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+	}
 	for (UI_Box *child = root->first;
 		 child != 0;
 		 child = child->next)
