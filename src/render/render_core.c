@@ -60,11 +60,11 @@ internal Vec4F32
 vec4f32_srgb_to_linear(Vec4F32 srgb)
 {
 	Vec4F32 result = v4f32(
-		f32_srgb_to_linear(srgb.r),
-		f32_srgb_to_linear(srgb.g),
-		f32_srgb_to_linear(srgb.b),
-		srgb.a
-	);
+						   f32_srgb_to_linear(srgb.r),
+						   f32_srgb_to_linear(srgb.g),
+						   f32_srgb_to_linear(srgb.b),
+						   srgb.a
+						   );
 	return(result);
 }
 
@@ -87,11 +87,11 @@ internal Vec4F32
 vec4f32_linear_to_srgb(Vec4F32 linear)
 {
 	Vec4F32 result = v4f32(
-		f32_linear_to_srgb(linear.r),
-		f32_linear_to_srgb(linear.g),
-		f32_linear_to_srgb(linear.b),
-		linear.a
-	);
+						   f32_linear_to_srgb(linear.r),
+						   f32_linear_to_srgb(linear.g),
+						   f32_linear_to_srgb(linear.b),
+						   linear.a
+						   );
 	return(result);
 }
 
@@ -126,7 +126,7 @@ render_init(Gfx_Context *gfx)
 #if defined(RENDERER_OPENGL)
 	renderer->dirty_font_region_queue = push_struct(arena, R_DirtyFontRegionQueue);
 	renderer->dirty_font_region_queue->queue = push_array(arena, RectU32, FONT_QUEUE_SIZE);
-	#endif
+#endif
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
 

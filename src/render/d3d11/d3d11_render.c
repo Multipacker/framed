@@ -42,7 +42,7 @@ render_backend_init(R_Context *renderer)
 #endif
 		D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_0 };
 		hr = D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, flags, levels, ARRAYSIZE(levels),
-															 D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
+							   D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
 		assert_hr(hr);
 	}
 
@@ -116,42 +116,42 @@ render_backend_init(R_Context *renderer)
 		D3D11_INPUT_ELEMENT_DESC desc[] =
 		{
 			{ "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-			member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+			{ "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
 				member_offset(R_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+			{ "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
 				member_offset(R_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+			{ "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
 				member_offset(R_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 				member_offset(R_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			{ "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 				member_offset(R_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			{ "COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 				member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			{ "COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 				member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+			{ "CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
 				member_offset(R_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+			{ "SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
 				member_offset(R_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+			{ "BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
 				member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
+			{ "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
 				member_offset(R_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
-				{ "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
+			{ "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
 				member_offset(R_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 		};
@@ -264,25 +264,25 @@ render_backend_init(R_Context *renderer)
 		D3D11_BLEND_DESC desc =
 		{
 			.RenderTarget[0] =
-				{
-					.BlendEnable = TRUE,
+			{
+				.BlendEnable = TRUE,
 
-					// NOTE(hampus): For subpixel text rendering the rgb values are acting
-					// as an alpha value for each component. Therefore we specify another
-					// color source which will be these alpha values.
+				// NOTE(hampus): For subpixel text rendering the rgb values are acting
+				// as an alpha value for each component. Therefore we specify another
+				// color source which will be these alpha values.
 
-					// NOTE(hampus): dst.rgb = dst.rgb * (1 - src1.rgb) + src0.rgb * (src1.rgb)
-			.SrcBlend = D3D11_BLEND_SRC1_COLOR,
-			.DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
-			.BlendOp = D3D11_BLEND_OP_ADD,
+				// NOTE(hampus): dst.rgb = dst.rgb * (1 - src1.rgb) + src0.rgb * (src1.rgb)
+				.SrcBlend = D3D11_BLEND_SRC1_COLOR,
+				.DestBlend = D3D11_BLEND_INV_SRC1_COLOR,
+				.BlendOp = D3D11_BLEND_OP_ADD,
 
-			// NOTE(hampus): dst.a = dst.a * (1 - color.a) + src.a * (color.a)
-			.SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA,
-			.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
-			.BlendOpAlpha = D3D11_BLEND_OP_ADD,
+				// NOTE(hampus): dst.a = dst.a * (1 - color.a) + src.a * (color.a)
+				.SrcBlendAlpha = D3D11_BLEND_SRC_ALPHA,
+				.DestBlendAlpha = D3D11_BLEND_INV_SRC_ALPHA,
+				.BlendOpAlpha = D3D11_BLEND_OP_ADD,
 
-			.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
-		},
+				.RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL,
+			},
 		};
 		ID3D11Device_CreateBlendState(backend->device, &desc, &backend->blend_state);
 	}
@@ -422,8 +422,8 @@ render_backend_end(R_Context *renderer)
 		ID3D11DeviceContext_ClearDepthStencilView(backend->context, backend->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 		D3D11_BatchList *batch_list = &backend->batch_list;
 		for (D3D11_Batch *batch = batch_list->first;
-				 batch != 0;
-				 batch = batch->next)
+			 batch != 0;
+			 batch = batch->next)
 		{
 			D3D11_BatchParams *params = &batch->params;
 
@@ -524,9 +524,9 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
 	// NOTE(simon): Account for softness.
 	RectF32 expanded_area = rectf32(
-																		v2f32_sub_f32(min, params->softness),
-																		v2f32_add_f32(max, params->softness)
-	);
+									v2f32_sub_f32(min, params->softness),
+									v2f32_add_f32(max, params->softness)
+									);
 
 	if (!rectf32_overlaps(expanded_area, d3d11_top_clip(renderer)->rect))
 	{
@@ -537,7 +537,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
 	B32 inside_batch_clip   = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
 	if ((is_different_clip && !(inside_current_clip && inside_batch_clip)) ||
-				batch->instance_count >= D3D11_BATCH_SIZE)
+		batch->instance_count >= D3D11_BATCH_SIZE)
 	{
 		batch = 0;
 	}
@@ -640,7 +640,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, 
 	{
 		case R_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
 		case R_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-			invalid_case;
+		invalid_case;
 	}
 
 	D3D11_TEXTURE2D_DESC desc =
@@ -736,7 +736,7 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 	box.front      = 0;
 	box.back       = 1;
 	ID3D11DeviceContext_UpdateSubresource(renderer->backend->context, resource,
-																				0, &box, memory, (U32) width * 4, 0);
+										  0, &box, memory, (U32) width * 4, 0);
 #else
 	D3D11_MAPPED_SUBRESOURCE mapped;
 	ID3D11DeviceContext_Map(renderer->backend->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);

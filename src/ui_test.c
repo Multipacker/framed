@@ -39,8 +39,8 @@ os_main(Str8List arguments)
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
-						 event != 0;
-						 event = event->next)
+			 event != 0;
+			 event = event->next)
 		{
 			switch (event->kind)
 			{
@@ -103,7 +103,7 @@ os_main(Str8List arguments)
 		UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 								  UI_BoxFlag_DrawBorder |
 								  UI_BoxFlag_DrawText,
-					str8_lit("Box2"));
+								  str8_lit("Box2"));
 
 		ui_box_equip_display_string(box, str8_lit("Hello!"));
 
@@ -123,7 +123,7 @@ os_main(Str8List arguments)
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
 		ui_box_make(UI_BoxFlag_DrawBackground |
 					UI_BoxFlag_DrawBorder,
-								  str8_lit(""));
+					str8_lit(""));
 
 		ui_next_size(Axis2_X, ui_pixels(100, 1));
 		ui_next_size(Axis2_Y, ui_pixels(100, 1));
@@ -132,7 +132,7 @@ os_main(Str8List arguments)
 					str8_lit(""));
 
 		ui_pop_parent();
-		#endif
+#endif
 
 		ui_end();
 

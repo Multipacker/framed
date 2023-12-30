@@ -344,7 +344,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 
 							atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
-																			 v2u32(bitmap_width, bitmap_height));
+																		   v2u32(bitmap_width, bitmap_height));
 							rect_region = atlas_region->region;
 
 							// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
@@ -447,7 +447,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 		{
 			.min = rect_region.min,
 			.max = v2u32(rect_region.min.x + bitmap_width,
-			rect_region.min.y + bitmap_height),
+						 rect_region.min.y + bitmap_height),
 		};
 
 		RectF32 adjusted_rect_region_f32 = rectf32_from_rectu32(adjusted_rect_region);
@@ -627,7 +627,7 @@ render_make_font_freetype(R_Context *renderer, R_Font *out_font, S32 font_size, 
 	memory_fence();
 
 	render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
-	#endif
+#endif
 	memory_fence();
 
 	out_font->loading = true;
@@ -663,7 +663,7 @@ render_font_loader_thread(Void *data)
 
 				RectU32 *rect_entry = &dirty_font_region_queue->queue[queue_index & LOG_QUEUE_MASK];
 			}
-			#endif
+#endif
 		}
 	}
 }

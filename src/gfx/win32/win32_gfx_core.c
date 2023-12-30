@@ -11,7 +11,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		message == WM_KEYDOWN ||
 		message == WM_KEYUP ||
 		message == WM_SYSKEYDOWN ||
-		 message == WM_SYSKEYUP ||
+		message == WM_SYSKEYUP ||
 		message == WM_QUIT ||
 		message == WM_DESTROY ||
 		message == WM_CLOSE ||
@@ -31,7 +31,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 	}
 	else
 	{
-	result = DefWindowProc(hwnd, message, wparam, lparam);
+		result = DefWindowProc(hwnd, message, wparam, lparam);
 	}
 	release_scratch(scratch);
 	return(result);
@@ -47,7 +47,7 @@ struct Win32_WindowCreationData
 	Str8 title;
 };
 
-  DWORD
+DWORD
 win32_gfx_startup_thread(Void *data)
 {
 	Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *)data;
@@ -76,10 +76,10 @@ win32_gfx_startup_thread(Void *data)
 
 		Str16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
 		result.hwnd = CreateWindow(window_class.lpszClassName, (LPCWSTR) title_s16.data,
-															 create_window_flags,
+								   create_window_flags,
 								   window_creation_data->x, window_creation_data->y,
 								   window_creation_data->width, window_creation_data->height,
-															 0, 0, instance, 0);
+								   0, 0, instance, 0);
 		if (result.hwnd)
 		{
 			result.hdc = GetDC(result.hwnd);
@@ -275,7 +275,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 					{
 						if (win32_gfx_state.key_table[vk_code] != 0)
 						{
-						event->key = win32_gfx_state.key_table[vk_code];
+							event->key = win32_gfx_state.key_table[vk_code];
 						}
 					}
 
@@ -336,15 +336,15 @@ gfx_toggle_fullscreen(Gfx_Context *context)
 	{
 		MONITORINFO MonitorInfo = { sizeof(MonitorInfo) };
 		if (GetWindowPlacement(context->hwnd, &prev_placement) &&
-				GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &MonitorInfo))
+			GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &MonitorInfo))
 		{
 			SetWindowLong(context->hwnd, GWL_STYLE, WindowStyle & ~WS_OVERLAPPEDWINDOW);
 
 			SetWindowPos(context->hwnd, HWND_TOP,
-									 MonitorInfo.rcMonitor.left, MonitorInfo.rcMonitor.top,
-									 MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left,
-									 MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top,
-									 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+						 MonitorInfo.rcMonitor.left, MonitorInfo.rcMonitor.top,
+						 MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left,
+						 MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top,
+						 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 		}
 	}
 	else
@@ -352,8 +352,8 @@ gfx_toggle_fullscreen(Gfx_Context *context)
 		SetWindowLong(context->hwnd, GWL_STYLE, WindowStyle | WS_OVERLAPPEDWINDOW);
 		SetWindowPlacement(context->hwnd, &prev_placement);
 		SetWindowPos(context->hwnd, NULL, 0, 0, 0, 0,
-								 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-								 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
+					 SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+					 SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
 	}
 }
 

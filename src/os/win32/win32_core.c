@@ -6,7 +6,7 @@ win32_print_error_message(Void)
 	DWORD error = GetLastError();
 	U8 buffer[1024] = { 0 };
 	U64 size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-														0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
+							  0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
 	OutputDebugStringA((LPCSTR) buffer);
 }
 
@@ -95,9 +95,9 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 			{
 				VirtualFree(base + i*size, size, MEM_RELEASE|MEM_PRESERVE_PLACEHOLDER);
 				if (!MapViewOfFile3(file_mapping, 0, base + i*size, 0, size, MEM_REPLACE_PLACEHOLDER, PAGE_READWRITE, 0, 0))
-					{
+				{
 					mapped = false;
-					}
+				}
 			}
 			if (mapped)
 			{
@@ -174,12 +174,12 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	Arena_Temporary scratch = get_scratch(&arena, 1);
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-														 GENERIC_READ,
-														 FILE_SHARE_READ,
-														 0,
-														 OPEN_EXISTING,
-														 FILE_ATTRIBUTE_NORMAL,
-														 0);
+							 GENERIC_READ,
+							 FILE_SHARE_READ,
+							 0,
+							 OPEN_EXISTING,
+							 FILE_ATTRIBUTE_NORMAL,
+							 0);
 
 	release_scratch(scratch);
 
@@ -245,12 +245,12 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 	}
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-														 GENERIC_READ,
-														 FILE_SHARE_READ,
-														 0,
-														 create_file_flags,
-														 FILE_ATTRIBUTE_NORMAL,
-														 0);
+							 GENERIC_READ,
+							 FILE_SHARE_READ,
+							 0,
+							 create_file_flags,
+							 FILE_ATTRIBUTE_NORMAL,
+							 0);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
@@ -289,13 +289,13 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 		case OS_FileMode_Fail:    creation_flags = CREATE_NEW; break;
 		case OS_FileMode_Replace: creation_flags = CREATE_ALWAYS; break;
 		case OS_FileMode_Append:  creation_flags = OPEN_ALWAYS; break;
-			invalid_case;
+		invalid_case;
 	}
 
 	Str16 path16 = cstr16_from_str8(scratch.arena, path);
 
 	HANDLE file_handle = CreateFile((LPCWSTR) path16.data, GENERIC_WRITE | GENERIC_READ,
-																	0, 0, creation_flags, 0, 0);
+									0, 0, creation_flags, 0, 0);
 
 	if (file_handle != INVALID_HANDLE_VALUE)
 	{
@@ -649,7 +649,7 @@ os_semaphore_signal(OS_Semaphore *handle)
 {
 	assert(handle);
 	assert(handle->handle != INVALID_HANDLE_VALUE);
-	  LONG previous_count = 0;
+	LONG previous_count = 0;
 	ReleaseSemaphore(handle->handle, 1, &previous_count);
 }
 
@@ -680,7 +680,7 @@ os_thread_create(ThreadProc *proc, Void *data)
 	arguments->proc = proc;
 	arguments->data = data;
 
-	 DWORD thread_id;
+	DWORD thread_id;
 	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
 }
 
