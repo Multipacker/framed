@@ -251,6 +251,51 @@ str8_last_index_of(Str8 string, U32 codepoint, U64 *result_index)
 	return found;
 }
 
+internal B32
+str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
+{
+	B32 result = true;
+	 S64 first = -1;
+
+	for (U64 i = 0; i < string.size; ++i)
+	{
+			if (substring.size <= (string.size - i))
+			{
+				for (U64 j = 0; j < substring.size; ++j)
+				{
+					if (string.data[i+j] != substring.data[j])
+				{
+					first = -1;
+					break;
+				}
+				else
+				{
+					if (first == -1)
+					{
+						first = (S64)i;
+					}
+				}
+			}
+			if (first != -1)
+			{
+				break;
+			}
+			}
+			else
+			{
+				result = false;
+				break;
+			}
+	}
+
+	if (first != -1)
+	{
+		*result_index = (U64)first;
+	}
+
+	return(result);
+}
+
 internal Void
 str8_list_push_explicit(Str8List *list, Str8 string, Str8Node *node)
 {
