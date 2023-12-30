@@ -887,9 +887,17 @@ render_measure_text(R_Font *font, Str8 text)
 		S32 length = (S32) text.size;
 		for (S32 i = 0; i < length; ++i)
 		{
+
 			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
 			R_Glyph *glyph = font->glyphs + index;
 			result.x += (glyph->advance_width);
+
+			if ((U64)(i+1) < text.size)
+			{
+				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+				R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
+				result.x += kerning_pair->value;
+			}
 		}
 
 		result.y = font->line_height;
