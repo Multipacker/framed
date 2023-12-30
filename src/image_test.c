@@ -14,35 +14,10 @@
 
 // rate = (1 + ε) - 2^(log2(ε) * (dt / animation_duration))
 
-internal Void
-thread_work(Void *arguments)
-{
-	ThreadContext *context = thread_ctx_alloc();
-	thread_set_ctx(context);
-
-	U32 thread_index = (U32) int_from_ptr(arguments);
-
-	Arena_Temporary scratch = get_scratch(0, 0);
-
-	thread_set_name(str8_pushf(scratch.arena, "Thread%u", thread_index));
-
-	for (U32 i = 0; i < 50; ++i)
-	{
-		log_info("Index: %u", i);
-	}
-
-	release_scratch(scratch);
-}
-
 internal S32
 os_main(Str8List arguments)
 {
 	log_init(str8_lit("log"));
-
-	/*for (U32 i = 0; i < 4; ++i)
-	{
-		os_thread_create(thread_work, ptr_from_int(i));
-	}*/
 
 	Arena *arena = arena_create();
 
