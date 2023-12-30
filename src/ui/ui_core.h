@@ -18,7 +18,8 @@ enum UI_BoxFlags
 	UI_BoxFlag_ViewScroll      = (1 << 8),
 
 	// NOTE(hampus): This decides if the children
-	// of the box are allowed to go outside
+	// of the box are allowed to go outside of
+	// the parent region
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
 
@@ -26,7 +27,10 @@ enum UI_BoxFlags
 
 	// NOTE(hampus): These makes the ui auto-layouting
 	// algorithm skip this box. Useful if you want
-	// the box to have an absolute position
+	// the box to have an absolute position.
+	//
+	// Set the position with ui_push/next_relative_pos
+	// It will be relative to the parent.
 	UI_BoxFlag_FloatingX       = (1 << 12),
 	UI_BoxFlag_FloatingY       = (1 << 13),
 	UI_BoxFlag_FloatingPos     = (1 << 14),
