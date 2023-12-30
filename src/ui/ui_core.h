@@ -11,6 +11,23 @@ enum UI_BoxFlags
 	UI_BoxFlag_DrawDropShadow  = (1 << 4),
 	UI_BoxFlag_HotAnimation    = (1 << 5),
 	UI_BoxFlag_ActiveAnimation = (1 << 6),
+	UI_BoxFlag_FocusAnimation  = (1 << 7),
+	UI_BoxFlag_ViewScroll      = (1 << 8),
+	UI_BoxFlag_OverflowX       = (1 << 9),
+	UI_BoxFlag_OverflowY       = (1 << 10),
+	UI_BoxFlag_Clip            = (1 << 11),
+
+	UI_BoxFlag_FloatingX       = (1 << 12),
+	UI_BoxFlag_FloatingY       = (1 << 13),
+	UI_BoxFlag_FloatingPos     = (1 << 14),
+
+	UI_BoxFlag_AnimateX        = (1 << 15),
+	UI_BoxFlag_AnimateY        = (1 << 16),
+	UI_BoxFlag_AnimatePos      = (1 << 17),
+
+	UI_BoxFlag_AnimateWidth    = (1 << 18),
+	UI_BoxFlag_AnimateHeight   = (1 << 19),
+	UI_BoxFlag_AnimateDim      = (1 << 20),
 };
 
 typedef enum UI_SizeKind UI_SizeKind;
