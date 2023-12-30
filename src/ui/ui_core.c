@@ -8,6 +8,7 @@
 // []  - Hover cursor
 // []  - Size violations & strictness
 // []  - Icons
+// []  - Scrolling
 // []  - Focused box
 // []  - Context menu
 // []  - Tooltip
@@ -539,16 +540,16 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 				}
 				if (prev)
 				{
-					root->target_rel_pos[axis] = prev->target_rel_pos[axis] + prev->target_size[axis];
+					root->calc_rel_pos[axis] = prev->calc_rel_pos[axis] + prev->calc_size[axis];
 				}
 			}
 			else
 			{
-				root->target_rel_pos[axis] = 0;
+				root->calc_rel_pos[axis] = 0;
 			}
 		}
 
-		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->target_rel_pos[axis];
+		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos[axis];
 	}
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * g_ui_ctx->dt));
@@ -989,12 +990,12 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
 	{
-		result->target_rel_pos[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
+		result->calc_rel_pos[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
 	}
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingY))
 	{
-		result->target_rel_pos[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
+		result->calc_rel_pos[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
 	}
 
 	if (g_ui_ctx->rect_style_stack.auto_pop)

@@ -46,3 +46,70 @@ ui_buttonf(CStr fmt, ...)
 	va_end(args);
 	return(comm);
 }
+
+internal Void
+ui_spacer(UI_Size size)
+{
+	ui_next_size(ui_top_parent()->layout_style.child_layout_axis, size);
+	ui_box_make(0, str8_lit(""));
+}
+
+internal UI_Box *
+ui_begin_named_row(Str8 string)
+{
+	ui_next_child_layout_axis(Axis2_X);
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	UI_Box *box = ui_box_make(0, string);
+	ui_push_parent(box);
+	return(box);
+}
+
+internal Void
+ui_end_named_row(Void)
+{
+	ui_pop_parent();
+}
+
+internal UI_Box *
+ui_begin_row(Void)
+{
+	UI_Box *box = ui_begin_named_row(str8_lit(""));
+	return(box);
+}
+
+internal Void
+ui_end_row(Void)
+{
+	ui_end_named_row();
+}
+
+internal UI_Box *
+ui_begin_named_column(Str8 string)
+{
+	ui_next_child_layout_axis(Axis2_Y);
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	UI_Box *box = ui_box_make(0, string);
+	ui_push_parent(box);
+	return(box);
+}
+
+internal Void
+ui_end_named_column(Void)
+{
+	ui_pop_parent();
+}
+
+internal UI_Box *
+ui_begin_column(Void)
+{
+	UI_Box *box = ui_begin_named_column(str8_lit(""));
+	return(box);
+}
+
+internal Void
+ui_end_column(Void)
+{
+	ui_end_named_column();
+}
