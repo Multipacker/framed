@@ -12,3 +12,4 @@
 - [ ] Simon: PNG-reader.
 - [ ] Simon: Performance counters.
 - [ ] Simon: Window handling on a separate thread.
+- [ ] Simon: Fix race conditions with font loading.
