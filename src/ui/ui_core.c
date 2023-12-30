@@ -368,7 +368,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
 	// TODO(hampus): Make this EM
 	text_style->padding[Axis2_X] = 10;
 
@@ -600,7 +600,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			}
 		}
 
-		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos[axis];
+		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos[axis] - root->scroll.v[axis];
 	}
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * g_ui_ctx->dt));
@@ -608,10 +608,13 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 		ui_animations_enabled())
 	{
-		root->calc_pos[axis] += (F32)(root->target_pos[axis] - root->calc_pos[axis]) * animation_delta;
 		if (f32_abs(root->calc_pos[axis] - root->target_pos[axis]) <= 1)
 		{
 			root->calc_pos[axis] = root->target_pos[axis];
+		}
+		else
+		{
+			root->calc_pos[axis] += (F32)(root->target_pos[axis] - root->calc_pos[axis]) * animation_delta;
 		}
 	}
 	else
@@ -622,10 +625,13 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 		ui_animations_enabled())
 	{
-		root->calc_size[axis] += (F32)(root->target_size[axis] - root->calc_size[axis]) * animation_delta;
 		if (f32_abs(root->calc_size[axis] - root->target_size[axis]) <= 1)
 		{
 			root->calc_size[axis] = root->target_size[axis];
+		}
+		else
+		{
+			root->calc_size[axis] += (F32)(root->target_size[axis] - root->calc_size[axis]) * animation_delta;
 		}
 	}
 	else
@@ -633,7 +639,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 		root->calc_size[axis] = root->target_size[axis];
 	}
 
-	root->calc_pos[axis] -= root->scroll.v[axis];
+
 
 	root->rect.min.v[axis] = root->calc_pos[axis];
 	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size[axis];
@@ -734,7 +740,7 @@ internal Void
 ui_draw(UI_Box *root)
 {
 	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
-	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 2.0f*-ui_animation_speed() * g_ui_ctx->dt));
+	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * g_ui_ctx->dt));
 	if (ui_box_is_active(root))
 	{
 		root->active_t += (1.0f - root->active_t) * animation_delta;
@@ -783,18 +789,17 @@ ui_draw(UI_Box *root)
 	{
 		// TODO(hampus): Correct darkening/lightening
 		R_RectInstance *instance = 0;
+
 		F32 d = 0;
 		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
 		{
-			d += 0.2f * root->active_t;
+			d += f32_srgb_to_linear(0.3f) * root->active_t;
 		}
 
 		if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 		{
-			d += 0.2f * root->hot_t;
+			d += f32_srgb_to_linear(0.3f) * root->hot_t;
 		}
-
-		d = f32_srgb_to_linear(d);
 
 		rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 															v4f32(d, d, d, 0));
@@ -807,6 +812,14 @@ ui_draw(UI_Box *root)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
+
+		F32 d = 0;
+		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
+			ui_box_is_active(root))
+		{
+			d += f32_srgb_to_linear(0.4f);
+		}
+		rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
 		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
@@ -1005,13 +1018,14 @@ internal UI_Key
 ui_key_from_string_f(UI_Key seed, CStr fmt, ...)
 {
 	UI_Key result = {0};
-	Arena_Temporary scratch = get_scratch(0, 0);
-	va_list args;
-	va_start(args, fmt);
-	Str8 string = str8_pushfv(scratch.arena, fmt, args);
-	result = ui_key_from_string(seed, string);
-	va_end(args);
-	release_scratch(scratch);
+	arena_scratch(0, 0)
+	{
+		va_list args;
+		va_start(args, fmt);
+		Str8 string = str8_pushfv(scratch, fmt, args);
+		result = ui_key_from_string(seed, string);
+		va_end(args);
+	}
 	return(result);
 }
 
@@ -1150,13 +1164,15 @@ ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 	UI_Box *result = {0};
 	// TODO(hampus): This won't work with debug_string
 	// since it needs to be persistent across the frame
-	Arena_Temporary scratch = get_scratch(0, 0);
-	va_list args;
-	va_start(args, fmt);
-	Str8 string = str8_pushfv(scratch.arena, fmt, args);
-	result = ui_box_make(flags, string);
-	va_end(args);
-	release_scratch(scratch);
+	arena_scratch(0, 0)
+	{
+		va_list args;
+		va_start(args, fmt);
+		Str8 string = str8_pushfv(scratch, fmt, args);
+		result = ui_box_make(flags, string);
+		va_end(args);
+	}
+
 	return(result);
 }
 
