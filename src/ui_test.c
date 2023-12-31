@@ -186,11 +186,10 @@ os_main(Str8List arguments)
 
 		if (comm.hovering)
 		{
-			ui_tooltip_begin();
-
-			ui_text(str8_lit("Tooltip!"));
-
-			ui_tooltip_end();
+			ui_tooltip()
+			{
+				ui_text(str8_lit("Tooltip!"));
+			}
 		}
 
 		if (comm.pressed)
