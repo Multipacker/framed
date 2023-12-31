@@ -11,13 +11,13 @@
 // [x] - Size violations & strictness
 // [x] - Seed pushing
 
+// []  - Tooltip
 // []  - Horizontal scrolling
 // []  - Death animations
 // []  - Change animation speed per-box
 // []  - Hover cursor
 // []  - Focused box
 // []  - Context menu
-// []  - Tooltip
 // []  - Custom draw functions
 // []  - Fixup icon sizes
 // []  - Keyboard navigation
@@ -297,6 +297,18 @@ ui_init(Void)
 }
 
 internal Void
+ui_tooltip_begin(Void)
+{
+	ui_push_parent(g_ui_ctx->tooltip_root);
+}
+
+internal Void
+ui_tooltip_end(Void)
+{
+	ui_pop_parent();
+}
+
+internal Void
 ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt)
 {
 	g_ui_ctx = ui_ctx;
@@ -399,7 +411,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
 	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
 	// TODO(hampus): Make this EM
-	text_style->padding[Axis2_X] = 10;
+	text_style->padding.v[Axis2_X] = 10;
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
@@ -422,6 +434,20 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	ui_push_parent(g_ui_ctx->root);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
+
+
+	ui_next_width(ui_pct(1, 1));
+	ui_next_height(ui_pct(1, 1));
+	UI_Box *normal_root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
+									  str8_lit("NormalRoot"));
+
+	ui_next_relative_pos(Axis2_X, g_ui_ctx->mouse_pos.x+10);
+	ui_next_relative_pos(Axis2_Y, g_ui_ctx->mouse_pos.y);
+	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
+										 str8_lit("TooltipRoot"));
+
+
+	ui_push_parent(normal_root);
 }
 
 internal F32
@@ -533,7 +559,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 			{
 				text_dim = render_measure_text(font, root->string);
 			}
-			root->target_size.v[axis] = text_dim.v[axis] + root->text_style.padding[axis];
+			root->target_size.v[axis] = text_dim.v[axis] + root->text_style.padding.v[axis];
 		} break;
 
 		default: break;
@@ -751,8 +777,6 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 		root->calc_size.v[axis] = root->target_size.v[axis];
 	}
 
-
-
 	root->rect.min.v[axis] = root->calc_pos.v[axis];
 	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size.v[axis];
 
@@ -967,8 +991,13 @@ ui_draw(UI_Box *root)
 internal Void
 ui_end(Void)
 {
+	// NOTE(hampus): Pop normal root
+	ui_pop_parent();
+
 	ui_pop_clip_rect();
 	ui_pop_seed();
+
+	// NOTE(hampus): Pop master root
 	ui_pop_parent();
 
 	ui_layout(g_ui_ctx->root);

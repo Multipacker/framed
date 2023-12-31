@@ -85,7 +85,6 @@ os_main(Str8List arguments)
 
 			if (ui_button(str8_lit("Decrease font size")).pressed)
 			{
-
 				font_size -= 1;
 			}
 		}
@@ -184,6 +183,15 @@ os_main(Str8List arguments)
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
 
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
+
+		if (comm.hovering)
+		{
+			ui_tooltip_begin();
+
+			ui_text(str8_lit("Tooltip!"));
+
+			ui_tooltip_end();
+		}
 
 		if (comm.pressed)
 		{

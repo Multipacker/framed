@@ -115,7 +115,7 @@ struct UI_TextStyle
 
 	Vec4F32      color;
 	UI_TextAlign align;
-	F32          padding[Axis2_COUNT];
+	Vec2F32      padding;
 	U32          icon;
 	R_FontKey    font;
 };
@@ -290,6 +290,7 @@ struct UI_Context
 	UI_ClipBoxStack clip_rect_stack;
 
 	UI_Box *root;
+	UI_Box *tooltip_root;
 
 	UI_Key active_key;
 	UI_Key hot_key;
@@ -315,6 +316,9 @@ internal UI_Context *ui_init(Void);
 
 internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt);
 internal Void ui_end(Void);
+
+internal Void ui_tooltip_begin(Void);
+internal Void ui_tooltip_end(Void);
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
 internal UI_Size ui_text_content(F32 strictness);
