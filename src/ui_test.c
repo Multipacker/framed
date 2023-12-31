@@ -12,6 +12,53 @@
 #include "render/render_inc.c"
 #include "ui/ui_inc.c"
 
+internal Void
+ui_logger(B32 *log_keep)
+{
+	R_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 7);
+
+	ui_next_child_layout_axis(Axis2_X);
+
+	UI_Box *log_window = ui_box_make(
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_AnimateHeight,
+		str8_lit("LogWindow")
+	);
+
+	ui_parent(log_window)
+	{
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
+		ui_push_scrollable_region(str8_lit("LogEntries"));
+		ui_push_font(mono);
+
+		U32 entry_count = 0;
+		Log_QueueEntry *entries = log_get_entries(&entry_count);
+		for (S32 i = (S32) entry_count - 1; i >= 0; --i)
+		{
+			Str8 message = str8_chop(str8_cstr((CStr) entries[i].message), 1);
+			ui_textf("%"PRISTR8"##%"PRIS32, str8_expand(message), i);
+		}
+
+		ui_pop_font();
+		ui_pop_scrollable_region();
+
+		ui_column()
+		{
+			ui_spacer(ui_em(0.4f, 1));
+
+			ui_row()
+			{
+				ui_spacer(ui_em(0.4f, 1));
+				ui_check(log_keep, str8_lit("LogKeep"));
+				ui_spacer(ui_em(0.4f, 1));
+				ui_text(str8_lit("Keep entries"));
+			}
+		}
+	}
+}
+
+
 internal S32
 os_main(Str8List arguments)
 {
@@ -44,6 +91,10 @@ os_main(Str8List arguments)
 		Arena *current_arena  = frame_arenas[0];
 		Arena *previous_arena = frame_arenas[1];
 
+		local B32 show_log = false;
+		local B32 show_atlas = false;
+		local B32 log_keep = false;
+
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
 			 event != 0;
@@ -62,6 +113,11 @@ os_main(Str8List arguments)
 					{
 						gfx_toggle_fullscreen(&gfx);
 					}
+					else if (event->key == Gfx_Key_F1)
+					{
+						show_log = !show_log;
+					}
+					log_info("Key press!");
 				} break;
 
 				default:
@@ -73,6 +129,8 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
+
+		ui_push_font(font);
 
 		ui_next_width(ui_pct(1, 1));
 		ui_row()
@@ -89,13 +147,25 @@ os_main(Str8List arguments)
 			}
 		}
 
-		local B32 show_atlas = false;
+		ui_row()
+		{
+			ui_check(&show_log, str8_lit("ShowLog"));
+			ui_spacer(ui_em(0.4f, 1));
+			ui_text(str8_lit("Show Log"));
+		}
 
 		ui_row()
 		{
 			ui_check(&show_atlas, str8_lit("ShowAtlas"));
 			ui_spacer(ui_em(0.4f, 1));
 			ui_text(str8_lit("Show Atlas"));
+		}
+
+		if (show_log)
+		{
+			ui_next_width(ui_fill());
+			ui_next_height(ui_pct(0.25, 1));
+			ui_logger(&log_keep);
 		}
 
 		if (show_atlas)
@@ -321,7 +391,10 @@ os_main(Str8List arguments)
 
 		render_end(renderer);
 
-		log_update_entries(1000);
+		if (!log_keep)
+		{
+			log_update_entries(1000);
+		}
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
