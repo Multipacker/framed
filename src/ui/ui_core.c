@@ -302,7 +302,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->event_list = event_list;
 	g_ui_ctx->dt = dt;
 
-	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+	g_ui_ctx->mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	B32 left_mouse_released = false;
 	for (Gfx_Event *node = event_list->first;
