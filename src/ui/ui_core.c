@@ -10,9 +10,9 @@
 // [x] - Textures
 // [x] - Size violations & strictness
 // [x] - Seed pushing
-// []  - Slider, checkbox
-// []  - Death animations
 
+// []  - Horizontal scrolling
+// []  - Death animations
 // []  - Change animation speed per-box
 // []  - Hover cursor
 // []  - Focused box
@@ -417,6 +417,8 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	clip_rect->max = max_clip;
 	ui_push_clip_rect(clip_rect, false);
 
+	ui_next_width(ui_pixels(max_clip.x, 1));
+	ui_next_height(ui_pixels(max_clip.y, 1));
 	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
