@@ -20,7 +20,7 @@ internal Void    ui_end_named_column(Void);
 internal UI_Box *ui_begin_column(Void);
 internal Void    ui_end_column(Void);
 
-#define ui_named_row(string) defer_loop(ui_begin_named_row(string), ui_end_named_row(string))
+#define ui_named_row(string) defer_loop(ui_begin_named_row(string), ui_end_named_row())
 #define ui_row()             defer_loop(ui_begin_row(), ui_end_row())
 
 #define ui_named_column(string) defer_loop(ui_begin_named_column(string), ui_end_named_column(string))

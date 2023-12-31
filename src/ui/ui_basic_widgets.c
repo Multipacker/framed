@@ -1,6 +1,23 @@
+internal Void
+ui_default_size(UI_Size width, UI_Size height)
+{
+	UI_LayoutStyle *layout_style = ui_top_layout_style();
+	if (layout_style->size[Axis2_X].kind == UI_SizeKind_Null)
+	{
+		ui_next_width(width);
+	}
+
+	if (layout_style->size[Axis2_Y].kind == UI_SizeKind_Null)
+	{
+		ui_next_height(height);
+	}
+}
+
 internal UI_Comm
 ui_text(Str8 string)
 {
+	ui_next_width(ui_text_content(1));
+	ui_next_height(ui_text_content(1));
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText,
 							  string);
 	ui_box_equip_display_string(box, string);
@@ -134,9 +151,8 @@ ui_spacer(UI_Size size)
 internal UI_Box *
 ui_begin_named_row(Str8 string)
 {
+	ui_default_size(ui_children_sum(1), ui_children_sum(1));
 	ui_next_child_layout_axis(Axis2_X);
-	ui_next_width(ui_children_sum(1));
-	ui_next_height(ui_children_sum(1));
 	UI_Box *box = ui_box_make(0, string);
 	ui_push_parent(box);
 	return(box);
@@ -164,9 +180,8 @@ ui_end_row(Void)
 internal UI_Box *
 ui_begin_named_column(Str8 string)
 {
+	ui_default_size(ui_children_sum(1), ui_children_sum(1));
 	ui_next_child_layout_axis(Axis2_Y);
-	ui_next_width(ui_children_sum(1));
-	ui_next_height(ui_children_sum(1));
 	UI_Box *box = ui_box_make(0, string);
 	ui_push_parent(box);
 	return(box);

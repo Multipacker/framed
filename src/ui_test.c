@@ -24,16 +24,18 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
-	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
-	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
-
 	UI_Context *ui = ui_init();
 
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
 	R_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
+
+	local S32 font_size = 15;
+
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), font_size);
+	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -71,6 +73,22 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
+
+		ui_next_width(ui_pct(1, 1));
+		ui_row()
+		{
+			ui_spacer(ui_fill());
+			if (ui_button(str8_lit("Increase font size")).pressed)
+			{
+				font_size += 1;
+			}
+
+			if (ui_button(str8_lit("Decrease font size")).pressed)
+			{
+
+				font_size -= 1;
+			}
+		}
 
 		local B32 show_atlas = false;
 
@@ -135,7 +153,6 @@ os_main(Str8List arguments)
 										str8_lit("TestSlice"));
 
 		UI_Comm slice_comm = ui_comm_from_box(slice_box);
-		printf("%.02f\n", slice_comm.drag_delta.x);
 
 		U64 result = 0;
 
@@ -164,8 +181,6 @@ os_main(Str8List arguments)
 			}
 		}
 
-		ui_next_relative_pos(Axis2_X, 500);
-		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
 
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
@@ -265,8 +280,10 @@ os_main(Str8List arguments)
 
 			ui_next_width(ui_children_sum(1));
 			ui_next_height(ui_em(20, 1));
+			ui_next_extra_box_flags(UI_BoxFlag_AnimatePos);
 			ui_push_scrollable_region(str8_lit("Test"));
 
+#if 0
 			ui_row()
 			{
 				for (U64 i = 0; i < 5; ++i)
@@ -287,10 +304,12 @@ os_main(Str8List arguments)
 					ui_spacer(ui_em(0.25f, 1));
 				}
 			}
+#endif
 
 			ui_pop_scrollable_region();
 
 		}
+
 		ui_end();
 
 		render_end(renderer);

@@ -402,8 +402,6 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	text_style->padding[Axis2_X] = 10;
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
-	layout_style->size[Axis2_X] = ui_text_content(1);
-	layout_style->size[Axis2_Y] = ui_text_content(1);
 	layout_style->child_layout_axis = Axis2_Y;
 
 	g_ui_ctx->hot_key = ui_key_null();
@@ -419,7 +417,8 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
-	g_ui_ctx->root = ui_box_make(0, str8_lit("Root"));
+	g_ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
+								 str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
@@ -509,14 +508,15 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
+	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
+	{
+		root->layout_style.size[axis].kind = UI_SizeKind_TextContent;
+		root->layout_style.size[axis].strictness = 1;
+	}
 	UI_Size size = root->layout_style.size[axis];
+
 	switch (size.kind)
 	{
-		case UI_SizeKind_Null:
-		{
-			assert(false);
-		} break;
-
 		case UI_SizeKind_Pixels:
 		{
 			root->target_size.v[axis] = size.value;
@@ -613,7 +613,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 internal Void
 ui_solve_size_violations(UI_Box *root, Axis2 axis)
 {
-	F32 available_space = root->calc_size.v[axis];
+	F32 available_space = root->target_size.v[axis];
 
 	F32 taken_space = 0;
 	F32 total_fixup_budget = 0;
@@ -991,7 +991,8 @@ ui_end(Void)
 internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
-	assert(!ui_key_is_null(box->key));
+	assert(!ui_key_is_null(box->key) &&
+		   "Tried to gather input from a keyless box!");
 
 	UI_Comm result = {0};
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
