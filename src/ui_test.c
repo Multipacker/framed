@@ -29,6 +29,7 @@ ui_logger(B32 *log_keep)
 	{
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
+		ui_next_extra_box_flags(UI_BoxFlag_AnimateHeight);
 		ui_push_scrollable_region(str8_lit("LogEntries"));
 		ui_push_font(mono);
 
@@ -36,8 +37,7 @@ ui_logger(B32 *log_keep)
 		Log_QueueEntry *entries = log_get_entries(&entry_count);
 		for (S32 i = (S32) entry_count - 1; i >= 0; --i)
 		{
-			Str8 message = str8_chop(str8_cstr((CStr) entries[i].message), 1);
-			ui_textf("%"PRISTR8"##%"PRIS32, str8_expand(message), i);
+			ui_text(str8_chop(str8_cstr((CStr) entries[i].message), 1));
 		}
 
 		ui_pop_font();
@@ -78,9 +78,9 @@ os_main(Str8List arguments)
 
 	R_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
 
-	local S32 font_size = 15;
+	local S32 font_size = 11;
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), font_size);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
 	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
