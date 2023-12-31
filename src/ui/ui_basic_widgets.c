@@ -80,6 +80,18 @@ ui_check(B32 *value, Str8 string)
 	return(comm);
 }
 
+internal UI_Comm
+ui_checkf(B32 *value, CStr fmt, ...)
+{
+	UI_Comm comm = {0};
+	va_list args;
+	va_start(args, fmt);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	comm = ui_check(value, string);
+	va_end(args);
+	return(comm);
+}
+
 internal Void
 ui_spacer(UI_Size size)
 {
