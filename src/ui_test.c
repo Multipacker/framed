@@ -72,6 +72,59 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 
+		local B32 show_atlas = false;
+		ui_row()
+		{
+			ui_check(&show_atlas, str8_lit("ShowAtlas"));
+			ui_spacer(ui_em(0.4f, 1));
+			ui_text(str8_lit("Show Atlas"));
+		}
+
+		if (show_atlas)
+		{
+			ui_next_width(ui_em(20, 1));
+			ui_next_height(ui_em(20, 1));
+			ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
+			UI_Box *atlas_parent = ui_box_make(
+				UI_BoxFlag_DrawBackground |
+				UI_BoxFlag_Clip |
+				UI_BoxFlag_Clickable |
+				UI_BoxFlag_ViewScroll |
+				UI_BoxFlag_AnimateDim,
+				str8_lit("FontParent")
+			);
+			ui_parent(atlas_parent)
+			{
+				local Vec2F32 offset = { 0 };
+				local F32 scale = 1;
+
+				ui_next_relative_pos(Axis2_X, offset.x);
+				ui_next_relative_pos(Axis2_Y, offset.y);
+				ui_next_width(ui_pct(1.0f / scale, 1));
+				ui_next_height(ui_pct(1.0f / scale, 1));
+
+				R_TextureSlice font_slice = render_slice_from_texture(
+					renderer->font_atlas->texture,
+					rectf32(v2f32(0, 0), v2f32(1, 1))
+				);
+				ui_next_slice(font_slice);
+				ui_next_color(v4f32(1, 1, 1, 1));
+
+				ui_next_corner_radius(0);
+				UI_Box *atlas_box = ui_box_make(
+					UI_BoxFlag_FloatingPos |
+					UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_AnimateDim,
+					str8_lit("FontAtlas")
+				);
+
+				UI_Comm atlas_comm = ui_comm_from_box(atlas_parent);
+
+				scale *= f32_pow(2, atlas_comm.scroll.y * 0.1f);
+				offset = v2f32_sub_v2f32(offset, atlas_comm.drag_delta);
+			}
+		}
+
 		ui_next_slice(slice);
 		ui_next_color(v4f32(1, 1, 1, 1));
 		ui_next_width(ui_em(10, 1));
