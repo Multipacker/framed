@@ -103,8 +103,7 @@ os_main(Str8List arguments)
 			ui_next_width(ui_em(20, 1));
 			ui_next_height(ui_em(20, 1));
 			ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
-			UI_Box *atlas_parent = ui_box_make(
-											   UI_BoxFlag_DrawBackground |
+			UI_Box *atlas_parent = ui_box_make(UI_BoxFlag_DrawBackground |
 											   UI_BoxFlag_Clip |
 											   UI_BoxFlag_Clickable |
 											   UI_BoxFlag_ViewScroll |
@@ -121,25 +120,26 @@ os_main(Str8List arguments)
 				ui_next_width(ui_pct(1.0f / scale, 1));
 				ui_next_height(ui_pct(1.0f / scale, 1));
 
-				R_TextureSlice font_slice = render_slice_from_texture(
-																	  renderer->font_atlas->texture,
+				R_TextureSlice font_slice = render_slice_from_texture(renderer->font_atlas->texture,
 																	  rectf32(v2f32(0, 0), v2f32(1, 1))
 																	  );
 				ui_next_slice(font_slice);
 				ui_next_color(v4f32(1, 1, 1, 1));
 
 				ui_next_corner_radius(0);
-				UI_Box *atlas_box = ui_box_make(
-												UI_BoxFlag_FloatingPos |
-												UI_BoxFlag_DrawBackground |
-												UI_BoxFlag_AnimateDim,
+				UI_Box *atlas_box = ui_box_make(UI_BoxFlag_FloatingPos |
+												UI_BoxFlag_DrawBackground,
 												str8_lit("FontAtlas")
 												);
 
 				UI_Comm atlas_comm = ui_comm_from_box(atlas_parent);
 
+				F32 old_scale = scale;
 				scale *= f32_pow(2, atlas_comm.scroll.y * 0.1f);
-				offset = v2f32_sub_v2f32(offset, atlas_comm.drag_delta);
+
+				// TODO(simon): Slightly broken math, but mostly works.
+				Vec2F32 scale_offset = v2f32_mul_f32(v2f32_sub_v2f32(atlas_comm.rel_mouse, offset), scale / old_scale - 1.0f);
+				offset = v2f32_add_v2f32(v2f32_sub_v2f32(offset, atlas_comm.drag_delta), scale_offset);
 			}
 		}
 
