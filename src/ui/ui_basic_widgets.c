@@ -13,28 +13,25 @@ ui_default_size(UI_Size width, UI_Size height)
 	}
 }
 
-internal UI_Comm
+internal Void
 ui_text(Str8 string)
 {
 	ui_next_width(ui_text_content(1));
 	ui_next_height(ui_text_content(1));
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText,
-							  string);
+							  str8_lit(""));
 	ui_box_equip_display_string(box, string);
-	UI_Comm comm = ui_comm_from_box(box);
-	return(comm);
 }
 
-internal UI_Comm
+internal Void
 ui_textf(CStr fmt, ...)
 {
 	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
-	comm = ui_text(string);
+	ui_text(string);
 	va_end(args);
-	return(comm);
 }
 
 internal UI_Comm
