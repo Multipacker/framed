@@ -904,6 +904,8 @@ ui_end(Void)
 internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
+	assert(!ui_key_is_null(box->key));
+
 	UI_Comm result = {0};
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
