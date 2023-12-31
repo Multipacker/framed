@@ -1,7 +1,7 @@
 #ifndef WIN32_GFX_CORE_H
 #define WIN32_GFX_CORE_H
 
-typedef struct Gfx_Context Gfx_Content;
+typedef struct Gfx_Context Gfx_Context;
 struct Gfx_Context
 {
 	HWND hwnd;
