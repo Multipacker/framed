@@ -93,6 +93,38 @@ ui_checkf(B32 *value, CStr fmt, ...)
 }
 
 internal Void
+ui_push_scrollable_region(Str8 string)
+{
+	B32 smooth_scroll = true;
+	UI_Box *view_region = ui_box_make(UI_BoxFlag_Clip |
+									  UI_BoxFlag_ViewScroll |
+									  UI_BoxFlag_DrawBackground |
+									  UI_BoxFlag_DrawBorder,
+									  string);
+	UI_Comm comm = ui_comm_from_box(view_region);
+	ui_push_parent(view_region);
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	// TODO(hampus): Push seed key instead
+	Str8List list = {0};
+	str8_list_push(ui_frame_arena(), &list, string);
+	str8_list_push(ui_frame_arena(), &list, str8_lit("ScrollContainer"));
+	UI_Box *container = ui_box_make(smooth_scroll ? UI_BoxFlag_AnimatePos : 0,
+									str8_join(ui_frame_arena(), &list));
+	container->scroll.y += (F32)(comm.scroll.y * g_ui_ctx->dt * 5000.0);
+	container->scroll.y = f32_clamp(0, container->scroll.y,
+									container->target_size[Axis2_Y] - view_region->target_size[Axis2_Y]);
+	ui_push_parent(container);
+}
+
+internal Void
+ui_pop_scrollable_region(Void)
+{
+	ui_pop_parent();
+	ui_pop_parent();
+}
+
+internal Void
 ui_spacer(UI_Size size)
 {
 	ui_next_size(ui_top_parent()->layout_style.child_layout_axis, size);

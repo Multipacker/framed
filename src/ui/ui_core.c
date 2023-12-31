@@ -961,7 +961,7 @@ ui_comm_from_box(UI_Box *box)
 				{
 					if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
 					{
-						result.scroll.y = node->scroll.y;
+						result.scroll.y = -node->scroll.y;
 						dll_remove(event_list->first, event_list->last, node);
 					}
 				} break;

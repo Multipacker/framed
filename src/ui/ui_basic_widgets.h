@@ -5,10 +5,10 @@ internal UI_Comm ui_text(Str8 string);
 internal UI_Comm ui_textf(CStr fmt, ...);
 internal UI_Comm ui_button(Str8 string);
 internal UI_Comm ui_buttonf(CStr fmt, ...);
-internal Void    ui_spacer(UI_Size size);
-
 internal UI_Comm ui_check(B32 *value, Str8 string);
 internal UI_Comm ui_checkf(B32 *value, CStr fmt, ...);
+
+internal Void    ui_spacer(UI_Size size);
 
 internal UI_Box *ui_begin_named_row(Str8 string);
 internal Void    ui_end_named_row(Void);
