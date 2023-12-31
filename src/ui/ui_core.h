@@ -184,12 +184,18 @@ struct UI_Box
 	UI_Key key;
 	U64    last_frame_touched_index;
 
-	F32 calc_rel_pos[Axis2_COUNT];
-	F32 calc_size[Axis2_COUNT];
-	F32 calc_pos[Axis2_COUNT];
+	// NOTE(hampus): This is the current
+	// size and position of the box.
+	// These are the same as target when
+	// animations are turned off.
+	Vec2F32 calc_size;
+	Vec2F32 calc_pos;
+	Vec2F32 calc_rel_pos;
 
-	F32 target_size[Axis2_COUNT];
-	F32 target_pos[Axis2_COUNT];
+	// NOTE(hampus): This is the destination size
+	// and position.
+	Vec2F32 target_size;
+	Vec2F32 target_pos;
 
 	RectF32 rect;
 
@@ -339,6 +345,7 @@ internal UI_Key ui_push_seed(UI_Key key);
 internal UI_Key ui_pop_seed(Void);
 
 #define ui_parent(box) defer_loop(ui_push_parent(box), ui_pop_parent())
+#define ui_seed(string) defer_loop(ui_push_string(string), ui_pop_string())
 
 // NOTE(hampus): Rect styling
 

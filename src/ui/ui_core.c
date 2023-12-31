@@ -8,9 +8,10 @@
 // [x] - Scrolling
 // [x] - Clipping rects
 // [x] - Textures
-// []  - Size violations & strictness
+// [x] - Size violations & strictness
+// [x] - Seed pushing
 // []  - Slider, checkbox
-// []  - Seed pushing
+// []  - Death animations
 
 // []  - Change animation speed per-box
 // []  - Hover cursor
@@ -396,7 +397,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
+	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
 	// TODO(hampus): Make this EM
 	text_style->padding[Axis2_X] = 10;
 
@@ -516,7 +517,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_Pixels:
 		{
-			root->target_size[axis] = size.value;
+			root->target_size.v[axis] = size.value;
 		} break;
 
 		case UI_SizeKind_TextContent:
@@ -530,7 +531,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 			{
 				text_dim = render_measure_text(font, root->string);
 			}
-			root->target_size[axis] = text_dim.v[axis] + root->text_style.padding[axis];
+			root->target_size.v[axis] = text_dim.v[axis] + root->text_style.padding[axis];
 		} break;
 
 		default: break;
@@ -557,8 +558,8 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
 			   "Cyclic sizing behaviour");
 
-		F32 parent_size = root->parent->target_size[axis];
-		root->target_size[axis] = parent_size * size.value;
+		F32 parent_size = root->parent->target_size.v[axis];
+		root->target_size.v[axis] = parent_size * size.value;
 	}
 
 	for (UI_Box *child = root->first;
@@ -591,7 +592,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 		{
 			if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 			{
-				F32 child_size = child->target_size[axis];
+				F32 child_size = child->target_size.v[axis];
 				if (axis == child_layout_axis)
 				{
 					children_total_size += child_size;
@@ -603,14 +604,14 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 			}
 		}
 
-		root->target_size[axis] = children_total_size;
+		root->target_size.v[axis] = children_total_size;
 	}
 }
 
 internal Void
 ui_solve_size_violations(UI_Box *root, Axis2 axis)
 {
-	F32 available_space = root->calc_size[axis];
+	F32 available_space = root->calc_size.v[axis];
 
 	F32 taken_space = 0;
 	F32 total_fixup_budget = 0;
@@ -624,13 +625,13 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 			{
 				if(axis == root->layout_style.child_layout_axis)
 				{
-					taken_space += child->target_size[axis];
+					taken_space += child->target_size.v[axis];
 				}
 				else
 				{
-					taken_space = f32_max(taken_space, child->target_size[axis]);
+					taken_space = f32_max(taken_space, child->target_size.v[axis]);
 				}
-				F32 fixup_budget_this_child = child->target_size[axis] * (1 - child->layout_style.size[axis].strictness);
+				F32 fixup_budget_this_child = child->target_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 				total_fixup_budget += fixup_budget_this_child;
 			}
 		}
@@ -647,7 +648,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 			{
 				if(!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
 				{
-					F32 fixup_budget_this_child = child->target_size[axis] * (1 - child->layout_style.size[axis].strictness);
+					F32 fixup_budget_this_child = child->target_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 					F32 fixup_size_this_child = 0;
 					if(axis == root->layout_style.child_layout_axis)
 					{
@@ -655,11 +656,11 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 					}
 					else
 					{
-						fixup_size_this_child = child->target_size[axis] - available_space;
+						fixup_size_this_child = child->target_size.v[axis] - available_space;
 					}
 					fixup_size_this_child = f32_clamp(0, fixup_size_this_child, fixup_budget_this_child);
-					child->target_size[axis] -= fixup_size_this_child;
-					child->target_size[axis] = f32_floor(child->target_size[axis]);
+					child->target_size.v[axis] -= fixup_size_this_child;
+					child->target_size.v[axis] = f32_floor(child->target_size.v[axis]);
 				}
 			}
 		}
@@ -695,12 +696,12 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 
 				if (prev)
 				{
-					root->calc_rel_pos[axis] = prev->calc_rel_pos[axis] + prev->calc_size[axis];
+					root->calc_rel_pos.v[axis] = prev->calc_rel_pos.v[axis] + prev->calc_size.v[axis];
 				}
 			}
 			else
 			{
-				root->calc_rel_pos[axis] = 0;
+				root->calc_rel_pos.v[axis] = 0;
 			}
 		}
 		else
@@ -709,7 +710,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			// that we want
 		}
 
-		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos[axis] - root->scroll.v[axis];
+		root->target_pos.v[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos.v[axis] - root->scroll.v[axis];
 	}
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * g_ui_ctx->dt));
@@ -717,41 +718,41 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 		ui_animations_enabled())
 	{
-		if (f32_abs(root->calc_pos[axis] - root->target_pos[axis]) <= 1)
+		if (f32_abs(root->calc_pos.v[axis] - root->target_pos.v[axis]) <= 0.5f)
 		{
-			root->calc_pos[axis] = root->target_pos[axis];
+			root->calc_pos.v[axis] = root->target_pos.v[axis];
 		}
 		else
 		{
-			root->calc_pos[axis] += (F32)(root->target_pos[axis] - root->calc_pos[axis]) * animation_delta;
+			root->calc_pos.v[axis] += (F32)(root->target_pos.v[axis] - root->calc_pos.v[axis]) * animation_delta;
 		}
 	}
 	else
 	{
-		root->calc_pos[axis]  = root->target_pos[axis];
+		root->calc_pos.v[axis]  = root->target_pos.v[axis];
 	}
 
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 		ui_animations_enabled())
 	{
-		if (f32_abs(root->calc_size[axis] - root->target_size[axis]) <= 1)
+		if (f32_abs(root->calc_size.v[axis] - root->target_size.v[axis]) <= 0.5f)
 		{
-			root->calc_size[axis] = root->target_size[axis];
+			root->calc_size.v[axis] = root->target_size.v[axis];
 		}
 		else
 		{
-			root->calc_size[axis] += (F32)(root->target_size[axis] - root->calc_size[axis]) * animation_delta;
+			root->calc_size.v[axis] += (F32)(root->target_size.v[axis] - root->calc_size.v[axis]) * animation_delta;
 		}
 	}
 	else
 	{
-		root->calc_size[axis] = root->target_size[axis];
+		root->calc_size.v[axis] = root->target_size.v[axis];
 	}
 
 
 
-	root->rect.min.v[axis] = root->calc_pos[axis];
-	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size[axis];
+	root->rect.min.v[axis] = root->calc_pos.v[axis];
+	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size.v[axis];
 
 	for (UI_Box *child = root->first;
 		 child != 0;
@@ -1128,7 +1129,7 @@ ui_key_from_string(UI_Key seed, Str8 string)
 
 	if (string.size != 0)
 	{
-		memory_copy_struct(&result, &seed);
+		result = seed;
 		for (U64 i = 0; i < string.size; ++i)
 		{
 			result.value = ((result.value << 5) + result.value) + string.data[i];
@@ -1252,12 +1253,12 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
 	{
-		result->calc_rel_pos[Axis2_X] = result->layout_style.relative_pos.v[Axis2_X];
+		result->calc_rel_pos.v[Axis2_X] = result->layout_style.relative_pos.v[Axis2_X];
 	}
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingY))
 	{
-		result->calc_rel_pos[Axis2_Y] = result->layout_style.relative_pos.v[Axis2_Y];
+		result->calc_rel_pos.v[Axis2_Y] = result->layout_style.relative_pos.v[Axis2_Y];
 	}
 
 	if (g_ui_ctx->rect_style_stack.auto_pop)
@@ -1360,6 +1361,7 @@ ui_push_seed(UI_Key key)
 {
 	UI_KeyStackNode *node = push_struct(ui_frame_arena(), UI_KeyStackNode);
 	node->key = key;
+	node->key.value += ui_top_seed().value;
 	stack_push(g_ui_ctx->seed_stack, node);
 	return(ui_top_seed());
 }
@@ -1369,4 +1371,16 @@ ui_pop_seed(Void)
 {
 	stack_pop(g_ui_ctx->seed_stack);
 	return(ui_top_seed());
+}
+
+internal Void
+ui_push_string(Str8 string)
+{
+	ui_push_seed(ui_key_from_string(ui_key_null(), string));
+}
+
+internal Void
+ui_pop_string(Void)
+{
+	ui_pop_seed();
 }

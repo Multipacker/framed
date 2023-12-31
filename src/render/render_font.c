@@ -655,9 +655,9 @@ render_font_loader_thread(Void *data)
 
 			render_make_font_freetype(renderer, entry->font, (S32) entry->font->font_size, entry->font->path, entry->render_mode);
 
+			entry->font->loaded = true;
 			memory_fence();
 
-			entry->font->loaded = true;
 			++font_queue->queue_read_index;
 
 #if defined(RENDERER_OPENGL)
@@ -675,11 +675,15 @@ render_font_loader_thread(Void *data)
 internal Void
 render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path, R_FontRenderMode render_mode)
 {
+	// TODO(hampus): Check the pixel orientation of the monitor.
 	assert(renderer);
 	assert(font_size > 0);
 	assert(path.size > 0);
-	// TODO(hampus): Check the pixel orientation of the monitor.
-	B32 font_is_in_queue = false;
+	out_font->loaded = false;
+	out_font->loading = true;
+
+	memory_fence();
+
 	R_FontQueue *font_queue = renderer->font_queue;
 
 	U32 queue_index = u32_atomic_add(&font_queue->queue_write_index, 1);
@@ -689,7 +693,6 @@ render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path
 	entry->render_mode = render_mode;
 	out_font->font_size = (U32) font_size;
 	out_font->path = path;
-	out_font->loading = true;
 
 	memory_fence();
 
