@@ -344,8 +344,12 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 
 							atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
-																		   v2u32(bitmap_width, bitmap_height));
+																		   v2u32(bitmap_width+2, bitmap_height+2));
 							rect_region = atlas_region->region;
+
+							// NOTE(hampus): Add some extra padding
+							rect_region.min.x += 1;
+							rect_region.min.y += 1;
 
 							// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
 							// NOTE(hampus): Convert from 8 bit to 32 bit
@@ -386,9 +390,13 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 							// NOTE(hampus): We now have 3 "pixels" for each value.
 
 							atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
-							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width, bitmap_height));
+							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width+2, bitmap_height+2));
 
 							rect_region = atlas_region->region;
+
+							// NOTE(hampus): Add some extra padding
+							rect_region.min.x += 1;
+							rect_region.min.y += 1;
 
 							// TODO(hampus): SIMD (or check that the compiler actually SIMD's this)
 							// NOTE(hampus): Convert from 24 bit RGB to 32 bit RGBA
