@@ -51,7 +51,7 @@ internal UI_Comm
 ui_check(B32 *value, Str8 string)
 {
 	UI_Comm comm = {0};
-
+	
 	ui_next_width(ui_em(1.0f, 1));
 	ui_next_height(ui_em(1.0f, 1));
 	UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
@@ -76,7 +76,7 @@ ui_check(B32 *value, Str8 string)
 		UI_Box *check = ui_box_make(UI_BoxFlag_DrawText,
 									str8_lit(""));
 	}
-
+	
 	return(comm);
 }
 

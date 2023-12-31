@@ -282,10 +282,16 @@ struct UI_Context
 	UI_Key active_key;
 	UI_Key hot_key;
 
+	UI_Key prev_active_key;
+	UI_Key prev_hot_key;
+
 	Gfx_EventList *event_list;
 	R_Context     *renderer;
 
 	UI_Config config;
+
+	Vec2F32 mouse_pos;
+	Vec2F32 prev_mouse_pos;
 
 	B32 show_debug_lines;
 

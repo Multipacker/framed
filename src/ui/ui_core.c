@@ -7,9 +7,10 @@
 // [x] - Icons
 // [x] - Scrolling
 // [x] - Clipping rects
+// [x] - Textures
 // []  - Slider, checkbox
 // []  - Size violations & strictness
-// []  - Textures
+// []  - Seed pushing
 
 // []  - Hover cursor
 // []  - Focused box
@@ -63,12 +64,34 @@ ui_box_is_active(UI_Box *box)
 }
 
 internal B32
+ui_box_was_active(UI_Box *box)
+{
+	B32 result = false;
+	if (!ui_key_is_null(box->key))
+	{
+		result = ui_key_match(g_ui_ctx->prev_active_key, box->key);
+	}
+	return(result);
+}
+
+internal B32
 ui_box_is_hot(UI_Box *box)
 {
 	B32 result = false;
 	if (!ui_key_is_null(box->key))
 	{
 		result = ui_key_match(g_ui_ctx->hot_key, box->key);
+	}
+	return(result);
+}
+
+internal B32
+ui_box_was_hot(UI_Box *box)
+{
+	B32 result = false;
+	if (!ui_key_is_null(box->key))
+	{
+		result = ui_key_match(g_ui_ctx->prev_hot_key, box->key);
 	}
 	return(result);
 }
@@ -278,6 +301,8 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->renderer = renderer;
 	g_ui_ctx->event_list = event_list;
 	g_ui_ctx->dt = dt;
+
+	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	B32 left_mouse_released = false;
 	for (Gfx_Event *node = event_list->first;
@@ -862,6 +887,9 @@ ui_end(Void)
 	ui_layout(g_ui_ctx->root);
 	ui_draw(g_ui_ctx->root);
 
+	g_ui_ctx->prev_mouse_pos = g_ui_ctx->mouse_pos;
+	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
+	g_ui_ctx->prev_hot_key = g_ui_ctx->hot_key;
 	g_ui_ctx->parent_stack = 0;
 	g_ui_ctx->seed_stack = 0;
 	arena_pop_to(ui_frame_arena(), 0);
@@ -972,6 +1000,13 @@ ui_comm_from_box(UI_Box *box)
 				} break;
 			}
 		}
+	}
+
+	if (ui_box_is_active(box) &&
+		ui_box_was_active(box))
+	{
+		result.dragging = true;
+		result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
 	}
 
 	return(result);
