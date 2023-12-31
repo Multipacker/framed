@@ -909,6 +909,8 @@ ui_comm_from_box(UI_Box *box)
 	UI_Comm result = {0};
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
+	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);
+
 	if (rectf32_contains_v2f32(box->rect, mouse_pos))
 	{
 		g_ui_ctx->hot_key = box->key;

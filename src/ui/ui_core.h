@@ -12,13 +12,18 @@ struct UI_Config
 typedef enum UI_BoxFlags UI_BoxFlags;
 enum UI_BoxFlags
 {
+	// NOTE(hampus): This allows the box to
+	// consume key press events which is the only
+	// way right now to become active.
 	UI_BoxFlag_Clickable       = (1 << 0),
+
 	UI_BoxFlag_DrawText        = (1 << 1),
 	UI_BoxFlag_DrawBorder      = (1 << 2),
 	UI_BoxFlag_DrawBackground  = (1 << 3),
 	UI_BoxFlag_DrawDropShadow  = (1 << 4),
 	UI_BoxFlag_HotAnimation    = (1 << 5),
 	UI_BoxFlag_ActiveAnimation = (1 << 6),
+	// TODO(hampus): Implement this
 	UI_BoxFlag_FocusAnimation  = (1 << 7),
 
 	// NOTE(hampus): This decides if the box
