@@ -656,9 +656,8 @@ render_font_loader_thread(Void *data)
 			R_DirtyFontRegionQueue *dirty_font_region_queue = renderer->dirty_font_region_queue;
 			{
 				// NOTE(hampus): Add it to the font region update queue
-				U32 queue_index = u32_atomic_add(&dirty_font_region_queue->queue_write_index, 1);
-
-				RectU32 *rect_entry = &dirty_font_region_queue->queue[queue_index & LOG_QUEUE_MASK];
+				RectU32 *rect_entry = &dirty_font_region_queue->queue[dirty_font_region_queue->queue_write_index & LOG_QUEUE_MASK];
+				++dirty_font_region_queue->queue_write_index;
 			}
 #endif
 		}
