@@ -6,9 +6,10 @@
 // [x] - Animations
 // [x] - Icons
 // [x] - Scrolling
-// [x]  - Clipping rects
+// [x] - Clipping rects
 // []  - Slider, checkbox
 // []  - Size violations & strictness
+// []  - Textures
 
 // []  - Hover cursor
 // []  - Focused box
@@ -805,7 +806,7 @@ ui_draw(UI_Box *root)
 															v4f32(d, d, d, 0));
 		rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 															 v4f32(d, d, d, 0));
-		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness);
+		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
 		memory_copy_array(instance->colors, rect_style->color);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}

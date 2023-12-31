@@ -128,6 +128,7 @@ internal Void
 ui_spacer(UI_Size size)
 {
 	ui_next_size(ui_top_parent()->layout_style.child_layout_axis, size);
+	ui_next_size(!ui_top_parent()->layout_style.child_layout_axis, ui_pixels(0, 0));
 	ui_box_make(0, str8_lit(""));
 }
 

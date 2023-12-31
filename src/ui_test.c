@@ -20,19 +20,20 @@ os_main(Str8List arguments)
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
 	R_Context *renderer = render_init(&gfx);
-
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/segoeuibi.ttf"), 16);
-	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 10);
+	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
 	UI_Context *ui = ui_init();
 
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
+
+	R_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -71,9 +72,15 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 
+		ui_next_slice(slice);
+		ui_next_color(v4f32(1, 1, 1, 1));
+		ui_next_width(ui_em(10, 1));
+		ui_next_height(ui_em(10, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground,
+					str8_lit("TestSlice"));
+
 		U64 result = 0;
 
-#if 0
 		local U32 icon = R_ICON_STAR;
 
 		ui_next_icon(icon);
@@ -96,7 +103,7 @@ os_main(Str8List arguments)
 				icon = R_ICON_STAR;
 			}
 		}
-#endif
+
 		ui_next_relative_pos(Axis2_X, 500);
 		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
@@ -145,10 +152,6 @@ os_main(Str8List arguments)
 
 		ui_text(str8_lit("Text!"));
 
-		ui_softness(1)
-		{
-		}
-
 		UI_Box *parent = 0;
 
 		ui_color(v4f32(1, 0, 0, 1))
@@ -177,7 +180,7 @@ os_main(Str8List arguments)
 								 UI_BoxFlag_Clip,
 								 str8_lit("Parent"));
 			UI_Comm parent_comm = ui_comm_from_box(parent);
-			parent->scroll.y += parent_comm.scroll.y;
+			parent->scroll.y += (F32)(parent_comm.scroll.y*dt*5000);
 		}
 		ui_parent(parent)
 		{
@@ -205,7 +208,11 @@ os_main(Str8List arguments)
 									   str8_lit(""));
 			ui_box_equip_display_string(box2, str8_lit("Text color"));
 		}
-#if 0
+
+		ui_next_width(ui_children_sum(1));
+		ui_next_height(ui_em(20, 1));
+		ui_push_scrollable_region(str8_lit("Test"));
+
 		ui_row()
 		{
 			for (U64 i = 0; i < 5; ++i)
@@ -214,7 +221,7 @@ os_main(Str8List arguments)
 
 				ui_column()
 				{
-					for (U64 j = 0; j < 5; ++j)
+					for (U64 j = 0; j < 20; ++j)
 					{
 						ui_spacer(ui_em(0.25f, 1));
 						ui_next_width(ui_em(7.5f, 1));
@@ -226,7 +233,9 @@ os_main(Str8List arguments)
 				ui_spacer(ui_em(0.25f, 1));
 			}
 		}
-#endif
+
+		ui_pop_scrollable_region();
+
 		ui_end();
 
 		render_end(renderer);
