@@ -171,17 +171,17 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 
 	B32 result = false;
 
-	Arena_Temporary scratch = get_scratch(&arena, 1);
-
-	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-							 GENERIC_READ,
-							 FILE_SHARE_READ,
-							 0,
-							 OPEN_EXISTING,
-							 FILE_ATTRIBUTE_NORMAL,
-							 0);
-
-	release_scratch(scratch);
+	HANDLE file = INVALID_HANDLE_VALUE;
+	arena_scratch(&arena, 1)
+	{
+		file = CreateFile(cstr16_from_str8(scratch, path).data,
+						  GENERIC_READ,
+						  FILE_SHARE_READ,
+						  0,
+						  OPEN_EXISTING,
+						  FILE_ATTRIBUTE_NORMAL,
+						  0);
+	}
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
