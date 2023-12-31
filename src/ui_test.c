@@ -73,6 +73,7 @@ os_main(Str8List arguments)
 		ui_begin(ui, &events, renderer, dt);
 
 		local B32 show_atlas = false;
+
 		ui_row()
 		{
 			ui_check(&show_atlas, str8_lit("ShowAtlas"));
@@ -86,13 +87,13 @@ os_main(Str8List arguments)
 			ui_next_height(ui_em(20, 1));
 			ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
 			UI_Box *atlas_parent = ui_box_make(
-				UI_BoxFlag_DrawBackground |
-				UI_BoxFlag_Clip |
-				UI_BoxFlag_Clickable |
-				UI_BoxFlag_ViewScroll |
-				UI_BoxFlag_AnimateDim,
-				str8_lit("FontParent")
-			);
+											   UI_BoxFlag_DrawBackground |
+											   UI_BoxFlag_Clip |
+											   UI_BoxFlag_Clickable |
+											   UI_BoxFlag_ViewScroll |
+											   UI_BoxFlag_AnimateDim,
+											   str8_lit("FontParent")
+											   );
 			ui_parent(atlas_parent)
 			{
 				local Vec2F32 offset = { 0 };
@@ -104,19 +105,19 @@ os_main(Str8List arguments)
 				ui_next_height(ui_pct(1.0f / scale, 1));
 
 				R_TextureSlice font_slice = render_slice_from_texture(
-					renderer->font_atlas->texture,
-					rectf32(v2f32(0, 0), v2f32(1, 1))
-				);
+																	  renderer->font_atlas->texture,
+																	  rectf32(v2f32(0, 0), v2f32(1, 1))
+																	  );
 				ui_next_slice(font_slice);
 				ui_next_color(v4f32(1, 1, 1, 1));
 
 				ui_next_corner_radius(0);
 				UI_Box *atlas_box = ui_box_make(
-					UI_BoxFlag_FloatingPos |
-					UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_AnimateDim,
-					str8_lit("FontAtlas")
-				);
+												UI_BoxFlag_FloatingPos |
+												UI_BoxFlag_DrawBackground |
+												UI_BoxFlag_AnimateDim,
+												str8_lit("FontAtlas")
+												);
 
 				UI_Comm atlas_comm = ui_comm_from_box(atlas_parent);
 
@@ -129,13 +130,19 @@ os_main(Str8List arguments)
 		ui_next_color(v4f32(1, 1, 1, 1));
 		ui_next_width(ui_em(10, 1));
 		ui_next_height(ui_em(10, 1));
-		ui_box_make(UI_BoxFlag_DrawBackground,
-					str8_lit("TestSlice"));
+		UI_Box *slice_box = ui_box_make(UI_BoxFlag_DrawBackground |
+										UI_BoxFlag_Clickable,
+										str8_lit("TestSlice"));
+
+		UI_Comm slice_comm = ui_comm_from_box(slice_box);
+		printf("%.02f\n", slice_comm.drag_delta.x);
 
 		U64 result = 0;
 
 		local U32 icon = R_ICON_STAR;
 
+		ui_next_width(ui_em(1.0f, 1));
+		ui_next_height(ui_em(1.0f, 1));
 		ui_next_icon(icon);
 		UI_Comm star_comm = ui_comm_from_box(ui_box_make(UI_BoxFlag_DrawText |
 														 UI_BoxFlag_DrawBackground |
@@ -207,88 +214,83 @@ os_main(Str8List arguments)
 
 		UI_Box *parent = 0;
 
-		ui_color(v4f32(1, 0, 0, 1))
-			ui_border_color(v4f32(0, 1, 0, 1))
-		{
-			ui_next_width(ui_em(10, 1));
-			ui_next_height(ui_em(10, 1));
-			UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-									  UI_BoxFlag_DrawBorder |
-									  UI_BoxFlag_DrawText |
-									  UI_BoxFlag_AnimateDim |
-									  UI_BoxFlag_AnimatePos,
-									  str8_lit("Box2"));
-
-			ui_box_equip_display_string(box, str8_lit("Hello!"));
-
-			ui_next_width(ui_children_sum(1));
-			ui_next_height(ui_children_sum(1));
-			ui_next_child_layout_axis(Axis2_X);
-			parent = ui_box_make(UI_BoxFlag_DrawBackground |
-								 UI_BoxFlag_DrawBorder |
-								 UI_BoxFlag_DrawDropShadow |
-								 UI_BoxFlag_AnimateDim |
-								 UI_BoxFlag_AnimatePos |
-								 UI_BoxFlag_ViewScroll |
-								 UI_BoxFlag_Clip,
-								 str8_lit("Parent"));
-			UI_Comm parent_comm = ui_comm_from_box(parent);
-			parent->scroll.y += (F32)(parent_comm.scroll.y*dt*5000);
-		}
-		ui_parent(parent)
-		{
-			ui_next_vert_corner_radius(20, 0);
-			ui_next_width(ui_em(15, 1));
-			ui_next_height(ui_em(15, 1));
-			ui_next_font(font2);
-			UI_Box *box1 = ui_box_make(UI_BoxFlag_DrawBackground |
-									   UI_BoxFlag_DrawBorder |
-									   UI_BoxFlag_DrawText,
-									   str8_lit(""));
-
-			ui_box_equip_display_string(box1, str8_lit("Font change!"));
-
-			ui_next_hori_corner_radius(20, 0);
-			ui_next_text_color(v4f32(0, 0, 0.9f, 1));
-			ui_next_text_align(UI_TextAlign_Left);
-			ui_next_width(ui_em(1, 1));
-			ui_next_height(ui_em(60, 1));
-			ui_next_border_color(v4f32(1, 0, 0, 1));
-			UI_Box *box2 = ui_box_make(UI_BoxFlag_DrawBackground |
-									   UI_BoxFlag_DrawBorder |
-									   UI_BoxFlag_DrawText |
-									   UI_BoxFlag_FloatingPos,
-									   str8_lit(""));
-			ui_box_equip_display_string(box2, str8_lit("Text color"));
-		}
-
-		ui_next_width(ui_children_sum(1));
-		ui_next_height(ui_em(20, 1));
-		ui_push_scrollable_region(str8_lit("Test"));
-
 		ui_row()
 		{
-			for (U64 i = 0; i < 5; ++i)
+			ui_color(v4f32(1, 0, 0, 1))
+				ui_border_color(v4f32(0, 1, 0, 1))
 			{
-				ui_spacer(ui_em(0.25f, 1));
+				ui_next_width(ui_em(10, 1));
+				ui_next_height(ui_em(10, 1));
+				UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+										  UI_BoxFlag_DrawBorder |
+										  UI_BoxFlag_DrawText |
+										  UI_BoxFlag_AnimateDim |
+										  UI_BoxFlag_AnimatePos,
+										  str8_lit("Box2"));
 
-				ui_column()
-				{
-					for (U64 j = 0; j < 20; ++j)
-					{
-						ui_spacer(ui_em(0.25f, 1));
-						ui_next_width(ui_em(7.5f, 1));
-						ui_buttonf("Hello %d%d", i, j);
-						ui_spacer(ui_em(0.25f, 1));
-					}
-				}
+				ui_box_equip_display_string(box, str8_lit("Hello!"));
 
-				ui_spacer(ui_em(0.25f, 1));
+				ui_next_width(ui_em(20, 1));
+				ui_next_height(ui_em(20, 1));
+				ui_next_child_layout_axis(Axis2_Y);
+				parent = ui_box_make(UI_BoxFlag_DrawBackground |
+									 UI_BoxFlag_DrawBorder |
+									 UI_BoxFlag_DrawDropShadow |
+									 UI_BoxFlag_AnimateDim |
+									 UI_BoxFlag_AnimatePos |
+									 UI_BoxFlag_ViewScroll |
+									 UI_BoxFlag_Clip,
+									 str8_lit("Parent"));
+
+				UI_Comm parent_comm = ui_comm_from_box(parent);
+				parent->scroll.y += (F32)(parent_comm.scroll.y*dt*5000);
 			}
+			ui_parent(parent)
+			{
+				ui_next_vert_corner_radius(20, 0);
+				ui_next_width(ui_em(10, 1));
+				ui_next_height(ui_em(10, 1));
+				ui_next_font(font2);
+				UI_Box *box1 = ui_box_make(UI_BoxFlag_DrawBackground |
+										   UI_BoxFlag_DrawBorder |
+										   UI_BoxFlag_DrawText,
+										   str8_lit(""));
+
+				ui_box_equip_display_string(box1, str8_lit("Font change!"));
+
+				ui_fill();
+				ui_button(str8_lit("Centered button!"));
+				ui_fill();
+			}
+
+			ui_next_width(ui_children_sum(1));
+			ui_next_height(ui_em(20, 1));
+			ui_push_scrollable_region(str8_lit("Test"));
+
+			ui_row()
+			{
+				for (U64 i = 0; i < 5; ++i)
+				{
+					ui_spacer(ui_em(0.25f, 1));
+
+					ui_column()
+					{
+						for (U64 j = 0; j < 20; ++j)
+						{
+							ui_spacer(ui_em(0.25f, 1));
+							ui_next_width(ui_em(7.5f, 1));
+							ui_buttonf("Hello %d%d", i, j);
+							ui_spacer(ui_em(0.25f, 1));
+						}
+					}
+
+					ui_spacer(ui_em(0.25f, 1));
+				}
+			}
+
+			ui_pop_scrollable_region();
+
 		}
-
-		ui_pop_scrollable_region();
-
 		ui_end();
 
 		render_end(renderer);

@@ -33,7 +33,6 @@ enum UI_BoxFlags
 	// NOTE(hampus): This decides if the children
 	// of the box are allowed to go outside of
 	// the parent region
-	// TODO(hampus): Implement this
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
 
@@ -127,7 +126,7 @@ struct UI_LayoutStyle
 	UI_LayoutStyle *stack_next;
 
 	UI_Size     size[Axis2_COUNT];
-	F32         relative_pos[Axis2_COUNT];
+	Vec2F32     relative_pos;
 	Axis2       child_layout_axis;
 	UI_BoxFlags box_flags;
 };
@@ -216,7 +215,9 @@ typedef struct UI_Comm UI_Comm;
 struct UI_Comm
 {
 	UI_Box *widget;
-	Vec2F32 mouse;
+	// NOTE(hampus): Relative to upper-left
+	// corner of the box
+	Vec2F32 rel_mouse;
 	Vec2F32 drag_delta;
 	Vec2F32 scroll;
 	B8 pressed;
@@ -314,6 +315,7 @@ internal UI_Size ui_text_content(F32 strictness);
 internal UI_Size ui_pct(F32 value, F32 strictness);
 internal UI_Size ui_children_sum(F32 strictness);
 internal UI_Size ui_em(F32 value, F32 strictness);
+internal UI_Size ui_fill(Void);
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 
@@ -448,8 +450,8 @@ internal UI_Key ui_pop_seed(Void);
 
 // NOTE(hampus): For these to work, the box *has* to have either
 // UI_BoxFlag_FloatingX and/or UI_BoxFlag_FloatingY flag
-#define ui_next_relative_pos(axis, p) ui_get_auto_pop_layout_style()->relative_pos[axis] = p
-#define ui_push_relative_pos(axis, p) ui_push_layout_style()->relative_pos[axis] = p
+#define ui_next_relative_pos(axis, p) ui_get_auto_pop_layout_style()->relative_pos.v[axis] = p
+#define ui_push_relative_pos(axis, p) ui_push_layout_style()->relative_pos.v[axis] = p
 #define ui_pop_relative_pos()         ui_pop_layout_style()
 #define ui_relative_pos(axis, p)      defer_loop(ui_push_relative_pos(axis, p), ui_pop_relative_pos())
 

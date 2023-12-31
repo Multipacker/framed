@@ -8,10 +8,11 @@
 // [x] - Scrolling
 // [x] - Clipping rects
 // [x] - Textures
-// []  - Slider, checkbox
 // []  - Size violations & strictness
+// []  - Slider, checkbox
 // []  - Seed pushing
 
+// []  - Change animation speed per-box
 // []  - Hover cursor
 // []  - Focused box
 // []  - Context menu
@@ -114,6 +115,7 @@ ui_box_alloc(Void)
 internal Void
 ui_box_free(UI_Box *box)
 {
+
 	UI_FreeBox *free_box = (UI_FreeBox *)box;
 	free_box->next = g_ui_ctx->box_storage.first_free_box;
 	g_ui_ctx->box_storage.first_free_box = free_box;
@@ -489,6 +491,16 @@ ui_em(F32 value, F32 strictness)
 	return(result);
 }
 
+internal UI_Size
+ui_fill(Void)
+{
+	UI_Size result = {0};
+	result.kind = UI_SizeKind_Pct;
+	result.value = 1;
+	result.strictness = 0;
+	return(result);
+}
+
 internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
@@ -596,6 +608,72 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 }
 
 internal Void
+ui_solve_size_violations(UI_Box *root, Axis2 axis)
+{
+	F32 available_space = root->calc_size[axis];
+
+	F32 taken_space = 0;
+	F32 total_fixup_budget = 0;
+	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	{
+		for(UI_Box *child = root->first;
+			child != 0;
+			child = child->next)
+		{
+			if(!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+			{
+				if(axis == root->layout_style.child_layout_axis)
+				{
+					taken_space += child->target_size[axis];
+				}
+				else
+				{
+					taken_space = f32_max(taken_space, child->target_size[axis]);
+				}
+				F32 fixup_budget_this_child = child->target_size[axis] * (1 - child->layout_style.size[axis].strictness);
+				total_fixup_budget += fixup_budget_this_child;
+			}
+		}
+	}
+
+	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	{
+		F32 violation = taken_space - available_space;
+		if(violation > 0 && total_fixup_budget > 0)
+		{
+			for(UI_Box *child = root->first;
+				child != 0;
+				child = child->next)
+			{
+				if(!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+				{
+					F32 fixup_budget_this_child = child->target_size[axis] * (1 - child->layout_style.size[axis].strictness);
+					F32 fixup_size_this_child = 0;
+					if(axis == root->layout_style.child_layout_axis)
+					{
+						fixup_size_this_child = fixup_budget_this_child * (violation / total_fixup_budget);
+					}
+					else
+					{
+						fixup_size_this_child = child->target_size[axis] - available_space;
+					}
+					fixup_size_this_child = f32_clamp(0, fixup_size_this_child, fixup_budget_this_child);
+					child->target_size[axis] -= fixup_size_this_child;
+					child->target_size[axis] = f32_floor(child->target_size[axis]);
+				}
+			}
+		}
+	}
+
+	for (UI_Box *child = root->first;
+		 child != 0;
+		 child = child->next)
+	{
+		ui_solve_size_violations(child, axis);
+	}
+}
+
+internal Void
 ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
 	if (root->parent)
@@ -624,6 +702,11 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			{
 				root->calc_rel_pos[axis] = 0;
 			}
+		}
+		else
+		{
+			// NOTE(hampus): We have already set the box's position
+			// that we want
 		}
 
 		root->target_pos[axis] = root->parent->rect.min.v[axis] + root->calc_rel_pos[axis] - root->scroll.v[axis];
@@ -686,6 +769,7 @@ ui_layout(UI_Box *root)
 		ui_solve_independent_sizes(root, axis);
 		ui_solve_upward_dependent_sizes(root, axis);
 		ui_solve_downward_dependent_sizes(root, axis);
+		ui_solve_size_violations(root, axis);
 		ui_calculate_final_rect(root, axis);
 	}
 }
@@ -1168,12 +1252,12 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
 	{
-		result->calc_rel_pos[Axis2_X] = result->layout_style.relative_pos[Axis2_X];
+		result->calc_rel_pos[Axis2_X] = result->layout_style.relative_pos.v[Axis2_X];
 	}
 
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingY))
 	{
-		result->calc_rel_pos[Axis2_Y] = result->layout_style.relative_pos[Axis2_Y];
+		result->calc_rel_pos[Axis2_Y] = result->layout_style.relative_pos.v[Axis2_Y];
 	}
 
 	if (g_ui_ctx->rect_style_stack.auto_pop)
