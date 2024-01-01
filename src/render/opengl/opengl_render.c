@@ -135,7 +135,8 @@ render_backend_init(R_Context *renderer)
 	backend->uniform_sampler_location    = glGetUniformLocation(backend->program, "uniform_sampler");
 
 	// NOTE(simon): We only need to set these once as we don't change them anywhere
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+	Vec4F32 background = vec4f32_srgb_to_linear(v4f32(0.1f, 0.2f, 0.3f, 1.0f));
+	glClearColor(background.r, background.g, background.b, background.a);
 	glUseProgram(backend->program);
 	glBindVertexArray(backend->vao);
 	glEnable(GL_BLEND);
