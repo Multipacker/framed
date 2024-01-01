@@ -24,8 +24,11 @@ render_backend_init(R_Context *renderer)
 {
 	Gfx_Context *gfx = renderer->gfx;
 
+	// NOTE(simon): The alignment is needed for atomic access within the struct.
+	arena_align(renderer->permanent_arena, 3);
 	renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
 	R_BackendContext *backend = renderer->backend;
+	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
 
 	HRESULT hr;
 
@@ -348,8 +351,47 @@ render_backend_begin(R_Context *renderer)
 internal Void
 render_backend_end(R_Context *renderer)
 {
-	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	R_BackendContext *backend = renderer->backend;
+
+	// NOTE(simon): Perform texture updates.
+	while (backend->texture_update_write_index - backend->texture_update_read_index != 0)
+	{
+		D3D11_TextureUpdate *waiting_update = &backend->texture_update_queue[backend->texture_update_read_index & D3D11_TEXTURE_UPDATE_QUEUE_MASK];
+
+		while (!waiting_update->is_valid)
+		{
+			// NOTE(simon): Busy wait for the entry to become valid.
+		}
+		waiting_update->is_valid = false;
+		D3D11_TextureUpdate update = *waiting_update;
+		memory_fence();
+		++backend->texture_update_read_index;
+
+		// TODO(hampus): Benchmark these
+#if 0
+		D3D11_BOX box = { 0 };
+		box.left      = update.x;
+		box.top       = update.y;
+		box.right     = update.x + update.width;
+		box.bottom    = update.y + update.height;
+		box.front     = 0;
+		box.back      = 1;
+		ID3D11DeviceContext_UpdateSubresource(
+			backend->context,
+			resource, 0,
+			&box,
+			update.data,
+			(U32) update.width * 4, 0
+		);
+#else
+		D3D11_MAPPED_SUBRESOURCE mapped;
+		ID3D11DeviceContext_Map(backend->context, update.resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
+		memory_copy_typed((U8 *) mapped.pData, (U8 *) update.memory, (update.width * update.height * 4));
+		ID3D11DeviceContext_Unmap(backend->context, update.resource, 0);
+#endif
+	}
+
+	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	HRESULT hr;
 	if (backend->render_target_view == 0 || backend->current_width != client_area.width || backend->current_height != client_area.height)
 	{
@@ -722,25 +764,28 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 internal Void
 render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
+	R_BackendContext *backend = renderer->backend;
+
+	U32 queue_index = u32_atomic_add(&backend->texture_update_write_index, 1);
+	while (queue_index - backend->texture_update_read_index >= D3D11_TEXTURE_UPDATE_QUEUE_SIZE)
+	{
+		// NOTE(simon): The queue is full, so busy wait. This should not be
+		// that common.
+	}
+
+	D3D11_TextureUpdate *update = &backend->texture_update_queue[queue_index & D3D11_TEXTURE_UPDATE_QUEUE_MASK];
+
 	R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *)texture.u64;
-	// TODO(hampus): Benchmark these
 	ID3D11Resource *resource = (ID3D11Resource *)d3d11_texture->texture;
-#if 0
-	S32 dst_width  = (S32) d3d11_texture->width;
-	S32 dst_height = (S32) d3d11_texture->height;
-	D3D11_BOX box  = { 0 };
-	box.left       = offset   % dst_width;
-	box.top        = offset   / dst_width;
-	box.right      = box.left + width;
-	box.bottom     = box.top  + height;
-	box.front      = 0;
-	box.back       = 1;
-	ID3D11DeviceContext_UpdateSubresource(renderer->backend->context, resource,
-										  0, &box, memory, (U32) width * 4, 0);
-#else
-	D3D11_MAPPED_SUBRESOURCE mapped;
-	ID3D11DeviceContext_Map(renderer->backend->context, resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-	memory_copy_typed((U8 *) mapped.pData, (U8 *) memory, (width * height * 4));
-	ID3D11DeviceContext_Unmap(renderer->backend->context, resource, 0);
-#endif
+
+	update->resource = resource;
+	update->x        = (U32) (offset % d3d11_texture->width);
+	update->y        = (U32) (offset / d3d11_texture->width);
+	update->width    = width;
+	update->height   = height;
+	update->data     = memory;
+
+	memory_fence();
+
+	update->is_valid = true;
 }

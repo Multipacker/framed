@@ -97,8 +97,11 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 internal R_BackendContext *
 render_backend_init(R_Context *renderer)
 {
+	// NOTE(simon): The alignment is needed for atomic access within the struct.
+	arena_align(renderer->permanent_arena, 3);
     renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
     R_BackendContext *backend = renderer->backend;
+	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	glCreateBuffers(1, &backend->vbo);
@@ -161,6 +164,31 @@ internal Void
 render_backend_end(R_Context *renderer)
 {
     R_BackendContext *backend = renderer->backend;
+
+	// NOTE(simon): Perform texture updates.
+	while (backend->texture_update_write_index - backend->texture_update_read_index != 0)
+	{
+		OpenGL_TextureUpdate *waiting_update = &backend->texture_update_queue[backend->texture_update_read_index & OPENGL_TEXTURE_UPDATE_QUEUE_MASK];
+
+		while (!waiting_update->is_valid)
+		{
+			// NOTE(simon): Busy wait for the entry to become valid.
+		}
+		waiting_update->is_valid = false;
+		OpenGL_TextureUpdate update = *waiting_update;
+		memory_fence();
+		++backend->texture_update_read_index;
+
+		glTextureSubImage2D(
+			update.texture,
+			0,
+			update.x, update.y,
+			update.width, update.height,
+			GL_RGBA, GL_UNSIGNED_BYTE,
+			update.data
+		);
+	}
+
 	glDisable(GL_SCISSOR_TEST);
 	glClear(GL_COLOR_BUFFER_BIT);
 	glEnable(GL_SCISSOR_TEST);
@@ -455,16 +483,26 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 {
 	if (texture.u64[0])
 	{
-		GLuint opengl_texture = (GLuint) texture.u64[0];
-		U32 x = offset % texture.u64[1];
-		U32 y = (U32)(offset / texture.u64[1]);
-		glTextureSubImage2D(
-							opengl_texture,
-							0,
-							(GLint) x, (GLint) y,
-							(GLsizei) width, (GLsizei) height,
-							GL_RGBA, GL_UNSIGNED_BYTE,
-							(const Void *) memory
-							);
+		R_BackendContext *backend = renderer->backend;
+
+		U32 queue_index = u32_atomic_add(&backend->texture_update_write_index, 1);
+		while (queue_index - backend->texture_update_read_index >= OPENGL_TEXTURE_UPDATE_QUEUE_SIZE)
+		{
+			// NOTE(simon): The queue is full, so busy wait. This should not be
+			// that common.
+		}
+
+		OpenGL_TextureUpdate *update = &backend->texture_update_queue[queue_index & OPENGL_TEXTURE_UPDATE_QUEUE_MASK];
+
+		update->texture = (GLuint) texture.u64[0];
+		update->x       = (GLint) (offset % texture.u64[1]);
+		update->y       = (GLint) (offset / texture.u64[1]);
+		update->width   = (GLsizei) width;
+		update->height  = (GLsizei) height;
+		update->data    = memory;
+
+		memory_fence();
+
+		update->is_valid = true;
 	}
 }

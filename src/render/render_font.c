@@ -331,7 +331,14 @@ render_font_stream_thread(Void *data)
 				
 				memory_fence();
 				
-				++renderer->dirty_font_region_queue->queue_write_index;
+				render_update_texture(
+					renderer,
+					renderer->font_atlas->texture,
+					renderer->font_atlas->memory,
+					renderer->font_atlas->dim.width,
+					renderer->font_atlas->dim.height,
+					0
+				);
 				
 				if (success)
 				{

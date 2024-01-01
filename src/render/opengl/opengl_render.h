@@ -3,6 +3,9 @@
 
 #define OPENGL_BATCH_SIZE 1024
 
+#define OPENGL_TEXTURE_UPDATE_QUEUE_SIZE (1 << 6)
+#define OPENGL_TEXTURE_UPDATE_QUEUE_MASK (OPENGL_TEXTURE_UPDATE_QUEUE_SIZE - 1)
+
 typedef struct OpenGL_ClipNode OpenGL_ClipNode;
 struct OpenGL_ClipNode
 {
@@ -32,6 +35,21 @@ struct OpenGL_BatchList
 	U64 batch_count;
 };
 
+typedef struct OpenGL_TextureUpdate OpenGL_TextureUpdate;
+struct OpenGL_TextureUpdate
+{
+	volatile B32 is_valid;
+
+	GLuint texture;
+
+	GLint x;
+	GLint y;
+	GLsizei width;
+	GLsizei height;
+
+	Void *data;
+};
+
 struct R_BackendContext
 {
 	OpenGL_BatchList batches;
@@ -44,6 +62,10 @@ struct R_BackendContext
 	GLint uniform_sampler_location;
 
 	OpenGL_ClipNode *clip_stack;
+
+	OpenGL_TextureUpdate *texture_update_queue;
+	U32 volatile texture_update_write_index;
+	U32 volatile texture_update_read_index;
 };
 
 internal R_BackendContext *render_backend_init(R_Context *renderer);

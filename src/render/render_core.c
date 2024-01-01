@@ -114,25 +114,20 @@ render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
 	R_Context *renderer = push_struct(arena, R_Context);
-	renderer->gfx = gfx;
-	renderer->permanent_arena       = arena;
-	renderer->frame_arena = arena_create();
-	renderer->backend = render_backend_init(renderer);
+	renderer->gfx             = gfx;
+	renderer->permanent_arena = arena;
+	renderer->frame_arena     = arena_create();
+	renderer->backend         = render_backend_init(renderer);
 
 	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
 	renderer->font_cache = push_struct(arena, R_FontCache);
 	for (U64 i = 0; i < R_FONT_CACHE_SIZE; ++i)
 	{
-		R_Font *font = renderer->font_cache->entries + i;
-		Arena *font_arena = arena_create();
-		font->arena = font_arena;
+		renderer->font_cache->entries[i].arena = arena_create();
 	}
 
 	renderer->font_queue = push_struct(arena, R_FontQueue);
 	renderer->font_queue->queue = push_array(arena, R_FontQueueEntry, FONT_QUEUE_SIZE);
-
-	renderer->dirty_font_region_queue = push_struct(arena, R_DirtyFontRegionQueue);
-	renderer->dirty_font_region_queue->queue = push_array(arena, RectU32, FONT_QUEUE_SIZE);
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
 	renderer->font_atlas_mutex = os_mutex_create();
@@ -158,18 +153,6 @@ render_begin(R_Context *renderer)
 internal Void
 render_end(R_Context *renderer)
 {
-	R_DirtyFontRegionQueue *dirty_font_region_queue = renderer->dirty_font_region_queue;
-	if ((dirty_font_region_queue->queue_read_index - dirty_font_region_queue->queue_write_index) != 0)
-	{
-		RectU32 *entry = &dirty_font_region_queue->queue[dirty_font_region_queue->queue_read_index & FONT_QUEUE_MASK];
-
-		render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
-
-		memory_fence();
-
-		++dirty_font_region_queue->queue_read_index;
-	}
-
 	render_backend_end(renderer);
 	renderer->frame_index++;
 	arena_pop_to(renderer->frame_arena, 0);
