@@ -865,10 +865,9 @@ os_semaphore_wait(OS_Semaphore *handle)
 	} while (success == -1 && errno == EINTR);
 }
 
-internal OS_Mutex
-os_mutex_create(Void)
+internal Void
+os_mutex_create(OS_Mutex *mutex)
 {
-	OS_Mutex result = { 0 };
 	// TODO(simon): Check for failure.
 	pthread_mutexattr_t attributes = { 0 };
 	pthread_mutexattr_init(&attributes);
@@ -878,22 +877,20 @@ os_mutex_create(Void)
 	// TODO(simon): What is a good priority ceiling value?
 	//pthread_mutexattr_setprioceiling(&attributes, ...);
 
-	pthread_mutex_init(&result.mutex, 0);
+	pthread_mutex_init(&mutex->mutex, 0);
 	pthread_mutexattr_destroy(&attributes);
-
-	return(result);
 }
 
 internal Void
-os_mutex_take(OS_Mutex mutex)
+os_mutex_take(OS_Mutex *mutex)
 {
-	pthread_mutex_lock(&mutex.mutex);
+	pthread_mutex_lock(&mutex->mutex);
 }
 
 internal Void
-os_mutex_release(OS_Mutex mutex)
+os_mutex_release(OS_Mutex *mutex)
 {
-	pthread_mutex_unlock(&mutex.mutex);
+	pthread_mutex_unlock(&mutex->mutex);
 }
 
 internal Void *

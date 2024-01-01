@@ -130,7 +130,7 @@ render_init(Gfx_Context *gfx)
 	renderer->font_queue->queue = push_array(arena, R_FontQueueEntry, FONT_QUEUE_SIZE);
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
-	renderer->font_atlas_mutex = os_mutex_create();
+	os_mutex_create(&renderer->font_atlas_mutex);
 	
 	for (U32 i = 0; i < 4; ++i)
 	{

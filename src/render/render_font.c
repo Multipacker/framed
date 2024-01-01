@@ -278,7 +278,7 @@ render_unload_font(R_Context *renderer, R_Font *font)
 	assert(font);
 	assert(renderer);
 	
-	os_mutex(renderer->font_atlas_mutex)
+	os_mutex(&renderer->font_atlas_mutex)
 	{
 	for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
 	{
