@@ -245,8 +245,6 @@ os_main(Str8List arguments)
 			}
 		}
 
-		ui_buttonf("Num free boxes: %I32d ###MyBox", 5);
-
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
 
 		if (comm.hovering)
