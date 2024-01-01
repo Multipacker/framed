@@ -74,9 +74,7 @@ struct R_Context
 	R_FontAtlas *font_atlas;
 	R_FontCache *font_cache;
 	R_FontQueue *font_queue;
-#if defined(RENDERER_OPENGL)
 	R_DirtyFontRegionQueue *dirty_font_region_queue;
-	#endif
 	OS_Semaphore font_loader_semaphore;
 
 	U64 frame_index;

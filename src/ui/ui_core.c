@@ -1,17 +1,4 @@
 // TODO(hampus):
-// [x] - Styling
-// [x] - Input
-// [x] - More layout sizes
-// [x] - EM sizing
-// [x] - Animations
-// [x] - Icons
-// [x] - Scrolling
-// [x] - Clipping rects
-// [x] - Textures
-// [x] - Size violations & strictness
-// [x] - Seed pushing
-
-// []  - Tooltip
 // []  - Horizontal scrolling
 // []  - Death animations
 // []  - Change animation speed per-box
@@ -456,7 +443,7 @@ ui_top_font_line_height(Void)
 	UI_TextStyle *text_style = ui_top_text_style();
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 	F32 result = 0;
-	if (font)
+	if (render_font_is_loaded(font))
 	{
 		result = font->line_height;
 	}
@@ -534,6 +521,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
+	
 	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
 	{
 		root->layout_style.size[axis].kind = UI_SizeKind_TextContent;

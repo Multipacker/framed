@@ -120,7 +120,6 @@ ui_push_scrollable_region(Str8 string)
 	ui_push_parent(view_region);
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
-	// TODO(hampus): Push seed key instead
 	UI_Box *container = ui_box_make(smooth_scroll ? UI_BoxFlag_AnimatePos : 0,
 									str8_lit("ScrollContainer"));
 	container->scroll.y += (F32)(comm.scroll.y * g_ui_ctx->dt * 5000.0);

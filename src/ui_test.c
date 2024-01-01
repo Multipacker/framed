@@ -20,10 +20,10 @@ ui_logger(B32 *log_keep)
 	ui_next_child_layout_axis(Axis2_X);
 
 	UI_Box *log_window = ui_box_make(
-		UI_BoxFlag_DrawBackground |
-		UI_BoxFlag_AnimateHeight,
-		str8_lit("LogWindow")
-	);
+									 UI_BoxFlag_DrawBackground |
+									 UI_BoxFlag_AnimateHeight,
+									 str8_lit("LogWindow")
+									 );
 
 	ui_parent(log_window)
 	{
@@ -78,12 +78,6 @@ os_main(Str8List arguments)
 
 	R_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
 
-	local S32 font_size = 11;
-
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
-	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
-	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
-
 	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
@@ -129,7 +123,13 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
-
+		
+		local S32 font_size = 11;
+		
+		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
+		R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+		R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
+		
 		ui_push_font(font);
 
 		ui_next_width(ui_pct(1, 1));
@@ -250,7 +250,7 @@ os_main(Str8List arguments)
 			}
 		}
 
-		ui_buttonf("Num free boxes: %d###MyBox", g_ui_ctx->box_storage.num_free_boxes);
+		ui_buttonf("Num free boxes: %I32d ###MyBox", 5);
 
 		UI_Comm comm = ui_button(str8_lit("Helloaa!##a"));
 
@@ -350,9 +350,9 @@ os_main(Str8List arguments)
 
 				ui_box_equip_display_string(box1, str8_lit("Font change!"));
 
-				ui_fill();
+				ui_spacer(ui_fill());
 				ui_button(str8_lit("Centered button!"));
-				ui_fill();
+				ui_spacer(ui_fill());
 			}
 
 			ui_next_width(ui_children_sum(1));

@@ -160,18 +160,6 @@ render_backend_begin(R_Context *renderer)
 internal Void
 render_backend_end(R_Context *renderer)
 {
-	R_DirtyFontRegionQueue *dirty_font_region_queue = renderer->dirty_font_region_queue;
-	if ((dirty_font_region_queue->queue_read_index - dirty_font_region_queue->queue_write_index) != 0)
-	{
-		RectU32 *entry = &dirty_font_region_queue->queue[dirty_font_region_queue->queue_read_index & FONT_QUEUE_MASK];
-
-		render_update_texture(renderer, renderer->font_atlas->texture, renderer->font_atlas->memory, renderer->font_atlas->dim.width, renderer->font_atlas->dim.height, 0);
-
-		memory_fence();
-
-		++dirty_font_region_queue->queue_read_index;
-	}
-
     R_BackendContext *backend = renderer->backend;
 	glDisable(GL_SCISSOR_TEST);
 	glClear(GL_COLOR_BUFFER_BIT);
@@ -187,11 +175,11 @@ render_backend_end(R_Context *renderer)
 		// NOTE(simon): OpenGL has its origin in the lower left corner, not the
 		// top left like we have, hence the weirdness with the y-coordinate.
 		glScissor(
-			(GLint)   clip_rect.min.x,
-			(GLint)   ((F32) backend->client_area.height - clip_rect.max.y),
-			(GLsizei) (clip_rect.max.x - clip_rect.min.x),
-			(GLsizei) (clip_rect.max.y - clip_rect.min.y)
-		);
+				  (GLint)   clip_rect.min.x,
+				  (GLint)   ((F32) backend->client_area.height - clip_rect.max.y),
+				  (GLsizei) (clip_rect.max.x - clip_rect.min.x),
+				  (GLsizei) (clip_rect.max.y - clip_rect.min.y)
+				  );
 
 		if (batch->texture.u64[0])
 		{
@@ -246,9 +234,9 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
 	// NOTE(simon): Account for softness.
 	RectF32 expanded_area = rectf32(
-		v2f32_sub_f32(min, params->softness),
-		v2f32_add_f32(max, params->softness)
-	);
+									v2f32_sub_f32(min, params->softness),
+									v2f32_add_f32(max, params->softness)
+									);
 
 	// NOTE(simon): Is the rectangle completly outside of the current clip rect?
 	if (!rectf32_overlaps(expanded_area, backend->clip_stack->rect))
@@ -275,7 +263,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 		batch->texture.u64[0] &&
 		params->slice.texture.u64[0] &&
 		batch->texture.u64[0] != params->slice.texture.u64[0]
-	)
+		)
 	{
 		batch = opengl_create_batch(renderer);
 	}
@@ -353,10 +341,10 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 		int height        = 0;
 		int channel_count = 0;
 		stbi_uc *pixels = stbi_load_from_memory(
-			(stbi_uc const *) contents.data, (int) contents.size,
-			&width, &height,
-			&channel_count, 4
-		);
+												(stbi_uc const *) contents.data, (int) contents.size,
+												&width, &height,
+												&channel_count, 4
+												);
 
 		if (pixels)
 		{
@@ -388,13 +376,13 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 			glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 			glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 			glTextureSubImage2D(
-				texture,
-				0,
-				0, 0,
-				(GLsizei) width, (GLsizei) height,
-				byte_layout, GL_UNSIGNED_BYTE,
-				(const Void *) pixels
-			);
+								texture,
+								0,
+								0, 0,
+								(GLsizei) width, (GLsizei) height,
+								byte_layout, GL_UNSIGNED_BYTE,
+								(const Void *) pixels
+								);
 
 			result.u64[0] = (U64) texture;
 			result.u64[1] = (U64) width;
@@ -437,13 +425,13 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTextureSubImage2D(
-		texture,
-		0,
-		0, 0,
-		(GLsizei) width, (GLsizei) height,
-		GL_RGBA, GL_UNSIGNED_BYTE,
-		(const Void *) data
-	);
+						texture,
+						0,
+						0, 0,
+						(GLsizei) width, (GLsizei) height,
+						GL_RGBA, GL_UNSIGNED_BYTE,
+						(const Void *) data
+						);
 
 	result.u64[0] = (U64) texture;
 	result.u64[1] = width;
@@ -471,12 +459,12 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 		U32 x = offset % texture.u64[1];
 		U32 y = (U32)(offset / texture.u64[1]);
 		glTextureSubImage2D(
-			opengl_texture,
-			0,
-			(GLint) x, (GLint) y,
-			(GLsizei) width, (GLsizei) height,
-			GL_RGBA, GL_UNSIGNED_BYTE,
-			(const Void *) memory
-		);
+							opengl_texture,
+							0,
+							(GLint) x, (GLint) y,
+							(GLsizei) width, (GLsizei) height,
+							GL_RGBA, GL_UNSIGNED_BYTE,
+							(const Void *) memory
+							);
 	}
 }

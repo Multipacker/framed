@@ -7,6 +7,8 @@ enum R_FontRenderMode
 	R_FontRenderMode_Normal, // Default render mode. 8-bit AA bitmaps
 	R_FontRenderMode_LCD,    // Subpixel rendering for horizontally decimated LCD displays
 	R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
+	
+	R_FontRenderMode_COUNT,
 };
 
 #define R_USE_SUBPIXEL_RENDERING 1
@@ -79,6 +81,24 @@ struct R_KerningPair
 	F32 value;
 };
 
+typedef enum R_FontState R_FontState;
+enum R_FontState 
+{
+	R_FontState_Unloaded,
+	
+		R_FontState_InQueue,
+	R_FontState_Loading,
+	R_FontState_Loaded,
+};
+
+typedef struct R_FontLoadParams R_FontLoadParams;
+struct R_FontLoadParams
+{
+	R_FontRenderMode render_mode;
+	U32              size;
+	Str8             path;
+};
+
 typedef struct R_Font R_Font;
 struct R_Font
 {
@@ -101,20 +121,14 @@ struct R_Font
 	B32 has_kerning;
 	U32 num_glyphs;
 	U32 num_loaded_glyphs;
-
-	U32 font_size;
-
-	// TODO(hampus): Collapse these somehow
+	
 	Str8 family_name;
 	Str8 style_name;
-	Str8 path;
-
-	R_FontRenderMode render_mode;
 
 	U64 last_frame_index_used;
-
-	B32 loaded;
-	B32 loading;
+	
+	R_FontState state;
+	R_FontLoadParams load_params;
 };
 
 typedef struct R_FontCache R_FontCache;
@@ -134,7 +148,7 @@ struct R_FontKey
 typedef struct R_FontQueueEntry R_FontQueueEntry;
 struct R_FontQueueEntry
 {
-	R_FontRenderMode render_mode;
+	R_FontLoadParams params;
 	R_Font *font;
 };
 
@@ -160,12 +174,5 @@ struct R_DirtyFontRegionQueue
 internal Void render_font_loader_thread(Void *data);
 
 internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
-
-internal Void    render_init_font(R_Context *renderer, R_Font *out_font, S32 font_size, Str8 path, R_FontRenderMode render_mode);
-internal Void    render_destroy_font(R_Context *renderer, R_Font *font);
-
-internal Void render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color);
-internal Vec2F32 render_measure_text(R_Font *font, Str8 text);
-internal Vec2F32 render_measure_character(R_Font *font, U32 codepoint);
 
 #endif
