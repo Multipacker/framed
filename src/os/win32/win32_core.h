@@ -39,4 +39,9 @@ struct OS_Semaphore
 	 HANDLE handle;
 };
 
+struct OS_Mutex
+{
+	HANDLE handle;
+};
+
 #endif // WIN32_ESSENTIAL_H

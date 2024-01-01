@@ -684,6 +684,29 @@ os_thread_create(ThreadProc *proc, Void *data)
 	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
 }
 
+internal OS_Mutex
+os_mutex_create(Void)
+{
+	OS_Mutex result = {0};
+	 BOOL obtain_ownership = FALSE;
+	result.handle = CreateMutex(0, obtain_ownership, 0);
+	return(result);
+}
+
+internal Void
+os_mutex_take(OS_Mutex mutex)
+{
+	assert(mutex.handle != INVALID_HANDLE_VALUE);
+	WaitForSingleObject(mutex.handle, INFINITE);
+}
+
+internal Void
+os_mutex_release(OS_Mutex mutex)
+{
+	assert(mutex.handle != INVALID_HANDLE_VALUE);
+	ReleaseMutex(mutex.handle);
+}
+
 internal S32
 win32_common_main(Void)
 {
