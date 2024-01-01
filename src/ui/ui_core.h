@@ -436,8 +436,8 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_text_align()    ui_pop_text_style()
 #define ui_text_align(x)       defer_loop(ui_push_text_align(x), ui_pop_text_align())
 
-#define ui_next_text_padding(axis, x)  ui_get_auto_pop_text_style()->padding[axis] = x
-#define ui_push_text_padding(axis, x)  ui_push_text_style()->padding[axis] = x
+#define ui_next_text_padding(axis, x)  ui_get_auto_pop_text_style()->padding.v[axis] = x
+#define ui_push_text_padding(axis, x)  ui_push_text_style()->padding.v[axis] = x
 #define ui_pop_text_padding()          ui_pop_text_style()
 #define ui_text_padding(axis, x)       defer_loop(ui_push_text_padding(axis, x), ui_pop_text_padding())
 
@@ -461,12 +461,12 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_next_width(sz) ui_next_size(Axis2_X, sz)
 #define ui_push_width(sz) ui_push_size(Axis2_X, sz)
 #define ui_pop_width()    ui_pop_size()
-#define ui_width(sz)      defer_loop(ui_push_width(sz), ui_pop_width(sz))
+#define ui_width(sz)      defer_loop(ui_push_width(sz), ui_pop_width())
 
 #define ui_next_height(sz) ui_next_size(Axis2_Y, sz)
 #define ui_push_height(sz) ui_push_size(Axis2_Y, sz)
 #define ui_pop_height()    ui_pop_size()
-#define ui_height(sz)      defer_loop(ui_push_height(sz), ui_pop_height(sz))
+#define ui_height(sz)      defer_loop(ui_push_height(sz), ui_pop_height())
 
 // NOTE(hampus): For these to work, the box *has* to have either
 // UI_BoxFlag_FloatingX and/or UI_BoxFlag_FloatingY flag
