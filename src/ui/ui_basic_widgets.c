@@ -34,6 +34,29 @@ ui_textf(CStr fmt, ...)
 	va_end(args);
 }
 
+
+internal UI_Comm
+ui_image(R_TextureSlice slice, Str8 string)
+{
+	ui_next_slice(slice);
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground,
+							  string);
+	UI_Comm comm = ui_comm_from_box(box);
+	return(comm);
+}
+
+internal UI_Comm
+ui_imagef(R_TextureSlice slice, CStr fmt, ...)
+{
+	UI_Comm comm = {0};
+	va_list args;
+	va_start(args, fmt);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	comm = ui_image(slice, string);
+	va_end(args);
+	return(comm);
+}
+
 internal UI_Comm
 ui_button(Str8 string)
 {

@@ -6,7 +6,6 @@
 // []  - Focused box
 // []  - Context menu
 // []  - Custom draw functions
-// []  - Fixup icon sizes
 // []  - Keyboard navigation
 
 #define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
@@ -103,7 +102,6 @@ ui_box_alloc(Void)
 internal Void
 ui_box_free(UI_Box *box)
 {
-
 	UI_FreeBox *free_box = (UI_FreeBox *)box;
 	free_box->next = g_ui_ctx->box_storage.first_free_box;
 	g_ui_ctx->box_storage.first_free_box = free_box;

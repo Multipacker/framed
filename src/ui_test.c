@@ -213,15 +213,10 @@ os_main(Str8List arguments)
 			}
 		}
 
-		ui_next_slice(slice);
 		ui_next_color(v4f32(1, 1, 1, 1));
 		ui_next_width(ui_em(10, 1));
 		ui_next_height(ui_em(10, 1));
-		UI_Box *slice_box = ui_box_make(UI_BoxFlag_DrawBackground |
-										UI_BoxFlag_Clickable,
-										str8_lit("TestSlice"));
-
-		UI_Comm slice_comm = ui_comm_from_box(slice_box);
+		ui_image(slice, str8_lit("TestSlice"));
 
 		U64 result = 0;
 
