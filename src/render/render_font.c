@@ -342,11 +342,11 @@ render_font_stream_thread(Void *data)
 				
 				if (success)
 				{
-				font->state = R_FontState_Loaded;
+					font->state = R_FontState_Loaded;
 				}
 				else
 				{
-				font->state = R_FontState_Unloaded;
+					font->state = R_FontState_Unloaded;
 				}
 				
 				memory_fence();
@@ -363,27 +363,27 @@ render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 	// TODO(hampus): Check the pixel orientation of the monitor.
 	assert(renderer);
 	assert(render_font_valid_load_params(params));
-	
+
 	font->state = R_FontState_InQueue;
 	// NOTE(hampus): This is so that we can recongnize that the font
 	// is in the queue when we are looking in the cache
-		font->load_params = params;
-		
-		memory_fence();
-		
-		R_FontQueue *font_queue = renderer->font_queue;
-		
-		U32 queue_index = u32_atomic_add(&font_queue->queue_write_index, 1);
-		
-		R_FontQueueEntry *entry = &font_queue->queue[queue_index & FONT_QUEUE_MASK];
-		entry->font        = font;
-		entry->params = params;
-	
+	font->load_params = params;
+
+	memory_fence();
+
+	R_FontQueue *font_queue = renderer->font_queue;
+
+	U32 queue_index = u32_atomic_add(&font_queue->queue_write_index, 1);
+
+	R_FontQueueEntry *entry = &font_queue->queue[queue_index & FONT_QUEUE_MASK];
+	entry->font        = font;
+	entry->params = params;
+
 	log_info("Pushed font %"PRISTR8" to queue", str8_expand(params.path));
-	
-		memory_fence();
-	
-		os_semaphore_signal(&renderer->font_loader_semaphore);
+
+	memory_fence();
+
+	os_semaphore_signal(&renderer->font_loader_semaphore);
 }
 
 internal U32
