@@ -1082,102 +1082,136 @@ ui_comm_from_box(UI_Box *box)
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);
-
-	if (rectf32_contains_v2f32(box->rect, mouse_pos))
+	
+	B32 gather_input = true;
+	
+	if (ui_ctx_menu_is_open())
 	{
-		g_ui_ctx->hot_key = box->key;
-		result.hovering = true;
-		Gfx_EventList *event_list = g_ui_ctx->event_list;
-		for (Gfx_Event *node = event_list->first;
-			 node != 0;
-			 node = node->next)
+		// NOTE(hampus): Check to see if this box is a 
+		// part of the context menu
+		B32 part_of_ctx_menu = false;
+		UI_Box *ctx_menu_root = g_ui_ctx->ctx_menu_root;
+		for (UI_Box *parent = box->parent;
+			 parent != 0;
+			 parent = parent->parent)
 		{
-			switch (node->kind)
+			if (parent == ctx_menu_root)
 			{
-				case Gfx_EventKind_KeyRelease:
-				{
-					switch (node->key)
-					{
-						case Gfx_Key_MouseLeft:
-						{
-							// TODO(hampus): Do we want UI_BoxFlag_Clickable to
-							// work for release as well?
-							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-							{
-								result.released = true;
-								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
-
-						case Gfx_Key_MouseRight:
-						{
-							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-							{
-								result.right_released = true;
-								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
-
-						default:
-						{
-						} break;
-					}
-				} break;
-
-				case Gfx_EventKind_KeyPress:
-				{
-					switch (node->key)
-					{
-						case Gfx_Key_MouseLeft:
-						{
-							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-							{
-								result.pressed = true;
-								g_ui_ctx->active_key = box->key;
-								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
-
-						case Gfx_Key_MouseRight:
-						{
-							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-							{
-								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
-
-						case Gfx_Key_MouseLeftDouble:
-						{
-							if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-							{
-								result.double_clicked = true;
-								g_ui_ctx->active_key = box->key;
-								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
-
-						default:
-						{
-						} break;
-					}
-				} break;
-
-				case Gfx_EventKind_Scroll:
-				{
-					if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
-					{
-						result.scroll.y = -node->scroll.y;
-						dll_remove(event_list->first, event_list->last, node);
-					}
-				} break;
-
-				default:
-				{
-				} break;
+				part_of_ctx_menu = true;
+			}
+		}
+		
+		if (!part_of_ctx_menu)
+		{
+			// NOTE(hampus): If the mouse is inside 
+			// the contex menu and it is not a part of 
+			// it, don't gather input.
+			if (rectf32_contains_v2f32(ctx_menu_root->rect, mouse_pos))
+			{
+				gather_input = false;
 			}
 		}
 	}
-
+	
+	if (gather_input)
+	{
+		if (rectf32_contains_v2f32(box->rect, mouse_pos))
+		{
+			g_ui_ctx->hot_key = box->key;
+			result.hovering = true;
+			Gfx_EventList *event_list = g_ui_ctx->event_list;
+			for (Gfx_Event *node = event_list->first;
+				 node != 0;
+				 node = node->next)
+			{
+				switch (node->kind)
+				{
+					case Gfx_EventKind_KeyRelease:
+					{
+						switch (node->key)
+						{
+							case Gfx_Key_MouseLeft:
+							{
+								// TODO(hampus): Do we want UI_BoxFlag_Clickable to
+								// work for release as well?
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.released = true;
+									dll_remove(event_list->first, event_list->last, node);
+								}
+							} break;
+							
+							case Gfx_Key_MouseRight:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.right_released = true;
+									dll_remove(event_list->first, event_list->last, node);
+								}
+							} break;
+							
+							default:
+							{
+							} break;
+						}
+					} break;
+					
+					case Gfx_EventKind_KeyPress:
+					{
+						switch (node->key)
+						{
+							case Gfx_Key_MouseLeft:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.pressed = true;
+									g_ui_ctx->active_key = box->key;
+									dll_remove(event_list->first, event_list->last, node);
+								}
+							} break;
+							
+							case Gfx_Key_MouseRight:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									dll_remove(event_list->first, event_list->last, node);
+								}
+							} break;
+							
+							case Gfx_Key_MouseLeftDouble:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.double_clicked = true;
+									g_ui_ctx->active_key = box->key;
+									dll_remove(event_list->first, event_list->last, node);
+								}
+							} break;
+							
+							default:
+							{
+							} break;
+						}
+					} break;
+					
+					case Gfx_EventKind_Scroll:
+					{
+						if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
+						{
+							result.scroll.y = -node->scroll.y;
+							dll_remove(event_list->first, event_list->last, node);
+						}
+					} break;
+					
+					default:
+					{
+					} break;
+				}
+			}
+		}
+		
+	}
+	
 	if (ui_box_is_active(box) &&
 		ui_box_was_active(box))
 	{

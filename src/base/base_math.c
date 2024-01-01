@@ -22,14 +22,12 @@ v2f32_mul_f32(Vec2F32 a, F32 t)
 	return((Vec2F32) { a.x * t, a.y * t });
 }
 
-
 internal Vec2F32
 v2f32_from_v2u32(Vec2U32 v)
 {
 	Vec2F32 result = (Vec2F32) { (F32) v.x, (F32) v.y };
 	return(result);
 }
-
 
 internal Vec2F32
 v2f32_div_f32(Vec2F32 a, F32 t)
