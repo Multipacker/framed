@@ -15,3 +15,18 @@ u32_atomic_add(U32 volatile *location, U32 amount)
 #endif
 	return(result);
 }
+
+internal B32
+u32_atomic_compare_exchange(U32 volatile *location, U32 exchange_value, U32 compare_value)
+{
+	// TODO(simon): Is the memory ordering correct?
+#if COMPILER_CLANG || COMPILER_GCC
+#error "There isn't a u32_atomic_add for your compiler."
+#elif COMPILER_CL
+	// NOTE(hampus): Returns the value at location
+	U32 initial_value = InterlockedCompareExchange((LONG *)location, exchange_value, compare_value);
+#else
+#error "There isn't a u32_atomic_add for your compiler."
+#endif
+	return(initial_value == compare_value);
+}
