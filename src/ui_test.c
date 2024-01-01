@@ -64,6 +64,7 @@ ui_ctx_menu_test(Void)
 	UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 	
 	ui_ctx_menu(my_ctx_menu)
+		ui_width(ui_em(4, 1))
 	{
 			if (ui_button(str8_lit("Test")).pressed)
 			{
@@ -84,6 +85,7 @@ ui_ctx_menu_test(Void)
 	UI_Key my_ctx_menu2 = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu2"));
 	
 	ui_ctx_menu(my_ctx_menu2)
+		ui_width(ui_em(4, 1))
 	{
 			if (ui_button(str8_lit("Test5")).pressed)
 			{
@@ -103,6 +105,7 @@ ui_ctx_menu_test(Void)
 	
 	ui_row() 
 		ui_corner_radius(0)
+		ui_width(ui_em(4, 1))
 	{
 		UI_Comm comm = ui_button(str8_lit("File"));
 		
@@ -110,12 +113,12 @@ ui_ctx_menu_test(Void)
 		{
 			if (ui_ctx_menu_is_open())
 			{
-				ui_ctx_menu_open(comm.box->key, my_ctx_menu);
+				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 			}
 		}
 		if (comm.pressed )
 		{
-			ui_ctx_menu_open(comm.box->key, my_ctx_menu);
+			ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 		}
 		
 		UI_Comm comm2 = ui_button(str8_lit("Edit"));
@@ -124,12 +127,12 @@ ui_ctx_menu_test(Void)
 		{
 			if (ui_ctx_menu_is_open())
 			{
-			ui_ctx_menu_open(comm2.box->key, my_ctx_menu2);
+				ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
 			}
 		}
 		if (comm2.pressed )
 		{
-			ui_ctx_menu_open(comm2.box->key, my_ctx_menu2);
+			ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
 		}
 		
 			ui_button(str8_lit("View"));

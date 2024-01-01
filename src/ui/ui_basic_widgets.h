@@ -8,7 +8,10 @@ internal UI_Comm ui_imagef(R_TextureSlice slice, CStr fmt, ...);
 internal UI_Comm ui_button(Str8 string);
 internal UI_Comm ui_buttonf(CStr fmt, ...);
 internal UI_Comm ui_check(B32 *value, Str8 string);
-internal UI_Comm ui_checkf(B32 *value, CStr fmt, ...);
+internal UI_Comm ui_checkf(B32 *value, CStr fmt, ...)
+;
+internal Void ui_push_scrollable_region(Str8 string);
+internal Void ui_pop_scrollable_region(Void);
 
 internal Void    ui_spacer(UI_Size size);
 
@@ -27,5 +30,7 @@ internal Void    ui_column_end(Void);
 
 #define ui_named_column(string) defer_loop(ui_named_column_begin(string), ui_named_column_end())
 #define ui_column()             defer_loop(ui_column_begin(), ui_column_end())
+
+#define ui_scrollable_region(string) defer_loop(ui_push_scrollable_region(string), ui_pop_scrollable_region())
 
 #endif //UI_BASIC_WIDGETS_H

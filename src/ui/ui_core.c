@@ -251,6 +251,27 @@ ui_get_auto_pop_layout_style(Void)
 	return(layout);
 }
 
+internal F32
+ui_top_font_line_height(Void)
+{
+	UI_TextStyle *text_style = ui_top_text_style();
+	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	F32 result = 0;
+	if (render_font_is_loaded(font))
+	{
+		result = font->line_height;
+	}
+	return(result);
+}
+
+internal S32
+ui_top_font_size(Void)
+{
+	UI_TextStyle *text_style = ui_top_text_style();
+	S32 result = (S32) text_style->font.font_size;
+	return(result);
+}
+
 internal UI_Context *
 ui_init(Void)
 {
@@ -298,7 +319,14 @@ ui_ctx_menu_begin(UI_Key key)
 {
 	B32 is_open = ui_key_match(key, g_ui_ctx->ctx_menu_key);
 	
+	if (is_open)
+	{
+		g_ui_ctx->ctx_menu_root->flags |= UI_BoxFlag_DrawDropShadow;
+	}
+	
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
+	
+	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
 	ui_column_begin();
 	
 	return(is_open);
@@ -312,10 +340,11 @@ ui_ctx_menu_end(Void)
 }
 
 internal Void
-ui_ctx_menu_open(UI_Key anchor, UI_Key menu)
+ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu)
 {
 	g_ui_ctx->ctx_menu_key = menu;
 	g_ui_ctx->ctx_menu_anchor_key = anchor;
+	g_ui_ctx->anchor_offset = offset;
 }
 
 internal Void
@@ -429,6 +458,16 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
 	// NOTE(hampus): Setup default styling
+	
+	UI_TextStyle *text_style = ui_push_text_style();
+	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
+	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+	// TODO(hampus): Make this EM
+	text_style->padding.v[Axis2_X] = (F32)ui_top_font_size();
+
+	UI_LayoutStyle *layout_style = ui_push_layout_style();
+	layout_style->child_layout_axis = Axis2_Y;
+	
 	UI_RectStyle *rect_style = ui_push_rect_style();
 	rect_style->color[Corner_TopLeft]     = color;
 	rect_style->color[Corner_TopRight]    = color;
@@ -437,18 +476,10 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	rect_style->border_color     = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
 	rect_style->border_thickness = 1;
 	// TODO(hampus): Make this EM
-	rect_style->radies           = v4f32(3, 3, 3, 3);
+	F32 radius = (F32)ui_top_font_size() * 0.2f;
+	rect_style->radies           = v4f32(radius, radius, radius, radius);
 	rect_style->softness         = 1;
-
-	UI_TextStyle *text_style = ui_push_text_style();
-	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
-	// TODO(hampus): Make this EM
-	text_style->padding.v[Axis2_X] = 10;
-
-	UI_LayoutStyle *layout_style = ui_push_layout_style();
-	layout_style->child_layout_axis = Axis2_Y;
-
+	
 	g_ui_ctx->hot_key = ui_key_null();
 
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
@@ -472,16 +503,16 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	ui_next_height(ui_pct(1, 1));
 	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
 									  str8_lit("NormalRoot"));
-
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
+										  str8_lit("CtxMenuRoot"));
+	
 	ui_next_relative_pos(Axis2_X, g_ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, g_ui_ctx->mouse_pos.y);
 	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										 str8_lit("TooltipRoot"));
-	ui_next_width(ui_children_sum(1));
-	ui_next_height(ui_children_sum(1));
-	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_DrawBackground | 
-										  UI_BoxFlag_FloatingPos,
-										 str8_lit("CtxMenuRoot"));
+	
 	
 	if (escape_key_pressed && ui_ctx_menu_is_open())
 	{
@@ -489,27 +520,6 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	}
 	
 	ui_push_parent(g_ui_ctx->normal_root);
-}
-
-internal F32
-ui_top_font_line_height(Void)
-{
-	UI_TextStyle *text_style = ui_top_text_style();
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
-	F32 result = 0;
-	if (render_font_is_loaded(font))
-	{
-		result = font->line_height;
-	}
-	return(result);
-}
-
-internal S32
-ui_top_font_size(Void)
-{
-	UI_TextStyle *text_style = ui_top_text_style();
-	S32 result = (S32) text_style->font.font_size;
-	return(result);
 }
 
 internal UI_Size
@@ -1044,12 +1054,16 @@ ui_end(Void)
 	
 	if (ui_ctx_menu_is_open())
 	{
+		Vec2F32 anchor_pos = {0};
 		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
 		{
 			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
-			g_ui_ctx->ctx_menu_root->calc_rel_pos.v[Axis2_X] = anchor->rect.min.x;
-			g_ui_ctx->ctx_menu_root->calc_rel_pos.v[Axis2_Y] = anchor->rect.max.y;
+			anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
 		}
+		
+		anchor_pos = v2f32_add_v2f32(anchor_pos, g_ui_ctx->anchor_offset);
+		
+		g_ui_ctx->ctx_menu_root->calc_rel_pos = anchor_pos;
 	}
 	
 	ui_layout(g_ui_ctx->root);

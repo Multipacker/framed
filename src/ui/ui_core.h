@@ -296,6 +296,7 @@ struct UI_Context
 	
 	UI_Key ctx_menu_key;
 	UI_Key ctx_menu_anchor_key;
+	Vec2F32 anchor_offset;
 	
 	UI_Key active_key;
 	UI_Key hot_key;
