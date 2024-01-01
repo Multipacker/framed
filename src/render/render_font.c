@@ -300,6 +300,10 @@ render_font_stream_thread(Void *data)
 	ThreadContext *ctx = thread_ctx_init(thread_data->name);
 	for (;;)
 	{
+		// FIXME(simon): This pattern for dequeueing elements is fine for SPSC,
+		// but not for SPMC, which is what we have here. If a thread fails to
+		// dequeue, it will loop back end hit the semaphore, causing it to
+		// sleep when there is actual work to do.
 		os_semaphore_wait(&renderer->font_loader_semaphore);
 		
 		U32 queue_read_index = font_queue->queue_read_index;
@@ -307,6 +311,9 @@ render_font_stream_thread(Void *data)
 		{
 			if (u32_atomic_compare_exchange(&font_queue->queue_read_index, queue_read_index+1, queue_read_index))
 			{
+				// TODO(simon): At this point, the entry could have been
+				// overwritten by the writing thread, causing us to read
+				// corrupted data.
 				R_FontQueueEntry *entry = &font_queue->queue[queue_read_index & FONT_QUEUE_MASK];
 				R_Font *font = entry->font;
 				
@@ -348,10 +355,6 @@ render_font_stream_thread(Void *data)
 				{
 					font->state = R_FontState_Unloaded;
 				}
-				
-				memory_fence();
-				
-				memory_zero_struct(entry);
 			}
 		}
 	}
