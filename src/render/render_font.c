@@ -278,7 +278,7 @@ render_unload_font(R_Context *renderer, R_Font *font)
 	assert(font);
 	assert(renderer);
 	
-	os_mutex(renderer->font_atlas_mutex)
+	os_mutex(&renderer->font_atlas_mutex)
 	{
 	for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
 	{
@@ -302,7 +302,7 @@ render_font_stream_thread(Void *data)
 	{
 		os_semaphore_wait(&renderer->font_loader_semaphore);
 		
-		S32 queue_read_index = font_queue->queue_read_index;
+		U32 queue_read_index = font_queue->queue_read_index;
 		if (font_queue->queue_write_index - queue_read_index != 0)
 		{
 			if (u32_atomic_compare_exchange(&font_queue->queue_read_index, queue_read_index+1, queue_read_index))
@@ -331,7 +331,14 @@ render_font_stream_thread(Void *data)
 				
 				memory_fence();
 				
-				++renderer->dirty_font_region_queue->queue_write_index;
+				render_update_texture(
+					renderer,
+					renderer->font_atlas->texture,
+					renderer->font_atlas->memory,
+					renderer->font_atlas->dim.width,
+					renderer->font_atlas->dim.height,
+					0
+				);
 				
 				if (success)
 				{

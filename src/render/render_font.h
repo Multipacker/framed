@@ -163,14 +163,6 @@ struct R_FontQueue
 	U32 volatile queue_read_index;
 };
 
-typedef struct R_DirtyFontRegionQueue R_DirtyFontRegionQueue;
-struct R_DirtyFontRegionQueue
-{
-	RectU32 *queue;
-	U32 volatile queue_write_index;
-	U32 volatile queue_read_index;
-};
-
 internal R_FontAtlas      *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
 internal Void              render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);
 internal Void              render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);

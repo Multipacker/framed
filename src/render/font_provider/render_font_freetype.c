@@ -90,7 +90,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 							bearing_top   = face->glyph->bitmap_top;
 							bitmap_width  = face->glyph->bitmap.width;
 							
-							os_mutex(renderer->font_atlas_mutex)
+							os_mutex(&renderer->font_atlas_mutex)
 							{
 								atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 								*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
@@ -141,7 +141,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 							bearing_top   = face->glyph->bitmap_top;
 							// NOTE(hampus): We now have 3 "pixels" for each value.
 							
-							os_mutex(renderer->font_atlas_mutex)
+							os_mutex(&renderer->font_atlas_mutex)
 							{
 								atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 								*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(bitmap_width+2, bitmap_height+2));
@@ -291,7 +291,7 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 					font->family_name         = str8_copy_cstr(font->arena, (U8 *) face->family_name);
 					font->style_name          = str8_copy_cstr(font->arena, (U8 *) face->style_name);
 					
-					os_mutex(renderer->font_atlas_mutex)
+					os_mutex(&renderer->font_atlas_mutex)
 					{
 						// NOTE(hampus): Make an empty glyph that the empty glyphs will use
 						font->font_atlas_regions[font->num_font_atlas_regions++] = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(1, 1));
