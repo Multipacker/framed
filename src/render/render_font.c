@@ -302,7 +302,7 @@ render_font_stream_thread(Void *data)
 	{
 		os_semaphore_wait(&renderer->font_loader_semaphore);
 		
-		S32 queue_read_index = font_queue->queue_read_index;
+		U32 queue_read_index = font_queue->queue_read_index;
 		if (font_queue->queue_write_index - queue_read_index != 0)
 		{
 			if (u32_atomic_compare_exchange(&font_queue->queue_read_index, queue_read_index+1, queue_read_index))
