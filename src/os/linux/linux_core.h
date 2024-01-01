@@ -41,4 +41,9 @@ struct OS_Semaphore
 	sem_t semaphore;
 };
 
+struct OS_Mutex
+{
+	pthread_mutex_t mutex;
+};
+
 #endif // LINUX_ESSENTIAL_H
