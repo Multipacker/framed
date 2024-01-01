@@ -10,7 +10,7 @@
 #define D3D11_BATCH_SIZE 4096
 
 #define D3D11_TEXTURE_UPDATE_QUEUE_SIZE (1 << 6)
-#define D3D11_TEXTURE_UPDATE_QUEUE_MASK (OPENGL_TEXTURE_UPDATE_QUEUE_SIZE - 1)
+#define D3D11_TEXTURE_UPDATE_QUEUE_MASK (D3D11_TEXTURE_UPDATE_QUEUE_SIZE - 1)
 
 typedef struct D3D11_ClipRect D3D11_ClipRect;
 struct D3D11_ClipRect
@@ -60,7 +60,7 @@ struct D3D11_TextureUpdate
 	ID3D11Resource *resource;
 
 	U32 x;
-	U32 y
+	U32 y;
 	U32 width;
 	U32 height;
 

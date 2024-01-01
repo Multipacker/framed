@@ -673,18 +673,6 @@ win32_thread_proc(Void *raw_arguments)
 }
 
 internal Void
-os_thread_create(ThreadProc *proc, Void *data)
-{
-	Win32_ThreadArguments *arguments = os_memory_reserve(sizeof(Win32_ThreadArguments));
-	os_memory_commit(arguments, sizeof(Win32_ThreadArguments));
-	arguments->proc = proc;
-	arguments->data = data;
-
-	DWORD thread_id;
-	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
-}
-
-internal Void
 os_mutex_create(OS_Mutex *mutex)
 {
 	assert(mutex);
@@ -706,6 +694,18 @@ os_mutex_release(OS_Mutex *mutex)
 	assert(mutex);
 	assert(mutex->handle != INVALID_HANDLE_VALUE);
 	ReleaseMutex(mutex->handle);
+}
+
+internal Void
+os_thread_create(ThreadProc *proc, Void *data)
+{
+	Win32_ThreadArguments *arguments = os_memory_reserve(sizeof(Win32_ThreadArguments));
+	os_memory_commit(arguments, sizeof(Win32_ThreadArguments));
+	arguments->proc = proc;
+	arguments->data = data;
+
+	DWORD thread_id;
+	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
 }
 
 internal S32

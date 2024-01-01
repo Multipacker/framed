@@ -386,7 +386,7 @@ render_backend_end(R_Context *renderer)
 #else
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		ID3D11DeviceContext_Map(backend->context, update.resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-		memory_copy_typed((U8 *) mapped.pData, (U8 *) update.memory, (update.width * update.height * 4));
+		memory_copy_typed((U8 *) mapped.pData, (U8 *) update.data, (update.width * update.height * 4));
 		ID3D11DeviceContext_Unmap(backend->context, update.resource, 0);
 #endif
 	}

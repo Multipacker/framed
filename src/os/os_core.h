@@ -97,11 +97,11 @@ internal Void os_semaphore_destroy(OS_Semaphore *handle);
 internal Void os_semaphore_signal(OS_Semaphore *handle);
 internal Void os_semaphore_wait(OS_Semaphore *handle);
 
-internal Void os_thread_create(ThreadProc *proc, Void *data);
-
 internal Void os_mutex_create(OS_Mutex *mutex);
 internal Void os_mutex_take(OS_Mutex *mutex);
 internal Void os_mutex_release(OS_Mutex *mutex);
+
+internal Void os_thread_create(ThreadProc *proc, Void *data);
 
 #define os_mutex(mutex) defer_loop(os_mutex_take(mutex), os_mutex_release(mutex))
 

@@ -213,7 +213,7 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 		
-		local S32 font_size = 20;
+		local S32 font_size = 15;
 		
 		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
 		R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);

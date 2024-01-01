@@ -348,6 +348,10 @@ render_font_stream_thread(Void *data)
 				{
 				font->state = R_FontState_Unloaded;
 				}
+				
+				memory_fence();
+				
+				memory_zero_struct(entry);
 			}
 		}
 	}
@@ -371,7 +375,7 @@ render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 		
 		U32 queue_index = u32_atomic_add(&font_queue->queue_write_index, 1);
 		
-		R_FontQueueEntry *entry = &font_queue->queue[queue_index & LOG_QUEUE_MASK];
+		R_FontQueueEntry *entry = &font_queue->queue[queue_index & FONT_QUEUE_MASK];
 		entry->font        = font;
 		entry->params = params;
 	
