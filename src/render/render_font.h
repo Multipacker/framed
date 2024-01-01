@@ -171,8 +171,13 @@ struct R_DirtyFontRegionQueue
 	U32 volatile queue_read_index;
 };
 
-internal Void render_font_loader_thread(Void *data);
+internal R_FontAtlas      *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
+internal Void              render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);
+internal Void              render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);
+internal R_FontAtlasRegion render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim);
+internal Void              render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region);
 
-internal R_FontAtlas *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
+
+internal Void render_font_stream_thread(Void *data);
 
 #endif
