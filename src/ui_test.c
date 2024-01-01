@@ -63,10 +63,8 @@ ui_ctx_menu_test(Void)
 {
 	UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 	
-	if (ui_ctx_menu_begin(my_ctx_menu))
+	ui_ctx_menu(my_ctx_menu)
 	{
-		ui_column()
-		{
 			if (ui_button(str8_lit("Test")).pressed)
 			{
 				printf("Hello world!");
@@ -81,17 +79,12 @@ ui_ctx_menu_test(Void)
 			{
 				printf("Hello world!");
 			}
-		}
 	}
-	
-	ui_ctx_menu_end();
 	
 	UI_Key my_ctx_menu2 = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu2"));
 	
-	if (ui_ctx_menu_begin(my_ctx_menu2))
+	ui_ctx_menu(my_ctx_menu2)
 	{
-		ui_column()
-		{
 			if (ui_button(str8_lit("Test5")).pressed)
 			{
 				printf("Hello world!");
@@ -106,10 +99,7 @@ ui_ctx_menu_test(Void)
 			{
 				printf("Hello world!");
 			}
-		}
 	}
-	
-	ui_ctx_menu_end();
 	
 	ui_row() 
 		ui_corner_radius(0)

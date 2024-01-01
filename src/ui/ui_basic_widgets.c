@@ -167,7 +167,7 @@ ui_spacer(UI_Size size)
 }
 
 internal UI_Box *
-ui_begin_named_row(Str8 string)
+ui_named_row_begin(Str8 string)
 {
 	ui_default_size(ui_children_sum(1), ui_children_sum(1));
 	ui_next_child_layout_axis(Axis2_X);
@@ -177,26 +177,26 @@ ui_begin_named_row(Str8 string)
 }
 
 internal Void
-ui_end_named_row(Void)
+ui_named_row_end(Void)
 {
 	ui_pop_parent();
 }
 
 internal UI_Box *
-ui_begin_row(Void)
+ui_row_begin(Void)
 {
-	UI_Box *box = ui_begin_named_row(str8_lit(""));
+	UI_Box *box = ui_named_row_begin(str8_lit(""));
 	return(box);
 }
 
 internal Void
-ui_end_row(Void)
+ui_row_end(Void)
 {
-	ui_end_named_row();
+	ui_named_row_end();
 }
 
 internal UI_Box *
-ui_begin_named_column(Str8 string)
+ui_named_column_begin(Str8 string)
 {
 	ui_default_size(ui_children_sum(1), ui_children_sum(1));
 	ui_next_child_layout_axis(Axis2_Y);
@@ -206,20 +206,20 @@ ui_begin_named_column(Str8 string)
 }
 
 internal Void
-ui_end_named_column(Void)
+ui_named_column_end(Void)
 {
 	ui_pop_parent();
 }
 
 internal UI_Box *
-ui_begin_column(Void)
+ui_column_begin(Void)
 {
-	UI_Box *box = ui_begin_named_column(str8_lit(""));
+	UI_Box *box = ui_named_column_begin(str8_lit(""));
 	return(box);
 }
 
 internal Void
-ui_end_column(Void)
+ui_column_end(Void)
 {
-	ui_end_named_column();
+	ui_named_column_end();
 }

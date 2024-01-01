@@ -299,6 +299,7 @@ ui_ctx_menu_begin(UI_Key key)
 	B32 is_open = ui_key_match(key, g_ui_ctx->ctx_menu_key);
 	
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
+	ui_column_begin();
 	
 	return(is_open);
 }
@@ -307,6 +308,7 @@ internal Void
 ui_ctx_menu_end(Void)
 {
 	ui_pop_parent();
+	ui_column_end();
 }
 
 internal Void

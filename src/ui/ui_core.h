@@ -355,9 +355,10 @@ internal UI_Key ui_top_seed(Void);
 internal UI_Key ui_push_seed(UI_Key key);
 internal UI_Key ui_pop_seed(Void);
 
-#define ui_parent(box)  defer_loop(ui_push_parent(box), ui_pop_parent())
-#define ui_seed(string) defer_loop(ui_push_string(string), ui_pop_string())
-#define ui_tooltip()    defer_loop(ui_tooltip_begin(), ui_tooltip_end())
+#define ui_parent(box)   defer_loop(ui_push_parent(box), ui_pop_parent())
+#define ui_seed(string)  defer_loop(ui_push_string(string), ui_pop_string())
+#define ui_tooltip()     defer_loop(ui_tooltip_begin(), ui_tooltip_end())
+#define ui_ctx_menu(key) defer_loop_checked(ui_ctx_menu_begin(key), ui_ctx_menu_end())
 
 // NOTE(hampus): Rect styling
 

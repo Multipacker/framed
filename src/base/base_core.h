@@ -266,6 +266,7 @@ typedef Void VoidFunction(Void);
 #define glue_(a, b)   a##b
 #define glue(a, b)    glue_(a, b)
 
+#define defer_loop_checked(begin, end) for(S32 glue(_i_, __LINE__) = 2 * !(begin); glue(_i_, __LINE__) == 2 ? ((end), 0) : !glue(_i_, __LINE__); ++glue(_i_, __LINE__), (end))
 #define defer_loop(begin, end) for(S32 glue(_i_, __LINE__) = ((begin), 0); !glue(_i_, __LINE__); ++glue(_i_, __LINE__), (end))
 
 #define int_from_ptr(p) (unsigned long long)((char*)(p) - (char*)0)
