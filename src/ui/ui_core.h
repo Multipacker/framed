@@ -220,7 +220,7 @@ struct UI_Box
 typedef struct UI_Comm UI_Comm;
 struct UI_Comm
 {
-	UI_Box *widget;
+	UI_Box *box;
 	// NOTE(hampus): Relative to upper-left
 	// corner of the box
 	Vec2F32 rel_mouse;
@@ -290,8 +290,13 @@ struct UI_Context
 	UI_ClipBoxStack clip_rect_stack;
 
 	UI_Box *root;
+	UI_Box *normal_root;
 	UI_Box *tooltip_root;
-
+	UI_Box *ctx_menu_root;
+	
+	UI_Key ctx_menu_key;
+	UI_Key ctx_menu_anchor_key;
+	
 	UI_Key active_key;
 	UI_Key hot_key;
 
@@ -337,6 +342,8 @@ internal UI_Key ui_key_from_string_f(UI_Key seed, CStr fmt, ...);
 
 internal UI_Box *ui_box_make(UI_BoxFlags flags, Str8 string);
 internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
+
+internal UI_Box *ui_box_from_key(UI_Key key);
 
 internal Void ui_box_equip_display_string(UI_Box *widget, Str8 string);
 

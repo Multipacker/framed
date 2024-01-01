@@ -58,6 +58,95 @@ ui_logger(B32 *log_keep)
 	}
 }
 
+internal Void
+ui_ctx_menu_test(Void)
+{
+	UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
+	
+	if (ui_ctx_menu_begin(my_ctx_menu))
+	{
+		ui_column()
+		{
+			if (ui_button(str8_lit("Test")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test2")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test3")).pressed)
+			{
+				printf("Hello world!");
+			}
+		}
+	}
+	
+	ui_ctx_menu_end();
+	
+	UI_Key my_ctx_menu2 = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu2"));
+	
+	if (ui_ctx_menu_begin(my_ctx_menu2))
+	{
+		ui_column()
+		{
+			if (ui_button(str8_lit("Test5")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test52")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test53")).pressed)
+			{
+				printf("Hello world!");
+			}
+		}
+	}
+	
+	ui_ctx_menu_end();
+	
+	ui_row() 
+		ui_corner_radius(0)
+	{
+		UI_Comm comm = ui_button(str8_lit("File"));
+		
+		if (comm.hovering)
+		{
+			if (ui_ctx_menu_is_open())
+			{
+				ui_ctx_menu_open(comm.box->key, my_ctx_menu);
+			}
+		}
+		if (comm.pressed )
+		{
+			ui_ctx_menu_open(comm.box->key, my_ctx_menu);
+		}
+		
+		UI_Comm comm2 = ui_button(str8_lit("Edit"));
+		
+		if (comm2.hovering)
+		{
+			if (ui_ctx_menu_is_open())
+			{
+			ui_ctx_menu_open(comm2.box->key, my_ctx_menu2);
+			}
+		}
+		if (comm2.pressed )
+		{
+			ui_ctx_menu_open(comm2.box->key, my_ctx_menu2);
+		}
+		
+			ui_button(str8_lit("View"));
+			ui_button(str8_lit("Options"));
+			ui_button(str8_lit("Help"));
+	}
+}
 
 internal S32
 os_main(Str8List arguments)
@@ -124,14 +213,16 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 		
-		local S32 font_size = 11;
+		local S32 font_size = 20;
 		
 		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
 		R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
 		R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 		
 		ui_push_font(font);
-
+		
+		ui_ctx_menu_test();
+			
 		ui_next_width(ui_pct(1, 1));
 		ui_row()
 		{

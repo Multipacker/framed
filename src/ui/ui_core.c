@@ -1,10 +1,10 @@
 // TODO(hampus):
 // []  - Horizontal scrolling
+// []  - Context menu
 // []  - Death animations
 // []  - Change animation speed per-box
 // []  - Hover cursor
 // []  - Focused box
-// []  - Context menu
 // []  - Custom draw functions
 // []  - Keyboard navigation
 
@@ -293,6 +293,43 @@ ui_tooltip_end(Void)
 	ui_pop_parent();
 }
 
+internal B32
+ui_ctx_menu_begin(UI_Key key)
+{
+	B32 is_open = ui_key_match(key, g_ui_ctx->ctx_menu_key);
+	
+	ui_push_parent(g_ui_ctx->ctx_menu_root);
+	
+	return(is_open);
+}
+
+internal Void
+ui_ctx_menu_end(Void)
+{
+	ui_pop_parent();
+}
+
+internal Void
+ui_ctx_menu_open(UI_Key anchor, UI_Key menu)
+{
+	g_ui_ctx->ctx_menu_key = menu;
+	g_ui_ctx->ctx_menu_anchor_key = anchor;
+}
+
+internal Void
+ui_ctx_menu_close(Void)
+{
+	g_ui_ctx->ctx_menu_key = ui_key_null();
+	g_ui_ctx->ctx_menu_anchor_key = ui_key_null();
+}
+
+internal B32
+ui_ctx_menu_is_open(Void)
+{
+	B32 result = ui_key_is_null(g_ui_ctx->ctx_menu_key);
+	return(!result);
+}
+
 internal Void
 ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt)
 {
@@ -305,6 +342,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	B32 left_mouse_released = false;
+	B32 escape_key_pressed = false;
 	for (Gfx_Event *node = event_list->first;
 		 node != 0;
 		 node = node->next)
@@ -323,6 +361,14 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 					default:
 					{
 					} break;
+				}
+			} break;
+			
+			case Gfx_EventKind_KeyPress:
+			{
+				if (node->key == Gfx_Key_Escape)
+				{
+					escape_key_pressed = true;
 				}
 			} break;
 
@@ -420,19 +466,27 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	ui_push_parent(g_ui_ctx->root);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
 
-
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
-	UI_Box *normal_root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
+	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
 									  str8_lit("NormalRoot"));
 
 	ui_next_relative_pos(Axis2_X, g_ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, g_ui_ctx->mouse_pos.y);
 	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										 str8_lit("TooltipRoot"));
-
-
-	ui_push_parent(normal_root);
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_DrawBackground | 
+										  UI_BoxFlag_FloatingPos,
+										 str8_lit("CtxMenuRoot"));
+	
+	if (escape_key_pressed && ui_ctx_menu_is_open())
+	{
+		ui_ctx_menu_close();
+	}
+	
+	ui_push_parent(g_ui_ctx->normal_root);
 }
 
 internal F32
@@ -985,10 +1039,24 @@ ui_end(Void)
 
 	// NOTE(hampus): Pop master root
 	ui_pop_parent();
-
+	
+	if (ui_ctx_menu_is_open())
+	{
+		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
+		{
+			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
+			g_ui_ctx->ctx_menu_root->calc_rel_pos.v[Axis2_X] = anchor->rect.min.x;
+			g_ui_ctx->ctx_menu_root->calc_rel_pos.v[Axis2_Y] = anchor->rect.max.y;
+		}
+	}
+	
 	ui_layout(g_ui_ctx->root);
-	ui_draw(g_ui_ctx->root);
-
+	ui_draw(g_ui_ctx->normal_root);
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
+	{
+	ui_draw(g_ui_ctx->ctx_menu_root);
+	}
+	
 	g_ui_ctx->prev_mouse_pos = g_ui_ctx->mouse_pos;
 	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
 	g_ui_ctx->prev_hot_key = g_ui_ctx->hot_key;
@@ -1010,6 +1078,7 @@ ui_comm_from_box(UI_Box *box)
 		   "Tried to gather input from a keyless box!");
 
 	UI_Comm result = {0};
+	result.box = box;
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);

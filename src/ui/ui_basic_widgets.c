@@ -34,7 +34,6 @@ ui_textf(CStr fmt, ...)
 	va_end(args);
 }
 
-
 internal UI_Comm
 ui_image(R_TextureSlice slice, Str8 string)
 {
