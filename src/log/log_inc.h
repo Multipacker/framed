@@ -12,11 +12,17 @@ enum Log_Level
 	Log_Level_COUNT,
 };
 
+// TODO(simon): Do all of these fields really need to be marked volatile?
 typedef struct Log_QueueEntry Log_QueueEntry;
 struct Log_QueueEntry
 {
-	B32 volatile is_valid;
-	U8 message[512];
+	B32       volatile is_valid;
+	DateTime  volatile time;
+	Log_Level volatile level;
+	U8        volatile thread_name[THREAD_CONTEXT_NAME_SIZE];
+	CStr      volatile file;
+	U32       volatile line;
+	U8        volatile message[256];
 };
 
 internal Void log_init(Str8 log_file);

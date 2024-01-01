@@ -3,12 +3,14 @@
 
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 
+#define THREAD_CONTEXT_NAME_SIZE 32
+
 typedef struct ThreadContext ThreadContext;
 struct ThreadContext
 {
 	Arena *permanent_arena;
 	Arena *scratch_arenas[THREAD_SCRATCH_ARENA_POOL_SIZE];
-	U8 name[32];
+	U8 name[THREAD_CONTEXT_NAME_SIZE];
 };
 
 internal ThreadContext *thread_ctx_init(Str8 name);

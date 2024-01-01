@@ -33,10 +33,10 @@ struct Logger
 global Logger global_logger;
 
 internal Str8
-log_format_entry(Arena *arena, DateTime time, Log_Level level, Str8 thread_name, CStr file, U32 line, Str8 message)
+log_format_entry(Arena *arena, Log_QueueEntry *entry)
 {
 	CStr cstr_level = "";
-	switch (level)
+	switch (entry->level)
 	{
 		case Log_Level_Info:    cstr_level = "INFO";    break;
 		case Log_Level_Warning: cstr_level = "WARNING"; break;
@@ -47,13 +47,13 @@ log_format_entry(Arena *arena, DateTime time, Log_Level level, Str8 thread_name,
 
 	Str8 result = str8_pushf(
 		arena,
-		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %"PRISTR8" %s:%u: %"PRISTR8"\n",
-		time.year, time.month + 1, time.day + 1,
-		time.hour, time.minute, time.second, time.millisecond,
+		"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %s %s:%u: %s\n",
+		entry->time.year, entry->time.month + 1, entry->time.day + 1,
+		entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
 		cstr_level,
-		str8_expand(thread_name),
-		file, line,
-		str8_expand(message)
+		entry->thread_name,
+		entry->file, entry->line,
+		entry->message
 	);
 
 	return(result);
@@ -63,6 +63,8 @@ internal Void
 log_flusher_proc(Void *argument)
 {
 	Logger *logger = &global_logger;
+
+	thread_ctx_init(str8_lit("Logger"));
 
 	for (;;)
 	{
@@ -92,7 +94,11 @@ log_flusher_proc(Void *argument)
 				++logger->buffer_write_index;
 			}
 
-			os_file_stream_write(logger->log_file, str8_cstr((CStr) entry.message));
+			arena_scratch(0, 0)
+			{
+				Str8 log_entry = log_format_entry(scratch, &entry);
+				os_file_stream_write(logger->log_file, log_entry);
+			}
 		}
 	}
 }
@@ -127,8 +133,6 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	Str8 message = str8_pushfv(scratch.arena, format, args);
 	va_end(args);
 
-	Str8 log_entry = log_format_entry(scratch.arena, time, level, thread_name, file, line, message);
-
 	U32 queue_index = u32_atomic_add(&logger->queue_write_index, 1);
 	while (queue_index - logger->queue_read_index >= LOG_QUEUE_SIZE)
 	{
@@ -138,10 +142,17 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 
 	Log_QueueEntry *entry = &logger->queue[queue_index & LOG_QUEUE_MASK];
 
-	assert(log_entry.size + 1 <= array_count(entry->message));
+	assert(thread_name.size + 1 <= array_count(entry->thread_name));
+	assert(message.size + 1 <= array_count(entry->message));
 
-	memory_copy(entry->message, log_entry.data, log_entry.size);
-	entry->message[log_entry.size] = 0;
+	entry->time  = time;
+	entry->level = level;
+	memory_copy((U8 *) entry->thread_name, thread_name.data, thread_name.size);
+	entry->thread_name[thread_name.size] = 0;
+	entry->file = file;
+	entry->line = line;
+	memory_copy((U8 *) entry->message, message.data, message.size);
+	entry->message[message.size] = 0;
 
 	// NOTE(simon): Make sure all the data of the log entry is written before
 	// we mark it as valid.

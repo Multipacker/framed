@@ -37,7 +37,9 @@ ui_logger(B32 *log_keep)
 		Log_QueueEntry *entries = log_get_entries(&entry_count);
 		for (S32 i = (S32) entry_count - 1; i >= 0; --i)
 		{
-			ui_text(str8_chop(str8_cstr((CStr) entries[i].message), 1));
+			// NOTE(simon): Skip the trailing new-line.
+			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), &entries[i]), 1);
+			ui_text(message);
 		}
 
 		ui_pop_font();
