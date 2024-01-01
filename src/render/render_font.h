@@ -177,7 +177,6 @@ internal Void              render_remove_free_region_from_atlas(R_FontAtlas *atl
 internal R_FontAtlasRegion render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim);
 internal Void              render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region);
 
-
 internal Void render_font_stream_thread(Void *data);
 
 #endif

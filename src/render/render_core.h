@@ -76,6 +76,7 @@ struct R_Context
 	R_FontQueue *font_queue;
 	R_DirtyFontRegionQueue *dirty_font_region_queue;
 	OS_Semaphore font_loader_semaphore;
+	OS_Mutex font_atlas_mutex;
 
 	U64 frame_index;
 	R_BackendContext *backend;

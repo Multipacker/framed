@@ -242,8 +242,8 @@ render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 	return(result);
 }
 
-internal Void
-render_make_font_freetype(R_Context *renderer, R_Font *font, R_FontLoadParams params)
+internal B32
+render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 {
 	assert(font);
 	Arena_Temporary scratch = get_scratch(0, 0);
@@ -373,14 +373,7 @@ render_make_font_freetype(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 		log_error("Freetype: %"PRISTR8, str8_expand(error));
 	}
 	
-	if (font)
-	{
-		log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(params.path));
-	}
-	else
-	{
-		log_warning("Failed to load font `%"PRISTR8"`", str8_expand(params.path));
-	}
-	
 	release_scratch(scratch);
+	
+	return(font != 0);
 }

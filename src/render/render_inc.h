@@ -1,6 +1,7 @@
 #ifndef RENDER_INC_H
 #define RENDER_INC_H
 
+#include "render/render_icon_codepoints.h"
 #include "render/render_core.h"
 #include "render/render_font.h"
 

@@ -101,6 +101,14 @@ render_get_stats(R_Context *renderer)
 	return(renderer->render_stats[1]);
 }
 
+typedef struct R_FontLoaderThreadData R_FontLoaderThreadData;
+struct R_FontLoaderThreadData
+{
+	R_Context *renderer;
+	U32 id;
+	Str8 name;
+};
+
 internal R_Context *
 render_init(Gfx_Context *gfx)
 {
@@ -127,8 +135,16 @@ render_init(Gfx_Context *gfx)
 	renderer->dirty_font_region_queue->queue = push_array(arena, RectU32, FONT_QUEUE_SIZE);
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
-
-	os_thread_create(render_font_loader_thread, renderer);
+	renderer->font_atlas_mutex = os_mutex_create();
+	
+	for (U32 i = 0; i < 4; ++i)
+	{
+		R_FontLoaderThreadData *data = push_struct( renderer->permanent_arena, R_FontLoaderThreadData);
+		data->id = i;
+		data->renderer = renderer;
+		data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i); 
+	os_thread_create(render_font_stream_thread, data);
+	}
 
 	return(renderer);
 }
