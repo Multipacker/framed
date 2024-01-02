@@ -128,7 +128,7 @@ ui_checkf(B32 *value, CStr fmt, ...)
 	return(comm);
 }
 
-internal Void
+internal UI_ScrollabelRegion
 ui_push_scrollable_region(Str8 string)
 {
 	ui_push_string(string);
@@ -148,6 +148,19 @@ ui_push_scrollable_region(Str8 string)
 	container->scroll.y = f32_clamp(0, container->scroll.y,
 									container->target_size.v[Axis2_Y] - view_region->target_size.v[Axis2_Y]);
 	ui_push_parent(container);
+
+	UI_ScrollabelRegion result;
+	result.view_region = view_region;
+	result.container   = container;
+	return(result);
+}
+
+internal Void
+ui_scrollabel_region_set_scroll(UI_ScrollabelRegion region, F32 offset)
+{
+	UI_Box *view_region = region.view_region;
+	UI_Box *container   = region.container;
+	container->scroll.y = f32_clamp(0, offset, container->target_size.v[Axis2_Y] - view_region->target_size.v[Axis2_Y]);
 }
 
 internal Void
