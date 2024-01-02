@@ -191,11 +191,12 @@ os_main(Str8List arguments)
 			}
 		}
 
-		ui_row()
+		ui_log_keep_alive(current_arena);
+		if (show_log)
 		{
-			ui_check(&show_log, str8_lit("ShowLog"));
-			ui_spacer(ui_em(0.4f, 1));
-			ui_text(str8_lit("Show Log"));
+			ui_next_width(ui_fill());
+			ui_next_height(ui_pct(0.25, 1));
+			ui_logger();
 		}
 
 		ui_row()
@@ -205,13 +206,6 @@ os_main(Str8List arguments)
 			ui_text(str8_lit("Show Atlas"));
 		}
 
-		ui_log_keep_alive(current_arena);
-		if (show_log)
-		{
-			ui_next_width(ui_fill());
-			ui_next_height(ui_pct(0.25, 1));
-			ui_logger();
-		}
 
 		if (show_atlas)
 		{
