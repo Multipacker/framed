@@ -33,12 +33,28 @@ ui_logger(B32 *log_keep)
 		ui_push_scrollable_region(str8_lit("LogEntries"));
 		ui_push_font(mono);
 
+		local B32 only_info = false;
+
 		U32 entry_count = 0;
 		Log_QueueEntry *entries = log_get_entries(&entry_count);
+
 		for (S32 i = (S32) entry_count - 1; i >= 0; --i)
 		{
+			Log_QueueEntry *entry = &entries[i];
+
+			Vec4F32 color = { 0 };
+			switch (entry->level)
+			{
+				case Log_Level_Info:    color = v4f32_mul_f32(v4f32(229.0f, 229.0f, 229.0f, 255.0f), 1.0f / 255.0f); break;
+				case Log_Level_Warning: color = v4f32_mul_f32(v4f32(229.0f, 227.0f,  91.0f, 255.0f), 1.0f / 255.0f); break;
+				case Log_Level_Error:   color = v4f32_mul_f32(v4f32(229.0f, 100.0f,  91.0f, 255.0f), 1.0f / 255.0f); break;
+				case Log_Level_Trace:   color = v4f32_mul_f32(v4f32(121.4f, 229.0f,  91.4f, 255.0f), 1.0f / 255.0f); break;
+				invalid_case;
+			}
+
 			// NOTE(simon): Skip the trailing new-line.
-			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), &entries[i]), 1);
+			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
+			ui_next_text_color(color);
 			ui_text(message);
 		}
 
@@ -55,6 +71,14 @@ ui_logger(B32 *log_keep)
 				ui_check(log_keep, str8_lit("LogKeep"));
 				ui_spacer(ui_em(0.4f, 1));
 				ui_text(str8_lit("Keep entries"));
+			}
+
+			ui_row()
+			{
+				ui_spacer(ui_em(0.4f, 1));
+				ui_check(&only_info, str8_lit("LogOnlyInfo"));
+				ui_spacer(ui_em(0.4f, 1));
+				ui_text(str8_lit("Only info"));
 			}
 		}
 	}
