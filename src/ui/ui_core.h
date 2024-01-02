@@ -169,6 +169,9 @@ struct UI_ClipBoxStack
 	UI_ClipRectStackNode *last;
 };
 
+#define UI_CUSTOM_DRAW_PROC(name) Void name(UI_Box *root)
+typedef UI_CUSTOM_DRAW_PROC(UI_CustomDrawProc);
+
 typedef struct UI_Box UI_Box;
 struct UI_Box
 {
@@ -212,7 +215,9 @@ struct UI_Box
 	Vec2F32 scroll;
 
 	UI_ClipRectStackNode *clip_rect;
-
+	
+	UI_CustomDrawProc *custom_draw;
+	
 	F32 hot_t;
 	F32 active_t;
 };
@@ -346,10 +351,11 @@ internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
 
 internal UI_Box *ui_box_from_key(UI_Key key);
 
-internal Void ui_box_equip_display_string(UI_Box *widget, Str8 string);
+internal Void ui_box_equip_display_string(UI_Box *box, Str8 string);
+internal Void ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc);
 
 internal UI_Box *ui_top_parent(Void);
-internal UI_Box *ui_push_parent(UI_Box *widget);
+internal UI_Box *ui_push_parent(UI_Box *box);
 internal UI_Box *ui_pop_parent(Void);
 
 internal UI_Key ui_top_seed(Void);

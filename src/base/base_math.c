@@ -113,6 +113,15 @@ v2f32_sub_f32(Vec2F32 a, F32 t)
 	return(result);
 }
 
+internal Vec2F32
+v2f32_round(Vec2F32 a)
+{
+	Vec2F32 result;
+	result.x = f32_round(a.x);
+	result.y = f32_round(a.y);
+	return(result);
+}
+
 // S32
 
 internal Vec2S32
@@ -1015,6 +1024,12 @@ f32_ceil(F32 x)
 	return ceilf(x);
 }
 
+internal F32
+f32_round(F32 x)
+{
+	return roundf(x);
+}
+
 internal U32
 f32_round_to_u32(F32 x)
 {
@@ -1127,6 +1142,12 @@ internal F64
 f64_ceil(F64 x)
 {
 	return ceil(x);
+}
+
+internal F64
+f64_round(F64 x)
+{
+	return round(x);
 }
 
 internal F64

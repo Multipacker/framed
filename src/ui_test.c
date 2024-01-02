@@ -91,12 +91,18 @@ ui_ctx_menu_test(Void)
 			{
 				printf("Hello world!");
 			}
-			
+		
+		ui_row()
+		{
 			if (ui_button(str8_lit("Test52")).pressed)
 			{
 				printf("Hello world!");
 			}
-			
+			if (ui_button(str8_lit("Test5251")).pressed)
+			{
+				printf("Hello world2!");
+			}
+		}
 			if (ui_button(str8_lit("Test53")).pressed)
 			{
 				printf("Hello world!");

@@ -207,6 +207,8 @@ internal Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_add_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_sub_f32(Vec2F32 a, F32 t);
 
+internal Vec2F32 v2f32_round(Vec2F32 a);
+
 internal Vec2F32 v2f32_from_v2u32(Vec2U32 v);
 
 internal Vec3F32 v3f32(F32 x, F32 y, F32 z);
@@ -394,7 +396,9 @@ internal F32 f32_unlerp(F32 a, F32 b, F32 x);
 internal F32 f32_pow(F32 a, F32 b);
 internal F32 f32_floor(F32 x);
 internal F32 f32_ceil(F32 x);
+internal F32 f32_round(F32 x);
 internal U32 f32_round_to_u32(F32 x);
+
 internal S32 f32_round_to_s32(F32 x);
 internal F32 f32_clamp(F32 min, F32 val, F32 max);
 
@@ -412,6 +416,7 @@ internal F64 f64_unlerp(F64 a, F64 b, F64 x);
 internal F64 f64_pow(F64 a, F64 b);
 internal F64 f64_floor(F64 x);
 internal F64 f64_ceil(F64 x);
+internal F64 f64_round(F64 x);
 internal F64 f64_clamp(F64 min, F64 val, F64 max);
 
 #endif // BASE_MATH_H

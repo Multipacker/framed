@@ -1,6 +1,8 @@
 // TODO(hampus):
+// [x] - Context menu
+
 // []  - Horizontal scrolling
-// []  - Context menu
+// []  - Context menu's inside other context menu's
 // []  - Death animations
 // []  - Change animation speed per-box
 // []  - Hover cursor
@@ -455,13 +457,13 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->config.animations = true;
 	g_ui_ctx->config.animation_speed = 10;
 
-	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
+	Vec4F32 color = v4f32(0.05f, 0.05f, 0.05f, 1.0f);
 
 	// NOTE(hampus): Setup default styling
 	
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 20);
 	// TODO(hampus): Make this EM
 	text_style->padding.v[Axis2_X] = (F32)ui_top_font_size();
 
@@ -929,114 +931,123 @@ internal Void
 ui_draw(UI_Box *root)
 {
 	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
-	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * g_ui_ctx->dt));
-	if (ui_box_is_active(root))
+	if (root->custom_draw)
 	{
-		root->active_t += (1.0f - root->active_t) * animation_delta;
+		root->custom_draw(root);
 	}
 	else
 	{
-		root->active_t += (0.0f - root->active_t) * animation_delta;
-	}
-
-	if (ui_box_is_hot(root))
-	{
-		root->hot_t += (1.0f - root->hot_t) * animation_delta;
-	}
-	else
-	{
-		root->hot_t += (0.0f - root->hot_t) * animation_delta;
-	}
-
-	root->active_t = f32_clamp(0, root->active_t, 1.0f);
-	root->hot_t = f32_clamp(0, root->hot_t, 1.0f);
-
-	UI_RectStyle *rect_style = &root->rect_style;
-	UI_TextStyle *text_style = &root->text_style;
-
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
-
-	rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
-	rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
-	rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
-	rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
-
-	text_style->color = vec4f32_srgb_to_linear(text_style->color);
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
-	{
-		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
-		Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer,
-											   min,
-											   max,
-											   .softness = 15, .color = v4f32(0, 0, 0, 1));
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
-	{
-		// TODO(hampus): Correct darkening/lightening
-		R_RectInstance *instance = 0;
-
-		F32 d = 0;
-		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
+		
+		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * g_ui_ctx->dt));
+		if (ui_box_is_active(root))
 		{
-			d += f32_srgb_to_linear(0.3f) * root->active_t;
-		}
-
-		if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
-		{
-			d += f32_srgb_to_linear(0.3f) * root->hot_t;
-		}
-
-		rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-															v4f32(d, d, d, 0));
-		rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-															 v4f32(d, d, d, 0));
-		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
-		memory_copy_array(instance->colors, rect_style->color);
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
-	{
-
-		F32 d = 0;
-		if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
-			ui_box_is_active(root))
-		{
-			d += f32_srgb_to_linear(0.4f);
-		}
-		rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
-	{
-		if (text_style->icon)
-		{
-			Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->rect, text_style->align);
-			render_character_internal(g_ui_ctx->renderer, text_pos, text_style->icon, font, text_style->color);
+			root->active_t += (1.0f - root->active_t) * animation_delta;
 		}
 		else
 		{
-			Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, text_style->align);
-			render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+			root->active_t += (0.0f - root->active_t) * animation_delta;
 		}
-	}
-
-	render_pop_clip(g_ui_ctx->renderer);
-	if (g_ui_ctx->show_debug_lines)
-	{
-		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
-	}
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
-	{
-		ui_draw(child);
+		
+		if (ui_box_is_hot(root))
+		{
+			root->hot_t += (1.0f - root->hot_t) * animation_delta;
+		}
+		else
+		{
+			root->hot_t += (0.0f - root->hot_t) * animation_delta;
+		}
+		
+		root->active_t = f32_clamp(0, root->active_t, 1.0f);
+		root->hot_t = f32_clamp(0, root->hot_t, 1.0f);
+		
+		UI_RectStyle *rect_style = &root->rect_style;
+		UI_TextStyle *text_style = &root->text_style;
+		
+		R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+		
+		rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
+		rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
+		rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
+		rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
+		
+		text_style->color = vec4f32_srgb_to_linear(text_style->color);
+		
+		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
+		{
+			Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
+			Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
+			R_RectInstance *instance = render_rect(g_ui_ctx->renderer,
+												   min,
+												   max,
+												   .softness = 15, .color = v4f32(0, 0, 0, 1));
+			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+		}
+		
+		if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
+		{
+			// TODO(hampus): Correct darkening/lightening
+			R_RectInstance *instance = 0;
+			
+			F32 d = 0;
+			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
+			{
+				d += f32_srgb_to_linear(0.3f) * root->active_t;
+			}
+			
+			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
+			{
+				d += f32_srgb_to_linear(0.3f) * root->hot_t;
+			}
+			
+			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+																 v4f32(d, d, d, 0));
+			instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
+			memory_copy_array(instance->colors, rect_style->color);
+			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+		}
+		
+		if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
+		{
+			
+			F32 d = 0;
+			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
+				ui_box_is_active(root))
+			{
+				d += f32_srgb_to_linear(0.4f);
+			}
+			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
+			R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+		}
+		
+		if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
+		{
+			if (text_style->icon)
+			{
+				Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->rect, text_style->align);
+				render_character_internal(g_ui_ctx->renderer, text_pos, text_style->icon, font, text_style->color);
+			}
+			else
+			{
+				Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->rect, text_style->align);
+				render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+			}
+		}
+		
+		render_pop_clip(g_ui_ctx->renderer);
+		if (g_ui_ctx->show_debug_lines)
+		{
+			render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+		}
+		for (UI_Box *child = root->first;
+			 child != 0;
+			 child = child->next)
+		{
+			ui_draw(child);
+		}
+		
 	}
 }
 
@@ -1445,6 +1456,11 @@ ui_box_equip_display_string(UI_Box *box, Str8 string)
 	box->string = display_string;
 }
 
+internal Void 
+ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc)
+{
+	box->custom_draw = proc;
+}
 internal UI_Box *
 ui_top_parent(Void)
 {
