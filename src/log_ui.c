@@ -10,15 +10,17 @@ global LogUI_Thread *log_ui_previous_threads = 0;
 global LogUI_Thread *log_ui_current_threads  = 0;
 global Log_QueueEntry *log_ui_entries = 0;
 global U32 log_ui_entry_count = 0;
-global B32 log_ui_keep = false;;
+global U32 log_ui_previous_entry_count = 0;
+global B32 log_ui_freeze = false;
 
 internal Void ui_log_keep_alive(Arena *frame_arena)
 {
-	if (!log_ui_keep)
+	if (!log_ui_freeze)
 	{
 		log_update_entries(1000);
 	}
 
+	log_ui_previous_entry_count = log_ui_entry_count;
 	log_ui_entries = log_get_entries(&log_ui_entry_count);
 
 	// NOTE(simon): Find threads.
@@ -80,7 +82,13 @@ ui_logger(Void)
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		ui_next_extra_box_flags(UI_BoxFlag_AnimateHeight);
-		ui_push_scrollable_region(str8_lit("LogEntries"));
+		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
+
+		if (!log_ui_freeze && log_ui_entry_count != log_ui_previous_entry_count)
+		{
+			ui_scrollabel_region_set_scroll(entries_list, F32_MAX);
+		}
+
 		ui_push_font(mono);
 
 		local B32 only_info = false;
@@ -94,7 +102,7 @@ ui_logger(Void)
 			all_unselected &= !thread->show;
 		}
 
-		for (S32 i = (S32) log_ui_entry_count - 1; i >= 0; --i)
+		for (U32 i = 0; i < log_ui_entry_count; ++i)
 		{
 			Log_QueueEntry *entry = &log_ui_entries[i];
 
@@ -147,9 +155,9 @@ ui_logger(Void)
 			ui_row()
 			{
 				ui_spacer(ui_em(0.4f, 1));
-				ui_check(&log_ui_keep, str8_lit("LogKeep"));
+				ui_check(&log_ui_freeze, str8_lit("LogFreeze"));
 				ui_spacer(ui_em(0.4f, 1));
-				ui_text(str8_lit("Keep entries"));
+				ui_text(str8_lit("Freeze entries"));
 			}
 
 			ui_spacer(ui_em(0.4f, 1));
