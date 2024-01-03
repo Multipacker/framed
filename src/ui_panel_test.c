@@ -450,7 +450,27 @@ os_main(Str8List arguments)
 				}
 				replacement->parent = root->parent->parent;
 			}
-			
+			else if (root->parent)
+			{
+				// NOTE(hampus): We try to remove on of the root's children
+				if (is_first)
+				{
+					app_state->root_panel = root->next;
+				}
+				else
+				{
+					app_state->root_panel = root->prev;
+				}
+				app_state->root_panel->first = 0;
+				app_state->root_panel->last = 0;
+				app_state->root_panel->next = 0;
+				app_state->root_panel->prev = 0;
+				app_state->root_panel->parent = 0;
+			}
+			else
+			{
+				// NOTE(hampus): We tried to remove the root. big no
+			}
 			
 			app_state->panel_to_delete = 0;
 		}
