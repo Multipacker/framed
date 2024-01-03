@@ -28,6 +28,8 @@ struct Panel
 	
 	UI_Box *box;
 	
+	U64 frame_index;
+	
 	B32 pinned;
 };
 
@@ -36,28 +38,30 @@ struct AppState
 {
 	Arena *perm_arena;
 	U64 num_panels;
+	Panel *panel_to_delete;
+	
+	Panel *panel_to_split;
+	Axis2 panel_split_axis;
+	
+	Panel *root_panel;
 };
 
 AppState *app_state;
 
 internal Panel *
-ui_panel_alloc(Arena *arena, Panel *parent, F32 percent_of_parent)
+ui_panel_alloc(Arena *arena)
 {
 	Panel *result = push_struct(arena, Panel);
-	result->percent_of_parent = percent_of_parent;
-	result->parent = parent;
 	result->string = str8_pushf(app_state->perm_arena, "Panel%"PRIS32, app_state->num_panels);
-	dll_push_back(parent->first, parent->last, result);
 	app_state->num_panels++;
 	return(result);
 }
 
 internal Void
-ui_panel_split(Panel *root, Axis2 split_axis)
+ui_panel_split(Panel *first, Axis2 split_axis)
 {
-	root->split_axis = split_axis;
-	 ui_panel_alloc(app_state->perm_arena, root, 0.5f);
-	ui_panel_alloc(app_state->perm_arena, root, 0.5f);
+	app_state->panel_to_split = first;
+	app_state->panel_split_axis = split_axis;
 }
 
 internal B32
@@ -97,15 +101,7 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 	{
 		// TODO(hampus): Correct darkening/lightening
-		R_RectInstance *instance = 0;
-		
-		F32 d = 0;
-		
-		rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-															v4f32(d, d, d, 0));
-		rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-															 v4f32(d, d, d, 0));
-		instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
+		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
 		memory_copy_array(instance->colors, rect_style->color);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
@@ -125,14 +121,12 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 	
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
-		
 		F32 d = 0;
 		
 		rect_style->border_color = rect_style->border_color;
 		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
-	
 }
 
 internal Void
@@ -151,7 +145,7 @@ ui_panel(Panel *root)
 	{
 		Axis2 flipped_split_axis = !parent->split_axis;
 		ui_next_size(parent->split_axis, ui_pct(root->percent_of_parent, 0));
-		ui_next_size(flipped_split_axis, ui_pct(1, 0));
+		ui_next_size(flipped_split_axis, ui_fill());
 	}
 	else
 	{
@@ -159,12 +153,12 @@ ui_panel(Panel *root)
 		ui_next_height(ui_pct(1, 1));
 	}
 	
-	UI_Box *box = ui_box_make(0, 
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+							  UI_BoxFlag_Clip, 
 							  root->string);
 	root->box = box;
 	
 	ui_push_parent(box);
-	ui_push_string(root->string);
 	
 	if (!ui_panel_is_leaf(root))
 	{
@@ -176,11 +170,13 @@ ui_panel(Panel *root)
 		ui_next_size(root->split_axis, ui_em(0.3f, 1));
 		ui_next_size(!root->split_axis, ui_pct(1, 1));
 		ui_next_corner_radius(0);
-		UI_Box *draggable_box = ui_box_make(UI_BoxFlag_HotAnimation |
-											UI_BoxFlag_ActiveAnimation |
-											UI_BoxFlag_DrawBackground |
-											UI_BoxFlag_Clickable, 
-											str8_lit("DraggableBox"));
+		ui_seed(root->string)
+		{
+			UI_Box *draggable_box = ui_box_make(UI_BoxFlag_HotAnimation |
+												UI_BoxFlag_ActiveAnimation |
+												UI_BoxFlag_DrawBackground |
+												UI_BoxFlag_Clickable, 
+												str8_lit("DraggableBox"));
 		UI_Comm comm = ui_comm_from_box(draggable_box);
 		if (comm.dragging)
 		{
@@ -194,14 +190,15 @@ ui_panel(Panel *root)
 			first->box->layout_style.size[root->split_axis].value = first->percent_of_parent;
 			last->box->layout_style.size[root->split_axis].value  = last->percent_of_parent;
 		}
+		}
 			ui_panel(last);
 	}
 	else
 	{
+		ui_push_string(root->string);
 		box->layout_style.child_layout_axis = Axis2_Y;
-		box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder;
+		box->flags |= UI_BoxFlag_DrawBorder;
 		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
-		
 		// NOTE(hampus): Build title bar
 			ui_next_width(ui_pct(1, 1));
 			ui_row()
@@ -229,7 +226,12 @@ ui_panel(Panel *root)
 					ui_next_width(ui_em(1, 1));
 					ui_next_icon(R_ICON_PIN);
 					ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
-					UI_Box *pin_box = ui_box_make(root->pinned ? UI_BoxFlag_DrawText : 0,
+					UI_BoxFlags pin_box_flags = UI_BoxFlag_Clickable;
+					if (root->pinned)
+					{
+						pin_box_flags |= UI_BoxFlag_DrawText;
+					}
+					UI_Box *pin_box = ui_box_make(pin_box_flags,
 												  str8_lit("PinButton"));
 					
 					UI_Box *title = ui_box_make(UI_BoxFlag_DrawText,
@@ -237,42 +239,46 @@ ui_panel(Panel *root)
 					
 					ui_box_equip_display_string(title, root->string);
 					
-					UI_Comm title_comm = ui_comm_from_box(title_container);
-					
-					UI_BoxFlags close_button_flags = 0;
-					if (title_comm.hovering)
-					{
-						pin_box->flags |= UI_BoxFlag_DrawText | UI_BoxFlag_Clickable;
-						close_button_flags |= UI_BoxFlag_DrawText | UI_BoxFlag_Clickable;
-					}
-					
-					UI_Comm pin_box_comm = ui_comm_from_box(pin_box);
-					if (pin_box_comm.hovering)
-					{
-						pin_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation;
-					}
-					if (pin_box_comm.pressed)
-					{
-						root->pinned = !root->pinned;
-					}
-						
 					ui_next_height(ui_em(1, 1));
 					ui_next_width(ui_em(1, 1));
 					ui_next_icon(R_ICON_CROSS);
 					ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
-					UI_Box *close_box = ui_box_make(close_button_flags,
-								str8_lit("CloseButton"));
-					UI_Comm close_button_comm = ui_comm_from_box(close_box);
+					UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable,
+													str8_lit("CloseButton"));
 					
-					if (close_button_comm.hovering)
+					UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
+					
+					UI_Comm close_box_comm = ui_comm_from_box(close_box);
+					
+					UI_Comm title_comm = ui_comm_from_box(title_container);
+					
+					if (title_comm.hovering)
+					{
+						pin_box->flags   |= UI_BoxFlag_DrawText;
+						close_box->flags |= UI_BoxFlag_DrawText;
+					}
+					
+					if (pin_box_comm.hovering)
+					{
+						pin_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation;
+					}
+					
+					if (close_box_comm.hovering)
 					{
 						close_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation;
 					}
 					
-					if (close_button_comm.pressed && !root->pinned && root->parent)
+					if (pin_box_comm.pressed)
 					{
-						root->parent->first = 0;
-						root->parent->last = 0;
+						root->pinned = !root->pinned;
+					}
+					
+					if (close_box_comm.pressed)
+					{
+						if (!app_state->panel_to_delete && !root->pinned && root->parent)
+						{
+							app_state->panel_to_delete = root;
+						}
 					}
 				}
 				}
@@ -281,7 +287,7 @@ ui_panel(Panel *root)
 			// NOTE(hampus): Content
 			ui_next_width(ui_pct(1, 0));
 			ui_next_height(ui_pct(1, 0));
-			UI_Box *content_box = ui_box_make(0, str8_lit(""));
+			UI_Box *content_box = ui_box_make(0, str8_lit("Hehe"));
 			ui_parent(content_box)
 			{
 				ui_spacer(ui_em(0.5f, 1));
@@ -293,8 +299,9 @@ ui_panel(Panel *root)
 					ui_next_width(ui_pct(1, 0));
 					ui_next_height(ui_pct(1, 0));
 					ui_column()
-					{
-						if (ui_button(str8_lit("Split X")).pressed)
+				{
+					UI_Comm comm = ui_button(str8_lit("Split X"));
+						if (comm.pressed)
 						{
 							ui_panel_split(root, Axis2_X);
 						}
@@ -305,10 +312,33 @@ ui_panel(Panel *root)
 					}
 				}
 		}
-		
+		ui_pop_string();
 	}
-	ui_pop_string();
 	ui_pop_parent();
+}
+
+internal Void
+ui_panel_draw_debug(Panel *root)
+{
+	local F32 indent_level = 0;
+	Str8 split_axis = root->split_axis == Axis2_X ? str8_lit("X") : str8_lit("Y");
+	ui_textf("%"PRISTR8": %"PRISTR8, str8_expand(root->string), str8_expand(split_axis));
+	indent_level += 1;
+	ui_row_begin();
+	ui_spacer(ui_em(indent_level, 1));
+	
+	ui_column()
+	{
+		for (Panel *child = root->first;
+			 child != 0;
+			 child = child->next)
+		{
+			ui_panel_draw_debug(child);
+		}
+	}
+	
+	ui_row_end();
+	indent_level -= 1;
 }
 
 internal S32
@@ -332,8 +362,8 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 	
-	Panel *root_panel = push_struct(app_state->perm_arena, Panel);
-	root_panel->string = str8_pushf(app_state->perm_arena, "RootPanel");
+	app_state->root_panel = push_struct(app_state->perm_arena, Panel);
+	app_state->root_panel->string = str8_pushf(app_state->perm_arena, "RootPanel");
 	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
@@ -372,9 +402,110 @@ os_main(Str8List arguments)
 		
 		ui_begin(ui, &events, renderer, dt);
 		
-		ui_panel(root_panel);
-		
+		ui_panel(app_state->root_panel);
+
+#if 0
+		ui_next_relative_pos(Axis2_X, 200);
+		ui_next_relative_pos(Axis2_Y, 200);
+		UI_Box *debug_view = ui_box_make(UI_BoxFlag_FloatingPos , str8_lit(""));
+		ui_parent(debug_view)
+		{
+		ui_panel_draw_debug(app_state->root_panel);
+		}
+#endif
+
 		ui_end();
+		
+		if (app_state->panel_to_delete)
+		{
+			Panel *root = app_state->panel_to_delete;
+			B32 is_first = root->parent->first == root;
+			Panel *replacement = 0;
+			if (is_first)
+			{
+				replacement = root->next;
+			}
+			else
+			{
+				replacement = root->prev;
+			}
+			
+				if (root->parent->parent)
+				{
+				if (root->parent == root->parent->parent->first)
+				{
+					root->parent->parent->first = replacement;
+					root->parent->parent->last->prev = replacement;
+					replacement->next = root->parent->parent->last;
+					replacement->prev = 0;
+					replacement->percent_of_parent = 1.0f - replacement->next->percent_of_parent;
+				}
+				else
+				{
+					root->parent->parent->last = replacement;
+					root->parent->parent->first->next = replacement;
+					replacement->prev = root->parent->parent->first;
+					replacement->next = 0;
+					replacement->percent_of_parent = 1.0f - replacement->prev->percent_of_parent;
+				}
+				replacement->parent = root->parent->parent;
+			}
+			
+			
+			app_state->panel_to_delete = 0;
+		}
+		else if (app_state->panel_to_split)
+		{
+			Panel *first = app_state->panel_to_split;
+			Axis2 split_axis = app_state->panel_split_axis;
+			
+			Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+			Panel *second     = ui_panel_alloc(app_state->perm_arena);
+			
+			new_parent->percent_of_parent = first->percent_of_parent;
+			
+			first->percent_of_parent = 0.5f;
+			second->percent_of_parent = 0.5f;
+			
+			new_parent->split_axis = split_axis;
+			
+			Panel *next = first->next;
+			Panel *prev = first->prev;
+			
+			new_parent->next = next;
+			
+			dll_push_back(new_parent->first, new_parent->last, first);
+			dll_push_back(new_parent->first, new_parent->last, second);
+			
+			new_parent->next = next;
+			new_parent->prev = prev;
+			new_parent->parent = first->parent;
+			
+			if (first->parent)
+			{
+				if (first == first->parent->first)
+				{
+					first->parent->first = new_parent;
+					first->parent->last = next;
+					next->prev = new_parent;
+				}
+				else
+				{
+					first->parent->first = prev;
+					first->parent->last = new_parent;
+					prev->next = new_parent;
+				}
+			}
+			else
+			{
+				app_state->root_panel = new_parent;
+			}
+			
+			first->parent = new_parent;
+			second->parent = new_parent;
+			
+			app_state->panel_to_split = 0;
+		}
 		
 		render_end(renderer);
 		

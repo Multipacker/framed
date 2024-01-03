@@ -752,6 +752,10 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 				{
 					root->calc_rel_pos.v[axis] = prev->calc_rel_pos.v[axis] + prev->calc_size.v[axis];
 				}
+				else
+				{
+					root->calc_rel_pos.v[axis] = 0;
+				}
 			}
 			else
 			{
