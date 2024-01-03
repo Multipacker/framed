@@ -231,6 +231,7 @@ struct UI_Comm
 	Vec2F32 rel_mouse;
 	Vec2F32 drag_delta;
 	Vec2F32 scroll;
+	B8 clicked;
 	B8 pressed;
 	B8 released;
 	B8 double_clicked;
@@ -305,9 +306,6 @@ struct UI_Context
 	
 	UI_Key active_key;
 	UI_Key hot_key;
-
-	UI_Key prev_active_key;
-	UI_Key prev_hot_key;
 
 	Gfx_EventList *event_list;
 	R_Context     *renderer;

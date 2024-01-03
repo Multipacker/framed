@@ -54,34 +54,12 @@ ui_box_is_active(UI_Box *box)
 }
 
 internal B32
-ui_box_was_active(UI_Box *box)
-{
-	B32 result = false;
-	if (!ui_key_is_null(box->key))
-	{
-		result = ui_key_match(g_ui_ctx->prev_active_key, box->key);
-	}
-	return(result);
-}
-
-internal B32
 ui_box_is_hot(UI_Box *box)
 {
 	B32 result = false;
 	if (!ui_key_is_null(box->key))
 	{
 		result = ui_key_match(g_ui_ctx->hot_key, box->key);
-	}
-	return(result);
-}
-
-internal B32
-ui_box_was_hot(UI_Box *box)
-{
-	B32 result = false;
-	if (!ui_key_is_null(box->key))
-	{
-		result = ui_key_match(g_ui_ctx->prev_hot_key, box->key);
 	}
 	return(result);
 }
@@ -320,17 +298,17 @@ internal B32
 ui_ctx_menu_begin(UI_Key key)
 {
 	B32 is_open = ui_key_match(key, g_ui_ctx->ctx_menu_key);
-	
+
 	if (is_open)
 	{
 		g_ui_ctx->ctx_menu_root->flags |= UI_BoxFlag_DrawDropShadow;
 	}
-	
+
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
-	
+
 	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
 	ui_column_begin();
-	
+
 	return(is_open);
 }
 
@@ -396,7 +374,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 					} break;
 				}
 			} break;
-			
+
 			case Gfx_EventKind_KeyPress:
 			{
 				if (node->key == Gfx_Key_Escape)
@@ -457,10 +435,12 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->config.animations = true;
 	g_ui_ctx->config.animation_speed = 10;
 
+	g_ui_ctx->hot_key = ui_key_null();
+
 	Vec4F32 color = v4f32(0.05f, 0.05f, 0.05f, 1.0f);
 
 	// NOTE(hampus): Setup default styling
-	
+
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
 	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 20);
@@ -469,7 +449,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
-	
+
 	UI_RectStyle *rect_style = ui_push_rect_style();
 	rect_style->color[Corner_TopLeft]     = color;
 	rect_style->color[Corner_TopRight]    = color;
@@ -481,8 +461,6 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	F32 radius = (F32)ui_top_font_size() * 0.2f;
 	rect_style->radies           = v4f32(radius, radius, radius, radius);
 	rect_style->softness         = 1;
-	
-	g_ui_ctx->hot_key = ui_key_null();
 
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	Vec2F32 max_clip;
@@ -509,18 +487,17 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	ui_next_height(ui_children_sum(1));
 	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										  str8_lit("CtxMenuRoot"));
-	
+
 	ui_next_relative_pos(Axis2_X, g_ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, g_ui_ctx->mouse_pos.y);
 	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										 str8_lit("TooltipRoot"));
-	
-	
+
 	if (escape_key_pressed && ui_ctx_menu_is_open())
 	{
 		ui_ctx_menu_close();
 	}
-	
+
 	ui_push_parent(g_ui_ctx->normal_root);
 }
 
@@ -587,7 +564,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
 	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
-	
+
 	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
 	{
 		root->layout_style.size[axis].kind = UI_SizeKind_TextContent;
@@ -691,7 +668,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 }
 
 internal Void
-ui_solve_size_violations(UI_Box *root, Axis2 axis)
+ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
 	F32 available_space = root->target_size.v[axis];
 
@@ -748,17 +725,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		}
 	}
 
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
-	{
-		ui_solve_size_violations(child, axis);
-	}
-}
 
-internal Void
-ui_calculate_final_rect(UI_Box *root, Axis2 axis)
-{
 	if (root->parent)
 	{
 		if (!ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
@@ -850,7 +817,6 @@ ui_layout(UI_Box *root)
 		ui_solve_independent_sizes(root, axis);
 		ui_solve_upward_dependent_sizes(root, axis);
 		ui_solve_downward_dependent_sizes(root, axis);
-		ui_solve_size_violations(root, axis);
 		ui_calculate_final_rect(root, axis);
 	}
 }
@@ -930,6 +896,7 @@ ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAli
 internal Void
 ui_draw(UI_Box *root)
 {
+
 	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
 	if (root->custom_draw)
 	{
@@ -937,7 +904,7 @@ ui_draw(UI_Box *root)
 	}
 	else
 	{
-		
+
 		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * g_ui_ctx->dt));
 		if (ui_box_is_active(root))
 		{
@@ -947,7 +914,7 @@ ui_draw(UI_Box *root)
 		{
 			root->active_t += (0.0f - root->active_t) * animation_delta;
 		}
-		
+
 		if (ui_box_is_hot(root))
 		{
 			root->hot_t += (1.0f - root->hot_t) * animation_delta;
@@ -956,22 +923,22 @@ ui_draw(UI_Box *root)
 		{
 			root->hot_t += (0.0f - root->hot_t) * animation_delta;
 		}
-		
+
 		root->active_t = f32_clamp(0, root->active_t, 1.0f);
 		root->hot_t = f32_clamp(0, root->hot_t, 1.0f);
-		
+
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
-		
+
 		R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
-		
+
 		rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
 		rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
 		rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
 		rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
-		
+
 		text_style->color = vec4f32_srgb_to_linear(text_style->color);
-		
+
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 		{
 			Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
@@ -982,23 +949,23 @@ ui_draw(UI_Box *root)
 												   .softness = 15, .color = v4f32(0, 0, 0, 1));
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
-		
+
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 		{
 			// TODO(hampus): Correct darkening/lightening
 			R_RectInstance *instance = 0;
-			
+
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
 			{
 				d += f32_srgb_to_linear(0.3f) * root->active_t;
 			}
-			
+
 			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
 				d += f32_srgb_to_linear(0.3f) * root->hot_t;
 			}
-			
+
 			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 																v4f32(d, d, d, 0));
 			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
@@ -1007,10 +974,10 @@ ui_draw(UI_Box *root)
 			memory_copy_array(instance->colors, rect_style->color);
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
-		
+
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 		{
-			
+
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
 				ui_box_is_active(root))
@@ -1021,7 +988,7 @@ ui_draw(UI_Box *root)
 			R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
-		
+
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
 		{
 			if (text_style->icon)
@@ -1035,7 +1002,7 @@ ui_draw(UI_Box *root)
 				render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 			}
 		}
-		
+
 		render_pop_clip(g_ui_ctx->renderer);
 		if (g_ui_ctx->show_debug_lines)
 		{
@@ -1047,7 +1014,7 @@ ui_draw(UI_Box *root)
 		{
 			ui_draw(child);
 		}
-		
+
 	}
 }
 
@@ -1062,7 +1029,7 @@ ui_end(Void)
 
 	// NOTE(hampus): Pop master root
 	ui_pop_parent();
-	
+
 	if (ui_ctx_menu_is_open())
 	{
 		Vec2F32 anchor_pos = {0};
@@ -1071,22 +1038,20 @@ ui_end(Void)
 			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
 			anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
 		}
-		
+
 		anchor_pos = v2f32_add_v2f32(anchor_pos, g_ui_ctx->anchor_offset);
-		
+
 		g_ui_ctx->ctx_menu_root->calc_rel_pos = anchor_pos;
 	}
-	
+
 	ui_layout(g_ui_ctx->root);
 	ui_draw(g_ui_ctx->normal_root);
 	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
 	ui_draw(g_ui_ctx->ctx_menu_root);
 	}
-	
+
 	g_ui_ctx->prev_mouse_pos = g_ui_ctx->mouse_pos;
-	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
-	g_ui_ctx->prev_hot_key = g_ui_ctx->hot_key;
 	g_ui_ctx->parent_stack = 0;
 	g_ui_ctx->seed_stack = 0;
 	arena_pop_to(ui_frame_arena(), 0);
@@ -1109,12 +1074,12 @@ ui_comm_from_box(UI_Box *box)
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);
-	
+
 	B32 gather_input = true;
-	
+
 	if (ui_ctx_menu_is_open())
 	{
-		// NOTE(hampus): Check to see if this box is a 
+		// NOTE(hampus): Check to see if this box is a
 		// part of the context menu
 		B32 part_of_ctx_menu = false;
 		UI_Box *ctx_menu_root = g_ui_ctx->ctx_menu_root;
@@ -1127,11 +1092,11 @@ ui_comm_from_box(UI_Box *box)
 				part_of_ctx_menu = true;
 			}
 		}
-		
+
 		if (!part_of_ctx_menu)
 		{
-			// NOTE(hampus): If the mouse is inside 
-			// the contex menu and it is not a part of 
+			// NOTE(hampus): If the mouse is inside
+			// the contex menu and it is not a part of
 			// it, don't gather input.
 			if (rectf32_contains_v2f32(ctx_menu_root->rect, mouse_pos))
 			{
@@ -1139,13 +1104,25 @@ ui_comm_from_box(UI_Box *box)
 			}
 		}
 	}
-	
+
+	B32 mouse_over = false;
+
+	if (rectf32_contains_v2f32(box->rect, mouse_pos))
+	{
+		mouse_over = true;
+	}
+
 	if (gather_input)
 	{
-		if (rectf32_contains_v2f32(box->rect, mouse_pos))
-		{
+			if (ui_key_is_null(g_ui_ctx->hot_key) && mouse_over)
+			{
 			g_ui_ctx->hot_key = box->key;
+		}
+
+		if (mouse_over)
+		{
 			result.hovering = true;
+
 			Gfx_EventList *event_list = g_ui_ctx->event_list;
 			for (Gfx_Event *node = event_list->first;
 				 node != 0;
@@ -1161,13 +1138,14 @@ ui_comm_from_box(UI_Box *box)
 							{
 								// TODO(hampus): Do we want UI_BoxFlag_Clickable to
 								// work for release as well?
-								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-								{
 									result.released = true;
-									dll_remove(event_list->first, event_list->last, node);
+								dll_remove(event_list->first, event_list->last, node);
+								if (ui_box_is_active(box))
+								{
+									result.clicked = true;
 								}
 							} break;
-							
+
 							case Gfx_Key_MouseRight:
 							{
 								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -1176,13 +1154,13 @@ ui_comm_from_box(UI_Box *box)
 									dll_remove(event_list->first, event_list->last, node);
 								}
 							} break;
-							
+
 							default:
 							{
 							} break;
 						}
 					} break;
-					
+
 					case Gfx_EventKind_KeyPress:
 					{
 						switch (node->key)
@@ -1196,7 +1174,7 @@ ui_comm_from_box(UI_Box *box)
 									dll_remove(event_list->first, event_list->last, node);
 								}
 							} break;
-							
+
 							case Gfx_Key_MouseRight:
 							{
 								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -1204,7 +1182,7 @@ ui_comm_from_box(UI_Box *box)
 									dll_remove(event_list->first, event_list->last, node);
 								}
 							} break;
-							
+
 							case Gfx_Key_MouseLeftDouble:
 							{
 								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
@@ -1214,13 +1192,13 @@ ui_comm_from_box(UI_Box *box)
 									dll_remove(event_list->first, event_list->last, node);
 								}
 							} break;
-							
+
 							default:
 							{
 							} break;
 						}
 					} break;
-					
+
 					case Gfx_EventKind_Scroll:
 					{
 						if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
@@ -1229,18 +1207,16 @@ ui_comm_from_box(UI_Box *box)
 							dll_remove(event_list->first, event_list->last, node);
 						}
 					} break;
-					
+
 					default:
 					{
 					} break;
 				}
 			}
 		}
-		
 	}
-	
-	if (ui_box_is_active(box) &&
-		ui_box_was_active(box))
+
+	if (ui_box_is_active(box))
 	{
 		result.dragging = true;
 		result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
@@ -1378,6 +1354,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->first = 0;
 	result->last = 0;
+	result->next = 0;
+	result->prev = 0;
 	UI_Box *parent = ui_top_parent();
 
 	if (parent)
@@ -1456,7 +1434,7 @@ ui_box_equip_display_string(UI_Box *box, Str8 string)
 	box->string = display_string;
 }
 
-internal Void 
+internal Void
 ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc)
 {
 	box->custom_draw = proc;
