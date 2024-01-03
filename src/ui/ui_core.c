@@ -1,6 +1,8 @@
 // TODO(hampus):
 // [x] - Context menu
 
+// []  - Makes switching font & font size more robust
+// []  - Don't gather input from boxes outside clip
 // []  - Horizontal scrolling
 // []  - Context menu's inside other context menu's
 // []  - Death animations
@@ -305,7 +307,9 @@ ui_ctx_menu_begin(UI_Key key)
 	}
 
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
-
+	ui_push_clip_rect(&g_ui_ctx->root->rect, 0);
+	
+	
 	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
 	ui_column_begin();
 
@@ -317,6 +321,7 @@ ui_ctx_menu_end(Void)
 {
 	ui_pop_parent();
 	ui_column_end();
+	ui_pop_clip_rect();
 }
 
 internal Void
