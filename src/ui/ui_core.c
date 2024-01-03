@@ -1081,7 +1081,20 @@ ui_comm_from_box(UI_Box *box)
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);
 
 	B32 gather_input = true;
-
+	
+	RectF32 hover_region = box->rect;
+	for (UI_Box *parent = box->parent;
+		 parent != 0;
+		 parent = parent->parent)
+	{
+		if (ui_box_has_flag(parent, UI_BoxFlag_Clip))
+		{
+			assert(!ui_key_is_null(parent->key) &&
+				   "Clipping to an unstable rectangle");
+			hover_region = rectf32_intersect_rectf32(hover_region, parent->rect);
+		}
+	}
+	
 	if (ui_ctx_menu_is_open())
 	{
 		// NOTE(hampus): Check to see if this box is a
@@ -1095,6 +1108,7 @@ ui_comm_from_box(UI_Box *box)
 			if (parent == ctx_menu_root)
 			{
 				part_of_ctx_menu = true;
+				break;
 			}
 		}
 
@@ -1112,7 +1126,7 @@ ui_comm_from_box(UI_Box *box)
 
 	B32 mouse_over = false;
 
-	if (rectf32_contains_v2f32(box->rect, mouse_pos))
+	if (rectf32_contains_v2f32(hover_region, mouse_pos))
 	{
 		mouse_over = true;
 	}

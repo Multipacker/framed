@@ -406,6 +406,17 @@ rectf32_overlaps(RectF32 a, RectF32 b)
 	return(result);
 }
 
+internal RectF32
+rectf32_intersect_rectf32(RectF32 cookie, RectF32 cutter)
+{
+	RectF32 result = cookie;
+	cookie.x0 = f32_clamp(cutter.x0, cookie.x0, cutter.x1);
+	cookie.y0 = f32_clamp(cutter.y0, cookie.y0, cutter.y1);
+	cookie.x1 = f32_clamp(cutter.x0, cookie.x1, cutter.x1);
+	cookie.y1 = f32_clamp(cutter.y0, cookie.y1, cutter.y1);
+	return(result);
+}
+
 internal U8 u8_min(U8 a, U8 b)
 {
 	U8 result = (a < b ? a : b);
