@@ -126,10 +126,12 @@ render_init(Gfx_Context *gfx)
 		renderer->font_cache->entries[i].arena = arena_create();
 	}
 
+	// NOTE(simon): This is needed for atomic reads.
+	arena_align(arena, 8);
 	renderer->font_queue = push_struct(arena, R_FontQueue);
 	renderer->font_queue->queue = push_array(arena, R_FontQueueEntry, FONT_QUEUE_SIZE);
+	os_semaphore_create(&renderer->font_queue->semaphore, 0);
 
-	os_semaphore_create(&renderer->font_loader_semaphore, 0);
 	os_mutex_create(&renderer->font_atlas_mutex);
 
 	for (U32 i = 0; i < 4; ++i)

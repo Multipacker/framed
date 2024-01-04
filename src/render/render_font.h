@@ -159,8 +159,9 @@ typedef struct R_FontQueue R_FontQueue;
 struct R_FontQueue
 {
 	R_FontQueueEntry *queue;
-	U32 volatile queue_write_index;
-	U32 volatile queue_read_index;
+	U32 volatile write_index;
+	U32 volatile read_index;
+	OS_Semaphore semaphore;
 };
 
 internal R_FontAtlas      *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);

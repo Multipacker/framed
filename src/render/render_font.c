@@ -297,42 +297,43 @@ render_font_stream_thread(Void *data)
 	R_Context *renderer = (R_Context *)thread_data->renderer;
 	R_FontQueue *font_queue = renderer->font_queue;
 
-	ThreadContext *ctx = thread_ctx_init(thread_data->name);
+	thread_ctx_init(thread_data->name);
+
 	for (;;)
 	{
-		// FIXME(simon): This pattern for dequeueing elements is fine for SPSC,
-		// but not for SPMC, which is what we have here. If a thread fails to
-		// dequeue, it will loop back end hit the semaphore, causing it to
-		// sleep when there is actual work to do.
-		os_semaphore_wait(&renderer->font_loader_semaphore);
-		
-		U32 queue_read_index = font_queue->queue_read_index;
-		if (font_queue->queue_write_index - queue_read_index != 0)
+		os_semaphore_wait(&font_queue->semaphore);
+
+		// NOTE(simon): We were awoken to load a font. Loop until there are
+		// none left to load. This is because u32_atomic_compare_exchange could
+		// cause us to not load a font in an iteration, which would then make
+		// us wait on the semaphore.
+		while (font_queue->write_index - font_queue->read_index != 0)
 		{
-			if (u32_atomic_compare_exchange(&font_queue->queue_read_index, queue_read_index+1, queue_read_index))
+			// NOTE(simon): Grab the entry before attempting to change the
+			// index as that marks it as free for writing.
+			U32 queue_read_index = font_queue->read_index;
+			R_FontQueueEntry entry = font_queue->queue[queue_read_index & FONT_QUEUE_MASK];
+
+			memory_fence();
+
+			if (u32_atomic_compare_exchange(&font_queue->read_index, queue_read_index + 1, queue_read_index))
 			{
-				// TODO(simon): At this point, the entry could have been
-				// overwritten by the writing thread, causing us to read
-				// corrupted data.
-				R_FontQueueEntry *entry = &font_queue->queue[queue_read_index & FONT_QUEUE_MASK];
-				R_Font *font = entry->font;
+				R_Font *font = entry.font;
 				
-				log_info("Starting to load in font: %"PRISTR8, str8_expand(entry->params.path));
+				log_info("Starting to load in font: %"PRISTR8, str8_expand(entry.params.path));
 				font->state = R_FontState_Loading;
-				
-				memory_fence();
 				
 				render_unload_font(renderer, font);
 				
-				B32 success = render_load_font(renderer, font, entry->params);
+				B32 success = render_load_font(renderer, font, entry.params);
 				
 				if (success)
 				{
-					log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(entry->params.path));
+					log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(entry.params.path));
 				}
 				else
 				{
-					log_warning("Failed to load font `%"PRISTR8"`", str8_expand(entry->params.path));
+					log_warning("Failed to load font `%"PRISTR8"`", str8_expand(entry.params.path));
 					render_unload_font(renderer, font);
 				}
 				
@@ -367,26 +368,30 @@ render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 	assert(renderer);
 	assert(render_font_valid_load_params(params));
 
-	font->state = R_FontState_InQueue;
+	R_FontQueue *font_queue = renderer->font_queue;
+
 	// NOTE(hampus): This is so that we can recongnize that the font
 	// is in the queue when we are looking in the cache
+	font->state = R_FontState_InQueue;
 	font->load_params = params;
+
+	while (font_queue->write_index - font_queue->read_index >= LOG_QUEUE_SIZE)
+	{
+		// NOTE(simon): The queue is currently full. Bussy wait until there is
+		// space in it.
+	}
+
+	R_FontQueueEntry *entry = &font_queue->queue[font_queue->write_index & FONT_QUEUE_MASK];
+	entry->font   = font;
+	entry->params = params;
 
 	memory_fence();
 
-	R_FontQueue *font_queue = renderer->font_queue;
-
-	U32 queue_index = u32_atomic_add(&font_queue->queue_write_index, 1);
-
-	R_FontQueueEntry *entry = &font_queue->queue[queue_index & FONT_QUEUE_MASK];
-	entry->font        = font;
-	entry->params = params;
+	u32_atomic_add(&font_queue->write_index, 1);
 
 	log_info("Pushed font %"PRISTR8" to queue", str8_expand(params.path));
 
-	memory_fence();
-
-	os_semaphore_signal(&renderer->font_loader_semaphore);
+	os_semaphore_signal(&font_queue->semaphore);
 }
 
 internal U32

@@ -73,7 +73,6 @@ struct R_Context
 	R_FontAtlas *font_atlas;
 	R_FontCache *font_cache;
 	R_FontQueue *font_queue;
-	OS_Semaphore font_loader_semaphore;
 	OS_Mutex font_atlas_mutex;
 
 	U64 frame_index;
