@@ -1281,6 +1281,7 @@ ui_key_match(UI_Key a, UI_Key b)
 	return(result);
 }
 
+// TODO(simon): Switch to hash_str8 and hash_combine.
 internal UI_Key
 ui_key_from_string(UI_Key seed, Str8 string)
 {
