@@ -57,8 +57,58 @@ UI_CMD(panel_split)
 	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
 	Panel *second     = ui_panel_alloc(app_state->perm_arena);
 	
-	Tab *tab = ui_tab_alloc(app_state->perm_arena);
-	ui_attach_tab_to_panel(second, tab, 1);
+	new_parent->percent_of_parent = first->percent_of_parent;
+	
+	first->percent_of_parent = 0.5f;
+	second->percent_of_parent = 0.5f;
+	
+	new_parent->split_axis = split_axis;
+	
+	Panel *next = first->next;
+	Panel *prev = first->prev;
+	
+	new_parent->next = next;
+	
+	dll_push_back(new_parent->first, new_parent->last, first);
+	dll_push_back(new_parent->first, new_parent->last, second);
+	
+	new_parent->next = next;
+	new_parent->prev = prev;
+	new_parent->parent = first->parent;
+	
+	if (first->parent)
+	{
+		if (first == first->parent->first)
+		{
+			first->parent->first = new_parent;
+			first->parent->last = next;
+			next->prev = new_parent;
+		}
+		else
+		{
+			first->parent->first = prev;
+			first->parent->last = new_parent;
+			prev->next = new_parent;
+		}
+	}
+	else
+	{
+		app_state->root_panel = new_parent;
+	}
+	
+	first->parent = new_parent;
+	second->parent = new_parent;
+}
+
+UI_CMD(panel_split_and_attach)
+{
+	PanelSplitAndAttach *data = (PanelSplitAndAttach *)cmd->data;
+	
+	Panel *first     = data->panel;
+	Axis2 split_axis = data->axis;
+	
+	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+	Panel *second     = ui_panel_alloc(app_state->perm_arena);
 	
 	new_parent->percent_of_parent = first->percent_of_parent;
 	
@@ -102,7 +152,21 @@ UI_CMD(panel_split)
 	first->parent = new_parent;
 	second->parent = new_parent;
 	
+	Tab *tab = data->tab;
+	if (data->left_top)
+	{
+		dll_push_back(first->tab_group.first, first->tab_group.last, tab);
+		tab->panel = first;
+		first->tab_group.active_tab = tab;
+	}
+	else
+	{
+		dll_push_back(second->tab_group.first, second->tab_group.last, tab);
+		tab->panel = second;
+		second->tab_group.active_tab = tab;
+	}
 }
+
 UI_CMD(panel_close)
 {
 	PanelClose *data = (PanelClose *)cmd->data;
@@ -151,8 +215,6 @@ UI_CMD(panel_close)
 			{
 				app_state->root_panel = root->prev;
 			}
-			app_state->root_panel->first = 0;
-			app_state->root_panel->last = 0;
 			app_state->root_panel->next = 0;
 			app_state->root_panel->prev = 0;
 			app_state->root_panel->parent = 0;

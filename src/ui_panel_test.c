@@ -1,3 +1,14 @@
+// TODO(hampus):
+// [ ] - What to do if the user drops a tab outside of any panel
+// [ ] - Customize the view of tabs
+//          - Function pointers?
+//          - Enums?
+// [ ] - Scroll tabs horizontally if there are too many to fit
+// [ ] - Reorder tabs
+// [ ] - Highlighting of the active panel
+
+
+
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
@@ -55,7 +66,9 @@ struct Panel
 	Str8 string;
 
 	UI_Box *box;
-
+	
+	B32 drag_hovered;
+	
 	// NOTE(hampus): For debugging purposes
 	UI_Box *dragger;
 	U64 frame_index;
@@ -68,6 +81,7 @@ enum CmdKind
 	CmdKind_TabClose,
 
 	CmdKind_PanelSplit,
+	CmdKind_PanelSplitAndAttach,
 	CmdKind_PanelSetActiveTab,
 	CmdKind_PanelClose,
 };
@@ -91,6 +105,15 @@ struct PanelSplit
 {
 	Panel *panel;
 	Axis2 axis;
+};
+
+typedef struct PanelSplitAndAttach PanelSplitAndAttach;
+struct PanelSplitAndAttach 
+{
+	Panel *panel;
+	Tab *tab;
+	Axis2 axis;
+	B32 left_top;
 };
 
 typedef struct PanelSetActiveTab PanelSetActiveTab;
@@ -390,6 +413,71 @@ ui_tab_button(Tab *tab)
 	}
 	ui_pop_string();
 }
+typedef enum HoverAxis HoverAxis;
+enum HoverAxis
+{
+	HoverAxis_Center,
+	HoverAxis_X,
+	HoverAxis_Y,
+};
+
+internal UI_Comm
+ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 center, HoverAxis *hover_axis, Side side, Side *hover_side)
+{
+	ui_next_width(ui_em(width_in_em, 1));
+	ui_next_height(ui_em(width_in_em, 1));
+	ui_next_color(ui_top_text_style()->color);
+	
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground,
+							  string);
+	
+	if (!center)
+	{
+		ui_parent(box)
+		{
+			ui_seed(string)
+			{
+				ui_size(!axis, ui_fill())
+					ui_size(axis, ui_pct(0.5f, 1))
+					ui_border_color(ui_top_rect_style()->color[0])
+				{
+					
+					ui_next_border_thickness(2);
+					ui_box_make(UI_BoxFlag_DrawBorder |
+													UI_BoxFlag_HotAnimation,
+													str8_lit("LeftLeft"));
+					
+					ui_next_border_thickness(2);
+					ui_box_make(UI_BoxFlag_DrawBorder |
+													 UI_BoxFlag_HotAnimation,
+													 str8_lit("LeftRight"));
+				}
+			}
+		}
+	}
+	
+	UI_Comm comm = ui_comm_from_box(box);
+	if (!center)
+	{
+		if (comm.hovering)
+		{
+			root->drag_hovered |= true;
+			*hover_axis = axis+1;
+			*hover_side = side;
+		}
+		if (comm.released)
+		{
+			PanelSplitAndAttach *data  = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSplitAndAttach, panel_split_and_attach);
+			data->tab        = app_state->drag_tab;
+			data->panel      = root;
+			data->axis = axis;
+			data->left_top = side == Side_Min;
+			app_state->drag_tab = 0;
+			root->drag_hovered = false;
+		}
+	}
+	return(comm);
+}
 
 internal Void
 ui_panel(Panel *root)
@@ -413,8 +501,8 @@ ui_panel(Panel *root)
 	}
 	else
 	{
-		ui_next_width(ui_pct(1, 1));
-		ui_next_height(ui_pct(1, 1));
+		ui_next_width(ui_pct(1, 0));
+		ui_next_height(ui_pct(1, 0));
 	}
 
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
@@ -467,20 +555,88 @@ ui_panel(Panel *root)
 	else
 	{
 		ui_push_string(root->string);
-		B32 tab_drag_hovering_this_panel = false;
+		
+		HoverAxis hover_axis = 0;
+		Side hover_side = 0;
 		if (app_state->drag_tab)
 		{
-			UI_Comm panel_comm = ui_comm_from_box(box);
-			if (panel_comm.hovering)
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pct(1, 1));
+			UI_Box *overlay_box2 = ui_box_make(UI_BoxFlag_FloatingPos,
+											   str8_lit("OverlayBox2"));
+			if (root->drag_hovered)
 			{
-				tab_drag_hovering_this_panel = true;
+				root->drag_hovered = false;
+				ui_parent(overlay_box2)
+				{
+					ui_push_string(str8_lit("OverlayBox2"));
+					F32 size = 3;
+					ui_spacer(ui_fill());
+					
+					ui_next_width(ui_fill());
+					ui_row()
+					{
+						ui_spacer(ui_fill());
+						UI_Comm top_comm = ui_hover_panel_type(str8_lit("TopYSplitPanelType"), size, root, Axis2_Y, false, &hover_axis, Side_Min, &hover_side);
+						
+						ui_spacer(ui_fill());
+					}
+					ui_spacer(ui_em(1, 1));
+					
+					ui_next_width(ui_fill());
+					ui_row()
+					{
+						ui_spacer(ui_fill());
+						
+						ui_next_child_layout_axis(Axis2_X);
+						UI_Comm left_comm = ui_hover_panel_type(str8_lit("LeftXSplitPanelType"), size, root, Axis2_X, false, &hover_axis, Side_Min, &hover_side);
+						
+						ui_spacer(ui_em(1, 1));
+						
+						UI_Comm center_comm = ui_hover_panel_type(str8_lit("CenterPanelType"), size, root, Axis2_X, true, &hover_axis, Side_Min, &hover_side);
+						
+						if (center_comm.hovering)
+						{
+							root->drag_hovered |= true;
+						}
+						
+						if (center_comm.released)
+						{
+							ui_attach_tab_to_panel(root, app_state->drag_tab, true);
+							app_state->drag_tab = 0;
+							root->drag_hovered = false;
+						}
+						
+						ui_spacer(ui_em(1, 1));
+						
+						ui_next_child_layout_axis(Axis2_X);
+						UI_Comm right_comm = ui_hover_panel_type(str8_lit("RightXSplitPanelType"), size, root, Axis2_X, false, &hover_axis, Side_Max, &hover_side);
+						
+						ui_spacer(ui_fill());
+					}
+					
+					ui_spacer(ui_em(1, 1));
+					
+					ui_next_width(ui_fill());
+					ui_row()
+					{
+						ui_spacer(ui_fill());
+						UI_Comm bottom_comm = ui_hover_panel_type(str8_lit("BottomYSplitPanelType"), size, root, Axis2_Y, false, &hover_axis, Side_Max, &hover_side);
+						ui_spacer(ui_fill());
+					}
+					ui_spacer(ui_fill());
+					ui_pop_string();
 				}
+			}
+			UI_Comm panel_comm = ui_comm_from_box(overlay_box2);
+			root->drag_hovered |= panel_comm.hovering;
 				if (panel_comm.released)
 				{
 					ui_attach_tab_to_panel(root, app_state->drag_tab, true);
-					app_state->drag_tab = 0;
-				}
+				app_state->drag_tab = 0;
+				root->drag_hovered = false;
 			}
+		}
 					
 			box->layout_style.child_layout_axis = Axis2_Y; 
 		box->flags |= UI_BoxFlag_DrawBorder;
@@ -553,7 +709,8 @@ ui_panel(Panel *root)
 		{
 			ui_next_width(ui_pct(1, 0));
 			ui_next_height(ui_pct(1, 0));
-			content_box = ui_box_make(UI_BoxFlag_DrawBackground,
+			
+			content_box = ui_box_make(0,
 									  str8_lit("ContentBox"));
 			ui_parent(content_box)
 			{
@@ -579,7 +736,6 @@ ui_panel(Panel *root)
 					ui_spacer(ui_fill());
 				}
 			}
-
 		}
 
 		for (Tab *tab = root->tab_group.first;
@@ -591,7 +747,7 @@ ui_panel(Panel *root)
 				// NOTE(hampus): Tab content
 				ui_next_width(ui_pct(1, 1));
 				ui_next_height(ui_pct(1, 0));
-				content_box = ui_box_make(UI_BoxFlag_DrawBackground,
+				content_box = ui_box_make(0,
 										  str8_lit("ContentBox"));
 				ui_parent(content_box)
 				{
@@ -641,19 +797,65 @@ ui_panel(Panel *root)
 			}
 		}
 		
-		if (tab_drag_hovering_this_panel)
+		if (root->drag_hovered)
 		{
 			Vec4F32 top_color = ui_top_rect_style()->color[0];
 			top_color.r += 0.2f;
 			top_color.g += 0.2f;
 			top_color.b += 0.2f;
 			top_color.a = 0.5f;
-			ui_next_vert_gradient(top_color, top_color);
+			
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_pct(1, 1));
-			UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground |
-											  UI_BoxFlag_FloatingPos,
-											  str8_lit("OverlayBox"));
+			UI_Box *container = ui_box_make(UI_BoxFlag_FloatingPos,
+											str8_lit("OverlayBoxContainer"));
+			ui_parent(container)
+			{
+				if (hover_axis == HoverAxis_Center)
+				{
+					ui_next_width(ui_pct(1, 1));
+					ui_next_height(ui_pct(1, 1));
+					ui_next_vert_gradient(top_color, top_color);
+					UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+													  str8_lit("OverlayBox"));
+				}
+				else
+				{
+					switch (hover_axis)
+					{
+						case HoverAxis_X:
+						{
+							container->layout_style.child_layout_axis = Axis2_X;
+							if (hover_side == Side_Max)
+							{
+								ui_spacer(ui_fill());
+							}
+							ui_next_width(ui_pct(0.5f, 1));
+							ui_next_height(ui_pct(1, 1));
+							ui_next_vert_gradient(top_color, top_color);
+							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+															  str8_lit("OverlayBox"));
+						} break;
+						
+						case HoverAxis_Y:
+						{
+							container->layout_style.child_layout_axis = Axis2_Y;
+							if (hover_side == Side_Max)
+							{
+								ui_spacer(ui_fill());
+							}
+							ui_next_height(ui_pct(0.5f, 1));
+							ui_next_width(ui_pct(1, 1));
+							ui_next_vert_gradient(top_color, top_color);
+							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+															  str8_lit("OverlayBox"));
+						} break;
+						
+						default: break;
+					}
+				}
+				
+			}
 		}
 		
 		UI_Comm content_box_comm = ui_comm_from_box(content_box);
@@ -753,15 +955,88 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
-
+		
+		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
+		
+		ui_ctx_menu(my_ctx_menu)
+			ui_width(ui_em(4, 1))
+		{
+			if (ui_button(str8_lit("Test")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test2")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			if (ui_button(str8_lit("Test3")).pressed)
+			{
+				printf("Hello world!");
+			}
+		}
+		
+		UI_Key my_ctx_menu2 = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu2"));
+		
+		ui_ctx_menu(my_ctx_menu2)
+			ui_width(ui_em(4, 1))
+		{
+			if (ui_button(str8_lit("Test5")).pressed)
+			{
+				printf("Hello world!");
+			}
+			
+			ui_row()
+			{
+				if (ui_button(str8_lit("Test52")).pressed)
+				{
+					printf("Hello world!");
+				}
+				if (ui_button(str8_lit("Test5251")).pressed)
+				{
+					printf("Hello world2!");
+				}
+			}
+			if (ui_button(str8_lit("Test53")).pressed)
+			{
+				printf("Hello world!");
+			}
+		}
+		
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
 		ui_next_width(ui_fill());
 		ui_corner_radius(0)
 			ui_softness(0)
 			ui_row()
-		{
-			ui_button(str8_lit("File"));
-			ui_button(str8_lit("Edit"));
+			{
+			UI_Comm comm = ui_button(str8_lit("File"));
+			
+			if (comm.hovering)
+			{
+				if (ui_ctx_menu_is_open())
+				{
+					ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
+				}
+			}
+			if (comm.pressed )
+			{
+				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
+			}
+			
+			UI_Comm comm2 = ui_button(str8_lit("Edit"));
+			
+			if (comm2.hovering)
+			{
+				if (ui_ctx_menu_is_open())
+				{
+					ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
+				}
+			}
+			if (comm2.pressed )
+			{
+				ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
+			}
 			ui_button(str8_lit("View"));
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
@@ -796,7 +1071,16 @@ os_main(Str8List arguments)
 				data->tab = app_state->drag_tab;
 			}
 		}
-
+		
+		ui_next_relative_pos(Axis2_X, 500);
+		ui_next_relative_pos(Axis2_Y, 500);
+		UI_Box *box = ui_box_make(UI_BoxFlag_FloatingPos,
+								  str8_lit(""));
+		ui_parent(box)
+		{
+			//ui_panel_draw_debug(app_state->root_panel);
+		}
+		
 		ui_end();
 
 		for (U64 i = 0; i < app_state->cmd_buffer.pos; ++i)

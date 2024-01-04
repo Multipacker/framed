@@ -311,7 +311,6 @@ ui_ctx_menu_begin(UI_Key key)
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
 	ui_push_clip_rect(&g_ui_ctx->root->rect, 0);
 
-
 	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
 	ui_column_begin();
 
@@ -1174,8 +1173,6 @@ ui_comm_from_box(UI_Box *box)
 						{
 							case Gfx_Key_MouseLeft:
 							{
-								// TODO(hampus): Do we want UI_BoxFlag_Clickable to
-								// work for release as well?
 								result.released = true;
 								dll_remove(event_list->first, event_list->last, node);
 								if (ui_key_match(box->key, g_ui_ctx->prev_active_key))
