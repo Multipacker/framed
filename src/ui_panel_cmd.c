@@ -153,17 +153,16 @@ UI_CMD(panel_split_and_attach)
 	second->parent = new_parent;
 	
 	Tab *tab = data->tab;
+	
+	dll_push_back(second->tab_group.first, second->tab_group.last, tab);
+	tab->panel = second;
+	second->tab_group.active_tab = tab;
 	if (data->left_top)
 	{
-		dll_push_back(first->tab_group.first, first->tab_group.last, tab);
-		tab->panel = first;
-		first->tab_group.active_tab = tab;
-	}
-	else
-	{
-		dll_push_back(second->tab_group.first, second->tab_group.last, tab);
-		tab->panel = second;
-		second->tab_group.active_tab = tab;
+		second->next = first;
+		first->prev= second;
+		new_parent->first = second;
+		new_parent->last = first;
 	}
 }
 

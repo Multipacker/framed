@@ -6,8 +6,9 @@
 // [ ] - Scroll tabs horizontally if there are too many to fit
 // [ ] - Reorder tabs
 // [ ] - Highlighting of the active panel
-
-
+// [ ] - Creating a new split on left or top should not combine the tabs
+// [ ] - Background on tooltip
+ 
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
