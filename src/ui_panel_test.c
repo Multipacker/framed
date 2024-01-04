@@ -313,7 +313,7 @@ ui_tab_button(Tab *tab)
 	Vec4F32 color = ui_tab_is_active(tab) ? v4f32(0.4f, 0.4f, 0.4f, 1.0f) : v4f32(0.2f, 0.2f, 0.2f, 1.0f);
 
 	ui_next_color(color);
-	ui_next_vert_corner_radius(ui_top_font_size() * 0.5f, 0);
+	ui_next_vert_corner_radius((F32) ui_top_font_size() * 0.5f, 0);
 	ui_next_child_layout_axis(Axis2_X);
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
