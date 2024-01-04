@@ -287,6 +287,7 @@ ui_init(Void)
 internal Void
 ui_tooltip_begin(Void)
 {
+	ui_push_clip_rect(&g_ui_ctx->root->rect, 0);
 	ui_push_parent(g_ui_ctx->tooltip_root);
 }
 
@@ -294,6 +295,7 @@ internal Void
 ui_tooltip_end(Void)
 {
 	ui_pop_parent();
+	ui_pop_clip_rect();
 }
 
 internal B32
