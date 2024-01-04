@@ -275,7 +275,7 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				U64 num_glyphs_to_load = 128;
 				font->font_atlas_regions = push_array(font->arena, R_FontAtlasRegion, num_glyphs_to_load+1);
 				font->glyphs             = push_array(font->arena, R_Glyph, (U64) face->num_glyphs);
-				font->kerning_pairs      = push_array(font->arena, R_KerningPair, (U64) (face->num_glyphs*face->num_glyphs));
+				font->kerning_pairs      = push_array_zero(font->arena, R_KerningPair, (U64) (face->num_glyphs*face->num_glyphs));
 				font->num_glyphs         = (U32) face->num_glyphs;
 				
 				Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
