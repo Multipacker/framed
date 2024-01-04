@@ -1054,7 +1054,7 @@ ui_end(Void)
 		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
 		{
 			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
-			if (!anchor)
+			if (anchor)
 			{
 			 anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
 			}
