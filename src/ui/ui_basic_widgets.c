@@ -138,15 +138,11 @@ ui_push_scrollable_region(Str8 string)
 									  UI_BoxFlag_DrawBackground |
 									  UI_BoxFlag_DrawBorder,
 									  string);
-	UI_Comm comm = ui_comm_from_box(view_region);
 	ui_push_parent(view_region);
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
 	UI_Box *container = ui_box_make(smooth_scroll ? UI_BoxFlag_AnimatePos : 0,
 									str8_lit("ScrollContainer"));
-	container->scroll.y += (F32)(comm.scroll.y * g_ui_ctx->dt * 5000.0);
-	container->scroll.y = f32_clamp(0, container->scroll.y,
-									container->target_size.v[Axis2_Y] - view_region->target_size.v[Axis2_Y]);
 	ui_push_parent(container);
 
 	UI_ScrollabelRegion result;
@@ -167,8 +163,13 @@ internal Void
 ui_pop_scrollable_region(Void)
 {
 	ui_pop_string();
-	ui_pop_parent();
-	ui_pop_parent();
+	UI_Box *container   = ui_pop_parent();
+	UI_Box *view_region = ui_pop_parent();
+
+	UI_Comm comm = ui_comm_from_box(view_region);
+	container->scroll.y += (F32)(comm.scroll.y * g_ui_ctx->dt * 5000.0);
+	container->scroll.y = f32_clamp(0, container->scroll.y,
+									container->target_size.v[Axis2_Y] - view_region->target_size.v[Axis2_Y]);
 }
 
 internal Void
