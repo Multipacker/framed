@@ -131,13 +131,13 @@ render_init(Gfx_Context *gfx)
 
 	os_semaphore_create(&renderer->font_loader_semaphore, 0);
 	os_mutex_create(&renderer->font_atlas_mutex);
-	
+
 	for (U32 i = 0; i < 4; ++i)
 	{
 		R_FontLoaderThreadData *data = push_struct( renderer->permanent_arena, R_FontLoaderThreadData);
 		data->id = i;
 		data->renderer = renderer;
-		data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i); 
+		data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
 	os_thread_create(render_font_stream_thread, data);
 	}
 
