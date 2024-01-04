@@ -1500,7 +1500,7 @@ ui_pop_parent(Void)
 		ui_pop_clip_rect();
 	}
 	stack_pop(g_ui_ctx->parent_stack);
-	return(ui_top_parent());
+	return(parent);
 }
 
 internal UI_Key
