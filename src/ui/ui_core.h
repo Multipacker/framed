@@ -204,9 +204,6 @@ struct UI_Box
 
 	UI_BoxFlags flags;
 	Str8        string;
-#if !BUILD_MODE_RELEASE
-	Str8        debug_string;
-#endif
 
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
@@ -306,7 +303,12 @@ struct UI_Context
 	
 	UI_Key active_key;
 	UI_Key hot_key;
-
+	
+	
+	// NOTE(hampus): We only have this to for the
+	// "clicked" member in UI_Comm
+	UI_Key prev_active_key;
+	
 	Gfx_EventList *event_list;
 	R_Context     *renderer;
 

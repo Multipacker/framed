@@ -310,8 +310,8 @@ ui_ctx_menu_begin(UI_Key key)
 
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
 	ui_push_clip_rect(&g_ui_ctx->root->rect, 0);
-	
-	
+
+
 	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
 	ui_column_begin();
 
@@ -356,7 +356,9 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->renderer = renderer;
 	g_ui_ctx->event_list = event_list;
 	g_ui_ctx->dt = dt;
-
+	
+	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
+	
 	g_ui_ctx->mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	B32 left_mouse_released = false;
@@ -450,8 +452,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 20);
-	// TODO(hampus): Make this EM
+	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
 	text_style->padding.v[Axis2_X] = (F32)ui_top_font_size();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
@@ -462,12 +463,11 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	rect_style->color[Corner_TopRight]    = color;
 	rect_style->color[Corner_BottomLeft]  = color;
 	rect_style->color[Corner_BottomRight] = color;
-	rect_style->border_color     = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
-	rect_style->border_thickness = 1;
-	// TODO(hampus): Make this EM
-	F32 radius = (F32)ui_top_font_size() * 0.2f;
-	rect_style->radies           = v4f32(radius, radius, radius, radius);
-	rect_style->softness         = 1;
+	rect_style->border_color              = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
+	rect_style->border_thickness          = 1;
+	F32 radius                            = (F32)ui_top_font_size() * 0.2f;
+	rect_style->radies                    = v4f32(radius, radius, radius, radius);
+	rect_style->softness                  = 1;
 
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	Vec2F32 max_clip;
@@ -476,20 +476,23 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
 	clip_rect->max = max_clip;
+
 	ui_push_clip_rect(clip_rect, false);
+	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
 
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
-	g_ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
+	g_ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX | 
+								 UI_BoxFlag_OverflowY,
 								 str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
-	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
 
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
-	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY,
-									  str8_lit("NormalRoot"));
+	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX | 
+										UI_BoxFlag_OverflowY,
+										str8_lit("NormalRoot"));
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
 	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
@@ -814,7 +817,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 
 	root->rect.min.v[axis] = root->calc_pos.v[axis];
 	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size.v[axis];
-	
+
 	root->rect.min.v[axis] = f32_floor(root->rect.min.v[axis]);
 	root->rect.max.v[axis] = f32_floor(root->rect.max.v[axis]);
 
@@ -1038,15 +1041,15 @@ ui_draw(UI_Box *root)
 internal Void
 ui_end(Void)
 {
-	// NOTE(hampus): Pop normal root
+	// NOTE(hampus): Normal root
 	ui_pop_parent();
 
+	// NOTE(hampus): Master root
+	ui_pop_parent();
+
+	// NOTE(hampus): Root clip rect
 	ui_pop_clip_rect();
-	ui_pop_seed();
-
-	// NOTE(hampus): Pop master root
-	ui_pop_parent();
-
+	
 	if (ui_ctx_menu_is_open())
 	{
 		Vec2F32 anchor_pos = {0};
@@ -1088,7 +1091,7 @@ ui_comm_from_box(UI_Box *box)
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->rect.min);
 
 	B32 gather_input = true;
-	
+
 	RectF32 hover_region = box->rect;
 	for (UI_Box *parent = box->parent;
 		 parent != 0;
@@ -1101,7 +1104,7 @@ ui_comm_from_box(UI_Box *box)
 			hover_region = rectf32_intersect_rectf32(hover_region, parent->rect);
 		}
 	}
-	
+
 	if (ui_ctx_menu_is_open())
 	{
 		// NOTE(hampus): Check to see if this box is a
@@ -1140,14 +1143,23 @@ ui_comm_from_box(UI_Box *box)
 
 	if (gather_input)
 	{
-			if (ui_key_is_null(g_ui_ctx->hot_key) && mouse_over)
-			{
+		if (ui_box_is_active(box))
+		{
+			result.dragging = true;
+			result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
+		}
+		
+		if (ui_key_is_null(g_ui_ctx->hot_key) && mouse_over)
+		{
 			g_ui_ctx->hot_key = box->key;
 		}
 
 		if (mouse_over)
 		{
+			if (ui_box_is_hot(box))
+			{
 			result.hovering = true;
+			}
 
 			Gfx_EventList *event_list = g_ui_ctx->event_list;
 			for (Gfx_Event *node = event_list->first;
@@ -1164,9 +1176,9 @@ ui_comm_from_box(UI_Box *box)
 							{
 								// TODO(hampus): Do we want UI_BoxFlag_Clickable to
 								// work for release as well?
-									result.released = true;
+								result.released = true;
 								dll_remove(event_list->first, event_list->last, node);
-								if (ui_box_is_active(box))
+								if (ui_key_match(box->key, g_ui_ctx->prev_active_key))
 								{
 									result.clicked = true;
 								}
@@ -1240,12 +1252,6 @@ ui_comm_from_box(UI_Box *box)
 				}
 			}
 		}
-	}
-
-	if (ui_box_is_active(box))
-	{
-		result.dragging = true;
-		result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
 	}
 
 	return(result);
@@ -1390,9 +1396,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 		dll_push_back(parent->first, parent->last, result);
 	}
 
-#if !BUILD_MODE_RELEASE
-	result->debug_string = string;
-#endif
+	result->string = str8_copy(ui_frame_arena(), string);
 
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();
@@ -1457,7 +1461,7 @@ internal Void
 ui_box_equip_display_string(UI_Box *box, Str8 string)
 {
 	Str8 display_string = ui_get_display_part_from_string(string);
-	box->string = display_string;
+	box->string = str8_copy(ui_frame_arena(), display_string);
 }
 
 internal Void
@@ -1506,10 +1510,7 @@ internal UI_Key
 ui_top_seed(Void)
 {
 	UI_Key result = ui_key_null();
-	if (g_ui_ctx->seed_stack)
-	{
-		result = g_ui_ctx->seed_stack->key;
-	}
+	result = g_ui_ctx->seed_stack->key;
 	return(result);
 }
 
