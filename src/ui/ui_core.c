@@ -584,6 +584,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 		case UI_SizeKind_Pixels:
 		{
 			root->target_size.v[axis] = size.value;
+			root->target_size.v[axis] = f32_floor(root->target_size.v[axis]);
 		} break;
 
 		case UI_SizeKind_TextContent:
@@ -626,6 +627,7 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 
 		F32 parent_size = root->parent->target_size.v[axis];
 		root->target_size.v[axis] = parent_size * size.value;
+		root->target_size.v[axis] = f32_floor(root->target_size.v[axis]);
 	}
 
 	for (UI_Box *child = root->first;
@@ -671,6 +673,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 		}
 
 		root->target_size.v[axis] = children_total_size;
+		root->target_size.v[axis] = f32_floor(root->target_size.v[axis]);
 	}
 }
 
@@ -811,6 +814,9 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 
 	root->rect.min.v[axis] = root->calc_pos.v[axis];
 	root->rect.max.v[axis] = root->rect.min.v[axis] + root->calc_size.v[axis];
+	
+	root->rect.min.v[axis] = f32_floor(root->rect.min.v[axis]);
+	root->rect.max.v[axis] = f32_floor(root->rect.max.v[axis]);
 
 	for (UI_Box *child = root->first;
 		 child != 0;
@@ -1056,12 +1062,7 @@ ui_end(Void)
 	}
 
 	ui_layout(g_ui_ctx->root);
-	ui_draw(g_ui_ctx->normal_root);
-	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
-	{
-	ui_draw(g_ui_ctx->ctx_menu_root);
-	}
-
+	ui_draw(g_ui_ctx->root);
 	g_ui_ctx->prev_mouse_pos = g_ui_ctx->mouse_pos;
 	g_ui_ctx->parent_stack = 0;
 	g_ui_ctx->seed_stack = 0;
@@ -1517,7 +1518,6 @@ ui_push_seed(UI_Key key)
 {
 	UI_KeyStackNode *node = push_struct(ui_frame_arena(), UI_KeyStackNode);
 	node->key = key;
-	node->key.value += ui_top_seed().value;
 	stack_push(g_ui_ctx->seed_stack, node);
 	return(ui_top_seed());
 }
@@ -1532,7 +1532,7 @@ ui_pop_seed(Void)
 internal Void
 ui_push_string(Str8 string)
 {
-	ui_push_seed(ui_key_from_string(ui_key_null(), string));
+	ui_push_seed(ui_key_from_string(ui_top_seed(), string));
 }
 
 internal Void
