@@ -1,8 +1,7 @@
 // TODO(hampus):
-// [x] - Context menu
 
+// []  - Close context menu when clicking outside context menu
 // []  - Makes switching font & font size more robust
-// []  - Don't gather input from boxes outside clip
 // []  - Horizontal scrolling
 // []  - Context menu's inside other context menu's
 // []  - Death animations
@@ -1055,7 +1054,14 @@ ui_end(Void)
 		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
 		{
 			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
-			anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
+			if (!anchor)
+			{
+			 anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
+			}
+			else
+			{
+				ui_ctx_menu_close();
+			}
 		}
 
 		anchor_pos = v2f32_add_v2f32(anchor_pos, g_ui_ctx->anchor_offset);

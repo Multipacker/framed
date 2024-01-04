@@ -51,53 +51,45 @@ UI_CMD(panel_split)
 {
 	PanelSplit *data = (PanelSplit *)cmd->data;
 	
-	Panel *first     = data->panel;
 	Axis2 split_axis = data->axis;
 	
 	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
-	Panel *second     = ui_panel_alloc(app_state->perm_arena);
+	Panel *child0     = data->panel;
+	Panel *child1     = ui_panel_alloc(app_state->perm_arena);
 	
-	new_parent->percent_of_parent = first->percent_of_parent;
+	new_parent->sibling = child0->sibling;
 	
-	first->percent_of_parent = 0.5f;
-	second->percent_of_parent = 0.5f;
-	
-	new_parent->split_axis = split_axis;
-	
-	Panel *next = first->next;
-	Panel *prev = first->prev;
-	
-	new_parent->next = next;
-	
-	dll_push_back(new_parent->first, new_parent->last, first);
-	dll_push_back(new_parent->first, new_parent->last, second);
-	
-	new_parent->next = next;
-	new_parent->prev = prev;
-	new_parent->parent = first->parent;
-	
-	if (first->parent)
+	if (child0->sibling)
 	{
-		if (first == first->parent->first)
+		child0->sibling->sibling = new_parent;
+	}
+	
+	child0->sibling = child1;
+	child1->sibling = child0;
+	
+	new_parent->parent = child0->parent;
+	if (child0->parent)
+	{
+		if (child0 == child0->parent->children[0])
 		{
-			first->parent->first = new_parent;
-			first->parent->last = next;
-			next->prev = new_parent;
+			child0->parent->children[0] = new_parent;
 		}
 		else
 		{
-			first->parent->first = prev;
-			first->parent->last = new_parent;
-			prev->next = new_parent;
+			child0->parent->children[1] = new_parent;
 		}
 	}
-	else
-	{
-		app_state->root_panel = new_parent;
-	}
+	child0->parent = 0;
 	
-	first->parent = new_parent;
-	second->parent = new_parent;
+	new_parent->children[0] = child0;
+	new_parent->children[1] = child1;
+	
+	new_parent->percent_of_parent = child0->percent_of_parent;
+	
+	child0->percent_of_parent = 0.5f;
+	child1->percent_of_parent = 0.5f;
+	
+	new_parent->split_axis = split_axis;
 }
 
 UI_CMD(panel_split_and_attach)

@@ -53,12 +53,12 @@ struct TabGroup
 typedef struct Panel Panel;
 struct Panel
 {
-	Panel *first;
-	Panel *last;
-	Panel *next;
-	Panel *prev;
+	Panel *children[Side_Max];
+	Panel *sibling;
 	Panel *parent;
-
+	
+	U64 num_children;
+	
 	TabGroup tab_group;
 
 	Axis2 split_axis;
@@ -414,6 +414,7 @@ ui_tab_button(Tab *tab)
 	}
 	ui_pop_string();
 }
+
 typedef enum HoverAxis HoverAxis;
 enum HoverAxis
 {
@@ -855,7 +856,6 @@ ui_panel(Panel *root)
 						default: break;
 					}
 				}
-				
 			}
 		}
 		
