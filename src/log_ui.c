@@ -162,32 +162,18 @@ ui_logger(Void)
 
 			ui_spacer(ui_em(0.4f, 1));
 
-			UI_Key thread_menu_key = ui_key_from_string(ui_key_null(), str8_lit("ThreadMenu"));
+			ui_text(str8_lit("Threads:"));
 
-			ui_ctx_menu(thread_menu_key)
+			for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
 			{
-				for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+				ui_spacer(ui_em(0.4f, 1));
+				ui_row()
 				{
+					ui_spacer(ui_em(0.8f, 1));
+					ui_check(&thread->show, thread->name);
 					ui_spacer(ui_em(0.4f, 1));
-					ui_row()
-					{
-						ui_spacer(ui_em(0.8f, 1));
-						ui_check(&thread->show, thread->name);
-						ui_spacer(ui_em(0.4f, 1));
-						ui_text(thread->name);
-					}
+					ui_text(thread->name);
 				}
-			}
-
-			UI_Box *thread_menu = ui_box_make(
-				UI_BoxFlag_DrawBackground | UI_BoxFlag_Clickable | UI_BoxFlag_DrawText,
-				str8_lit("Threads:")
-			);
-			ui_box_equip_display_string(thread_menu, str8_lit("Threads:"));
-			UI_Comm thread_menu_comm = ui_comm_from_box(thread_menu);
-			if (thread_menu_comm.clicked)
-			{
-				ui_ctx_menu_open(thread_menu_comm.box->key, v2f32(0, 0), thread_menu_key);
 			}
 		}
 		ui_pop_scrollable_region();
