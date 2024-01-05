@@ -90,6 +90,10 @@ typedef struct TabDelete TabDelete;
 struct TabDelete
 {
 	Tab *tab;
+	
+	// NOTE(hampus): Set this to true if you don't want
+	// to close the panel if you close the last tab
+	B32 keep_open_if_last;
 };
 
 typedef struct TabAttach TabAttach;

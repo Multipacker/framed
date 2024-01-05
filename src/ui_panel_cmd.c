@@ -1,3 +1,5 @@
+UI_CMD(panel_close);
+
 UI_CMD(tab_delete)
 {
 	TabDelete *data = (TabDelete *)params;
@@ -23,6 +25,14 @@ UI_CMD(tab_delete)
 	tab->next = 0;
 	tab->prev = 0;
 	tab->panel = 0;
+	if (panel->tab_group.first == 0)
+	{
+		PanelClose close = 
+		{
+			.panel = panel,
+		};
+		panel_close(&close);
+	}
 }
 
 UI_CMD(tab_attach)
