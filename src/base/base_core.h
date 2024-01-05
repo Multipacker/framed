@@ -323,6 +323,7 @@ enum Axis4
 	Axis4_COUNT,
 };
 
+#define side_flip(side) (!(side))
 typedef enum Side Side;
 enum Side
 {
