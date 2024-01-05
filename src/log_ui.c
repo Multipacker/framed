@@ -138,7 +138,27 @@ ui_logger(Void)
 			// NOTE(simon): Skip the trailing new-line.
 			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
 			ui_next_text_color(color);
-			ui_text(message);
+			UI_Box *log_entry = ui_box_make(
+				UI_BoxFlag_DrawBackground |
+				UI_BoxFlag_DrawText |
+				UI_BoxFlag_HotAnimation |
+				UI_BoxFlag_ActiveAnimation |
+				UI_BoxFlag_Clickable,
+				str8_pushf(ui_frame_arena(), "LogEntry%p", entry)
+			);
+			ui_box_equip_display_string(log_entry, message);
+			UI_Comm entry_comm = ui_comm_from_box(log_entry);
+
+			if (entry_comm.clicked)
+			{
+				arena_scratch(0, 0)
+				{
+					Str8List arguments = { 0 };
+					str8_list_push(scratch, &arguments, str8_lit("-g"));
+					str8_list_push(scratch, &arguments, str8_pushf(scratch, "%s:%"PRIU32, entry->file, entry->line));
+					os_run(str8_lit("code"), arguments);
+				}
+			}
 		}
 
 		ui_pop_font();
