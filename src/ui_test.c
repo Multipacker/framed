@@ -206,7 +206,6 @@ os_main(Str8List arguments)
 			ui_text(str8_lit("Show Atlas"));
 		}
 
-
 		if (show_atlas)
 		{
 			ui_next_width(ui_em(20, 1));

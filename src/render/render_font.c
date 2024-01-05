@@ -54,6 +54,22 @@ render_key_from_font(Str8 path, U32 font_size)
 	return(result);
 }
 
+internal R_KerningPair
+render_kern_pair_from_glyph_indicies(R_Font *font, U32 index0, U32 index1)
+{
+	U64 pair = (U64) index0 << 32 | (U64) index1;
+	U64 mask = font->kern_map_size - 1;
+	// NOTE(simon): Pseudo fibonacci hashing.
+	U64 index = (pair * 11400714819323198485LLU) & mask;
+	while (font->kern_pairs[index].pair != pair && font->kern_pairs[index].value != 0.0f)
+	{
+		index = (index + 1) & mask;
+	}
+
+	R_KerningPair result = font->kern_pairs[index];
+	return(result);
+}
+
 internal R_FontAtlas *
 render_make_font_atlas(R_Context *renderer, Vec2U32 dim)
 {
@@ -506,8 +522,8 @@ render_text_internal(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, 
 			if ((i+1) < text.size)
 			{
 				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
-				min.x += kerning_pair->value;
+				R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+				min.x += kerning_pair.value;
 			}
 
 			render_glyph(renderer, min, index, font, color);
@@ -548,8 +564,8 @@ render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey fon
 				if ((i+1) < text.size)
 				{
 					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-					R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
-					min.x += kerning_pair->value;
+					R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+					min.x += kerning_pair.value;
 				}
 
 				render_glyph(renderer, min, index, font, color);
@@ -607,8 +623,8 @@ render_measure_text(R_Font *font, Str8 text)
 			if ((U64)(i+1) < text.size)
 			{
 				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				R_KerningPair *kerning_pair = font->kerning_pairs + next_index*128 + index;
-				result.x += kerning_pair->value;
+				R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+				result.x += kerning_pair.value;
 			}
 		}
 

@@ -247,7 +247,7 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 {
 	assert(font);
 	Arena_Temporary scratch = get_scratch(0, 0);
-	
+
 	FT_Library ft;
 	// NOTE(hampus): 0 indicates a success in freetype, otherwise error
 	Str8 error = { 0 };
@@ -275,7 +275,6 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				U64 num_glyphs_to_load = 128;
 				font->font_atlas_regions = push_array(font->arena, R_FontAtlasRegion, num_glyphs_to_load+1);
 				font->glyphs             = push_array(font->arena, R_Glyph, (U64) face->num_glyphs);
-				font->kerning_pairs      = push_array_zero(font->arena, R_KerningPair, (U64) (face->num_glyphs*face->num_glyphs));
 				font->num_glyphs         = (U32) face->num_glyphs;
 				
 				Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
@@ -330,23 +329,70 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				
 				if (font->has_kerning)
 				{
-					// NOTE(hampus): Get all the kerning pairs
-					U32 index0 = 0;
-					U32 c0 = (U32) FT_Get_First_Char(face, &index0);
-					for (U32 i = 0; i < 128; ++i)
+					// NOTE(simon): Count the number of kerning pairs.
+					U64 kerning_pairs = 0;
+					for (
+						U32 index0, char0 = (U32) FT_Get_First_Char(face, &index0);
+						index0 != 0;
+						char0 = (U32) FT_Get_Next_Char(face, char0, &index0)
+					)
 					{
-						U32 index1 = 0;
-						U32 c1 = (U32) FT_Get_First_Char(face, &index1);
-						for (U32 j = 0; j < 128; ++j)
+						for (
+							U32 index1, char1 = (U32) FT_Get_First_Char(face, &index1);
+							index1 != 0;
+							char1 = (U32) FT_Get_Next_Char(face, char1, &index1)
+						)
 						{
-							c1 = (U32) FT_Get_Next_Char(face, c1, &index1);
 							FT_Vector kerning;
 							FT_Get_Kerning(face, index0, index1, FT_KERNING_DEFAULT, &kerning);
-							R_KerningPair *kerning_pair = font->kerning_pairs + c0*128 + c1;
-							kerning_pair->value = (F32) (kerning.x >> 6);
+							if (kerning.x)
+							{
+								++kerning_pairs;
+							}
 						}
-						c0 = (U32) FT_Get_Next_Char(face, c0, &index0);
 					}
+
+					// NOTE(simon): Open addressed hash table with at least 75% fill.
+					font->kern_map_size = u64_ceil_to_power_of_2((kerning_pairs * 4 + 2) / 3);
+					font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
+
+					for (
+						U32 index0 = 0, char0 = (U32) FT_Get_First_Char(face, &index0);
+						index0 != 0;
+						char0 = (U32) FT_Get_Next_Char(face, char0, &index0)
+					)
+					{
+						for (
+							U32 index1 = 0, char1 = (U32) FT_Get_First_Char(face, &index1);
+							index1 != 0;
+							char1 = (U32) FT_Get_Next_Char(face, char1, &index1)
+						)
+						{
+							FT_Vector kerning = { 0 };
+							FT_Get_Kerning(face, index0, index1, FT_KERNING_DEFAULT, &kerning);
+
+							if (kerning.x)
+							{
+								U64 pair = (U64) index0 << 32 | (U64) index1;
+								U64 mask = font->kern_map_size - 1;
+								// NOTE(simon): Pseudo fibonacci hashing.
+								U64 index = (pair * 11400714819323198485LLU) & mask;
+								while (font->kern_pairs[index].value != 0.0f)
+								{
+									index = (index + 1) & mask;
+								}
+
+								font->kern_pairs[index].pair = pair;
+								font->kern_pairs[index].value = (F32) kerning.x / 65536.0f;
+							}
+						}
+					}
+				}
+				else
+				{
+					// NOTE(simon): We need a map of size 1 in order to be able to do lookups into it.
+					font->kern_map_size = 1;
+					font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
 				}
 				
 				FT_Done_Face(face);

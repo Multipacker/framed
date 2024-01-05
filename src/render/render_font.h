@@ -78,6 +78,7 @@ struct R_GlyphBucket
 typedef struct R_KerningPair R_KerningPair;
 struct R_KerningPair
 {
+	U64 pair;
 	F32 value;
 };
 
@@ -86,7 +87,7 @@ enum R_FontState
 {
 	R_FontState_Unloaded,
 	
-		R_FontState_InQueue,
+	R_FontState_InQueue,
 	R_FontState_Loading,
 	R_FontState_Loaded,
 };
@@ -108,7 +109,9 @@ struct R_Font
 
 	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
 	R_Glyph *glyphs;
-	R_KerningPair *kerning_pairs;
+
+	U64 kern_map_size;
+	R_KerningPair *kern_pairs;
 
 	U32 num_font_atlas_regions;
 	R_FontAtlasRegion *font_atlas_regions;
