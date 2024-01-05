@@ -106,14 +106,17 @@ UI_CMD(panel_split)
 		app_state->root_panel = new_parent;
 	}
 	
-	Tab *tab = ui_tab_alloc(app_state->perm_arena);
-	TabAttach attach =
+	if (!data->skip_default_tab)
 	{
-		.tab = tab,
-		.panel = child1,
-		.set_active = true,
-	};
-	tab_attach(&attach);
+		Tab *tab = ui_tab_alloc(app_state->perm_arena);
+		TabAttach attach =
+		{
+			.tab = tab,
+			.panel = child1,
+			.set_active = true,
+		};
+		tab_attach(&attach);
+	}
 }
 
 UI_CMD(panel_split_and_attach)
@@ -125,6 +128,7 @@ UI_CMD(panel_split_and_attach)
 		.panel      = data->panel,
 		.panel_side = data->panel_side,
 		.axis       = data->axis,
+		.skip_default_tab = true ,
 	};
 
 	panel_split(&split_data);

@@ -110,6 +110,7 @@ struct PanelSplit
 	Panel *panel;
 	Axis2  axis;
 	Side   panel_side; // Which side to put this panel on
+	B32    skip_default_tab;
 };
 
 typedef struct PanelSplitAndAttach PanelSplitAndAttach;
