@@ -101,7 +101,7 @@ internal Void os_mutex_create(OS_Mutex *mutex);
 internal Void os_mutex_take(OS_Mutex *mutex);
 internal Void os_mutex_release(OS_Mutex *mutex);
 
-internal Void os_run(Str8 program, Str8List arguments);
+internal B32 os_run(Str8 program, Str8List arguments);
 
 internal Void os_thread_create(ThreadProc *proc, Void *data);
 

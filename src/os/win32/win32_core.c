@@ -712,9 +712,10 @@ os_thread_create(ThreadProc *proc, Void *data)
 // Windows. It is untested and I have no idea if it will work. Forgive my
 // crimes and please check that this is correct before using it.
 // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa
-internal Void
+internal B32
 os_run(Str8 program, Str8List arguments)
 {
+	B32 success = true;
 	log_warning("Running untested Windows code written by a Linux person");
 
 	/*
@@ -735,7 +736,7 @@ os_run(Str8 program, Str8List arguments)
 		startup_info.dwFlags = 0;
 
 		PROCESS_INFORMATION *process_information = { 0 };
-		B32 success = CreateProcessA(
+		B32 could_launch = CreateProcessA(
 			cstr16_from_str8(scratch, program).data,
 			cstr16_from_str8(scratch, command_line).data,
 			0,
@@ -748,7 +749,9 @@ os_run(Str8 program, Str8List arguments)
 			&process_information
 		);
 
-		if (success)
+		success = could_launch;
+
+		if (could_launch)
 		{
 			CloseHandle(process_information.hProcess);
 			CloseHandle(process_information.hThread);
@@ -759,6 +762,7 @@ os_run(Str8 program, Str8List arguments)
 		}
 	}
 	*/
+	return(success);
 }
 
 internal S32

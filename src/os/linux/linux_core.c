@@ -917,9 +917,11 @@ os_thread_create(ThreadProc *proc, Void *data)
 	pthread_create(&thread, 0, linux_thread_proc, arguments);
 }
 
-internal Void
+internal B32
 os_run(Str8 program, Str8List arguments)
 {
+	B32 success = true;
+
 	arena_scratch(0, 0)
 	{
 		// NOTE(simon): argv must begin with the program name and end with a null-pointer.
@@ -935,6 +937,7 @@ os_run(Str8 program, Str8List arguments)
 		if (child_pid)
 		{
 			// TODO(simon): Error could not fork
+			success = false;
 		}
 		else if (child_pid == 0)
 		{
@@ -950,6 +953,8 @@ os_run(Str8 program, Str8List arguments)
 			// NOTE(simon): Parent
 		}
 	}
+
+	return(success);
 }
 
 int
