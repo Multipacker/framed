@@ -87,12 +87,10 @@ UI_CMD(panel_split)
 		children[side]->sibling = children[side_flip(side)];
 		children[side]->parent = new_parent;
 		children[side]->percent_of_parent = 0.5f;
+		new_parent->children[side] = children[side];
 		memory_zero_array(children[side]->children);
 	}
-
-	new_parent->children[data->panel_side] = children[Side_Min];
-	new_parent->children[side_flip(data->panel_side)] = children[Side_Max];
-
+	
 	if (child0 == app_state->root_panel)
 	{
 		app_state->root_panel = new_parent;
@@ -111,7 +109,12 @@ UI_CMD(panel_split_and_attach)
 	};
 
 	panel_split(&split_data);
-
+	
+	if (data->panel_side == Side_Min)
+	{
+		swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+	}
+	
 	Panel *panel = data->panel->parent->children[data->panel_side];
 
 	TabAttach tab_attach_data =
