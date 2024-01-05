@@ -153,7 +153,6 @@ os_main(Str8List arguments)
 					{
 						show_log = !show_log;
 					}
-					log_info("Key press!");
 				} break;
 
 				default:
