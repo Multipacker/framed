@@ -140,7 +140,7 @@ render_init(Gfx_Context *gfx)
 		data->id = i;
 		data->renderer = renderer;
 		data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
-	os_thread_create(render_font_stream_thread, data);
+		os_thread_create(render_font_stream_thread, data);
 	}
 
 	return(renderer);

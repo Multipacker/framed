@@ -98,7 +98,7 @@ internal R_BackendContext *
 render_backend_init(R_Context *renderer)
 {
 	// NOTE(simon): The alignment is needed for atomic access within the struct.
-	arena_align(renderer->permanent_arena, 3);
+	arena_align(renderer->permanent_arena, 8);
     renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
     R_BackendContext *backend = renderer->backend;
 	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
