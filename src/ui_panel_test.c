@@ -974,7 +974,16 @@ os_main(Str8List arguments)
 
 	app_state->root_panel = push_struct(app_state->perm_arena, Panel);
 	app_state->root_panel->string = str8_pushf(app_state->perm_arena, "RootPanel");
-
+	
+	Tab *tab = ui_tab_alloc(app_state->perm_arena);
+	TabAttach attach =
+	{
+		.tab = tab,
+		.panel = app_state->root_panel,
+		.set_active = true,
+	};
+	tab_attach(&attach);
+	
 	app_state->frame_index = 1;
 
 	gfx_show_window(&gfx);

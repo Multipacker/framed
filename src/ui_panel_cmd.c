@@ -105,6 +105,15 @@ UI_CMD(panel_split)
 	{
 		app_state->root_panel = new_parent;
 	}
+	
+	Tab *tab = ui_tab_alloc(app_state->perm_arena);
+	TabAttach attach =
+	{
+		.tab = tab,
+		.panel = child1,
+		.set_active = true,
+	};
+	tab_attach(&attach);
 }
 
 UI_CMD(panel_split_and_attach)
