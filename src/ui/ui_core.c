@@ -1,6 +1,8 @@
 // TODO(hampus):
 
+// []  - Look into the 1-frame rendering glitch when dropping a tab
 // []  - Close context menu when clicking outside context menu
+// []  - Make tooltip stay on the first position it got
 // []  - Makes switching font & font size more robust
 // []  - Horizontal scrolling
 // []  - Context menu's inside other context menu's
@@ -1060,6 +1062,8 @@ ui_end(Void)
 			}
 			else
 			{
+				// TODO(hampus): This doesn't solve the problem
+				// if the context menu doesn't have an anchor
 				ui_ctx_menu_close();
 			}
 		}
