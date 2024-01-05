@@ -275,7 +275,7 @@ typedef Void VoidFunction(Void);
 #define stmnt(x) do {x} while(0)
 
 #define member(t, m)        (((t*)0)->m)
-#define member_offset(t, m) int_from_ptr(&member(t, m))
+#define member_offset(t, m) offsetof(t, m)
 
 #define kilobytes(n) ((n)*1024LL)
 #define megabytes(n) (1024LL*kilobytes(n))
