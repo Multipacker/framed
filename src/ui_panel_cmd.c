@@ -1,7 +1,7 @@
-			   UI_CMD(tab_delete)
+UI_CMD(tab_delete)
 {
-	TabDelete *data = (TabDelete *)cmd->data;
-	
+	TabDelete *data = (TabDelete *)params;
+
 	Tab *tab = data->tab;
 	Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
@@ -27,8 +27,8 @@
 
 UI_CMD(tab_attach)
 {
-	TabAttach *data = (TabAttach *)cmd->data;
-	
+	TabAttach *data = (TabAttach *)params;
+
 	Panel *panel = data->panel;
 	Tab *tab = data->tab;
 	dll_push_back(panel->tab_group.first, panel->tab_group.last, tab);
@@ -36,12 +36,12 @@ UI_CMD(tab_attach)
 	if (data->set_active)
 	{
 		panel->tab_group.active_tab = tab;
-}
 	}
+}
 
 UI_CMD(panel_set_active_tab)
 {
-	PanelSetActiveTab *data = (PanelSetActiveTab *)cmd->data;
+	PanelSetActiveTab *data = (PanelSetActiveTab *)params;
 	Panel *panel = data->panel;
 	Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
@@ -49,166 +49,110 @@ UI_CMD(panel_set_active_tab)
 
 UI_CMD(panel_split)
 {
-	PanelSplit *data = (PanelSplit *)cmd->data;
-	
-	Axis2 split_axis = data->axis;
-	
-	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+	// NOTE(hampus): We will create a new parent that will
+	// have this panel and a new child as children
+
+	PanelSplit *data  = (PanelSplit *)params;
+	Axis2 split_axis  = data->axis;
 	Panel *child0     = data->panel;
 	Panel *child1     = ui_panel_alloc(app_state->perm_arena);
-	
-	new_parent->sibling = child0->sibling;
-	
+	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+	new_parent->percent_of_parent = child0->percent_of_parent;
+	new_parent->split_axis = split_axis;
+	Panel *children[Side_COUNT] = {child0, child1};
+
+	// NOTE(hampus): Hook the new parent as a sibling
+	// to the panel's sibling
 	if (child0->sibling)
 	{
 		child0->sibling->sibling = new_parent;
 	}
-	
-	child0->sibling = child1;
-	child1->sibling = child0;
-	
-	new_parent->parent = child0->parent;
+	new_parent->sibling = child0->sibling;
+
+	// NOTE(hampus): Hook the new parent as a child
+	// to the panels parent
 	if (child0->parent)
 	{
-		if (child0 == child0->parent->children[0])
-		{
-			child0->parent->children[0] = new_parent;
-		}
-		else
-		{
-			child0->parent->children[1] = new_parent;
-		}
+		Side side = ui_get_panel_side(child0);
+		child0->parent->children[side] = new_parent;
 	}
-	child0->parent = 0;
-	
-	new_parent->children[0] = child0;
-	new_parent->children[1] = child1;
-	
-	new_parent->percent_of_parent = child0->percent_of_parent;
-	
-	child0->percent_of_parent = 0.5f;
-	child1->percent_of_parent = 0.5f;
-	
-	new_parent->split_axis = split_axis;
+	new_parent->parent = child0->parent;
+
+	// NOTE(hampus): Make the children siblings
+	// and hook them into the new parent
+	for (Side side = (Side)0;
+		 side < Side_COUNT;
+		 side++)
+	{
+		children[side]->sibling = children[side_flip(side)];
+		children[side]->parent = new_parent;
+		children[side]->percent_of_parent = 0.5f;
+		memory_zero_array(children[side]->children);
+	}
+
+	new_parent->children[data->panel_side] = children[Side_Min];
+	new_parent->children[side_flip(data->panel_side)] = children[Side_Max];
+
+	if (child0 == app_state->root_panel)
+	{
+		app_state->root_panel = new_parent;
+	}
 }
 
 UI_CMD(panel_split_and_attach)
 {
-	PanelSplitAndAttach *data = (PanelSplitAndAttach *)cmd->data;
-	
-	Panel *first     = data->panel;
-	Axis2 split_axis = data->axis;
-	
-	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
-	Panel *second     = ui_panel_alloc(app_state->perm_arena);
-	
-	new_parent->percent_of_parent = first->percent_of_parent;
-	
-	first->percent_of_parent = 0.5f;
-	second->percent_of_parent = 0.5f;
-	
-	new_parent->split_axis = split_axis;
-	
-	Panel *next = first->next;
-	Panel *prev = first->prev;
-	
-	new_parent->next = next;
-	
-	dll_push_back(new_parent->first, new_parent->last, first);
-	dll_push_back(new_parent->first, new_parent->last, second);
-	
-	new_parent->next = next;
-	new_parent->prev = prev;
-	new_parent->parent = first->parent;
-	
-	if (first->parent)
+	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
+
+	PanelSplit split_data =
 	{
-		if (first == first->parent->first)
-		{
-			first->parent->first = new_parent;
-			first->parent->last = next;
-			next->prev = new_parent;
-		}
-		else
-		{
-			first->parent->first = prev;
-			first->parent->last = new_parent;
-			prev->next = new_parent;
-		}
-	}
-	else
+		.panel      = data->panel,
+		.panel_side = data->panel_side,
+		.axis       = data->axis,
+	};
+
+	panel_split(&split_data);
+
+	Panel *panel = data->panel->parent->children[data->panel_side];
+
+	TabAttach tab_attach_data =
 	{
-		app_state->root_panel = new_parent;
-	}
-	
-	first->parent = new_parent;
-	second->parent = new_parent;
-	
-	Tab *tab = data->tab;
-	
-	dll_push_back(second->tab_group.first, second->tab_group.last, tab);
-	tab->panel = second;
-	second->tab_group.active_tab = tab;
-	if (data->left_top)
-	{
-		second->next = first;
-		first->prev= second;
-		new_parent->first = second;
-		new_parent->last = first;
-	}
+		.tab        = data->tab,
+		.panel      = panel,
+		.set_active = true,
+	};
+
+	tab_attach(&tab_attach_data);
 }
 
 UI_CMD(panel_close)
 {
-	PanelClose *data = (PanelClose *)cmd->data;
+	PanelClose *data = (PanelClose *)params;
 	Panel *root = data->panel;
 	if (root->parent)
 	{
-		B32 is_first = root->parent->first == root;
-		Panel *replacement = 0;
-		if (is_first)
-		{
-			replacement = root->next;
-		}
-		else
-		{
-			replacement = root->prev;
-		}
-		
+		B32 is_first       = root->parent->children[0] == root;
+		Panel *replacement = root->sibling;
 		if (root->parent->parent)
 		{
-			if (root->parent == root->parent->parent->first)
-			{
-				root->parent->parent->first = replacement;
-				root->parent->parent->last->prev = replacement;
-				replacement->next = root->parent->parent->last;
-				replacement->prev = 0;
-				replacement->percent_of_parent = 1.0f - replacement->next->percent_of_parent;
-			}
-			else
-			{
-				root->parent->parent->last = replacement;
-				root->parent->parent->first->next = replacement;
-				replacement->prev = root->parent->parent->first;
-				replacement->next = 0;
-				replacement->percent_of_parent = 1.0f - replacement->prev->percent_of_parent;
-			}
-			replacement->parent = root->parent->parent;
+			Side parent_side = ui_get_panel_side(root->parent);
+			Side flipped_parent_side = side_flip(parent_side);
+
+			root->parent->parent->children[parent_side] = replacement;
+			root->parent->parent->children[flipped_parent_side]->sibling = replacement;
+			replacement->sibling           = root->parent->parent->children[flipped_parent_side];
+			replacement->percent_of_parent = 1.0f - replacement->sibling->percent_of_parent;
+			replacement->parent            = root->parent->parent;
 		}
 		else if (root->parent)
 		{
-			// NOTE(hampus): We try to remove on of the root's children
-			if (is_first)
-			{
-				app_state->root_panel = root->next;
-			}
-			else
-			{
-				app_state->root_panel = root->prev;
-			}
-			app_state->root_panel->next = 0;
-			app_state->root_panel->prev = 0;
+			// NOTE(hampus): We closed one of the root's children
+			app_state->root_panel = replacement;
+			app_state->root_panel->sibling = 0;
 			app_state->root_panel->parent = 0;
 		}
 	}
+	else
+	{
+		// NOTE(hampus): We tried to remove the root, big nono
 	}
+}

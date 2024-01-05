@@ -20,11 +20,11 @@ set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -FC -Wall -WX %disabled_warnings% %additional_includes% -Fe:main
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
 set linker_flags=%libs% -incremental:no
-set src_files=../src/ui_test.c
+set src_files=../src/ui_panel_test.c
 
 rem -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -MTd -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -MTd -Zi -fsanitize=address -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console freetype_debug.lib
 
 rem -- Optimized build flags --

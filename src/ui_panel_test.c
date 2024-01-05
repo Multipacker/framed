@@ -1,4 +1,5 @@
 // TODO(hampus):
+// [ ] - If we close a tab and it is the last one, close the panel
 // [ ] - What to do if the user drops a tab outside of any panel
 // [ ] - Customize the view of tabs
 //          - Function pointers?
@@ -7,7 +8,6 @@
 // [ ] - Reorder tabs
 // [ ] - Highlighting of the active panel
 // [ ] - Creating a new split on left or top should not combine the tabs
-// [ ] - Background on tooltip
  
 
 #include "base/base_inc.h"
@@ -30,14 +30,15 @@ typedef struct Cmd Cmd;
 typedef struct Tab Tab;
 struct Tab
 {
-	Tab  *next;
-	Tab  *prev;
+	Tab *next;
+	Tab *prev;
 
 	Str8 string;
 	B32 pinned;
 
 	Panel *panel;
-
+	
+	// NOTE(hampus): For debugging
 	U64 frame_index;
 };
 
@@ -53,11 +54,9 @@ struct TabGroup
 typedef struct Panel Panel;
 struct Panel
 {
-	Panel *children[Side_Max];
+	Panel *children[Side_COUNT];
 	Panel *sibling;
 	Panel *parent;
-	
-	U64 num_children;
 	
 	TabGroup tab_group;
 
@@ -70,7 +69,7 @@ struct Panel
 	
 	B32 drag_hovered;
 	
-	// NOTE(hampus): For debugging purposes
+	// NOTE(hampus): For debugging
 	UI_Box *dragger;
 	U64 frame_index;
 };
@@ -105,7 +104,8 @@ typedef struct PanelSplit PanelSplit;
 struct PanelSplit
 {
 	Panel *panel;
-	Axis2 axis;
+	Axis2  axis;
+	Side   panel_side; // Which side to put this panel on
 };
 
 typedef struct PanelSplitAndAttach PanelSplitAndAttach;
@@ -114,7 +114,7 @@ struct PanelSplitAndAttach
 	Panel *panel;
 	Tab *tab;
 	Axis2 axis;
-	B32 left_top;
+	Side panel_side;  // Which side to put this panel on
 };
 
 typedef struct PanelSetActiveTab PanelSetActiveTab;
@@ -130,7 +130,7 @@ struct PanelClose
 	Panel *panel;
 };
 
-#define UI_CMD(name) Void name(Cmd *cmd)
+#define UI_CMD(name) Void name(Void *params)
 typedef UI_CMD(UI_CmdProc);
 
 typedef struct Cmd Cmd;
@@ -170,7 +170,9 @@ struct AppState
 	Tab *drag_tab;
 
 	Panel *panel_release;
-
+	
+	B32 show_debug_info;
+	
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
 };
@@ -194,6 +196,16 @@ ui_tab_alloc(Arena *arena)
 	app_state->num_panels++;
 	return(result);
 }
+
+internal Side
+ui_get_panel_side(Panel *panel)
+{
+	assert(panel->parent);
+	Side result = panel->parent->children[Side_Min] == panel ? Side_Min : Side_Max;
+	assert(panel->parent->children[result] == panel);
+	return(result);
+}
+
 internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
 
 #include "ui_panel_cmd.c"
@@ -230,7 +242,7 @@ ui_panel_split(Panel *first, Axis2 split_axis)
 internal B32
 ui_panel_is_leaf(Panel *panel)
 {
-	B32 result = !(panel->first || panel->last);
+	B32 result = !(panel->children[0] &&  panel->children[1]);
 	return(result);
 }
 
@@ -473,7 +485,7 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 c
 			data->tab        = app_state->drag_tab;
 			data->panel      = root;
 			data->axis = axis;
-			data->left_top = side == Side_Min;
+			data->panel_side = side;
 			app_state->drag_tab = 0;
 			root->drag_hovered = false;
 		}
@@ -511,15 +523,15 @@ ui_panel(Panel *root)
 							  UI_BoxFlag_Clip,
 							  root->string);
 	root->box = box;
-
+	
 	ui_push_parent(box);
-
+	
 	if (!ui_panel_is_leaf(root))
 	{
-		Panel *first = root->first;
-		Panel *last  = root->last;
+		Panel *child0 = root->children[Side_Min];
+		Panel *child1 = root->children[Side_Max]; 
 
-		ui_panel(first);
+		ui_panel(child0);
 
 		B32 dragging = false;
 		F32 drag_delta = 0;
@@ -543,15 +555,15 @@ ui_panel(Panel *root)
 			}
 		}
 
-		ui_panel(last);
+		ui_panel(child1);
 
 		if (dragging)
 		{
-			first->percent_of_parent -= drag_delta / box->calc_size.v[root->split_axis];
-			last->percent_of_parent  += drag_delta / box->calc_size.v[root->split_axis];
+			child0->percent_of_parent -= drag_delta / box->calc_size.v[root->split_axis];
+			child1->percent_of_parent += drag_delta / box->calc_size.v[root->split_axis];
 
-			first->percent_of_parent = f32_clamp(0, first->percent_of_parent, 1.0f);
-			last->percent_of_parent  = f32_clamp(0, last->percent_of_parent, 1.0f);
+			child0->percent_of_parent = f32_clamp(0, child0->percent_of_parent, 1.0f);
+			child1->percent_of_parent = f32_clamp(0, child1->percent_of_parent, 1.0f);
 		}
 	}
 	else
@@ -560,6 +572,7 @@ ui_panel(Panel *root)
 		
 		HoverAxis hover_axis = 0;
 		Side hover_side = 0;
+		// NOTE(hampus): Drag & split symbols
 		if (app_state->drag_tab)
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -644,7 +657,7 @@ ui_panel(Panel *root)
 		box->flags |= UI_BoxFlag_DrawBorder;
 		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
 
-		// NOTE(hampus): Build title bar
+		// NOTE(hampus): Title bar
 		ui_next_width(ui_fill());
 		ui_row()
 		{
@@ -691,7 +704,12 @@ ui_panel(Panel *root)
 					{
 						ui_tooltip()
 						{
-							ui_text(str8_lit("Close panel"));
+							UI_Box *tooltip = ui_box_make(UI_BoxFlag_DrawBackground |
+														  UI_BoxFlag_DrawBorder |
+														  UI_BoxFlag_DrawDropShadow |
+														  UI_BoxFlag_DrawText,
+														  str8_lit(""));
+							ui_box_equip_display_string(tooltip, str8_lit("Close panel"));
 						}
 					}
 
@@ -705,7 +723,8 @@ ui_panel(Panel *root)
 		}
 
 		B32 has_tabs = root->tab_group.first != 0;
-
+		
+		// NOTE(hampus): Default empty panel appearance
 		UI_Box *content_box = 0;
 		if (!has_tabs)
 		{
@@ -739,7 +758,8 @@ ui_panel(Panel *root)
 				}
 			}
 		}
-
+		
+		// NOTE(hampus): Active tab's content
 		for (Tab *tab = root->tab_group.first;
 			 tab != 0;
 			 tab = tab->next)
@@ -799,6 +819,7 @@ ui_panel(Panel *root)
 			}
 		}
 		
+		// NOTE(hampus): Drag & split preview
 		if (root->drag_hovered)
 		{
 			Vec4F32 top_color = ui_top_rect_style()->color[0];
@@ -859,10 +880,40 @@ ui_panel(Panel *root)
 			}
 		}
 		
-		UI_Comm content_box_comm = ui_comm_from_box(content_box);
-		
 		ui_pop_string();
 	}
+	
+	
+	if (app_state->show_debug_info)
+	{
+		// NOTE(hampus): Just some debug stuff
+		// so that we can see the name of each
+		// panel
+		ui_seed(root->string)
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pct(1, 1));
+			UI_Box *debug_box_parent = ui_box_make(UI_BoxFlag_FloatingPos,
+												   str8_lit(""));
+			ui_parent(debug_box_parent)
+			{
+				ui_spacer(ui_fill());
+				ui_next_width(ui_pct(1, 1));
+				ui_row()
+				{
+					ui_spacer(ui_fill());
+					ui_text(root->string);
+					ui_spacer(ui_fill());
+					
+				}
+				ui_spacer(ui_fill());
+			}
+		}
+	}
+	
+	// NOTE(hampus): Consume all non-taken events
+	UI_Comm root_comm = ui_comm_from_box(box);
+	
 	ui_pop_parent();
 }
 
@@ -878,11 +929,14 @@ ui_panel_draw_debug(Panel *root)
 
 	ui_column()
 	{
-		for (Panel *child = root->first;
-			 child != 0;
-			 child = child->next)
+		for (Side side = (Side)0;
+			 side < Side_COUNT;
+			 side++)
 		{
-			ui_panel_draw_debug(child);
+			if (root->children[side])
+			{
+			ui_panel_draw_debug(root->children[side]);
+			}
 		}
 	}
 
@@ -1041,6 +1095,7 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("View"));
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
+			ui_check(&app_state->show_debug_info, str8_lit("ShowDebugInfoCheck"));
 		}
 
 		ui_panel(app_state->root_panel);
@@ -1077,9 +1132,13 @@ os_main(Str8List arguments)
 		ui_next_relative_pos(Axis2_Y, 500);
 		UI_Box *box = ui_box_make(UI_BoxFlag_FloatingPos,
 								  str8_lit(""));
-		ui_parent(box)
+		
+		if (app_state->show_debug_info)
 		{
-			//ui_panel_draw_debug(app_state->root_panel);
+			ui_parent(box)
+			{
+				ui_panel_draw_debug(app_state->root_panel);
+			}
 		}
 		
 		ui_end();
@@ -1087,7 +1146,7 @@ os_main(Str8List arguments)
 		for (U64 i = 0; i < app_state->cmd_buffer.pos; ++i)
 		{
 			Cmd *cmd = app_state->cmd_buffer.buffer + i;
-			cmd->proc(cmd);
+			cmd->proc(cmd->data);
 		}
 
 		app_state->cmd_buffer.pos = 0;
