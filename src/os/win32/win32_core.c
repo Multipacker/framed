@@ -708,6 +708,59 @@ os_thread_create(ThreadProc *proc, Void *data)
 	CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
 }
 
+// FIXME(simon): I wrote this as a Linux guru who has never programmed for
+// Windows. It is untested and I have no idea if it will work. Forgive my
+// crimes and please check that this is correct before using it.
+// https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-createprocessa
+internal Void
+os_run(Str8 program, Str8List arguments)
+{
+	log_warning("Running untested Windows code written by a Linux person");
+
+	/*
+	arena_scratch(0, 0)
+	{
+		Str8List arguments_spaces = { 0 };
+		for (Str8Node *node = arguments.first; node; node = node->next) {
+			str8_list_push(scratch, &arguments_spaces, node->string);
+			if (node->next)
+			{
+				str8_list_push(scratch, &arguments_spaces, str8_lit(" "));
+			}
+		}
+		Str8 command_line = str8_join(scratch, arguments_spaces);
+
+		STARTUPINFOA startup_info = { 0 };
+		startup_info.cb = sizeof(startup_info);
+		startup_info.dwFlags = 0;
+
+		PROCESS_INFORMATION *process_information = { 0 };
+		B32 success = CreateProcessA(
+			cstr16_from_str8(scratch, program).data,
+			cstr16_from_str8(scratch, command_line).data,
+			0,
+			0,
+			false,
+			0,
+			0,
+			0,
+			&startup_info,
+			&process_information
+		);
+
+		if (success)
+		{
+			CloseHandle(process_information.hProcess);
+			CloseHandle(process_information.hThread);
+		}
+		else
+		{
+			win32_print_error_message();
+		}
+	}
+	*/
+}
+
 internal S32
 win32_common_main(Void)
 {

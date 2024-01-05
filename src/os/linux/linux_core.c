@@ -9,6 +9,7 @@
 
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/time.h>
 
 global Arena *linux_permanent_arena;
@@ -914,6 +915,41 @@ os_thread_create(ThreadProc *proc, Void *data)
 
 	pthread_t thread;
 	pthread_create(&thread, 0, linux_thread_proc, arguments);
+}
+
+internal Void
+os_run(Str8 program, Str8List arguments)
+{
+	arena_scratch(0, 0)
+	{
+		// NOTE(simon): argv must begin with the program name and end with a null-pointer.
+		CStr *arguments_cstr = push_array(scratch, CStr, arguments.node_count + 2);
+		arguments_cstr[0] = cstr_from_str8(scratch, program);
+		U32 argument_index = 1;
+		for (Str8Node *node = arguments.first; node; node = node->next) {
+			arguments_cstr[argument_index++] = cstr_from_str8(scratch, node->string);
+		}
+		arguments_cstr[argument_index] = 0;
+
+		pid_t child_pid = fork();
+		if (child_pid)
+		{
+			// TODO(simon): Error could not fork
+		}
+		else if (child_pid == 0)
+		{
+			// TODO(simon): Why doesn't execve with environ as the last argument work?
+			if (execvp(arguments_cstr[0], arguments_cstr) == -1)
+			{
+				// TODO(simon): Could not exec
+				syscall(SYS_exit_group, -1);
+			}
+		}
+		else
+		{
+			// NOTE(simon): Parent
+		}
+	}
 }
 
 int
