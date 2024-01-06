@@ -208,8 +208,6 @@ ui_get_panel_side(Panel *panel)
 
 internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
 
-#include "ui_panel_cmd.c"
-
 internal Void *
 cmd_push(CmdBuffer *buffer, CmdKind kind, Void *proc)
 {
@@ -221,6 +219,8 @@ cmd_push(CmdBuffer *buffer, CmdKind kind, Void *proc)
 	buffer->pos++;
 	return(result->data);
 }
+
+#include "ui_panel_cmd.c"
 
 internal Void
 ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active)
@@ -245,6 +245,16 @@ ui_panel_is_leaf(Panel *panel)
 {
 	B32 result = !(panel->children[0] &&  panel->children[1]);
 	return(result);
+}
+
+internal Void
+ui_attach_and_split_tab_to_panel(Panel *panel, Tab *tab, Axis2 axis, Side side)
+{
+	PanelSplitAndAttach *data  = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSplitAndAttach, panel_split_and_attach);
+	data->tab           = tab;
+	data->panel         = panel;
+	data->axis          = axis;
+	data->panel_side    = side;
 }
 
 UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
@@ -430,16 +440,22 @@ ui_tab_button(Tab *tab)
 	ui_pop_string();
 }
 
-typedef enum HoverAxis HoverAxis;
-enum HoverAxis
+typedef enum TabReleaseKind TabReleaseKind;
+enum TabReleaseKind
 {
-	HoverAxis_Center,
-	HoverAxis_X,
-	HoverAxis_Y,
+	TabReleaseKind_Center,
+
+	TabReleaseKind_Left,
+	TabReleaseKind_Right,
+
+	TabReleaseKind_Top,
+	TabReleaseKind_Bottom,
+
+	TabReleaseKind_COUNT
 };
 
 internal UI_Comm
-ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 center, HoverAxis *hover_axis, Side side, Side *hover_side)
+ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 center, Side side)
 {
 	ui_next_width(ui_em(width_in_em, 1));
 	ui_next_height(ui_em(width_in_em, 1));
@@ -474,25 +490,9 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 c
 	}
 
 	UI_Comm comm = ui_comm_from_box(box);
-	if (!center)
-	{
-		if (comm.hovering)
-		{
-			root->drag_hovered |= true;
-			*hover_axis = axis+1;
-			*hover_side = side;
-		}
-		if (comm.released)
-		{
-			PanelSplitAndAttach *data  = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSplitAndAttach, panel_split_and_attach);
-			data->tab        = app_state->drag_tab;
-			data->panel      = root;
-			data->axis = axis;
-			data->panel_side = side;
-			app_state->drag_tab = 0;
-			root->drag_hovered = false;
-		}
-	}
+
+
+
 	return(comm);
 }
 
@@ -573,21 +573,24 @@ ui_panel(Panel *root)
 	{
 		ui_push_string(root->string);
 
-		HoverAxis hover_axis = 0;
-		Side hover_side = 0;
+
+		// NOTE(hampus): Axis2_COUNT is the center
+		Axis2   hover_axis = Axis2_COUNT;
+		Side    hover_side = 0;
+		UI_Comm tab_release_comms[TabReleaseKind_COUNT] = {0};
 		// NOTE(hampus): Drag & split symbols
 		if (app_state->drag_tab)
 		{
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_pct(1, 1));
-			UI_Box *overlay_box2 = ui_box_make(UI_BoxFlag_FloatingPos,
-											   str8_lit("OverlayBox2"));
+			UI_Box *split_symbols_container = ui_box_make(UI_BoxFlag_FloatingPos,
+														  str8_lit("SplitSymbolsContainer"));
 			if (root->drag_hovered)
 			{
 				root->drag_hovered = false;
-				ui_parent(overlay_box2)
+				ui_parent(split_symbols_container)
 				{
-					ui_push_string(str8_lit("OverlayBox2"));
+					ui_push_string(str8_lit("SplitSymbolsContainer"));
 					F32 size = 3;
 					ui_spacer(ui_fill());
 
@@ -595,7 +598,8 @@ ui_panel(Panel *root)
 					ui_row()
 					{
 						ui_spacer(ui_fill());
-						UI_Comm top_comm = ui_hover_panel_type(str8_lit("TopYSplitPanelType"), size, root, Axis2_Y, false, &hover_axis, Side_Min, &hover_side);
+						tab_release_comms[TabReleaseKind_Top] = ui_hover_panel_type(str8_lit("TabReleaseTop"), size, root, Axis2_Y, false,
+																					Side_Min);
 
 						ui_spacer(ui_fill());
 					}
@@ -607,28 +611,16 @@ ui_panel(Panel *root)
 						ui_spacer(ui_fill());
 
 						ui_next_child_layout_axis(Axis2_X);
-						UI_Comm left_comm = ui_hover_panel_type(str8_lit("LeftXSplitPanelType"), size, root, Axis2_X, false, &hover_axis, Side_Min, &hover_side);
+						tab_release_comms[TabReleaseKind_Left] = ui_hover_panel_type(str8_lit("TabReleaseLeft"), size, root, Axis2_X, false, Side_Min);
 
 						ui_spacer(ui_em(1, 1));
 
-						UI_Comm center_comm = ui_hover_panel_type(str8_lit("CenterPanelType"), size, root, Axis2_X, true, &hover_axis, Side_Min, &hover_side);
-
-						if (center_comm.hovering)
-						{
-							root->drag_hovered |= true;
-						}
-
-						if (center_comm.released)
-						{
-							ui_attach_tab_to_panel(root, app_state->drag_tab, true);
-							app_state->drag_tab = 0;
-							root->drag_hovered = false;
-						}
+						tab_release_comms[TabReleaseKind_Center] = ui_hover_panel_type(str8_lit("TabReleaseCenter"), size, root, Axis2_X, true, Side_Min);
 
 						ui_spacer(ui_em(1, 1));
 
 						ui_next_child_layout_axis(Axis2_X);
-						UI_Comm right_comm = ui_hover_panel_type(str8_lit("RightXSplitPanelType"), size, root, Axis2_X, false, &hover_axis, Side_Max, &hover_side);
+						tab_release_comms[TabReleaseKind_Right] = ui_hover_panel_type(str8_lit("TabReleaseRight"), size, root, Axis2_X, false, Side_Max);
 
 						ui_spacer(ui_fill());
 					}
@@ -639,18 +631,76 @@ ui_panel(Panel *root)
 					ui_row()
 					{
 						ui_spacer(ui_fill());
-						UI_Comm bottom_comm = ui_hover_panel_type(str8_lit("BottomYSplitPanelType"), size, root, Axis2_Y, false, &hover_axis, Side_Max, &hover_side);
+						tab_release_comms[TabReleaseKind_Bottom] = ui_hover_panel_type(str8_lit("TabReleaseBottom"), size, root, Axis2_Y, false, Side_Max);
 						ui_spacer(ui_fill());
 					}
 					ui_spacer(ui_fill());
 					ui_pop_string();
 				}
 			}
-			UI_Comm panel_comm = ui_comm_from_box(overlay_box2);
+
+			for (TabReleaseKind i = (TabReleaseKind) 0;
+				 i < TabReleaseKind_COUNT;
+				 ++i)
+			{
+				UI_Comm *comm = tab_release_comms + i;
+				if (comm->hovering)
+				{
+					root->drag_hovered |= true;
+					switch (i)
+					{
+						case TabReleaseKind_Center:
+						{
+							hover_axis = Axis2_COUNT;
+						} break;
+
+						case TabReleaseKind_Left:
+						case TabReleaseKind_Right:
+						{
+							hover_axis = Axis2_X;
+							hover_side = i == TabReleaseKind_Left ? Side_Min : Side_Max;
+						} break;
+
+						case TabReleaseKind_Top:
+						case TabReleaseKind_Bottom:
+						{
+							hover_axis = Axis2_Y;
+							hover_side = i == TabReleaseKind_Top ? Side_Min : Side_Max;
+						} break;
+
+						invalid_case;
+					}
+				}
+				if (comm->released)
+				{
+					switch (i)
+					{
+						case TabReleaseKind_Center:
+						{
+							ui_attach_tab_to_panel(root, app_state->drag_tab, true);
+						} break;
+
+						case TabReleaseKind_Left:
+						case TabReleaseKind_Right:
+						case TabReleaseKind_Top:
+						case TabReleaseKind_Bottom:
+						{
+							ui_attach_and_split_tab_to_panel(root, app_state->drag_tab, hover_axis, hover_side);
+						} break;
+
+						invalid_case;
+					}
+					app_state->drag_tab = 0;
+					root->drag_hovered = false;
+				}
+			}
+
+			UI_Comm panel_comm = ui_comm_from_box(split_symbols_container);
 			root->drag_hovered |= panel_comm.hovering;
 			if (panel_comm.released)
 			{
 				ui_attach_tab_to_panel(root, app_state->drag_tab, true);
+
 				app_state->drag_tab = 0;
 				root->drag_hovered = false;
 			}
@@ -727,40 +777,7 @@ ui_panel(Panel *root)
 
 		B32 has_tabs = root->tab_group.first != 0;
 
-		// NOTE(hampus): Default empty panel appearance
 		UI_Box *content_box = 0;
-		if (!has_tabs)
-		{
-			ui_next_width(ui_pct(1, 0));
-			ui_next_height(ui_pct(1, 0));
-
-			content_box = ui_box_make(0,
-									  str8_lit("ContentBox"));
-			ui_parent(content_box)
-			{
-				ui_next_width(ui_fill());
-				ui_next_height(ui_fill());
-				ui_row()
-				{
-					ui_spacer(ui_fill());
-					ui_next_height(ui_pct(1, 1));
-					ui_column()
-					{
-						ui_spacer(ui_fill());
-						if (ui_button(str8_lit("Open a tab")).pressed)
-						{
-							Tab *new_tab = ui_tab_alloc(app_state->perm_arena);
-							TabAttach *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabAttach, tab_attach);
-							data->tab = new_tab;
-							data->panel = root;
-							data->set_active = true;
-						}
-						ui_spacer(ui_fill());
-					}
-					ui_spacer(ui_fill());
-				}
-			}
-		}
 
 		// NOTE(hampus): Active tab's content
 		for (Tab *tab = root->tab_group.first;
@@ -822,7 +839,7 @@ ui_panel(Panel *root)
 			}
 		}
 
-		// NOTE(hampus): Drag & split preview
+		// NOTE(hampus): Drag & split overlay
 		if (root->drag_hovered)
 		{
 			Vec4F32 top_color = ui_top_rect_style()->color[0];
@@ -837,7 +854,7 @@ ui_panel(Panel *root)
 											str8_lit("OverlayBoxContainer"));
 			ui_parent(container)
 			{
-				if (hover_axis == HoverAxis_Center)
+				if (hover_axis == Axis2_COUNT)
 				{
 					ui_next_width(ui_pct(1, 1));
 					ui_next_height(ui_pct(1, 1));
@@ -849,7 +866,7 @@ ui_panel(Panel *root)
 				{
 					switch (hover_axis)
 					{
-						case HoverAxis_X:
+						case Axis2_X:
 						{
 							container->layout_style.child_layout_axis = Axis2_X;
 							if (hover_side == Side_Max)
@@ -863,7 +880,7 @@ ui_panel(Panel *root)
 															  str8_lit("OverlayBox"));
 						} break;
 
-						case HoverAxis_Y:
+						case Axis2_Y:
 						{
 							container->layout_style.child_layout_axis = Axis2_Y;
 							if (hover_side == Side_Max)

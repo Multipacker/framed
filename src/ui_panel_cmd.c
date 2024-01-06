@@ -121,9 +121,10 @@ UI_CMD(panel_split)
 UI_CMD(panel_split_and_attach)
 {
 	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
-	
-	// NOTE(hampus): This would only be possible 
-	B32 same_panel = data->panel == data->tab->panel && data->panel->tab_group.count == 0;
+	 
+	B32 releasing_on_same_panel = 
+		data->panel == data->tab->panel && 
+		data->panel->tab_group.count == 0;
 
 	PanelSplit split_data =
 	{
@@ -132,10 +133,10 @@ UI_CMD(panel_split_and_attach)
 	};
 
 	panel_split(&split_data);
-
-	// NOTE(hampus): Because panel_split always put the new
-	// panel to the bottom or right
-	if (same_panel)
+	
+	// NOTE(hampus): panel_split always put the new panel
+	// to the left/top
+	if (releasing_on_same_panel)
 	{
 		if (data->panel_side == Side_Max)
 		{
@@ -149,9 +150,12 @@ UI_CMD(panel_split_and_attach)
 			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
 		}
 	}
-
-	if (same_panel)
+	
+	if (releasing_on_same_panel)
 	{
+		// NOTE(hampus): This is needed because if we're releasing
+		// on the same panel as we dragged the tab away from, and it
+		// was the last tab, we will have to allocate a new tab for the split
 		Tab *tab = ui_tab_alloc(app_state->perm_arena);
 		TabAttach attach =
 		{
