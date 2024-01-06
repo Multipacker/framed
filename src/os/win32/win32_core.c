@@ -718,9 +718,9 @@ os_run(Str8 program, Str8List arguments)
 	B32 success = true;
 	log_warning("Running untested Windows code written by a Linux person");
 
-	/*
 	arena_scratch(0, 0)
 	{
+
 		Str8List arguments_spaces = { 0 };
 		for (Str8Node *node = arguments.first; node; node = node->next) {
 			str8_list_push(scratch, &arguments_spaces, node->string);
@@ -729,25 +729,24 @@ os_run(Str8 program, Str8List arguments)
 				str8_list_push(scratch, &arguments_spaces, str8_lit(" "));
 			}
 		}
-		Str8 command_line = str8_join(scratch, arguments_spaces);
+		Str8 command_line = str8_join(scratch, &arguments_spaces);
 
-		STARTUPINFOA startup_info = { 0 };
+		STARTUPINFO startup_info = { 0 };
 		startup_info.cb = sizeof(startup_info);
 		startup_info.dwFlags = 0;
 
-		PROCESS_INFORMATION *process_information = { 0 };
-		B32 could_launch = CreateProcessA(
-			cstr16_from_str8(scratch, program).data,
-			cstr16_from_str8(scratch, command_line).data,
-			0,
-			0,
-			false,
-			0,
-			0,
-			0,
-			&startup_info,
-			&process_information
-		);
+		PROCESS_INFORMATION process_information = { 0 };
+		B32 could_launch = CreateProcess(0,
+										 cstr16_from_str8(scratch, command_line).data,
+										 0,
+										 0,
+										 false,
+										 0,
+										 0,
+										 0,
+										 &startup_info,
+										 &process_information
+										 );
 
 		success = could_launch;
 
@@ -761,7 +760,6 @@ os_run(Str8 program, Str8List arguments)
 			win32_print_error_message();
 		}
 	}
-	*/
 	return(success);
 }
 
