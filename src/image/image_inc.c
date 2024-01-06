@@ -20,7 +20,14 @@
 	})
 #define PNG_TYPE_INVALID 0
 
+#define PNG_MAX_BITS 32
+
 global U8 png_magic[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, };
+
+global U32 png_code_length_alphabet[] = {
+	16, 17, 18, 0, 8,  7, 9,  6, 10, 5,
+	11, 4,  12, 3, 13, 2, 14, 1, 15
+};
 
 typedef struct PNG_Chunk PNG_Chunk;
 struct PNG_Chunk
@@ -46,6 +53,80 @@ enum PNG_InterlaceMethod
 	PNG_InterlaceMethod_None  = 0,
 	PNG_InterlaceMethod_Adam7 = 2,
 };
+
+typedef struct PNG_Huffman PNG_Huffman;
+struct PNG_Huffman
+{
+	U32 *codes;
+	U32 *lengths;
+	U32 *values;
+	U32 count;
+};
+
+internal PNG_Huffman
+png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
+{
+	PNG_Huffman result = { 0 };
+	result.codes   = push_array(arena, U32, count);
+	result.lengths = lengths;
+	result.values  = alphabet;
+	result.count   = count;
+
+	U32 bl_count[PNG_MAX_BITS] = { 0 };
+	for (U32 i = 0; i < count; ++i)
+	{
+		++bl_count[lengths[i]];
+	}
+
+	U32 next_code[PNG_MAX_BITS] = { 0 };
+
+	U32 code = 0;
+	bl_count[0] = 0;
+	for (U32 bits = 1; bits < PNG_MAX_BITS; ++bits)
+	{
+		code = (code + bl_count[bits - 1]) << 1;
+		next_code[bits] = code;
+	}
+
+	for (U32 i = 0; i < count; ++i)
+	{
+		U32 length = lengths[i];
+		if (length != 0)
+		{
+			result.codes[i] = next_code[length]++;
+		}
+	}
+
+	return(result);
+}
+
+internal Void
+png_print_huffman(PNG_Huffman huffman)
+{
+	U32 max_value  = 0;
+	U32 max_length = 0;
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		max_value  = u32_max(max_value,  huffman.values[i]);
+		max_length = u32_max(max_length, huffman.lengths[i]);
+	}
+
+	U32 value_length  = (U32) f32_floor(f32_log((F32) max_value))  + 1;
+	U32 length_length = (U32) f32_floor(f32_log((F32) max_length)) + 1;
+
+	log_info("Huffman codes(Symbol, Length, Code):");
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		if (huffman.lengths[i] == 0)
+		{
+			log_info(" %*"PRIU32" %*"PRIU32, value_length, huffman.values[i], length_length, huffman.lengths[i]);
+		}
+		else
+		{
+			log_info(" %*"PRIU32" %*"PRIU32" %0*b", value_length, huffman.values[i], length_length, huffman.lengths[i], huffman.lengths[i], huffman.codes[i]);
+		}
+	}
+}
 
 internal PNG_Chunk
 png_parse_chunk(Str8 *contents)
@@ -458,7 +539,37 @@ png_zlib_inflate(PNG_State *state)
 		}
 		else if (block_type == 2)
 		{
+			Arena_Temporary scratch = get_scratch(0, 0);
+
 			// NOTE(simon): Dynamic Huffman codes
+			png_refill_bits(state, 14);
+			U32 hlit  = (U32) png_get_bits_no_refill(state, 5) + 257;
+			U32 hdist = (U32) png_get_bits_no_refill(state, 5) + 1;
+			U32 hclen = (U32) png_get_bits_no_refill(state, 4) + 4;
+
+			// NOTE(simon): We can always refill enough bits.
+			png_refill_bits(state, hclen * 3);
+			U32 *code_length_lengths = push_array(scratch.arena, U32, hclen);
+			for (U32 i = 0; i < hclen; ++i)
+			{
+				code_length_lengths[i] = (U32) png_get_bits_no_refill(state, 3);
+			}
+			U32 *code_length_codes = push_array(scratch.arena, U32, hclen);
+
+			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
+
+			png_print_huffman(code_length_huffman);
+
+			for (U32 i = 0; i < hlit; ++i)
+			{
+			}
+
+			for (U32 i = 0; i < hdist; ++i)
+			{
+			}
+
+			release_scratch(scratch);
+
 			log_error("Dynamic Huffman codes are not supported yet!");
 			return(false);
 		}
