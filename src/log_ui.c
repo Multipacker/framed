@@ -139,7 +139,6 @@ ui_logger(Void)
 			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
 			ui_next_text_color(color);
 			UI_Box *log_entry = ui_box_make(
-				UI_BoxFlag_DrawBackground |
 				UI_BoxFlag_DrawText |
 				UI_BoxFlag_HotAnimation |
 				UI_BoxFlag_ActiveAnimation |
@@ -149,14 +148,23 @@ ui_logger(Void)
 			ui_box_equip_display_string(log_entry, message);
 			UI_Comm entry_comm = ui_comm_from_box(log_entry);
 
+			if (entry_comm.hovering)
+			{
+				log_entry->flags |= UI_BoxFlag_DrawBackground;
+			}
 			if (entry_comm.clicked)
 			{
 				arena_scratch(0, 0)
 				{
 					Str8List arguments = { 0 };
-					str8_list_push(scratch, &arguments, str8_lit("-g"));
-					str8_list_push(scratch, &arguments, str8_pushf(scratch, "%s:%"PRIU32, entry->file, entry->line));
-					os_run(str8_lit("code"), arguments);
+					str8_list_push(scratch, &arguments, str8_cstr(entry->file));
+					str8_list_push(scratch, &arguments, str8_pushf(scratch, "%"PRIU32, entry->line));
+
+#if OS_WINDOWS
+					os_run(str8_lit("./script/log_open.bat"), arguments);
+#elif OS_LINUX
+					os_run(str8_lit("./script/log_open.sh"), arguments);
+#endif
 				}
 			}
 		}

@@ -720,7 +720,6 @@ os_run(Str8 program, Str8List arguments)
 
 	arena_scratch(0, 0)
 	{
-
 		Str8List arguments_spaces = { 0 };
 		for (Str8Node *node = arguments.first; node; node = node->next) {
 			str8_list_push(scratch, &arguments_spaces, node->string);
