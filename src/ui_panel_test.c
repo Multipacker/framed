@@ -45,8 +45,8 @@ struct Tab
 typedef struct TabGroup TabGroup;
 struct TabGroup
 {
+	U64 count;
 	Tab *active_tab;
-
 	Tab *first;
 	Tab *last;
 };
@@ -90,10 +90,6 @@ typedef struct TabDelete TabDelete;
 struct TabDelete
 {
 	Tab *tab;
-
-	// NOTE(hampus): Set this to true if you don't want
-	// to close the panel if you close the last tab
-	B32 keep_open_if_last;
 };
 
 typedef struct TabAttach TabAttach;
@@ -109,8 +105,7 @@ struct PanelSplit
 {
 	Panel *panel;
 	Axis2  axis;
-	Side   panel_side; // Which side to put this panel on
-	B32    skip_default_tab;
+	B32 alloc_new_tab;
 };
 
 typedef struct PanelSplitAndAttach PanelSplitAndAttach;
@@ -242,6 +237,7 @@ ui_panel_split(Panel *first, Axis2 split_axis)
 	PanelSplit *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSplit, panel_split);
 	data->panel = first;
 	data->axis = split_axis;
+	data->alloc_new_tab = true;
 }
 
 internal B32
@@ -488,9 +484,6 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 c
 		}
 		if (comm.released)
 		{
-			TabDelete *delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
-			delete_data->tab = app_state->drag_tab;
-
 			PanelSplitAndAttach *data  = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSplitAndAttach, panel_split_and_attach);
 			data->tab        = app_state->drag_tab;
 			data->panel      = root;
@@ -627,9 +620,6 @@ ui_panel(Panel *root)
 
 						if (center_comm.released)
 						{
-							TabDelete *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
-							data->tab = app_state->drag_tab;
-
 							ui_attach_tab_to_panel(root, app_state->drag_tab, true);
 							app_state->drag_tab = 0;
 							root->drag_hovered = false;
@@ -660,9 +650,6 @@ ui_panel(Panel *root)
 			root->drag_hovered |= panel_comm.hovering;
 			if (panel_comm.released)
 			{
-				TabDelete *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
-				data->tab = app_state->drag_tab;
-
 				ui_attach_tab_to_panel(root, app_state->drag_tab, true);
 				app_state->drag_tab = 0;
 				root->drag_hovered = false;
@@ -945,7 +932,7 @@ ui_panel_draw_debug(Panel *root)
 
 	ui_column()
 	{
-		for (Side side = (Side)0;
+		for (Side side = (Side) 0;
 			 side < Side_COUNT;
 			 side++)
 		{
@@ -1099,7 +1086,7 @@ os_main(Str8List arguments)
 					ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 				}
 			}
-			if (comm.pressed )
+			if (comm.pressed)
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 			}
@@ -1113,7 +1100,7 @@ os_main(Str8List arguments)
 					ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
 				}
 			}
-			if (comm2.pressed )
+			if (comm2.pressed)
 			{
 				ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
 			}
@@ -1151,6 +1138,8 @@ os_main(Str8List arguments)
 			{
 				app_state->drag_tab = app_state->drag_candidate;
 				app_state->drag_candidate = 0;
+				TabDelete *tab_delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
+				tab_delete_data->tab = app_state->drag_tab;
 			}
 		}
 

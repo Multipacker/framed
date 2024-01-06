@@ -22,12 +22,10 @@ UI_CMD(tab_delete)
 		}
 	}
 	dll_remove(panel->tab_group.first, panel->tab_group.last, tab);
-	tab->next = 0;
-	tab->prev = 0;
-	tab->panel = 0;
+	panel->tab_group.count--;
 	if (panel->tab_group.first == 0)
 	{
-		PanelClose close = 
+		PanelClose close =
 		{
 			.panel = panel,
 		};
@@ -47,6 +45,7 @@ UI_CMD(tab_attach)
 	{
 		panel->tab_group.active_tab = tab;
 	}
+	panel->tab_group.count++;
 }
 
 UI_CMD(panel_set_active_tab)
@@ -57,11 +56,11 @@ UI_CMD(panel_set_active_tab)
 	panel->tab_group.active_tab = tab;
 }
 
+// NOTE(hampus): This _always_ put the new child to the right or bottom
 UI_CMD(panel_split)
 {
 	// NOTE(hampus): We will create a new parent that will
 	// have this panel and a new child as children
-
 	PanelSplit *data  = (PanelSplit *)params;
 	Axis2 split_axis  = data->axis;
 	Panel *child0     = data->panel;
@@ -100,13 +99,13 @@ UI_CMD(panel_split)
 		new_parent->children[side] = children[side];
 		memory_zero_array(children[side]->children);
 	}
-	
+
 	if (child0 == app_state->root_panel)
 	{
 		app_state->root_panel = new_parent;
 	}
 	
-	if (!data->skip_default_tab)
+	if (data->alloc_new_tab)
 	{
 		Tab *tab = ui_tab_alloc(app_state->perm_arena);
 		TabAttach attach =
@@ -122,22 +121,48 @@ UI_CMD(panel_split)
 UI_CMD(panel_split_and_attach)
 {
 	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
+	
+	// NOTE(hampus): This would only be possible 
+	B32 same_panel = data->panel == data->tab->panel && data->panel->tab_group.count == 0;
 
 	PanelSplit split_data =
 	{
 		.panel      = data->panel,
-		.panel_side = data->panel_side,
 		.axis       = data->axis,
-		.skip_default_tab = true ,
 	};
 
 	panel_split(&split_data);
-	
-	if (data->panel_side == Side_Min)
+
+	// NOTE(hampus): Because panel_split always put the new
+	// panel to the bottom or right
+	if (same_panel)
 	{
-		swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+		if (data->panel_side == Side_Max)
+		{
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+		}
 	}
-	
+	else
+	{
+		if (data->panel_side == Side_Min)
+		{
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+		}
+	}
+
+	if (same_panel)
+	{
+		Tab *tab = ui_tab_alloc(app_state->perm_arena);
+		TabAttach attach =
+		{
+			.tab = tab,
+			.panel = data->panel->parent->children[side_flip(data->panel_side)],
+			.set_active = true,
+		};
+
+		tab_attach(&attach);
+	}
+
 	Panel *panel = data->panel->parent->children[data->panel_side];
 
 	TabAttach tab_attach_data =
