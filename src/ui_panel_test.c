@@ -1,5 +1,5 @@
 // TODO(hampus):
-// [ ] - If we close a tab and it is the last one, close the panel
+// []  - Look into the 1-frame rendering glitch when dropping a tab
 // [ ] - What to do if the user drops a tab outside of any panel
 // [ ] - Customize the view of tabs
 //          - Function pointers?
@@ -7,8 +7,6 @@
 // [ ] - Scroll tabs horizontally if there are too many to fit
 // [ ] - Reorder tabs
 // [ ] - Highlighting of the active panel
-// [ ] - Creating a new split on left or top should not combine the tabs
-
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -72,6 +70,24 @@ struct Panel
 	// NOTE(hampus): For debugging
 	UI_Box *dragger;
 	U64 frame_index;
+};
+
+typedef struct Window Window;
+struct Window
+{
+	Window *next;
+	Window *prev;
+	
+	U64 pos;
+	Panel *panel;
+};
+
+typedef struct WindowList WindowList;
+struct WindowList
+{
+	Window *first;
+	Window *last;
+	U64 count;
 };
 
 typedef enum CmdKind CmdKind;
@@ -160,7 +176,9 @@ struct AppState
 	CmdBuffer cmd_buffer;
 
 	Panel *root_panel;
-
+	
+	WindowList window_list;
+	
 	// NOTE(hampus): Dragging stuff
 
 	Vec2F32 start_drag_pos;
@@ -490,10 +508,7 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 c
 	}
 
 	UI_Comm comm = ui_comm_from_box(box);
-
-
-
-	return(comm);
+return(comm);
 }
 
 internal Void

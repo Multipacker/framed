@@ -1,6 +1,5 @@
 // TODO(hampus):
 
-// []  - Look into the 1-frame rendering glitch when dropping a tab
 // []  - Close context menu when clicking outside context menu
 // []  - Make tooltip stay on the first position it got
 // []  - Makes switching font & font size more robust
@@ -356,12 +355,13 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->renderer = renderer;
 	g_ui_ctx->event_list = event_list;
 	g_ui_ctx->dt = dt;
-	
+
 	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
-	
+
 	g_ui_ctx->mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
 
 	B32 left_mouse_released = false;
+	B32 left_mouse_pressed = false;
 	B32 escape_key_pressed = false;
 	for (Gfx_Event *node = event_list->first;
 		 node != 0;
@@ -376,6 +376,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 					case Gfx_Key_MouseLeft:
 					{
 						left_mouse_released = true;
+
 					} break;
 
 					default:
@@ -389,6 +390,11 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 				if (node->key == Gfx_Key_Escape)
 				{
 					escape_key_pressed = true;
+				}
+
+				if (node->key == Gfx_Key_MouseLeft)
+				{
+					left_mouse_pressed = true;
 				}
 			} break;
 
@@ -482,7 +488,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
-	g_ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX | 
+	g_ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX |
 								 UI_BoxFlag_OverflowY,
 								 str8_lit("Root"));
 
@@ -490,7 +496,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
-	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX | 
+	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX |
 										UI_BoxFlag_OverflowY,
 										str8_lit("NormalRoot"));
 	ui_next_width(ui_children_sum(1));
@@ -503,9 +509,24 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										 str8_lit("TooltipRoot"));
 
-	if (escape_key_pressed && ui_ctx_menu_is_open())
+	if (ui_ctx_menu_is_open())
 	{
-		ui_ctx_menu_close();
+
+		if (left_mouse_pressed)
+		{
+			UI_Box *ctx_menu_root = g_ui_ctx->ctx_menu_root;
+			B32 clicked_inside_context_menu = rectf32_contains_v2f32(ctx_menu_root->rect, g_ui_ctx->mouse_pos);;
+
+			if (!clicked_inside_context_menu)
+			{
+				ui_ctx_menu_close();
+			}
+		}
+
+		if (escape_key_pressed)
+		{
+			ui_ctx_menu_close();
+		}
 	}
 
 	ui_push_parent(g_ui_ctx->normal_root);
@@ -1049,7 +1070,7 @@ ui_end(Void)
 
 	// NOTE(hampus): Root clip rect
 	ui_pop_clip_rect();
-	
+
 	if (ui_ctx_menu_is_open())
 	{
 		Vec2F32 anchor_pos = {0};
@@ -1058,7 +1079,7 @@ ui_end(Void)
 			UI_Box *anchor = ui_box_from_key(g_ui_ctx->ctx_menu_anchor_key);
 			if (anchor)
 			{
-			 anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
+				anchor_pos = v2f32(anchor->rect.min.x, anchor->rect.max.y);
 			}
 			else
 			{
@@ -1157,7 +1178,7 @@ ui_comm_from_box(UI_Box *box)
 			result.dragging = true;
 			result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
 		}
-		
+
 		if (ui_key_is_null(g_ui_ctx->hot_key) && mouse_over)
 		{
 			g_ui_ctx->hot_key = box->key;
@@ -1167,7 +1188,7 @@ ui_comm_from_box(UI_Box *box)
 		{
 			if (ui_box_is_hot(box))
 			{
-			result.hovering = true;
+				result.hovering = true;
 			}
 
 			Gfx_EventList *event_list = g_ui_ctx->event_list;
