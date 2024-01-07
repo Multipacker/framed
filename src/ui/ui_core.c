@@ -494,8 +494,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
-	g_ui_ctx->normal_root = ui_box_make(UI_BoxFlag_OverflowX |
-										UI_BoxFlag_OverflowY,
+	g_ui_ctx->normal_root = ui_box_make(0,
 										str8_lit("NormalRoot"));
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
@@ -935,7 +934,6 @@ ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAli
 internal Void
 ui_draw(UI_Box *root)
 {
-
 	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
 	if (root->custom_draw)
 	{
@@ -943,7 +941,6 @@ ui_draw(UI_Box *root)
 	}
 	else
 	{
-
 		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * g_ui_ctx->dt));
 		if (ui_box_is_active(root))
 		{
@@ -1047,13 +1044,13 @@ ui_draw(UI_Box *root)
 		{
 			render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 		}
-		for (UI_Box *child = root->first;
+		
+		for (UI_Box *child = root->last;
 			 child != 0;
-			 child = child->next)
+			 child = child->prev)
 		{
 			ui_draw(child);
 		}
-
 	}
 }
 
