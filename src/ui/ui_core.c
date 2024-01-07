@@ -1096,7 +1096,7 @@ ui_end(Void)
 	}
 	else
 	{
-		gfx_set_cursor(g_ui_ctx->renderer->gfx, Gfx_Cursor_Hand);
+		gfx_set_cursor(g_ui_ctx->renderer->gfx, Gfx_Cursor_Arrow);
 	}
 
 	ui_layout(g_ui_ctx->root);
