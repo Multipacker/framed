@@ -559,6 +559,7 @@ ui_panel(Panel *root)
 			ui_next_size(root->split_axis, ui_em(0.3f, 1));
 			ui_next_size(!root->split_axis, ui_pct(1, 1));
 			ui_next_corner_radius(0);
+			ui_next_hover_cursor(root->split_axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
 			UI_Box *draggable_box = ui_box_make(UI_BoxFlag_HotAnimation |
 												UI_BoxFlag_ActiveAnimation |
 												UI_BoxFlag_DrawBackground |

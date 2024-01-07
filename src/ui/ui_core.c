@@ -1,13 +1,11 @@
 // TODO(hampus):
 
-// []  - Close context menu when clicking outside context menu
 // []  - Make tooltip stay on the first position it got
 // []  - Makes switching font & font size more robust
 // []  - Horizontal scrolling
 // []  - Context menu's inside other context menu's
 // []  - Death animations
 // []  - Change animation speed per-box
-// []  - Hover cursor
 // []  - Focused box
 // []  - Custom draw functions
 // []  - Keyboard navigation
@@ -1093,6 +1091,16 @@ ui_end(Void)
 
 		g_ui_ctx->ctx_menu_root->calc_rel_pos = anchor_pos;
 	}
+	
+	if (!ui_key_is_null(g_ui_ctx->hot_key))
+	{
+		UI_Box *hot_box = ui_box_from_key(g_ui_ctx->hot_key);
+		gfx_set_cursor(g_ui_ctx->renderer->gfx, hot_box->rect_style.hover_cursor);
+	}
+	else
+	{
+		gfx_set_cursor(g_ui_ctx->renderer->gfx, Gfx_Cursor_Hand);
+	}
 
 	ui_layout(g_ui_ctx->root);
 	ui_draw(g_ui_ctx->root);
@@ -1177,6 +1185,7 @@ ui_comm_from_box(UI_Box *box)
 		{
 			result.dragging = true;
 			result.drag_delta = v2f32_sub_v2f32(g_ui_ctx->prev_mouse_pos, g_ui_ctx->mouse_pos);
+			g_ui_ctx->hot_key = box->key;
 		}
 
 		if (ui_key_is_null(g_ui_ctx->hot_key) && mouse_over)

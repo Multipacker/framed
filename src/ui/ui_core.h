@@ -106,6 +106,7 @@ struct UI_RectStyle
 	Vec4F32 radies;
 	F32     softness;
 	R_TextureSlice slice;
+	Gfx_Cursor hover_cursor;
 };
 
 typedef struct UI_TextStyle UI_TextStyle;
@@ -430,6 +431,11 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_push_slice(x)  ui_push_rect_style()->slice = x
 #define ui_pop_slice()    ui_pop_rect_style()
 #define ui_slice(x)       defer_loop(ui_push_slice(x), ui_pop_slice())
+
+#define ui_next_hover_cursor(x)  ui_get_auto_pop_rect_style()->hover_cursor = x
+#define ui_push_hover_cursor(x)  ui_push_rect_style()->hover_cursor = x
+#define ui_pop_hover_cursor()    ui_pop_rect_style()
+#define ui_hover_cursor(x)       defer_loop(ui_push_hover_cursor(x), ui_pop_hover_cursor())
 
 // NOTE(hampus): Text styling
 
