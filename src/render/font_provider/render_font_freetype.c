@@ -276,6 +276,21 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				font->font_atlas_regions = push_array(font->arena, R_FontAtlasRegion, num_glyphs_to_load+1);
 				font->glyphs             = push_array(font->arena, R_Glyph, (U64) face->num_glyphs);
 				font->num_glyphs         = (U32) face->num_glyphs;
+
+				U32 *glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
+				U32 *codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
+				U32 glyph_count = 0;
+
+				for (
+					U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
+					index != 0 && glyph_count < num_glyphs_to_load;
+					codepoint = (U32) FT_Get_Next_Char(face, codepoint, &index)
+				)
+				{
+					glyph_indicies[glyph_count] = index;
+					codepoints[glyph_count]     = codepoint;
+					++glyph_count;
+				}
 				
 				Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
 				FT_Error ft_set_pixel_sizes_error = FT_Set_Char_Size(face, (U32) params.size << 6, (U32) params.size << 6, (U32) dpi.x, (U32) dpi.y);
@@ -301,11 +316,9 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 					render_make_glyph(renderer, font, face, 0, 0, params.render_mode);
 					font->num_loaded_glyphs++;
 					
-					U32 index;
-					U32 charcode = (U32) FT_Get_First_Char(face, &index);
-					while (index != 0)
+					for (U32 i = 0; i < glyph_count; ++i)
 					{
-						if (render_make_glyph(renderer, font, face, index, charcode, params.render_mode))
+						if (render_make_glyph(renderer, font, face, glyph_indicies[i], codepoints[i], params.render_mode))
 						{
 							font->num_loaded_glyphs++;
 							if (font->num_loaded_glyphs == num_glyphs_to_load)
@@ -316,8 +329,6 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 							// this function for some reason
 							// FT_Done_Glyph(face->glyph);
 						}
-						
-						charcode = (U32) FT_Get_Next_Char(face, charcode, &index);
 					}
 				}
 				else
@@ -331,20 +342,12 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				{
 					// NOTE(simon): Count the number of kerning pairs.
 					U64 kerning_pairs = 0;
-					for (
-						U32 index0, char0 = (U32) FT_Get_First_Char(face, &index0);
-						index0 != 0;
-						char0 = (U32) FT_Get_Next_Char(face, char0, &index0)
-					)
+					for (U32 i = 0; i < glyph_count; ++i)
 					{
-						for (
-							U32 index1, char1 = (U32) FT_Get_First_Char(face, &index1);
-							index1 != 0;
-							char1 = (U32) FT_Get_Next_Char(face, char1, &index1)
-						)
+						for (U32 j = 0; j < glyph_count; ++j)
 						{
 							FT_Vector kerning;
-							FT_Get_Kerning(face, index0, index1, FT_KERNING_DEFAULT, &kerning);
+							FT_Get_Kerning(face, glyph_indicies[i], glyph_indicies[j], FT_KERNING_DEFAULT, &kerning);
 							if (kerning.x)
 							{
 								++kerning_pairs;
@@ -353,27 +356,18 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 					}
 
 					// NOTE(simon): Open addressed hash table with at least 75% fill.
-					font->kern_map_size = u64_ceil_to_power_of_2((kerning_pairs * 4 + 2) / 3);
+					font->kern_map_size = u64_ceil_to_power_of_2((kerning_pairs * 4 + 3) / 3);
 					font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
 
-					for (
-						U32 index0 = 0, char0 = (U32) FT_Get_First_Char(face, &index0);
-						index0 != 0;
-						char0 = (U32) FT_Get_Next_Char(face, char0, &index0)
-					)
+					for (U32 i = 0; i < glyph_count; ++i)
 					{
-						for (
-							U32 index1 = 0, char1 = (U32) FT_Get_First_Char(face, &index1);
-							index1 != 0;
-							char1 = (U32) FT_Get_Next_Char(face, char1, &index1)
-						)
+						for (U32 j = 0; j < glyph_count; ++j)
 						{
-							FT_Vector kerning = { 0 };
-							FT_Get_Kerning(face, index0, index1, FT_KERNING_DEFAULT, &kerning);
-
+							FT_Vector kerning;
+							FT_Get_Kerning(face, glyph_indicies[i], glyph_indicies[j], FT_KERNING_DEFAULT, &kerning);
 							if (kerning.x)
 							{
-								U64 pair = (U64) index0 << 32 | (U64) index1;
+								U64 pair = (U64) glyph_indicies[i] << 32 | (U64) glyph_indicies[j];
 								U64 mask = font->kern_map_size - 1;
 								// NOTE(simon): Pseudo fibonacci hashing.
 								U64 index = (pair * 11400714819323198485LLU) & mask;
