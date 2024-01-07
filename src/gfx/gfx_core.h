@@ -17,6 +17,21 @@ enum Gfx_EventKind
 	Gfx_EventKind_COUNT,
 };
 
+typedef enum Gfx_Cursor Gfx_Cursor;
+enum Gfx_Cursor
+{
+	Gfx_Cursor_Arrow,
+	Gfx_Cursor_Hand,
+	Gfx_Cursor_Beam,
+	Gfx_Cursor_SizeNWSE, 
+	Gfx_Cursor_SizeNESW,
+	Gfx_Cursor_SizeWE,
+	Gfx_Cursor_SizeNS,
+	Gfx_Cursor_SizeAll,
+	
+	Gfx_Cursor_COUNT,
+};
+
 typedef enum Gfx_Key Gfx_Key;
 enum Gfx_Key
 {
@@ -127,5 +142,6 @@ internal Vec2U32       gfx_get_window_client_area(Gfx_Context *gfx);
 internal Void          gfx_toggle_fullscreen(Gfx_Context *gfx);
 internal Void          gfx_swap_buffers(Gfx_Context *gfx);
 internal Vec2F32       gfx_get_dpi(Gfx_Context *ctx);
+internal Void          gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor);
 
 #endif //GFX_ESSENTIAL_H

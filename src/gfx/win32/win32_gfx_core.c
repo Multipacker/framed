@@ -3,7 +3,6 @@ global volatile Win32_Gfx_State win32_gfx_state;
 internal LRESULT CALLBACK
 win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
-	Gfx_Context *context = (Gfx_Context *) GetWindowLongPtrW(hwnd, GWLP_USERDATA);
 	Arena_Temporary scratch = get_scratch(0, 0);
 	Gfx_Event event;
 	LRESULT result = 0;
@@ -25,8 +24,13 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		message == WM_RBUTTONUP ||
 		message == WM_RBUTTONDOWN ||
 		message == WM_LBUTTONUP ||
-		message == WM_LBUTTONDOWN)
+		message == WM_LBUTTONDOWN ||
+		message == WM_SETCURSOR)
 	{
+		if (message == WM_SETCURSOR)
+		{
+			SetCursor(win32_gfx_state.cursors[win32_gfx_state.cursor]);
+		}
 		PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam);
 	}
 	else
@@ -56,6 +60,15 @@ win32_gfx_startup_thread(Void *data)
 
 	Gfx_Context result = { 0 };
 	Arena_Temporary scratch = get_scratch(0, 0);
+
+	win32_gfx_state.cursors[Gfx_Cursor_Arrow]    = LoadCursor(0, IDC_ARROW);
+	win32_gfx_state.cursors[Gfx_Cursor_Hand]     = LoadCursor(0, IDC_HAND);
+	win32_gfx_state.cursors[Gfx_Cursor_Beam]     = LoadCursor(0, IDC_IBEAM);
+	win32_gfx_state.cursors[Gfx_Cursor_SizeNWSE] = LoadCursor(0, IDC_SIZENWSE);
+	win32_gfx_state.cursors[Gfx_Cursor_SizeNESW] = LoadCursor(0, IDC_SIZENESW);
+	win32_gfx_state.cursors[Gfx_Cursor_SizeWE]   = LoadCursor(0, IDC_SIZEWE);
+	win32_gfx_state.cursors[Gfx_Cursor_SizeNS]   = LoadCursor(0, IDC_SIZENS);
+	win32_gfx_state.cursors[Gfx_Cursor_SizeAll]  = LoadCursor(0, IDC_SIZEALL);
 
 	HINSTANCE instance = GetModuleHandle(0);
 
@@ -370,4 +383,11 @@ gfx_get_dpi(Gfx_Context *gfx)
 	result.x = (F32) dpi_x;
 	result.y = (F32) dpi_y;
 	return(result);
+}
+
+internal Void
+gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
+{
+	win32_gfx_state.cursor = cursor;
+	PostMessage(ctx->hwnd, WM_SETCURSOR, 0, 0);
 }
