@@ -520,6 +520,7 @@ png_zlib_inflate(PNG_State *state)
 				return(false);
 			}
 
+			assert(state->bit_count % 8 == 0);
 			while (state->bit_count)
 			{
 				*state->zlib_ptr++ = (U8) png_get_bits_no_refill(state, 8);
