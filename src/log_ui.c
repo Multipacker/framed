@@ -67,7 +67,7 @@ internal Void ui_log_keep_alive(Arena *frame_arena)
 internal Void
 ui_logger(Void)
 {
-	R_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 7);
+	R_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 9);
 
 	ui_next_child_layout_axis(Axis2_X);
 
