@@ -100,6 +100,23 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 	return(result);
 }
 
+internal U32
+png_read_huffman(PNG_State *state, PNG_Huffman huffman)
+{
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		U32 bits = png_peek_bits(state, huffman.lenghts[i]);
+		if (bits == huffman.codes[i])
+		{
+			png_consume_bits(state, huffman.lenghts[i]);
+			return huffman.values[i];
+		}
+	}
+
+	log_error("Unable to decode Huffman code");
+	return 0;
+}
+
 internal Void
 png_print_huffman(PNG_Huffman huffman)
 {
@@ -559,10 +576,19 @@ png_zlib_inflate(PNG_State *state)
 
 			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
 
-			png_print_huffman(code_length_huffman);
-
+			U32 *literal_lengths = push_array(scratch.arena, U32, hlit);
 			for (U32 i = 0; i < hlit; ++i)
 			{
+				png_refill_bits(state, PNG_MAX_BITS + 7);
+				U32 operation = png_read_huffman(state, code_length_huffman);
+				if (operation <= 15)
+				{
+					// NOTE(simon): Literal
+					literal_lengths[i] = operation;
+				}
+				else if (operation == 16)
+				{
+				}
 			}
 
 			for (U32 i = 0; i < hdist; ++i)
