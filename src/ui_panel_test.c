@@ -7,7 +7,13 @@
 // [ ] - Scroll tabs horizontally if there are too many to fit
 // [ ] - Reorder tabs
 // [ ] - Highlighting of the active panel
-
+	// [ ] - Windows
+//     [ ] - Resizing
+//     [ ] - Window title = tab title
+//     [ ] - Window content = tab content
+//     [x] - Dragging around
+//     [ ] - Pinnable which disables closing
+ 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
@@ -24,6 +30,7 @@
 
 typedef struct Panel Panel;
 typedef struct Cmd Cmd;
+typedef struct Window Window ;
 
 typedef struct Tab Tab;
 struct Tab
@@ -55,18 +62,17 @@ struct Panel
 	Panel *children[Side_COUNT];
 	Panel *sibling;
 	Panel *parent;
-
+	Window *window;
+	
 	TabGroup tab_group;
 
 	Axis2 split_axis;
-	F32 percent_of_parent;
+	F32 pct_of_parent;
 
 	Str8 string;
 
 	UI_Box *box;
-
-	B32 drag_hovered;
-
+	
 	// NOTE(hampus): For debugging
 	UI_Box *dragger;
 	U64 frame_index;
@@ -78,8 +84,11 @@ struct Window
 	Window *next;
 	Window *prev;
 	
-	U64 pos;
-	Panel *panel;
+	Vec2F32 pos;
+	Vec2F32 size;
+	Panel *root_panel;
+	
+	B32 dragging;
 };
 
 typedef struct WindowList WindowList;
@@ -175,21 +184,16 @@ struct AppState
 
 	CmdBuffer cmd_buffer;
 
-	Panel *root_panel;
-	
 	WindowList window_list;
 	
 	// NOTE(hampus): Dragging stuff
-
 	Vec2F32 start_drag_pos;
 	Vec2F32 current_drag_pos;
-
 	Tab *drag_candidate;
 	Tab *drag_tab;
-
-	Panel *panel_release;
-
-	B32 show_debug_info;
+	Panel *hovering_panel;
+	B32 tab_released;
+	Vec2F32 new_window_pct;
 
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
@@ -347,9 +351,7 @@ ui_tab_is_active(Tab *tab)
 internal Void
 ui_tab_button(Tab *tab)
 {
-	// TODO(hampus): Get this back here. Because it might be dragged
-	// aswell, it will be here two times
-	//assert(tab->frame_index != app_state->frame_index);
+	assert(tab->frame_index != app_state->frame_index);
 	tab->frame_index = app_state->frame_index;
 	ui_push_string(tab->string);
 
@@ -393,67 +395,82 @@ ui_tab_button(Tab *tab)
 		UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable,
 										str8_lit("CloseButton"));
 
-		UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
-
-		UI_Comm close_box_comm = ui_comm_from_box(close_box);
-
-		UI_Comm title_comm = ui_comm_from_box(title_container);
-
-		if (title_comm.pressed)
+		if (!app_state->drag_tab)
 		{
-			if (!app_state->drag_tab && !tab->pinned)
+			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
+			UI_Comm close_box_comm = ui_comm_from_box(close_box);
+			UI_Comm title_comm = ui_comm_from_box(title_container);
+			
+			if (title_comm.pressed)
 			{
-				app_state->start_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
-				app_state->drag_candidate = tab;
-				app_state->current_drag_pos = app_state->start_drag_pos;
-			}
-
-			PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab, panel_set_active_tab);
-			data->tab = tab;
-			data->panel = tab->panel;
-		}
-
-		if (title_comm.released)
-		{
-			if (app_state->drag_candidate == tab)
-			{
-				app_state->drag_candidate = 0;
-			}
-		}
-		// NOTE(hampus): Icon appearance
-
-		UI_BoxFlags icon_hover_flags = UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawText;
-
-		if (pin_box_comm.hovering)
-		{
-			pin_box->flags |= icon_hover_flags;
-		}
-
-		if (close_box_comm.hovering)
-		{
-			close_box->flags |= icon_hover_flags;
-		}
-
-		if (close_box_comm.hovering || pin_box_comm.hovering || title_comm.hovering)
-		{
-			pin_box->flags   |= UI_BoxFlag_DrawText;
-			close_box->flags |= UI_BoxFlag_DrawText;
-		}
-
-		if (pin_box_comm.pressed)
-		{
-			tab->pinned = !tab->pinned;
-		}
-
-		if (close_box_comm.pressed)
-		{
-			if (!tab->pinned)
-			{
-				TabDelete *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
+				if (!app_state->drag_tab && !tab->pinned)
+				{
+					// TODO(hampus): Think about moving the code
+					// for dragging tabs here
+					app_state->start_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+					app_state->drag_candidate = tab;
+					app_state->current_drag_pos = app_state->start_drag_pos;
+					
+					Vec2F32 new_window_pct = v2f32(1, 1);
+					Panel *panel_child = tab->panel;
+					for (Panel *panel_parent = panel_child->parent;
+						 panel_parent != 0;
+						 panel_parent = panel_parent->parent)
+					{
+						Axis2 axis = panel_parent->split_axis;
+						new_window_pct.v[axis] *= panel_child->pct_of_parent;
+						panel_child = panel_parent;
+					}
+					
+					app_state->new_window_pct = new_window_pct;
+				}
+				
+				PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab, panel_set_active_tab);
 				data->tab = tab;
+				data->panel = tab->panel;
+			}
+			
+			if (title_comm.released)
+			{
+				if (app_state->drag_candidate == tab)
+				{
+					app_state->drag_candidate = 0;
+				}
+			}
+			// NOTE(hampus): Icon appearance
+			
+			UI_BoxFlags icon_hover_flags = UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawText;
+			
+			if (pin_box_comm.hovering)
+			{
+				pin_box->flags |= icon_hover_flags;
+			}
+			
+			if (close_box_comm.hovering)
+			{
+				close_box->flags |= icon_hover_flags;
+			}
+			
+			if (close_box_comm.hovering || pin_box_comm.hovering || title_comm.hovering)
+			{
+				pin_box->flags   |= UI_BoxFlag_DrawText;
+				close_box->flags |= UI_BoxFlag_DrawText;
+			}
+			
+			if (pin_box_comm.pressed)
+			{
+				tab->pinned = !tab->pinned;
+			}
+			
+			if (close_box_comm.pressed)
+			{
+				if (!tab->pinned)
+				{
+					TabDelete *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
+					data->tab = tab;
+				}
 			}
 		}
-
 	}
 	ui_pop_string();
 }
@@ -528,13 +545,16 @@ ui_panel(Panel *root)
 	if (parent)
 	{
 		Axis2 flipped_split_axis = !parent->split_axis;
-		ui_next_size(parent->split_axis, ui_pct(root->percent_of_parent, 0));
+		ui_next_size(parent->split_axis, ui_pct(root->pct_of_parent, 0));
 		ui_next_size(flipped_split_axis, ui_fill());
 	}
 	else
 	{
-		ui_next_width(ui_pct(1, 0));
-		ui_next_height(ui_pct(1, 0));
+		ui_next_width(ui_pct(root->window->size.x, 0));
+		ui_next_height(ui_pct(root->window->size.y, 0));
+		ui_next_relative_pos(Axis2_X, root->window->pos.v[Axis2_X]);
+		ui_next_relative_pos(Axis2_Y, root->window->pos.v[Axis2_Y]);
+		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
 	}
 
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
@@ -578,11 +598,11 @@ ui_panel(Panel *root)
 
 		if (dragging)
 		{
-			child0->percent_of_parent -= drag_delta / box->calc_size.v[root->split_axis];
-			child1->percent_of_parent += drag_delta / box->calc_size.v[root->split_axis];
+			child0->pct_of_parent -= drag_delta / box->calc_size.v[root->split_axis];
+			child1->pct_of_parent += drag_delta / box->calc_size.v[root->split_axis];
 
-			child0->percent_of_parent = f32_clamp(0, child0->percent_of_parent, 1.0f);
-			child1->percent_of_parent = f32_clamp(0, child1->percent_of_parent, 1.0f);
+			child0->pct_of_parent = f32_clamp(0, child0->pct_of_parent, 1.0f);
+			child1->pct_of_parent = f32_clamp(0, child1->pct_of_parent, 1.0f);
 		}
 	}
 	else
@@ -594,6 +614,7 @@ ui_panel(Panel *root)
 		Axis2   hover_axis = Axis2_COUNT;
 		Side    hover_side = 0;
 		UI_Comm tab_release_comms[TabReleaseKind_COUNT] = {0};
+		B32 hovering_any_symbols = false;
 		// NOTE(hampus): Drag & split symbols
 		if (app_state->drag_tab)
 		{
@@ -601,9 +622,8 @@ ui_panel(Panel *root)
 			ui_next_height(ui_pct(1, 1));
 			UI_Box *split_symbols_container = ui_box_make(UI_BoxFlag_FloatingPos,
 														  str8_lit("SplitSymbolsContainer"));
-			if (root->drag_hovered)
+			if (root == app_state->hovering_panel)
 			{
-				root->drag_hovered = false;
 				ui_parent(split_symbols_container)
 				{
 					ui_push_string(str8_lit("SplitSymbolsContainer"));
@@ -654,7 +674,15 @@ ui_panel(Panel *root)
 					ui_pop_string();
 				}
 			}
-
+			
+			if (root != app_state->drag_tab->panel)
+			{
+				UI_Comm panel_comm = ui_comm_from_box(split_symbols_container);
+				if (panel_comm.hovering)
+				{
+					app_state->hovering_panel = root;
+				}
+			}
 			for (TabReleaseKind i = (TabReleaseKind) 0;
 				 i < TabReleaseKind_COUNT;
 				 ++i)
@@ -662,7 +690,7 @@ ui_panel(Panel *root)
 				UI_Comm *comm = tab_release_comms + i;
 				if (comm->hovering)
 				{
-					root->drag_hovered |= true;
+					hovering_any_symbols = true;
 					switch (i)
 					{
 						case TabReleaseKind_Center:
@@ -694,6 +722,10 @@ ui_panel(Panel *root)
 						case TabReleaseKind_Center:
 						{
 							ui_attach_tab_to_panel(root, app_state->drag_tab, true);
+							dll_remove(app_state->window_list.first, 
+									   app_state->window_list.last, 
+									   app_state->drag_tab->panel->window);
+							app_state->tab_released = true;
 						} break;
 
 						case TabReleaseKind_Left:
@@ -702,24 +734,19 @@ ui_panel(Panel *root)
 						case TabReleaseKind_Bottom:
 						{
 							ui_attach_and_split_tab_to_panel(root, app_state->drag_tab, hover_axis, hover_side);
+							dll_remove(app_state->window_list.first, 
+									   app_state->window_list.last, 
+									   app_state->drag_tab->panel->window);
+							app_state->tab_released = true;
 						} break;
 
 						invalid_case;
 					}
 					app_state->drag_tab = 0;
-					root->drag_hovered = false;
+					app_state->hovering_panel = 0;
 				}
 			}
-
-			UI_Comm panel_comm = ui_comm_from_box(split_symbols_container);
-			root->drag_hovered |= panel_comm.hovering;
-			if (panel_comm.released)
-			{
-				ui_attach_tab_to_panel(root, app_state->drag_tab, true);
-
-				app_state->drag_tab = 0;
-				root->drag_hovered = false;
-			}
+			
 		}
 
 		box->layout_style.child_layout_axis = Axis2_Y;
@@ -733,6 +760,12 @@ ui_panel(Panel *root)
 			ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 			ui_next_width(ui_fill());
 			ui_next_height(ui_em(1.3f, 1));
+			if (root->tab_group.count == 1)
+			{
+				ui_next_extra_box_flags(UI_BoxFlag_Clickable |
+										UI_BoxFlag_HotAnimation |
+										UI_BoxFlag_ActiveAnimation);
+			}
 			UI_Box *title_bar = ui_box_make(UI_BoxFlag_DrawBackground,
 											str8_lit("TitleBar"));
 			ui_parent(title_bar)
@@ -761,6 +794,7 @@ ui_panel(Panel *root)
 					ui_next_height(ui_em(1.3f, 1));
 					ui_next_width(ui_em(1.3f, 1));
 					ui_next_icon(R_ICON_CROSS);
+					ui_next_hover_cursor(Gfx_Cursor_Hand);
 					ui_next_color(v4f32(0.6f, 0.1f, 0.1f, 1.0f));
 					UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable |
 													UI_BoxFlag_DrawText |
@@ -787,6 +821,18 @@ ui_panel(Panel *root)
 						PanelClose *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelClose, panel_close);
 						data->panel = root;
 					}
+				}
+			}
+			
+			if (root->tab_group.count == 1 &&
+				!app_state->drag_tab)
+			{
+				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
+				if (title_bar_comm.pressed)
+				{
+					app_state->start_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+					app_state->drag_candidate = root->tab_group.active_tab;
+					app_state->current_drag_pos = app_state->start_drag_pos;
 				}
 			}
 		}
@@ -856,7 +902,7 @@ ui_panel(Panel *root)
 		}
 
 		// NOTE(hampus): Drag & split overlay
-		if (root->drag_hovered)
+		if (hovering_any_symbols)
 		{
 			Vec4F32 top_color = ui_top_rect_style()->color[0];
 			top_color.r += 0.2f;
@@ -918,37 +964,18 @@ ui_panel(Panel *root)
 
 		ui_pop_string();
 	}
-
-
-	if (app_state->show_debug_info)
+	
+	if (app_state->drag_tab)
 	{
-		// NOTE(hampus): Just some debug stuff
-		// so that we can see the name of each
-		// panel
-		ui_seed(root->string)
+		if (root != app_state->drag_tab->panel)
 		{
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_pct(1, 1));
-			UI_Box *debug_box_parent = ui_box_make(UI_BoxFlag_FloatingPos,
-												   str8_lit(""));
-			ui_parent(debug_box_parent)
-			{
-				ui_spacer(ui_fill());
-				ui_next_width(ui_pct(1, 1));
-				ui_row()
-				{
-					ui_spacer(ui_fill());
-					ui_text(root->string);
-					ui_spacer(ui_fill());
-
-				}
-				ui_spacer(ui_fill());
-			}
+			// NOTE(hampus): We don't want to consume all the events
+			// if we're dragging a tab in order to make the others panels
+			// able to get hovered
+			// NOTE(hampus): Consume all non-taken events
+			UI_Comm root_comm = ui_comm_from_box(box); 
 		}
 	}
-
-	// NOTE(hampus): Consume all non-taken events
-	UI_Comm root_comm = ui_comm_from_box(box);
 
 	ui_pop_parent();
 }
@@ -1000,22 +1027,32 @@ os_main(Str8List arguments)
 
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
-
+	
 	app_state->cmd_buffer.buffer = push_array(app_state->perm_arena, Cmd, CMD_BUFFER_SIZE);
 	app_state->cmd_buffer.size = CMD_BUFFER_SIZE;
-
-	app_state->root_panel = push_struct(app_state->perm_arena, Panel);
-	app_state->root_panel->string = str8_pushf(app_state->perm_arena, "RootPanel");
-
-	Tab *tab = ui_tab_alloc(app_state->perm_arena);
-	TabAttach attach =
+	
+	Window *first_window = push_struct(app_state->perm_arena, Window); 
+	
+	first_window->root_panel = push_struct(app_state->perm_arena, Panel);
+	first_window->root_panel->string = str8_pushf(app_state->perm_arena, "RootPanel");
+	
+	first_window->root_panel->window = first_window;
+	
+	first_window->size = v2f32(1, 1);
+	
+	dll_push_back(app_state->window_list.first, app_state->window_list.last, first_window); 
+	
 	{
-		.tab = tab,
-		.panel = app_state->root_panel,
-		.set_active = true,
-	};
-	tab_attach(&attach);
-
+		Tab *tab = ui_tab_alloc(app_state->perm_arena);
+		TabAttach attach =
+		{
+			.tab = tab,
+			.panel = first_window->root_panel,
+			.set_active = true,
+		};
+		tab_attach(&attach);
+	}
+	
 	app_state->frame_index = 1;
 
 	gfx_show_window(&gfx);
@@ -1024,7 +1061,8 @@ os_main(Str8List arguments)
 	{
 		Arena *current_arena  = frame_arenas[0];
 		Arena *previous_arena = frame_arenas[1];
-
+		
+		B32 left_mouse_released = false;
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first;
 			 event != 0;
@@ -1045,7 +1083,15 @@ os_main(Str8List arguments)
 					}
 					log_info("Key press!");
 				} break;
-
+				
+				case Gfx_EventKind_KeyRelease:
+				{
+					if (event->key == Gfx_Key_MouseLeft)
+					{
+						left_mouse_released = true;
+					}
+				} break;
+				
 				default:
 				{
 				} break;
@@ -1140,55 +1186,103 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("View"));
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
-			ui_check(&app_state->show_debug_info, str8_lit("ShowDebugInfoCheck"));
 		}
-
-		ui_panel(app_state->root_panel);
-
-		if (app_state->drag_tab ||
-			app_state->drag_candidate)
+		
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
+		UI_Box *window_root_parent = ui_box_make(0, str8_lit(""));
+		
+		ui_parent(window_root_parent)
 		{
-			app_state->current_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
-		}
-
-		if (app_state->drag_tab)
-		{
-			ui_next_relative_pos(Axis2_X, app_state->current_drag_pos.v[Axis2_X]);
-			ui_next_relative_pos(Axis2_Y, app_state->current_drag_pos.v[Axis2_Y]);
-			ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
-			ui_seed(str8_lit("DraggingTab"))
+			if (app_state->drag_tab ||
+				app_state->drag_candidate)
 			{
-				ui_tab_button(app_state->drag_tab);
+				app_state->current_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+			}
+			
+			local B32 begin_drag = false;
+			
+			if (begin_drag)
+			{
+				// NOTE(hampus): Lets check if it is the last tab
+				// of the window
+				if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
+					app_state->drag_tab->panel->tab_group.count == 1)
+				{
+					app_state->drag_tab->panel->sibling = 0;
+				}
+				else
+				{
+					Window *new_window = push_struct(app_state->perm_arena, Window); 
+					new_window->root_panel = ui_panel_alloc(app_state->perm_arena);
+					new_window->root_panel->window = new_window;
+					
+					dll_push_front(app_state->window_list.first, app_state->window_list.last, new_window); 
+					
+					{
+						TabAttach attach =
+						{
+							.tab = app_state->drag_tab,
+							.panel = new_window->root_panel,
+							.set_active = true,
+						};
+						tab_attach(&attach);
+					}
+					// TODO(hampus): Make the percent as big as the 
+					// tab's previous panel was.
+					new_window->size = app_state->new_window_pct; 
+				}
+				begin_drag = false;
+			}
+			
+			if (app_state->drag_tab)
+			{
+				app_state->drag_tab->panel->window->pos = app_state->current_drag_pos;
+			}
+			
+			B32 currently_dragging = app_state->drag_candidate != 0;
+			if (currently_dragging)
+			{
+				Vec2F32 delta = v2f32_sub_v2f32(app_state->current_drag_pos, app_state->start_drag_pos);
+				if (f32_abs(delta.x) > 20 || f32_abs(delta.y) > 20)
+				{
+					begin_drag = true;
+					app_state->drag_tab = app_state->drag_candidate;
+					app_state->drag_candidate = 0;
+					if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
+						app_state->drag_tab->panel->tab_group.count == 1)
+					{
+					}
+					else
+					{
+						TabDelete *tab_delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
+						tab_delete_data->tab = app_state->drag_tab;
+					}
+				}
+			}
+			
+			for (Window *window = app_state->window_list.first;
+				 window != 0;
+				 window = window->next)
+			{
+				ui_panel(window->root_panel);
 			}
 		}
-
-		B32 currently_dragging = app_state->drag_candidate != 0;
-		if (currently_dragging)
+		
+		if (left_mouse_released && app_state->drag_tab && !app_state->tab_released)
 		{
-			printf("True\n");
-			Vec2F32 delta = v2f32_sub_v2f32(app_state->current_drag_pos, app_state->start_drag_pos);
-			if (f32_abs(delta.x) > 20 || f32_abs(delta.y) > 20)
-			{
-				app_state->drag_tab = app_state->drag_candidate;
-				app_state->drag_candidate = 0;
-				TabDelete *tab_delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
-				tab_delete_data->tab = app_state->drag_tab;
-			}
+			app_state->drag_tab = 0;
+			app_state->hovering_panel = 0;
+			app_state->tab_released = true;
 		}
-
-		ui_next_relative_pos(Axis2_X, 500);
-		ui_next_relative_pos(Axis2_Y, 500);
-		UI_Box *box = ui_box_make(UI_BoxFlag_FloatingPos,
-								  str8_lit(""));
-
-		if (app_state->show_debug_info)
+		
+		if (app_state->tab_released)
 		{
-			ui_parent(box)
-			{
-				ui_panel_draw_debug(app_state->root_panel);
-			}
+			app_state->hovering_panel = 0;
 		}
-
+		
+		app_state->tab_released = false;
+		
 		ui_end();
 
 		for (U64 i = 0; i < app_state->cmd_buffer.pos; ++i)

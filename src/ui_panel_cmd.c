@@ -23,7 +23,7 @@ UI_CMD(tab_delete)
 	}
 	dll_remove(panel->tab_group.first, panel->tab_group.last, tab);
 	panel->tab_group.count--;
-	if (panel->tab_group.first == 0)
+	if (panel->tab_group.count == 0)
 	{
 		PanelClose close =
 		{
@@ -60,13 +60,21 @@ UI_CMD(panel_set_active_tab)
 UI_CMD(panel_split)
 {
 	// NOTE(hampus): We will create a new parent that will
-	// have this panel and a new child as children
-	PanelSplit *data  = (PanelSplit *)params;
-	Axis2 split_axis  = data->axis;
+	// have this panel and a new child as children:
+	//
+	//               c
+	//     a  -->   / \
+	//             a   b
+	//
+	// where c is ´new_parent´, and b is ´child1´
+			PanelSplit *data  = (PanelSplit *)params;
+			Axis2 split_axis  = data->axis;
 	Panel *child0     = data->panel;
 	Panel *child1     = ui_panel_alloc(app_state->perm_arena);
+	child1->window = child0->window;
 	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
-	new_parent->percent_of_parent = child0->percent_of_parent;
+	new_parent->window = child0->window;
+	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
 	Panel *children[Side_COUNT] = {child0, child1};
 
@@ -95,14 +103,14 @@ UI_CMD(panel_split)
 	{
 		children[side]->sibling = children[side_flip(side)];
 		children[side]->parent = new_parent;
-		children[side]->percent_of_parent = 0.5f;
+		children[side]->pct_of_parent = 0.5f;
 		new_parent->children[side] = children[side];
 		memory_zero_array(children[side]->children);
 	}
 
-	if (child0 == app_state->root_panel)
+	if (child0 == child0->window->root_panel)
 	{
-		app_state->root_panel = new_parent;
+		child0->window->root_panel = new_parent;
 	}
 	
 	if (data->alloc_new_tab)
@@ -195,19 +203,20 @@ UI_CMD(panel_close)
 			root->parent->parent->children[parent_side] = replacement;
 			root->parent->parent->children[flipped_parent_side]->sibling = replacement;
 			replacement->sibling           = root->parent->parent->children[flipped_parent_side];
-			replacement->percent_of_parent = 1.0f - replacement->sibling->percent_of_parent;
+			replacement->pct_of_parent     = 1.0f - replacement->sibling->pct_of_parent;
 			replacement->parent            = root->parent->parent;
 		}
 		else if (root->parent)
 		{
 			// NOTE(hampus): We closed one of the root's children
-			app_state->root_panel = replacement;
-			app_state->root_panel->sibling = 0;
-			app_state->root_panel->parent = 0;
+			root->window->root_panel = replacement;
+			root->window->root_panel->sibling = 0;
+			root->window->root_panel->parent = 0;
 		}
 	}
 	else
 	{
-		// NOTE(hampus): We tried to remove the root, big nono
+		Window *window = root->window;
+		dll_remove(app_state->window_list.first, app_state->window_list.last, window); 
 	}
 }

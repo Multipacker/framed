@@ -59,6 +59,7 @@ ui_imagef(R_TextureSlice slice, CStr fmt, ...)
 internal UI_Comm
 ui_button(Str8 string)
 {
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 							  UI_BoxFlag_DrawBorder |
 							  UI_BoxFlag_HotAnimation |
@@ -90,6 +91,7 @@ ui_check(B32 *value, Str8 string)
 
 	ui_next_width(ui_em(1.0f, 1));
 	ui_next_height(ui_em(1.0f, 1));
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
 	UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
 									UI_BoxFlag_Clickable |
 									UI_BoxFlag_HotAnimation |
