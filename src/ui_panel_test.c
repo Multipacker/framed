@@ -13,6 +13,7 @@
 //     [ ] - Window content = tab content
 //     [x] - Dragging around
 //     [ ] - Pinnable which disables closing
+//     [ ] - A common frame for panels on a window
  
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -181,7 +182,9 @@ struct AppState
 	Arena *perm_arena;
 	U64 num_panels;
 	U64 num_tabs;
-
+	
+	UI_Box *root_window;
+	
 	CmdBuffer cmd_buffer;
 
 	WindowList window_list;
@@ -349,6 +352,39 @@ ui_tab_is_active(Tab *tab)
 }
 
 internal Void
+ui_prepare_for_drag(Tab *tab, Vec2F32 mouse_offset)
+{
+	// NOTE(hampus): Since the root window may not have 
+	// it's origin on (0, 0), we have to account for it
+	app_state->start_drag_pos = v2f32_sub_v2f32(gfx_get_mouse_pos(g_ui_ctx->renderer->gfx),
+												app_state->root_window->rect.min);
+	
+	// NOTE(hampus): Place it where the cursor placed
+	// it on the box, not only from the box's origin
+	app_state->start_drag_pos = v2f32_sub_v2f32(app_state->start_drag_pos, mouse_offset);
+	
+	app_state->drag_candidate = tab;
+	app_state->current_drag_pos = app_state->start_drag_pos;
+	
+	// NOTE(hampus): Save the amount of space the 
+	// new window should have. Since the panel
+	// is removed from the tab, we have to
+	// calculate it here.
+	Vec2F32 new_window_pct = v2f32(1, 1);
+	Panel *panel_child = tab->panel;
+	for (Panel *panel_parent = panel_child->parent;
+		 panel_parent != 0;
+		 panel_parent = panel_parent->parent)
+	{
+		Axis2 axis = panel_parent->split_axis;
+		new_window_pct.v[axis] *= panel_child->pct_of_parent;
+		panel_child = panel_parent;
+	}
+	
+	app_state->new_window_pct = new_window_pct;
+}
+
+internal Void
 ui_tab_button(Tab *tab)
 {
 	assert(tab->frame_index != app_state->frame_index);
@@ -405,24 +441,7 @@ ui_tab_button(Tab *tab)
 			{
 				if (!app_state->drag_tab && !tab->pinned)
 				{
-					// TODO(hampus): Think about moving the code
-					// for dragging tabs here
-					app_state->start_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
-					app_state->drag_candidate = tab;
-					app_state->current_drag_pos = app_state->start_drag_pos;
-					
-					Vec2F32 new_window_pct = v2f32(1, 1);
-					Panel *panel_child = tab->panel;
-					for (Panel *panel_parent = panel_child->parent;
-						 panel_parent != 0;
-						 panel_parent = panel_parent->parent)
-					{
-						Axis2 axis = panel_parent->split_axis;
-						new_window_pct.v[axis] *= panel_child->pct_of_parent;
-						panel_child = panel_parent;
-					}
-					
-					app_state->new_window_pct = new_window_pct;
+					ui_prepare_for_drag(tab, title_comm.rel_mouse);
 				}
 				
 				PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab, panel_set_active_tab);
@@ -550,8 +569,8 @@ ui_panel(Panel *root)
 	}
 	else
 	{
-		ui_next_width(ui_pct(root->window->size.x, 0));
-		ui_next_height(ui_pct(root->window->size.y, 0));
+		ui_next_width(ui_pct(root->window->size.x, 1));
+		ui_next_height(ui_pct(root->window->size.y, 1));
 		ui_next_relative_pos(Axis2_X, root->window->pos.v[Axis2_X]);
 		ui_next_relative_pos(Axis2_Y, root->window->pos.v[Axis2_Y]);
 		ui_next_extra_box_flags(UI_BoxFlag_FloatingPos);
@@ -830,9 +849,8 @@ ui_panel(Panel *root)
 				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
 				if (title_bar_comm.pressed)
 				{
-					app_state->start_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
-					app_state->drag_candidate = root->tab_group.active_tab;
-					app_state->current_drag_pos = app_state->start_drag_pos;
+					ui_prepare_for_drag(root->tab_group.active_tab, title_bar_comm.rel_mouse);
+					
 				}
 			}
 		}
@@ -1054,11 +1072,14 @@ os_main(Str8List arguments)
 	}
 	
 	app_state->frame_index = 1;
-
+	
+	Vec2F32 prev_mouse_pos = {0};;
+	
 	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
 	{
+	Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
 		Arena *current_arena  = frame_arenas[0];
 		Arena *previous_arena = frame_arenas[1];
 		
@@ -1190,77 +1211,78 @@ os_main(Str8List arguments)
 		
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
-		UI_Box *window_root_parent = ui_box_make(0, str8_lit(""));
-		
-		ui_parent(window_root_parent)
+		UI_Box *window_root_parent = ui_box_make(0, str8_lit("RootWindow"));
+		app_state->root_window = window_root_parent;
+		if (app_state->drag_tab ||
+			app_state->drag_candidate)
 		{
-			if (app_state->drag_tab ||
-				app_state->drag_candidate)
+			Vec2F32 mouse_delta = v2f32_sub_v2f32(mouse_pos, prev_mouse_pos);
+			app_state->current_drag_pos = v2f32_add_v2f32(app_state->current_drag_pos, 
+														  mouse_delta);
+		}
+		
+		local B32 begin_drag = false;
+		
+		if (begin_drag)
+		{
+			// NOTE(hampus): If it is the last tab of the window,
+			// we don't need to allocate a new panel. Just use 
+			// the tab's panel
+			if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
+				app_state->drag_tab->panel->tab_group.count == 1)
 			{
-				app_state->current_drag_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+				app_state->drag_tab->panel->sibling = 0;
 			}
-			
-			local B32 begin_drag = false;
-			
-			if (begin_drag)
+			else
 			{
-				// NOTE(hampus): Lets check if it is the last tab
-				// of the window
+				Window *new_window = push_struct(app_state->perm_arena, Window); 
+				new_window->root_panel = ui_panel_alloc(app_state->perm_arena);
+				new_window->root_panel->window = new_window;
+				
+				dll_push_front(app_state->window_list.first, app_state->window_list.last, new_window); 
+				
+				{
+					TabAttach attach =
+					{
+						.tab = app_state->drag_tab,
+						.panel = new_window->root_panel,
+						.set_active = true,
+					};
+					tab_attach(&attach);
+				}
+				new_window->size = app_state->new_window_pct; 
+			}
+			begin_drag = false;
+		}
+		
+		if (app_state->drag_tab)
+		{
+			app_state->drag_tab->panel->window->pos = app_state->current_drag_pos;
+		}
+		
+		B32 currently_dragging = app_state->drag_candidate != 0;
+		if (currently_dragging)
+		{
+			Vec2F32 delta = v2f32_sub_v2f32(app_state->current_drag_pos, app_state->start_drag_pos);
+			if (f32_abs(delta.x) > 20 || f32_abs(delta.y) > 20)
+			{
+				begin_drag = true;
+				app_state->drag_tab = app_state->drag_candidate;
+				app_state->drag_candidate = 0;
 				if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
 					app_state->drag_tab->panel->tab_group.count == 1)
 				{
-					app_state->drag_tab->panel->sibling = 0;
 				}
 				else
 				{
-					Window *new_window = push_struct(app_state->perm_arena, Window); 
-					new_window->root_panel = ui_panel_alloc(app_state->perm_arena);
-					new_window->root_panel->window = new_window;
-					
-					dll_push_front(app_state->window_list.first, app_state->window_list.last, new_window); 
-					
-					{
-						TabAttach attach =
-						{
-							.tab = app_state->drag_tab,
-							.panel = new_window->root_panel,
-							.set_active = true,
-						};
-						tab_attach(&attach);
-					}
-					// TODO(hampus): Make the percent as big as the 
-					// tab's previous panel was.
-					new_window->size = app_state->new_window_pct; 
-				}
-				begin_drag = false;
-			}
-			
-			if (app_state->drag_tab)
-			{
-				app_state->drag_tab->panel->window->pos = app_state->current_drag_pos;
-			}
-			
-			B32 currently_dragging = app_state->drag_candidate != 0;
-			if (currently_dragging)
-			{
-				Vec2F32 delta = v2f32_sub_v2f32(app_state->current_drag_pos, app_state->start_drag_pos);
-				if (f32_abs(delta.x) > 20 || f32_abs(delta.y) > 20)
-				{
-					begin_drag = true;
-					app_state->drag_tab = app_state->drag_candidate;
-					app_state->drag_candidate = 0;
-					if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
-						app_state->drag_tab->panel->tab_group.count == 1)
-					{
-					}
-					else
-					{
-						TabDelete *tab_delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
-						tab_delete_data->tab = app_state->drag_tab;
-					}
+					TabDelete *tab_delete_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabClose, tab_delete);
+					tab_delete_data->tab = app_state->drag_tab;
 				}
 			}
-			
+		}
+		
+		ui_parent(window_root_parent)
+		{
 			for (Window *window = app_state->window_list.first;
 				 window != 0;
 				 window = window->next)
@@ -1271,13 +1293,15 @@ os_main(Str8List arguments)
 		
 		if (left_mouse_released && app_state->drag_tab && !app_state->tab_released)
 		{
-			app_state->drag_tab = 0;
-			app_state->hovering_panel = 0;
 			app_state->tab_released = true;
 		}
 		
 		if (app_state->tab_released)
 		{
+			app_state->hovering_panel = 0;
+			memory_zero_struct(&app_state->start_drag_pos);
+			memory_zero_struct(&app_state->current_drag_pos);
+			app_state->drag_tab = 0;
 			app_state->hovering_panel = 0;
 		}
 		
@@ -1303,6 +1327,8 @@ os_main(Str8List arguments)
 		start_counter = end_counter;
 
 		app_state->frame_index++;
+		
+		prev_mouse_pos = mouse_pos;
 	}
 
 	return(0);
