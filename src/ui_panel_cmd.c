@@ -1,6 +1,6 @@
-UI_CMD(panel_close);
+UI_COMMAND(panel_close);
 
-UI_CMD(tab_delete)
+UI_COMMAND(tab_close)
 {
 	TabDelete *data = (TabDelete *)params;
 
@@ -31,11 +31,11 @@ UI_CMD(tab_delete)
 		{
 			.panel = panel,
 		};
-		panel_close(&close);
+		ui_command_panel_close(&close);
 	}
 }
 
-UI_CMD(tab_attach)
+UI_COMMAND(tab_attach)
 {
 	TabAttach *data = (TabAttach *)params;
 
@@ -43,14 +43,15 @@ UI_CMD(tab_attach)
 	Tab *tab = data->tab;
 	dll_push_back(panel->tab_group.first, panel->tab_group.last, tab);
 	tab->panel = panel;
-	if (data->set_active)
+	B32 set_active = panel->tab_group.count == 0 || data->set_active;
+	if (set_active)
 	{
 		panel->tab_group.active_tab = tab;
 	}
 	panel->tab_group.count++;
 }
 
-UI_CMD(panel_set_active_tab)
+UI_COMMAND(panel_set_active_tab)
 {
 	PanelSetActiveTab *data = (PanelSetActiveTab *)params;
 	Panel *panel = data->panel;
@@ -59,7 +60,7 @@ UI_CMD(panel_set_active_tab)
 }
 
 // NOTE(hampus): This _always_ put the new child to the right or bottom
-UI_CMD(panel_split)
+UI_COMMAND(panel_split)
 {
 	// NOTE(hampus): We will create a new parent that will
 	// have this panel and a new child as children:
@@ -124,11 +125,11 @@ UI_CMD(panel_split)
 			.panel = child1,
 			.set_active = true,
 		};
-		tab_attach(&attach);
+		ui_command_tab_attach(&attach);
 	}
 }
 
-UI_CMD(panel_split_and_attach)
+UI_COMMAND(panel_split_and_attach)
 {
 	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
 
@@ -142,7 +143,7 @@ UI_CMD(panel_split_and_attach)
 		.axis       = data->axis,
 	};
 
-	panel_split(&split_data);
+	ui_command_panel_split(&split_data);
 
 	// NOTE(hampus): panel_split always put the new panel
 	// to the left/top
@@ -174,7 +175,7 @@ UI_CMD(panel_split_and_attach)
 			.set_active = true,
 		};
 
-		tab_attach(&attach);
+		ui_command_tab_attach(&attach);
 	}
 
 	Panel *panel = data->panel->parent->children[data->panel_side];
@@ -186,10 +187,10 @@ UI_CMD(panel_split_and_attach)
 		.set_active = true,
 	};
 
-	tab_attach(&tab_attach_data);
+	ui_command_tab_attach(&tab_attach_data);
 }
 
-UI_CMD(panel_close)
+UI_COMMAND(panel_close)
 {
 	PanelClose *data = (PanelClose *)params;
 	Panel *root = data->panel;
