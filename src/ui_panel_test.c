@@ -1299,8 +1299,9 @@ os_main(Str8List arguments)
 		B32 currently_dragging = app_state->drag_candidate != 0;
 		if (currently_dragging)
 		{
+			F32 drag_distance_required = ui_em(2, 1).value;
 			Vec2F32 delta = v2f32_sub_v2f32(app_state->current_drag_pos, app_state->start_drag_pos);
-			if (f32_abs(delta.x) > 20 || f32_abs(delta.y) > 20)
+			if (f32_abs(delta.x) > drag_distance_required || f32_abs(delta.y) > drag_distance_required)
 			{
 				begin_drag = true;
 				ui_begin_drag();
