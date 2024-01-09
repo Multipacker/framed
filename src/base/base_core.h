@@ -293,6 +293,7 @@ a = b; \
 b = temp; \
 }
 
+#define axis_flip(axis) (!(axis))
 typedef enum Axis2 Axis2;
 enum Axis2
 {
