@@ -93,6 +93,22 @@ struct PNG_State
 	U8 *zlib_opl;
 };
 
+internal U32
+png_stride_from_color_type(PNG_ColorType type)
+{
+	switch (type)
+	{
+		case PNG_ColorType_Greyscale:      return 1; break;
+		case PNG_ColorType_Truecolor:      return 3; break;
+		case PNG_ColorType_IndexedColor:   return 1; break;
+		case PNG_ColorType_GreyscaleAlpha: return 2; break;
+		case PNG_ColorType_TruecolorAlpha: return 4; break;
+		invalid_case;
+	}
+
+	return 0;
+}
+
 internal U8
 png_get_byte(PNG_State *state)
 {
@@ -728,6 +744,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 	// TODO(simon): Better approximation for the unfiltered data
 	U64 unfiltered_size = 4 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
+	U32 bit_stride = u32_round_up_to_power_of_2(state.bit_depth, 8) * (png_stride_from_color_type(state.color_type) - 1);
 	for (U32 y = 0; y < state.height; ++y)
 	{
 		U8 *row = state.zlib_output + y * (1 + state.width * 4);
@@ -743,8 +760,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 			U64 previous = 0;
 			for (U32 x = 0; x < state.width * 4; ++x)
 			{
-				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
-				U8 new_value = row[x] + (U8) (previous >> 24);
+				U8 new_value = row[x] + (U8) (previous >> bit_stride);
 				unfiltered_data[x + y * state.width * 4] = new_value;
 				previous = previous << 8 | new_value;
 			}
@@ -768,8 +784,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 			U64 previous = 0;
 			for (U32 x = 0; x < state.width * 4; ++x)
 			{
-				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
-				U8 previous_value = (U8) (previous >> 24);
+				U8 previous_value = (U8) (previous >> bit_stride);
 				U8 new_value = row[x] + (previous_value + *previous_scanline) / 2;
 				unfiltered_data[x + y * state.width * 4] = new_value;
 				previous_scanline += (y != 0);
@@ -785,8 +800,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 			U64 previous = 0;
 			for (U32 x = 0; x < state.width * 4; ++x)
 			{
-				// TODO(simon): The amount to shift down by depends on bit_depth and color_type.
-				U8 previous_value = (U8) (previous >> 24);
+				U8 previous_value = (U8) (previous >> bit_stride);
 				U8 previous_scanline_previous_value = (U8) (previous_scanline_previous >> 24);
 				U8 new_value = row[x] + png_paeth_predictor(previous_value, *previous_scanline, previous_scanline_previous_value);
 				unfiltered_data[x + y * state.width * 4] = new_value;
