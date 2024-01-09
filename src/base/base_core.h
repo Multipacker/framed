@@ -151,13 +151,18 @@
 #define check_null(x) ((x) == 0)
 #define set_null(x) ((x) = 0)
 
-#define dll_push_back_np(f,l,n,next,prev) 	((f)==0?\
+#define dll_push_back_np(f,l,n,next,prev) ((f)==0?\
 ((f)=(l)=(n),(n)->next=(n)->prev=0):\
 ((n)->prev=(l),(l)->next=(n),(l)=(n),(n)->next=0))
 
-// TODO(hampus): This does not work properly
-#define dll_push_front_np(f,l,n,next,prev) 	dll_push_back_np(l,f,n,next,prev)
+#define dll_insert_npz(f,l,p,n,next,prev,zchk,zset) \
+(zchk(f) ? (((f) = (l) = (n)), zset((n)->next), zset((n)->prev)) :\
+zchk(p) ? (zset((n)->prev), (n)->next = (f), (zchk(f) ? (0) : ((f)->prev = (n))), (f) = (n)) :\
+((zchk((p)->next) ? (0) : (((p)->next->prev) = (n))), (n)->next = (p)->next, (n)->prev = (p), (p)->next = (n),\
+((p) == (l) ? (l) = (n) : (0))))
 
+#define dll_push_back_npz(f,l,n,next,prev,zchk,zset) dll_insert_npz(f,l,l,n,next,prev,zchk,zset)
+#define dll_push_front_np(f,l,n,next,prev) dll_push_back_np(l,f,n,next,prev)
 
 #define dll_remove_npz(f,l,n,next,prev,zchk,zset) (((f)==(n))?\
 ((f)=(f)->next, (zchk(f) ? (zset(l)) : zset((f)->prev))):\
@@ -165,7 +170,6 @@
 ((l)=(l)->prev, (zchk(l) ? (zset(f)) : zset((l)->next))):\
 ((zchk((n)->next) ? (0) : ((n)->next->prev=(n)->prev)),\
 (zchk((n)->prev) ? (0) : ((n)->prev->next=(n)->next))))
-
 
 #define sll_push_front_np(f, n, next) ((n)->next = (f),\
 (f) = (n));
@@ -190,6 +194,7 @@ zset((n)->next))
 
 #define dll_push_back(f,l,n)  dll_push_back_np(f,l,n,next,prev)
 #define dll_push_front(f,l,n) dll_push_front_np(f,l,n,prev,next)
+#define dll_insert(f,l,p,n)   dll_insert_npz(f,l,p,n,next,prev,check_null,set_null)
 #define dll_remove(f,l,n)     dll_remove_npz(f,l,n,next,prev,check_null,set_null)
 
 #define stack_push(f,n) stack_push_n(f,n,next)
