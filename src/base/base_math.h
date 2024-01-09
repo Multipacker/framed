@@ -201,6 +201,7 @@ union RectU32
 internal Vec2F32 v2f32(F32 x, F32 y);
 internal Vec2F32 v2f32_add_v2f32(Vec2F32 a, Vec2F32 b);
 internal Vec2F32 v2f32_sub_v2f32(Vec2F32 a, Vec2F32 b);
+internal Vec2F32 v2f32_hadamard_div_v2f32(Vec2F32 a, Vec2F32 b);
 internal Vec2F32 v2f32_mul_f32(Vec2F32 a, F32 t);
 internal Vec2F32 v2f32_div_f32(Vec2F32 a, F32 t);
 
