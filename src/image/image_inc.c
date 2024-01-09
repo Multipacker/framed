@@ -63,129 +63,6 @@ struct PNG_Huffman
 	U32 count;
 };
 
-internal PNG_Huffman
-png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
-{
-	PNG_Huffman result = { 0 };
-	result.codes   = push_array(arena, U32, count);
-	result.lengths = lengths;
-	result.values  = alphabet;
-	result.count   = count;
-
-	U32 bl_count[PNG_MAX_BITS] = { 0 };
-	for (U32 i = 0; i < count; ++i)
-	{
-		++bl_count[lengths[i]];
-	}
-
-	U32 next_code[PNG_MAX_BITS] = { 0 };
-
-	U32 code = 0;
-	bl_count[0] = 0;
-	for (U32 bits = 1; bits < PNG_MAX_BITS; ++bits)
-	{
-		code = (code + bl_count[bits - 1]) << 1;
-		next_code[bits] = code;
-	}
-
-	for (U32 i = 0; i < count; ++i)
-	{
-		U32 length = lengths[i];
-		if (length != 0)
-		{
-			result.codes[i] = next_code[length]++;
-		}
-	}
-
-	return(result);
-}
-
-internal U32
-png_read_huffman(PNG_State *state, PNG_Huffman huffman)
-{
-	for (U32 i = 0; i < huffman.count; ++i)
-	{
-		U32 bits = png_peek_bits(state, huffman.lenghts[i]);
-		if (bits == huffman.codes[i])
-		{
-			png_consume_bits(state, huffman.lenghts[i]);
-			return huffman.values[i];
-		}
-	}
-
-	log_error("Unable to decode Huffman code");
-	return 0;
-}
-
-internal Void
-png_print_huffman(PNG_Huffman huffman)
-{
-	U32 max_value  = 0;
-	U32 max_length = 0;
-	for (U32 i = 0; i < huffman.count; ++i)
-	{
-		max_value  = u32_max(max_value,  huffman.values[i]);
-		max_length = u32_max(max_length, huffman.lengths[i]);
-	}
-
-	U32 value_length  = (U32) f32_floor(f32_log((F32) max_value))  + 1;
-	U32 length_length = (U32) f32_floor(f32_log((F32) max_length)) + 1;
-
-	log_info("Huffman codes(Symbol, Length, Code):");
-	for (U32 i = 0; i < huffman.count; ++i)
-	{
-		if (huffman.lengths[i] == 0)
-		{
-			log_info(" %*"PRIU32" %*"PRIU32, value_length, huffman.values[i], length_length, huffman.lengths[i]);
-		}
-		else
-		{
-			log_info(" %*"PRIU32" %*"PRIU32" %0*b", value_length, huffman.values[i], length_length, huffman.lengths[i], huffman.lengths[i], huffman.codes[i]);
-		}
-	}
-}
-
-internal PNG_Chunk
-png_parse_chunk(Str8 *contents)
-{
-	PNG_Chunk chunk = { 0 };
-
-	if (contents->size >= PNG_CHUNK_MIN_SIZE)
-	{
-		U32 length = u32_big_to_local_endian(*(U32 *) contents->data);
-		*contents = str8_skip(*contents, sizeof(U32));
-
-		chunk.type = *(U32 *) contents->data;
-		*contents = str8_skip(*contents, sizeof(U32));
-
-		// TODO(simon): Verify type is valid.
-
-		assert(length < S32_MAX);
-
-		if (contents->size >= length + sizeof(U32))
-		{
-			chunk.data = str8(contents->data, length);
-			*contents = str8_skip(*contents, length);
-
-			chunk.crc = u32_big_to_local_endian(*(U32 *) contents->data);
-			*contents = str8_skip(*contents, sizeof(U32));
-
-			// TODO(simon): Verify CRC.
-		}
-		else
-		{
-			chunk.type = 0;
-			log_error("Not enough data for chunk");
-		}
-	}
-	else
-	{
-		log_error("Not enough data for chunk");
-	}
-
-	return(chunk);
-}
-
 typedef struct PNG_IDATNode PNG_IDATNode;
 struct PNG_IDATNode
 {
@@ -284,6 +161,132 @@ png_align_to_byte(PNG_State *state)
 {
 	U32 bits_to_discard = state->bit_count & 0x07;
 	png_consume_bits(state, bits_to_discard);
+}
+
+internal PNG_Huffman
+png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
+{
+	PNG_Huffman result = { 0 };
+	result.codes   = push_array(arena, U32, count);
+	result.lengths = lengths;
+	result.values  = alphabet;
+	result.count   = count;
+
+	U32 bl_count[PNG_MAX_BITS] = { 0 };
+	for (U32 i = 0; i < count; ++i)
+	{
+		++bl_count[lengths[i]];
+	}
+
+	U32 next_code[PNG_MAX_BITS] = { 0 };
+
+	U32 code = 0;
+	bl_count[0] = 0;
+	for (U32 bits = 1; bits < PNG_MAX_BITS; ++bits)
+	{
+		code = (code + bl_count[bits - 1]) << 1;
+		next_code[bits] = code;
+	}
+
+	for (U32 i = 0; i < count; ++i)
+	{
+		U32 length = lengths[i];
+		if (length != 0)
+		{
+			// NOTE(simon): The codes here have the reverse bit order of what we need.
+			U32 code = next_code[length]++;
+			result.codes[i] = u32_reverse(code) >> (32 - length);
+		}
+	}
+
+	return(result);
+}
+
+internal U32
+png_read_huffman(PNG_State *state, PNG_Huffman huffman)
+{
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		U32 bits = (U32) png_peek_bits(state, huffman.lengths[i]);
+		if (bits == huffman.codes[i])
+		{
+			png_consume_bits(state, huffman.lengths[i]);
+			U32 result = huffman.values[i];
+			return(result);
+		}
+	}
+
+	log_error("Unable to decode Huffman code");
+	return(0);
+}
+
+internal Void
+png_print_huffman(PNG_Huffman huffman)
+{
+	U32 max_value  = 0;
+	U32 max_length = 0;
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		max_value  = u32_max(max_value,  huffman.values[i]);
+		max_length = u32_max(max_length, huffman.lengths[i]);
+	}
+
+	U32 value_length  = (U32) f32_floor(f32_log((F32) max_value))  + 1;
+	U32 length_length = (U32) f32_floor(f32_log((F32) max_length)) + 1;
+
+	log_info("Huffman codes(Symbol, Length, Code):");
+	for (U32 i = 0; i < huffman.count; ++i)
+	{
+		if (huffman.lengths[i] == 0)
+		{
+			log_info(" %*"PRIU32" %*"PRIU32, value_length, huffman.values[i], length_length, huffman.lengths[i]);
+		}
+		else
+		{
+			log_info(" %*"PRIU32" %*"PRIU32" %0*b", value_length, huffman.values[i], length_length, huffman.lengths[i], huffman.lengths[i], huffman.codes[i]);
+		}
+	}
+}
+
+internal PNG_Chunk
+png_parse_chunk(Str8 *contents)
+{
+	PNG_Chunk chunk = { 0 };
+
+	if (contents->size >= PNG_CHUNK_MIN_SIZE)
+	{
+		U32 length = u32_big_to_local_endian(*(U32 *) contents->data);
+		*contents = str8_skip(*contents, sizeof(U32));
+
+		chunk.type = *(U32 *) contents->data;
+		*contents = str8_skip(*contents, sizeof(U32));
+
+		// TODO(simon): Verify type is valid.
+
+		assert(length < S32_MAX);
+
+		if (contents->size >= length + sizeof(U32))
+		{
+			chunk.data = str8(contents->data, length);
+			*contents = str8_skip(*contents, length);
+
+			chunk.crc = u32_big_to_local_endian(*(U32 *) contents->data);
+			*contents = str8_skip(*contents, sizeof(U32));
+
+			// TODO(simon): Verify CRC.
+		}
+		else
+		{
+			chunk.type = 0;
+			log_error("Not enough data for chunk");
+		}
+	}
+	else
+	{
+		log_error("Not enough data for chunk");
+	}
+
+	return(chunk);
 }
 
 internal B32
@@ -464,6 +467,74 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 }
 
 internal B32
+png_zlib_decode_lengths(PNG_State *state, PNG_Huffman huffman, U32 *result_lengths, U32 count)
+{
+	U32 repeat_value = 0;
+	U32 repeat_count = 0;
+	for (U32 i = 0; i < count && !png_is_end(state); ++i)
+	{
+		if (repeat_count == 0)
+		{
+			png_refill_bits(state, PNG_MAX_BITS + 7);
+			U32 operation = png_read_huffman(state, huffman);
+			if (operation <= 15)
+			{
+				// NOTE(simon): Literal
+				result_lengths[i] = operation;
+			}
+			else if (operation == 16 && i != 0)
+			{
+				repeat_count = (U32) png_get_bits_no_refill(state, 2) + 3;
+				repeat_value = result_lengths[i - 1];
+			}
+			else if (operation == 17)
+			{
+				repeat_count = (U32) png_get_bits_no_refill(state, 3) + 3;
+				repeat_value = 0;
+
+			}
+			else if (operation == 18)
+			{
+				repeat_count = (U32) png_get_bits_no_refill(state, 7) + 11;
+				repeat_value = 0;
+			}
+			else if (operation > 18)
+			{
+				log_error("Unknown operation, corrupted PNG");
+				return(false);
+			}
+			else
+			{
+				log_error("Attempt to copy a ZLIB length value when there is none, corrupted PNG");
+				return(false);
+			}
+		}
+
+		if (repeat_count)
+		{
+			result_lengths[i] = repeat_value;
+			--repeat_count;
+		}
+	}
+
+	// NOTE(simon): Because there is a check sum at the end of the ZLIB stream,
+	// the data is corrupted if we have reached the end by this point.
+	if (png_is_end(state))
+	{
+		log_error("Not enough data in ZLIB stream, corrupted PNG");
+		return(false);
+	}
+
+	if (repeat_count)
+	{
+		log_error("Too much data, corrupted PNG");
+		return(false);
+	}
+
+	return(true);
+}
+
+internal B32
 png_zlib_inflate(PNG_State *state)
 {
 	png_refill_bits(state, 16);
@@ -577,22 +648,17 @@ png_zlib_inflate(PNG_State *state)
 			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
 
 			U32 *literal_lengths = push_array(scratch.arena, U32, hlit);
-			for (U32 i = 0; i < hlit; ++i)
+			if (!png_zlib_decode_lengths(state, code_length_huffman, literal_lengths, hlit))
 			{
-				png_refill_bits(state, PNG_MAX_BITS + 7);
-				U32 operation = png_read_huffman(state, code_length_huffman);
-				if (operation <= 15)
-				{
-					// NOTE(simon): Literal
-					literal_lengths[i] = operation;
-				}
-				else if (operation == 16)
-				{
-				}
+				release_scratch(scratch);
+				return(false);
 			}
 
-			for (U32 i = 0; i < hdist; ++i)
+			U32 *distance_lengths = push_array(scratch.arena, U32, hdist);
+			if (!png_zlib_decode_lengths(state, code_length_huffman, distance_lengths, hdist))
 			{
+				release_scratch(scratch);
+				return(false);
 			}
 
 			release_scratch(scratch);
