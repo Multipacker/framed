@@ -645,8 +645,12 @@ ui_panel(Panel *root)
 		ui_next_height(ui_pct(1, 0));
 	}
 
+	// NOTE(hampus): It is clickable so that it can consume
+	// all the click events at the end to prevent boxes
+	// from behind it to take click events
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
-							  UI_BoxFlag_DrawBackground,
+							  UI_BoxFlag_DrawBackground |
+							  UI_BoxFlag_Clickable,
 							  root->string);
 	root->box = box;
 
@@ -1049,16 +1053,22 @@ ui_panel(Panel *root)
 		ui_pop_string();
 	}
 
+	B32 take_input_from_root = true;
 	if (app_state->drag_tab)
 	{
-		if (root != app_state->drag_tab->panel)
+		if (root == app_state->drag_tab->panel)
 		{
 			// NOTE(hampus): We don't want to consume all the events
 			// if we're dragging a tab in order to make the others panels
 			// able to get hovered
-			// NOTE(hampus): Consume all non-taken events
-			UI_Comm root_comm = ui_comm_from_box(box);
+			take_input_from_root = false;
 		}
+	}
+
+	if (take_input_from_root)
+	{
+		// NOTE(hampus): Consume all non-taken events
+		UI_Comm root_comm = ui_comm_from_box(box);
 	}
 
 	ui_pop_parent();
@@ -1129,18 +1139,22 @@ ui_window_edge_resizer(Window *window, Str8 string, Axis2 axis, Side side)
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable,
 							  string);
 	Vec2U32 screen_size = gfx_get_window_area(g_ui_ctx->renderer->gfx);
-	UI_Comm comm = ui_comm_from_box(box);
-	if (comm.dragging)
+	UI_Comm comm = {0};
+	if (!ui_currently_dragging())
 	{
-		F32 drag_delta = comm.drag_delta.v[axis];
-		if (side == Side_Min)
+		comm = ui_comm_from_box(box);
+		if (comm.dragging)
 		{
-			window->pos.v[axis]  -= drag_delta;
-			window->size.v[axis] += drag_delta / (F32)screen_size.v[axis];
-		}
-		else
-		{
-			window->size.v[axis] -= drag_delta / (F32)screen_size.v[axis];
+			F32 drag_delta = comm.drag_delta.v[axis];
+			if (side == Side_Min)
+			{
+				window->pos.v[axis]  -= drag_delta;
+				window->size.v[axis] += drag_delta / (F32)screen_size.v[axis];
+			}
+			else
+			{
+				window->size.v[axis] -= drag_delta / (F32)screen_size.v[axis];
+			}
 		}
 	}
 	return(comm);
