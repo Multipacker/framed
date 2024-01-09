@@ -23,6 +23,8 @@ UI_CMD(tab_delete)
 	}
 	dll_remove(panel->tab_group.first, panel->tab_group.last, tab);
 	panel->tab_group.count--;
+	tab->next = 0;
+	tab->prev = 0;
 	if (panel->tab_group.count == 0)
 	{
 		PanelClose close =
@@ -67,8 +69,8 @@ UI_CMD(panel_split)
 	//             a   b
 	//
 	// where c is ´new_parent´, and b is ´child1´
-			PanelSplit *data  = (PanelSplit *)params;
-			Axis2 split_axis  = data->axis;
+	PanelSplit *data  = (PanelSplit *)params;
+	Axis2 split_axis  = data->axis;
 	Panel *child0     = data->panel;
 	Panel *child1     = ui_panel_alloc(app_state->perm_arena);
 	child1->window = child0->window;
@@ -112,7 +114,7 @@ UI_CMD(panel_split)
 	{
 		child0->window->root_panel = new_parent;
 	}
-	
+
 	if (data->alloc_new_tab)
 	{
 		Tab *tab = ui_tab_alloc(app_state->perm_arena);
@@ -129,9 +131,9 @@ UI_CMD(panel_split)
 UI_CMD(panel_split_and_attach)
 {
 	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
-	 
-	B32 releasing_on_same_panel = 
-		data->panel == data->tab->panel && 
+
+	B32 releasing_on_same_panel =
+		data->panel == data->tab->panel &&
 		data->panel->tab_group.count == 0;
 
 	PanelSplit split_data =
@@ -141,7 +143,7 @@ UI_CMD(panel_split_and_attach)
 	};
 
 	panel_split(&split_data);
-	
+
 	// NOTE(hampus): panel_split always put the new panel
 	// to the left/top
 	if (releasing_on_same_panel)
@@ -158,7 +160,7 @@ UI_CMD(panel_split_and_attach)
 			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
 		}
 	}
-	
+
 	if (releasing_on_same_panel)
 	{
 		// NOTE(hampus): This is needed because if we're releasing
@@ -217,6 +219,6 @@ UI_CMD(panel_close)
 	else
 	{
 		Window *window = root->window;
-		dll_remove(app_state->window_list.first, app_state->window_list.last, window); 
+		dll_remove(app_state->window_list.first, app_state->window_list.last, window);
 	}
 }
