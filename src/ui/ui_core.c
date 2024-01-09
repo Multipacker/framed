@@ -1044,7 +1044,7 @@ ui_draw(UI_Box *root)
 		{
 			render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 		}
-		
+
 		for (UI_Box *child = root->last;
 			 child != 0;
 			 child = child->prev)
@@ -1088,7 +1088,7 @@ ui_end(Void)
 
 		g_ui_ctx->ctx_menu_root->calc_rel_pos = anchor_pos;
 	}
-	
+
 	if (!ui_key_is_null(g_ui_ctx->hot_key))
 	{
 		UI_Box *hot_box = ui_box_from_key(g_ui_ctx->hot_key);
