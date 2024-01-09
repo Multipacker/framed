@@ -35,6 +35,12 @@ typedef struct Panel Panel;
 typedef struct Cmd Cmd;
 typedef struct Window Window ;
 
+typedef struct SplitPanelResult SplitPanelResult;
+struct SplitPanelResult
+{
+	Panel *panels[Side_COUNT];
+};
+
 typedef struct Tab Tab;
 struct Tab
 {
@@ -201,6 +207,7 @@ struct AppState
 	U64 num_windows;
 
 	UI_Box *root_window;
+	Window *master_window;
 
 	CmdBuffer cmd_buffer;
 
@@ -1087,6 +1094,12 @@ ui_panel_draw_debug(Panel *root)
 ////////////////////////////////
 //~ hampus: Window
 
+internal Void
+ui_window_push_to_front(Window *window)
+{
+	dll_push_front(app_state->window_list.first, app_state->window_list.last, window);
+}
+
 internal Window *
 ui_window_alloc(Arena *arena)
 {
@@ -1102,7 +1115,7 @@ ui_window_make(Arena *arena, Vec2F32 size)
 	Panel *panel = ui_panel_alloc(arena);
 	panel->window = result;
 	result->size = size;
-	dll_push_front(app_state->window_list.first, app_state->window_list.last, result);
+	ui_window_push_to_front(result);
 	result->root_panel = panel;
 	return(result);
 }
@@ -1188,12 +1201,6 @@ ui_window_corner_resizer(Window *window, Str8 string, Corner corner)
 ////////////////////////////////
 //~ hampus: UI startup builder
 
-typedef struct SplitPanelResult SplitPanelResult;
-struct SplitPanelResult
-{
-	Panel *panels[Side_COUNT];
-};
-
 #define ui_builder_split_panel(panel_to_split, split_axis, ...) ui_builder_split_panel_(&(PanelSplit) { .panel = panel_to_split, .axis = split_axis, __VA_ARGS__})
 internal SplitPanelResult
 ui_builder_split_panel_(PanelSplit *data)
@@ -1204,6 +1211,9 @@ ui_builder_split_panel_(PanelSplit *data)
 	result.panels[Side_Max] = data->panel->sibling;
 	return(result);
 }
+
+////////////////////////////////
+//~ hampus: Main
 
 internal S32
 os_main(Str8List arguments)
@@ -1231,9 +1241,9 @@ os_main(Str8List arguments)
 
 	// NOTE(hampus): Build default UI
 	{
-		Window *first_window = ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
+		Window *master_window = ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
 
-		Panel *first_panel = first_window->root_panel;
+		Panel *first_panel = master_window->root_panel;
 
 		SplitPanelResult split_panel_result = ui_builder_split_panel(first_panel, Axis2_X);
 		{
@@ -1255,6 +1265,8 @@ os_main(Str8List arguments)
 				ui_command_tab_attach(&attach);
 			}
 		}
+
+		app_state->master_window = master_window;
 	}
 
 	app_state->frame_index = 1;
@@ -1457,43 +1469,51 @@ os_main(Str8List arguments)
 			{
 				ui_seed(window->string)
 				{
-					ui_next_width(ui_pct(window->size.x, 1));
-					ui_next_height(ui_pct(window->size.y, 1));
-					ui_next_relative_pos(Axis2_X, window->pos.v[Axis2_X]);
-					ui_next_relative_pos(Axis2_Y, window->pos.v[Axis2_Y]);
-					ui_next_child_layout_axis(Axis2_X);
-					UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
-														   UI_BoxFlag_DrawDropShadow,
-														   str8_lit(""));
-					ui_parent(window_container)
+					if (window == app_state->master_window)
 					{
-						ui_next_height(ui_fill());
-						ui_column()
-						{
-							ui_window_corner_resizer(window, str8_lit("TopLeftWindowResize"), Corner_TopLeft);
-							ui_window_edge_resizer(window, str8_lit("TopWindowResize"), Axis2_X, Side_Min);
-							ui_window_corner_resizer(window, str8_lit("BottomLeftWindowResize"), Corner_BottomLeft);
-						}
-
-						ui_next_width(ui_fill());
-						ui_next_height(ui_fill());
-						ui_column()
-						{
-							ui_window_edge_resizer(window, str8_lit("LeftWindowResize"), Axis2_Y, Side_Min);
-							ui_panel(window->root_panel);
-							ui_window_edge_resizer(window, str8_lit("RightWindowResize"), Axis2_Y, Side_Max);
-						}
-
-						ui_next_height(ui_fill());
-						ui_column()
-						{
-							ui_window_corner_resizer(window, str8_lit("TopRightWindowResize"), Corner_TopRight);
-							ui_window_edge_resizer(window, str8_lit("BottomWindowResize"), Axis2_X, Side_Max);
-							ui_window_corner_resizer(window, str8_lit("BottomRightWindowResize"), Corner_BottomRight);
-						}
+						ui_panel(window->root_panel);
 					}
-					window->size.v[Axis2_X] = f32_clamp(0.05f, window->size.v[Axis2_X], 1.0f);
-					window->size.v[Axis2_Y] = f32_clamp(0.05f, window->size.v[Axis2_Y], 1.0f);
+					else
+					{
+
+						ui_next_width(ui_pct(window->size.x, 1));
+						ui_next_height(ui_pct(window->size.y, 1));
+						ui_next_relative_pos(Axis2_X, window->pos.v[Axis2_X]);
+						ui_next_relative_pos(Axis2_Y, window->pos.v[Axis2_Y]);
+						ui_next_child_layout_axis(Axis2_X);
+						UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
+															   UI_BoxFlag_DrawDropShadow,
+															   str8_lit(""));
+						ui_parent(window_container)
+						{
+							ui_next_height(ui_fill());
+							ui_column()
+							{
+								ui_window_corner_resizer(window, str8_lit("TopLeftWindowResize"), Corner_TopLeft);
+								ui_window_edge_resizer(window, str8_lit("TopWindowResize"), Axis2_X, Side_Min);
+								ui_window_corner_resizer(window, str8_lit("BottomLeftWindowResize"), Corner_BottomLeft);
+							}
+
+							ui_next_width(ui_fill());
+							ui_next_height(ui_fill());
+							ui_column()
+							{
+								ui_window_edge_resizer(window, str8_lit("LeftWindowResize"), Axis2_Y, Side_Min);
+								ui_panel(window->root_panel);
+								ui_window_edge_resizer(window, str8_lit("RightWindowResize"), Axis2_Y, Side_Max);
+							}
+
+							ui_next_height(ui_fill());
+							ui_column()
+							{
+								ui_window_corner_resizer(window, str8_lit("TopRightWindowResize"), Corner_TopRight);
+								ui_window_edge_resizer(window, str8_lit("BottomWindowResize"), Axis2_X, Side_Max);
+								ui_window_corner_resizer(window, str8_lit("BottomRightWindowResize"), Corner_BottomRight);
+							}
+						}
+						window->size.v[Axis2_X] = f32_clamp(0.05f, window->size.v[Axis2_X], 1.0f);
+						window->size.v[Axis2_Y] = f32_clamp(0.05f, window->size.v[Axis2_Y], 1.0f);
+					}
 				}
 			}
 		}

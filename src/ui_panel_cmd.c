@@ -1,5 +1,8 @@
 UI_COMMAND(panel_close);
 
+////////////////////////////////
+//~ hampus: Tab commands
+
 UI_COMMAND(tab_close)
 {
 	TabDelete *data = (TabDelete *)params;
@@ -50,6 +53,9 @@ UI_COMMAND(tab_attach)
 	}
 	panel->tab_group.count++;
 }
+
+////////////////////////////////
+//~ hampus: Panel commands
 
 UI_COMMAND(panel_set_active_tab)
 {
@@ -220,6 +226,9 @@ UI_COMMAND(panel_close)
 	else
 	{
 		Window *window = root->window;
-		dll_remove(app_state->window_list.first, app_state->window_list.last, window);
+		if (window != app_state->master_window)
+		{
+			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
+		}
 	}
 }
