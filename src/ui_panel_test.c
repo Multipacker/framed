@@ -79,6 +79,9 @@ ui_prepare_for_drag(Tab *tab, Vec2F32 mouse_offset)
 		panel_child = panel_parent;
 	}
 
+	new_window_pct.x *= tab->panel->window->size.x;
+	new_window_pct.y *= tab->panel->window->size.y;
+
 	app_state->new_window_pct = new_window_pct;
 }
 
