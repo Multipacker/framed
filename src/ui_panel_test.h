@@ -191,11 +191,16 @@ struct AppState
 
 	UI_Box *root_window;
 	Window *master_window;
-
+	
+	Panel *focused_panel;
+	Panel *next_focused_panel;
+	
 	CmdBuffer cmd_buffer;
 
 	WindowList window_list;
-
+	
+	Window *top_most_window_next_frame;
+	
 	// NOTE(hampus): Dragging stuff
 	Vec2F32 start_drag_pos;
 	Vec2F32 current_drag_pos;
@@ -223,6 +228,7 @@ internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
 ////////////////////////////////
 //~ hampus: Window
 
+internal Void ui_window_reorder_to_front(Window *window);
 internal Void ui_window_push_to_front(Window *window);
 internal Void ui_window_remove_from_list(Window *window);
 

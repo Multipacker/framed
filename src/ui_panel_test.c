@@ -1,15 +1,11 @@
 // TODO(hampus):
-// [ ] - Look into the 1-frame rendering glitch when dropping a tab
+
 // [ ] - Customize the view of tabs
 //          - Function pointer + data pointers
 // [ ] - Scroll tabs horizontally if there are too many to fit
 // [ ] - Reorder tabs
-// [ ] - Highlighting of the active panel
 // [ ] - Windows
-//     [ ] - Window title = tab title
-//     [ ] - Window content = tab content
 //     [ ] - Pinnable which disables closing
-//     [ ] - Ordering of multiple windows
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -64,7 +60,7 @@ ui_drag_prepare(Tab *tab, Vec2F32 mouse_offset)
 	app_state->drag_candidate = tab;
 	app_state->current_drag_pos = app_state->start_drag_pos;
 
-	// NOTE(hampus): Save the amount of space the
+	// NOTE(hampus): Save the amount of space the7
 	// new window should have. Since the panel
 	// is removed from the tab, we have to
 	// calculate it here.
@@ -461,6 +457,10 @@ ui_panel(Panel *root)
 	// NOTE(hampus): It is clickable so that it can consume
 	// all the click events at the end to prevent boxes
 	// from behind it to take click events
+	if (root == app_state->focused_panel)
+	{
+		ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+	}
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
 							  UI_BoxFlag_DrawBackground |
 							  UI_BoxFlag_Clickable,
@@ -514,6 +514,10 @@ ui_panel(Panel *root)
 	{
 		ui_push_string(root->string);
 
+		box->layout_style.child_layout_axis = Axis2_Y;
+		box->flags |= UI_BoxFlag_DrawBorder;
+		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
+
 		{
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_pct(1, 1));
@@ -521,24 +525,23 @@ ui_panel(Panel *root)
 												 str8_lit("InputDetector"));
 			B32 make_window_topmost = false;
 			Gfx_EventList *event_list = g_ui_ctx->event_list;
-			if (ui_mouse_is_inside_box(input_detector) &&
-				root->window != app_state->master_window &&
-				root->window != app_state->window_list.first)
+			if (ui_mouse_is_inside_box(input_detector))
 			{
 				for (Gfx_Event *node = event_list->first;
 					 node != 0;
 					 node = node->next)
 				{
-					if (node->kind == Gfx_EventKind_KeyPress ||
-						node->kind == Gfx_EventKind_KeyRelease)
+					if (node->kind == Gfx_EventKind_KeyPress)
 					{
+						if (!app_state->next_focused_panel)
 						{
-							WindowRemoveFromList *data = cmd_push(&app_state->cmd_buffer, CmdKind_WindowRemoveFromList);
-							data->window = root->window;
+							app_state->next_focused_panel = root;
 						}
+						if (root->window != app_state->master_window &&
+							root->window != app_state->window_list.first &&
+							!ui_currently_dragging())
 						{
-							WindowPushToFront *data = cmd_push(&app_state->cmd_buffer, CmdKind_WindowPushToFront);
-							data->window = root->window;
+							ui_window_reorder_to_front(root->window);
 						}
 					}
 				}
@@ -677,16 +680,11 @@ ui_panel(Panel *root)
 
 						invalid_case;
 					}
-
 					ui_end_drag();
 				}
 			}
 
 		}
-
-		box->layout_style.child_layout_axis = Axis2_Y;
-		box->flags |= UI_BoxFlag_DrawBorder;
-		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
 
 		// NOTE(hampus): Title bar
 		ui_next_width(ui_fill());
@@ -949,6 +947,15 @@ ui_panel_draw_debug(Panel *root)
 //~ hampus: Window
 
 internal Void
+ui_window_reorder_to_front(Window *window)
+{
+	if (!app_state->top_most_window_next_frame)
+	{
+		app_state->top_most_window_next_frame = window;
+	}
+}
+
+internal Void
 ui_window_push_to_front(Window *window)
 {
 	dll_push_front(app_state->window_list.first, app_state->window_list.last, window);
@@ -1184,6 +1191,7 @@ os_main(Str8List arguments)
 		}
 
 		app_state->master_window = master_window;
+		app_state->focused_panel = first_panel;
 	}
 
 	app_state->frame_index = 1;
@@ -1323,6 +1331,7 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("Help"));
 		}
 
+
 		if (ui_drag_is_prepared() || ui_currently_dragging())
 		{
 			Vec2F32 mouse_delta = v2f32_sub_v2f32(mouse_pos, prev_mouse_pos);
@@ -1331,6 +1340,10 @@ os_main(Str8List arguments)
 		}
 
 		local B32 begin_drag_next_frame = false;
+
+		app_state->focused_panel = app_state->next_focused_panel;
+		app_state->next_focused_panel = 0;
+		app_state->top_most_window_next_frame = 0;
 
 		if (begin_drag_next_frame)
 		{
@@ -1354,7 +1367,9 @@ os_main(Str8List arguments)
 			else
 			{
 				app_state->drag_tab->panel->sibling = 0;
+				ui_window_reorder_to_front(app_state->drag_tab->panel->window);
 			}
+			app_state->next_focused_panel = app_state->drag_tab->panel;
 			begin_drag_next_frame = false;
 		}
 
@@ -1410,6 +1425,18 @@ os_main(Str8List arguments)
 		}
 
 		app_state->tab_released = false;
+
+		if (!app_state->next_focused_panel)
+		{
+			app_state->next_focused_panel = app_state->focused_panel;
+		}
+
+		if (app_state->top_most_window_next_frame)
+		{
+			Window *window = app_state->top_most_window_next_frame;
+			ui_window_remove_from_list(window);
+			ui_window_push_to_front(window);
+		}
 
 		ui_end();
 

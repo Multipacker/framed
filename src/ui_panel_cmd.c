@@ -195,6 +195,8 @@ UI_COMMAND(panel_split_and_attach)
 		.set_active = true,
 	};
 
+	app_state->next_focused_panel = panel;
+
 	ui_command_tab_attach(&tab_attach_data);
 }
 
