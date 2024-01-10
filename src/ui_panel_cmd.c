@@ -196,6 +196,10 @@ UI_COMMAND(panel_split_and_attach)
 	};
 
 	app_state->next_focused_panel = panel;
+	if (data->panel->window != app_state->master_window)
+	{
+		app_state->top_most_window_next_frame = data->panel->window;
+	}
 
 	ui_command_tab_attach(&tab_attach_data);
 }

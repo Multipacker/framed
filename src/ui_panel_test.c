@@ -1343,7 +1343,6 @@ os_main(Str8List arguments)
 
 		app_state->focused_panel = app_state->next_focused_panel;
 		app_state->next_focused_panel = 0;
-		app_state->top_most_window_next_frame = 0;
 
 		if (begin_drag_next_frame)
 		{
@@ -1363,6 +1362,7 @@ os_main(Str8List arguments)
 					};
 					ui_command_tab_attach(&attach);
 				}
+				ui_window_reorder_to_front(app_state->drag_tab->panel->window);
 			}
 			else
 			{
@@ -1437,6 +1437,8 @@ os_main(Str8List arguments)
 			ui_window_remove_from_list(window);
 			ui_window_push_to_front(window);
 		}
+
+		app_state->top_most_window_next_frame = 0;
 
 		ui_end();
 
