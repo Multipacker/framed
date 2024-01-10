@@ -995,7 +995,7 @@ ui_window_edge_resizer(Window *window, Str8 string, Axis2 axis, Side side)
 	ui_next_hover_cursor(axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable,
 							  string);
-	Vec2U32 screen_size = gfx_get_window_area(g_ui_ctx->renderer->gfx);
+	Vec2U32 screen_size = gfx_get_window_client_area(g_ui_ctx->renderer->gfx);
 	UI_Comm comm = {0};
 	if (!ui_currently_dragging())
 	{
