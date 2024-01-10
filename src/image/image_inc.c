@@ -715,15 +715,12 @@ png_zlib_inflate(PNG_State *state)
 
 			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
 
-			U32 *literal_lengths = push_array(scratch.arena, U32, hlit);
-			if (!png_zlib_decode_lengths(state, code_length_huffman, literal_lengths, hlit))
-			{
-				release_scratch(scratch);
-				return(false);
-			}
+			// NOTE(simon): Lengths for literals and distances are compressed together.
+			U32 *lengths          = push_array(scratch.arena, U32, hlit + hdist);
+			U32 *literal_lengths  = lengths;
+			U32 *distance_lengths = lengths + hlit;
 
-			U32 *distance_lengths = push_array(scratch.arena, U32, hdist);
-			if (!png_zlib_decode_lengths(state, code_length_huffman, distance_lengths, hdist))
+			if (!png_zlib_decode_lengths(state, code_length_huffman, lengths, hlit + hdist))
 			{
 				release_scratch(scratch);
 				return(false);
