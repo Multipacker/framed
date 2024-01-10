@@ -736,7 +736,7 @@ png_zlib_inflate(PNG_State *state)
 
 				if (literal <= 255 && state->zlib_ptr < state->zlib_opl)
 				{
-					*state->zlib_ptr++ = png_get_byte(state);
+					*state->zlib_ptr++ = (U8) literal;
 				}
 				else if (literal == 256)
 				{
