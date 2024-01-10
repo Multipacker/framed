@@ -14,6 +14,13 @@
 
 global UI_Context *g_ui_ctx;
 
+internal B32
+ui_mouse_is_inside_box(UI_Box *box)
+{
+	B32 result = rectf32_contains_v2f32(box->rect, g_ui_ctx->mouse_pos);
+	return(result);
+}
+
 internal Arena *
 ui_permanent_arena(Void)
 {
@@ -1311,6 +1318,7 @@ ui_key_match(UI_Key a, UI_Key b)
 	B32 result = a.value == b.value;
 	return(result);
 }
+
 
 // TODO(simon): Switch to hash_str8 and hash_combine.
 internal UI_Key

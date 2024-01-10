@@ -55,7 +55,7 @@ enum UI_BoxFlags
 
 	UI_BoxFlag_AnimateWidth    = (1 << 16),
 	UI_BoxFlag_AnimateHeight   = (1 << 17),
-
+	
 	UI_BoxFlag_FloatingPos     = UI_BoxFlag_FloatingX | UI_BoxFlag_FloatingY,
 	UI_BoxFlag_AnimatePos      = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
 	UI_BoxFlag_AnimateDim      = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
@@ -304,7 +304,6 @@ struct UI_Context
 	
 	UI_Key active_key;
 	UI_Key hot_key;
-	
 	
 	// NOTE(hampus): We only have this to for the
 	// "clicked" member in UI_Comm

@@ -1,21 +1,15 @@
 // TODO(hampus):
 // [ ] - Look into the 1-frame rendering glitch when dropping a tab
 // [ ] - Customize the view of tabs
-//          - Function pointers?
-//          - Enums?
+//          - Function pointer + data pointers
 // [ ] - Scroll tabs horizontally if there are too many to fit
 // [ ] - Reorder tabs
 // [ ] - Highlighting of the active panel
-// [ ] - Diagonal resizing
 // [ ] - Windows
-//     [ ] - Resizing
 //     [ ] - Window title = tab title
 //     [ ] - Window content = tab content
-//     [x] - Dragging around
 //     [ ] - Pinnable which disables closing
-//     [ ] - A common frame for panels on a window
 //     [ ] - Ordering of multiple windows
-
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -31,205 +25,15 @@
 #include "render/render_inc.c"
 #include "ui/ui_inc.c"
 
-typedef struct Panel Panel;
-typedef struct Cmd Cmd;
-typedef struct Window Window ;
+#include "ui_panel_test.h"
 
-typedef struct SplitPanelResult SplitPanelResult;
-struct SplitPanelResult
-{
-	Panel *panels[Side_COUNT];
-};
-
-typedef struct Tab Tab;
-struct Tab
-{
-	Tab *next;
-	Tab *prev;
-
-	Str8 string;
-	B32 pinned;
-
-	Panel *panel;
-
-	// NOTE(hampus): For debugging
-	U64 frame_index;
-};
-
-typedef struct TabGroup TabGroup;
-struct TabGroup
-{
-	U64 count;
-	Tab *active_tab;
-	Tab *first;
-	Tab *last;
-};
-
-typedef struct Panel Panel;
-struct Panel
-{
-	Panel *children[Side_COUNT];
-	Panel *sibling;
-	Panel *parent;
-	Window *window;
-
-	TabGroup tab_group;
-
-	Axis2 split_axis;
-	F32 pct_of_parent;
-
-	Str8 string;
-
-	UI_Box *box;
-
-	// NOTE(hampus): For debugging
-	UI_Box *dragger;
-	U64 frame_index;
-};
-
-typedef struct Window Window;
-struct Window
-{
-	Window *next;
-	Window *prev;
-
-	Vec2F32 pos;
-	Vec2F32 size;
-	Panel *root_panel;
-
-	B32 dragging;
-
-	Str8 string;
-};
-
-typedef struct WindowList WindowList;
-struct WindowList
-{
-	Window *first;
-	Window *last;
-	U64 count;
-};
-
-typedef enum CmdKind CmdKind;
-enum CmdKind
-{
-	CmdKind_TabAttach,
-	CmdKind_TabClose,
-
-	CmdKind_PanelSplit,
-	CmdKind_PanelSplitAndAttach,
-	CmdKind_PanelSetActiveTab,
-	CmdKind_PanelClose,
-};
-
-typedef enum TabReleaseKind TabReleaseKind;
-enum TabReleaseKind
-{
-	TabReleaseKind_Center,
-
-	TabReleaseKind_Left,
-	TabReleaseKind_Right,
-
-	TabReleaseKind_Top,
-	TabReleaseKind_Bottom,
-
-	TabReleaseKind_COUNT
-};
-
-typedef struct TabDelete TabDelete;
-struct TabDelete
-{
-	Tab *tab;
-};
-
-typedef struct TabAttach TabAttach;
-struct TabAttach
-{
-	Tab   *tab;
-	Panel *panel;
-	B32    set_active;
-};
-
-typedef struct PanelSplit PanelSplit;
-struct PanelSplit
-{
-	Panel *panel;
-	Axis2  axis;
-	B32 alloc_new_tab;
-};
-
-typedef struct PanelSplitAndAttach PanelSplitAndAttach;
-struct PanelSplitAndAttach
-{
-	Panel *panel;
-	Tab *tab;
-	Axis2 axis;
-	Side panel_side;  // Which side to put this panel on
-};
-
-typedef struct PanelSetActiveTab PanelSetActiveTab;
-struct PanelSetActiveTab
-{
-	Panel *panel;
-	Tab *tab;
-};
-
-typedef struct PanelClose PanelClose;
-struct PanelClose
-{
-	Panel *panel;
-};
-
-#define UI_COMMAND(name) Void ui_command_##name(Void *params)
-
-typedef struct Cmd Cmd;
-struct Cmd
-{
-	CmdKind kind;
-	U8 data[512];
-};
-
-#define CMD_BUFFER_SIZE 16
-typedef struct CmdBuffer CmdBuffer;
-struct CmdBuffer
-{
-	U64 pos;
-	U64 size;
-	Cmd *buffer;
-};
-
-typedef struct AppState AppState;
-struct AppState
-{
-	Arena *perm_arena;
-	U64 num_panels;
-	U64 num_tabs;
-	U64 num_windows;
-
-	UI_Box *root_window;
-	Window *master_window;
-
-	CmdBuffer cmd_buffer;
-
-	WindowList window_list;
-
-	// NOTE(hampus): Dragging stuff
-	Vec2F32 start_drag_pos;
-	Vec2F32 current_drag_pos;
-	Tab *drag_candidate;
-	Tab *drag_tab;
-	Panel *hovering_panel;
-	Vec2F32 new_window_pct;
-	B8 tab_released;
-	B8 create_new_window;
-
-	// NOTE(hampus): Debug purposes
-	U64 frame_index;
-};
+////////////////////////////////
+//~ hampus: Global state
 
 AppState *app_state;
 
-internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
+////////////////////////////////
+//~ hampus: Command
 
 internal Void *
 cmd_push(CmdBuffer *buffer, CmdKind kind)
@@ -701,6 +505,36 @@ ui_panel(Panel *root)
 	{
 		ui_push_string(root->string);
 
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pct(1, 1));
+			UI_Box *input_detector = ui_box_make(UI_BoxFlag_FloatingPos,
+												 str8_lit("InputDetector"));
+			B32 make_window_topmost = false;
+			Gfx_EventList *event_list = g_ui_ctx->event_list;
+			if (ui_mouse_is_inside_box(input_detector) &&
+				root->window != app_state->master_window)
+			{
+				for (Gfx_Event *node = event_list->first;
+					 node != 0;
+					 node = node->next)
+				{
+					if (node->kind == Gfx_EventKind_KeyPress ||
+						node->kind == Gfx_EventKind_KeyRelease)
+					{
+						{
+							WindowRemoveFromList *data = cmd_push(&app_state->cmd_buffer, CmdKind_WindowRemoveFromList);
+							data->window = root->window;
+						}
+						{
+							WindowPushToFront *data = cmd_push(&app_state->cmd_buffer, CmdKind_WindowPushToFront);
+							data->window = root->window;
+						}
+					}
+				}
+			}
+		}
+
 		// NOTE(hampus): Axis2_COUNT is the center
 		Axis2   hover_axis = Axis2_COUNT;
 		Side    hover_side = 0;
@@ -1110,6 +944,12 @@ ui_window_push_to_front(Window *window)
 	dll_push_front(app_state->window_list.first, app_state->window_list.last, window);
 }
 
+internal Void
+ui_window_remove_from_list(Window *window)
+{
+	dll_remove(app_state->window_list.first, app_state->window_list.last, window);
+}
+
 internal Window *
 ui_window_alloc(Arena *arena)
 {
@@ -1208,6 +1048,59 @@ ui_window_corner_resizer(Window *window, Str8 string, Corner corner)
 	}
 
 	return(comm);
+}
+
+internal Void
+ui_update_window(Window *window)
+{
+	ui_seed(window->string)
+	{
+		if (window == app_state->master_window)
+		{
+			ui_panel(window->root_panel);
+		}
+		else
+		{
+
+			ui_next_width(ui_pct(window->size.x, 1));
+			ui_next_height(ui_pct(window->size.y, 1));
+			ui_next_relative_pos(Axis2_X, window->pos.v[Axis2_X]);
+			ui_next_relative_pos(Axis2_Y, window->pos.v[Axis2_Y]);
+			ui_next_child_layout_axis(Axis2_X);
+			UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
+												   UI_BoxFlag_DrawDropShadow,
+												   str8_lit(""));
+			ui_parent(window_container)
+			{
+				ui_next_height(ui_fill());
+				ui_column()
+				{
+					ui_window_corner_resizer(window, str8_lit("TopLeftWindowResize"), Corner_TopLeft);
+					ui_window_edge_resizer(window, str8_lit("TopWindowResize"), Axis2_X, Side_Min);
+					ui_window_corner_resizer(window, str8_lit("BottomLeftWindowResize"), Corner_BottomLeft);
+				}
+
+				ui_next_width(ui_fill());
+				ui_next_height(ui_fill());
+				ui_column()
+				{
+					ui_window_edge_resizer(window, str8_lit("LeftWindowResize"), Axis2_Y, Side_Min);
+					ui_panel(window->root_panel);
+					ui_window_edge_resizer(window, str8_lit("RightWindowResize"), Axis2_Y, Side_Max);
+				}
+
+				ui_next_height(ui_fill());
+				ui_column()
+				{
+					ui_window_corner_resizer(window, str8_lit("TopRightWindowResize"), Corner_TopRight);
+					ui_window_edge_resizer(window, str8_lit("BottomWindowResize"), Axis2_X, Side_Max);
+					ui_window_corner_resizer(window, str8_lit("BottomRightWindowResize"), Corner_BottomRight);
+				}
+			}
+			window->size.v[Axis2_X] = f32_clamp(0.05f, window->size.v[Axis2_X], 1.0f);
+			window->size.v[Axis2_Y] = f32_clamp(0.05f, window->size.v[Axis2_Y], 1.0f);
+		}
+	}
 }
 
 #include "ui_panel_cmd.c"
@@ -1481,54 +1374,7 @@ os_main(Str8List arguments)
 				 window != 0;
 				 window = window->next)
 			{
-				ui_seed(window->string)
-				{
-					if (window == app_state->master_window)
-					{
-						ui_panel(window->root_panel);
-					}
-					else
-					{
-
-						ui_next_width(ui_pct(window->size.x, 1));
-						ui_next_height(ui_pct(window->size.y, 1));
-						ui_next_relative_pos(Axis2_X, window->pos.v[Axis2_X]);
-						ui_next_relative_pos(Axis2_Y, window->pos.v[Axis2_Y]);
-						ui_next_child_layout_axis(Axis2_X);
-						UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
-															   UI_BoxFlag_DrawDropShadow,
-															   str8_lit(""));
-						ui_parent(window_container)
-						{
-							ui_next_height(ui_fill());
-							ui_column()
-							{
-								ui_window_corner_resizer(window, str8_lit("TopLeftWindowResize"), Corner_TopLeft);
-								ui_window_edge_resizer(window, str8_lit("TopWindowResize"), Axis2_X, Side_Min);
-								ui_window_corner_resizer(window, str8_lit("BottomLeftWindowResize"), Corner_BottomLeft);
-							}
-
-							ui_next_width(ui_fill());
-							ui_next_height(ui_fill());
-							ui_column()
-							{
-								ui_window_edge_resizer(window, str8_lit("LeftWindowResize"), Axis2_Y, Side_Min);
-								ui_panel(window->root_panel);
-								ui_window_edge_resizer(window, str8_lit("RightWindowResize"), Axis2_Y, Side_Max);
-							}
-
-							ui_next_height(ui_fill());
-							ui_column()
-							{
-								ui_window_corner_resizer(window, str8_lit("TopRightWindowResize"), Corner_TopRight);
-								ui_window_edge_resizer(window, str8_lit("BottomWindowResize"), Axis2_X, Side_Max);
-								ui_window_corner_resizer(window, str8_lit("BottomRightWindowResize"), Corner_BottomRight);
-							}
-						}
-						window->size.v[Axis2_X] = f32_clamp(0.05f, window->size.v[Axis2_X], 1.0f);
-						window->size.v[Axis2_Y] = f32_clamp(0.05f, window->size.v[Axis2_Y], 1.0f);
-					}
-				}
+				ui_update_window(window);
 			}
 		}
 
@@ -1562,6 +1408,9 @@ os_main(Str8List arguments)
 				case CmdKind_PanelSplitAndAttach: ui_command_panel_split_and_attach(cmd->data); break;
 				case CmdKind_PanelSetActiveTab:   ui_command_panel_set_active_tab(cmd->data);   break;
 				case CmdKind_PanelClose:          ui_command_panel_close(cmd->data);            break;
+
+				case CmdKind_WindowRemoveFromList: ui_command_window_remove_from_list(cmd->data); break;
+				case CmdKind_WindowPushToFront:    ui_command_window_push_to_front(cmd->data);    break;
 			}
 		}
 

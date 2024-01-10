@@ -1,3 +1,5 @@
+#define UI_COMMAND(name) Void ui_command_##name(Void *params)
+
 UI_COMMAND(panel_close);
 
 ////////////////////////////////
@@ -231,4 +233,18 @@ UI_COMMAND(panel_close)
 			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
 		}
 	}
+}
+
+UI_COMMAND(window_remove_from_list)
+{
+	WindowRemoveFromList *data = params;
+	Window *window = data->window;
+	ui_window_remove_from_list(window);
+}
+
+UI_COMMAND(window_push_to_front)
+{
+	WindowPushToFront *data = params;
+	Window *window = data->window;
+	ui_window_push_to_front(window);
 }
