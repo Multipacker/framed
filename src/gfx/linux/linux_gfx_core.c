@@ -300,3 +300,9 @@ gfx_get_dpi(Gfx_Context *ctx)
 	SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
 	return(dpi);
 }
+
+internal Void
+gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
+{
+	// TODO(simon): SDL doesn't seem to have support for this for some reason?
+}
