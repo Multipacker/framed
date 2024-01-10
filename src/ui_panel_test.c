@@ -50,7 +50,7 @@ cmd_push(CmdBuffer *buffer, CmdKind kind)
 //~ hampus: Tab dragging
 
 internal Void
-ui_prepare_for_drag(Tab *tab, Vec2F32 mouse_offset)
+ui_drag_prepare(Tab *tab, Vec2F32 mouse_offset)
 {
 	// NOTE(hampus): Since the root window may not have
 	// it's origin on (0, 0), we have to account for it
@@ -83,6 +83,12 @@ ui_prepare_for_drag(Tab *tab, Vec2F32 mouse_offset)
 	new_window_pct.y *= tab->panel->window->size.y;
 
 	app_state->new_window_pct = new_window_pct;
+}
+
+internal Void
+ui_drag_unprepare(Void)
+{
+	ui_end_drag();
 }
 
 internal Void
@@ -222,7 +228,7 @@ ui_tab_button(Tab *tab)
 			{
 				if (!app_state->drag_tab && !tab->pinned)
 				{
-					ui_prepare_for_drag(tab, title_comm.rel_mouse);
+					ui_drag_prepare(tab, title_comm.rel_mouse);
 				}
 
 				PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab);
@@ -516,7 +522,8 @@ ui_panel(Panel *root)
 			B32 make_window_topmost = false;
 			Gfx_EventList *event_list = g_ui_ctx->event_list;
 			if (ui_mouse_is_inside_box(input_detector) &&
-				root->window != app_state->master_window)
+				root->window != app_state->master_window &&
+				root->window != app_state->window_list.first)
 			{
 				for (Gfx_Event *node = event_list->first;
 					 node != 0;
@@ -759,7 +766,7 @@ ui_panel(Panel *root)
 				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
 				if (title_bar_comm.pressed)
 				{
-					ui_prepare_for_drag(root->tab_group.active_tab, title_bar_comm.rel_mouse);
+					ui_drag_prepare(root->tab_group.active_tab, title_bar_comm.rel_mouse);
 
 				}
 			}
@@ -1364,6 +1371,13 @@ os_main(Str8List arguments)
 			{
 				begin_drag_next_frame = true;
 				ui_begin_drag();
+			}
+			else
+			{
+				if (left_mouse_released)
+				{
+					ui_drag_unprepare();
+				}
 			}
 		}
 

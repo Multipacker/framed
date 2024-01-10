@@ -211,6 +211,11 @@ struct AppState
 };
 
 ////////////////////////////////
+//~ hampus: Tab dragging
+
+internal Void ui_end_drag(Void);
+
+////////////////////////////////
 //~ hampus: Panels
 
 internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
