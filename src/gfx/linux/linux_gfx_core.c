@@ -261,9 +261,13 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
 internal Vec2U32
 gfx_get_window_area(Gfx_Context *gfx)
 {
-	// TODO(simon): Implement this. The size should include the window
-	// decorations.
-	Vec2U32 result = { 0 };
+	int top = 0, left = 0, bottom = 0, right = 0;
+	SDL_GetWindowBordersSize(gfx->window, &top, &left, &bottom, &right);
+
+	int width = 0, height = 0;
+	SDL_GetWindowSize(gfx->window, &width, &height);
+
+	Vec2U32 result = v2u32((U32) (left + width + right), (U32) (top + height + bottom));
 	return(result);
 }
 
