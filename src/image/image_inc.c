@@ -720,10 +720,13 @@ png_zlib_inflate(PNG_State *state)
 				}
 				else
 				{
+					release_scratch(scratch);
 					log_error("ZLIB dynamic huffman compressed block contains too much data, corruped PNG");
 					return(false);
 				}
 			}
+
+			release_scratch(scratch);
 
 			// NOTE(simon): Because there is a check sum at the end of the ZLIB stream,
 			// the data is corrupted if we have reached the end by this point.
@@ -732,11 +735,6 @@ png_zlib_inflate(PNG_State *state)
 				log_error("Not enough data in ZLIB stream, corrupted PNG");
 				return(false);
 			}
-
-			release_scratch(scratch);
-
-			log_error("Dynamic Huffman codes are not supported yet!");
-			return(false);
 		}
 		else
 		{
