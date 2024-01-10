@@ -29,6 +29,26 @@ global U32 png_code_length_alphabet[] = {
 	11, 4,  12, 3, 13, 2, 14, 1, 15
 };
 
+global U32 png_linear_alphabet[] = {
+	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
+	16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
+	32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
+	48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
+	64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,  76,  77,  78,  79,
+	80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
+	96,  97,  98,  99,  100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+	128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,
+	144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
+	160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
+	176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
+	192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
+	208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
+	224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
+	240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
+	256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271,
+	272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285,
+};
 typedef struct PNG_Chunk PNG_Chunk;
 struct PNG_Chunk
 {
@@ -612,7 +632,7 @@ png_zlib_inflate(PNG_State *state)
 
 			if ((U16) ~length != (U16) n_length)
 			{
-				log_info("ZLIB Uncompressed block length is corrupted, corrupted PNG");
+				log_error("ZLIB Uncompressed block length is corrupted, corrupted PNG");
 				return(false);
 			}
 
@@ -620,7 +640,7 @@ png_zlib_inflate(PNG_State *state)
 
 			if (length > state->zlib_opl - state->zlib_ptr)
 			{
-				log_info("ZLIB Uncompressed block contains too much data, corruped PNG");
+				log_error("ZLIB Uncompressed block contains too much data, corruped PNG");
 				return(false);
 			}
 
@@ -659,7 +679,6 @@ png_zlib_inflate(PNG_State *state)
 			{
 				code_length_lengths[i] = (U32) png_get_bits_no_refill(state, 3);
 			}
-			U32 *code_length_codes = push_array(scratch.arena, U32, hclen);
 
 			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
 
@@ -674,6 +693,43 @@ png_zlib_inflate(PNG_State *state)
 			if (!png_zlib_decode_lengths(state, code_length_huffman, distance_lengths, hdist))
 			{
 				release_scratch(scratch);
+				return(false);
+			}
+
+			PNG_Huffman literal_huffman  = png_make_huffman(scratch.arena, hlit,  literal_lengths,  png_linear_alphabet);
+			PNG_Huffman distance_huffman = png_make_huffman(scratch.arena, hdist, distance_lengths, png_linear_alphabet);
+
+			while (!png_is_end(state))
+			{
+				png_refill_bits(state, PNG_MAX_BITS);
+				U32 literal = png_read_huffman(state, literal_huffman);
+
+				if (literal <= 255 && state->zlib_ptr < state->zlib_opl)
+				{
+					*state->zlib_ptr++ = png_get_byte(state);
+				}
+				else if (literal == 256)
+				{
+					// NOTE(simon): Normal exit
+					break;
+				}
+				else if (literal <= 285)
+				{
+					log_error("Looking backwards in the stream is not supported yet.");
+					return(false);
+				}
+				else
+				{
+					log_error("ZLIB dynamic huffman compressed block contains too much data, corruped PNG");
+					return(false);
+				}
+			}
+
+			// NOTE(simon): Because there is a check sum at the end of the ZLIB stream,
+			// the data is corrupted if we have reached the end by this point.
+			if (png_is_end(state))
+			{
+				log_error("Not enough data in ZLIB stream, corrupted PNG");
 				return(false);
 			}
 
