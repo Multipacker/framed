@@ -182,6 +182,7 @@ png_get_byte(PNG_State *state)
 	return(result);
 }
 
+// TODO(simon): This should register the bit position that is outside of the stream.
 internal B32
 png_is_end(PNG_State *state)
 {
@@ -750,13 +751,38 @@ png_zlib_inflate(PNG_State *state)
 				}
 				else if (literal <= 285)
 				{
-					log_error("Looking backwards in the stream is not supported yet.");
-					return(false);
+					U32 length = png_length_base[literal - 257] + (U32) png_get_bits_no_refill(state, png_length_extra_bits[literal - 257]);
+					U32 distance_code = png_read_huffman(state, distance_huffman);
+					U32 distance = png_distance_base[distance_code] + (U32) png_get_bits_no_refill(state, png_distance_extra_bits[distance_code]);
+
+					// TODO(simon): Verify that no "unused" codes appear in the input stream.
+
+					if (distance > state->zlib_ptr - state->zlib_output)
+					{
+						release_scratch(scratch);
+						log_error("Attempt to reference data that is outside of the ZLIB stream, corrupted PNG");
+						return(false);
+					}
+
+					if (length > state->zlib_opl - state->zlib_ptr)
+					{
+						release_scratch(scratch);
+						log_error("ZLIB dynamic Huffman compressed block contains too much data, corrupted PNG");
+						return(false);
+					}
+
+					// TODO(simon): Special case for when the regions don't overlap? Profile!
+					// NOTE(simon): memory_copy will not work as the two regions might overlap.
+					for (U32 i = 0; i < length; ++i)
+					{
+						*state->zlib_ptr = *(state->zlib_ptr - distance);
+						++state->zlib_ptr;
+					}
 				}
 				else
 				{
 					release_scratch(scratch);
-					log_error("ZLIB dynamic huffman compressed block contains too much data, corruped PNG");
+					log_error("ZLIB dynamic Huffman compressed block contains too much data, corruped PNG");
 					return(false);
 				}
 			}
@@ -767,8 +793,8 @@ png_zlib_inflate(PNG_State *state)
 			// the data is corrupted if we have reached the end by this point.
 			if (png_is_end(state))
 			{
-				log_error("Not enough data in ZLIB stream, corrupted PNG");
-				return(false);
+				//log_error("Not enough data in ZLIB stream, corrupted PNG");
+				//return(false);
 			}
 		}
 		else
