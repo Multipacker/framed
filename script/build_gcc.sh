@@ -5,7 +5,7 @@ mode=${1:-debug}
 mkdir -p build
 
 src_files="src/image_test.c"
-errors="-Werror -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable"
+errors="-Werror -Wall -Wextra -Wno-missing-braces -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable -Wconversion"
 common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-fuse-ld=mold -lm -lSDL2 build/freetype/freetype"
 

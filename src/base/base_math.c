@@ -448,7 +448,7 @@ u8_round_down_to_power_of_2(U8 value, U8 power)
 internal U8
 u8_round_up_to_power_of_2(U8 value, U8 power)
 {
-	U8 result = (value + power - 1) & ~(power - 1);
+	U8 result = (U8) ((value + power - 1) & ~(power - 1));
 	return(result);
 }
 
@@ -521,7 +521,7 @@ u16_round_down_to_power_of_2(U16 value, U16 power)
 internal U16
 u16_round_up_to_power_of_2(U16 value, U16 power)
 {
-	U16 result = (value + power - 1) & ~(power - 1);
+	U16 result = (U16) ((value + power - 1) & ~(power - 1));
 	return result;
 
 }
@@ -776,7 +776,7 @@ s8_max(S8 a, S8 b)
 internal S8
 s8_abs(S8 x)
 {
-	S8 result = (x < 0 ? -x : x);
+	S8 result = (S8) (x < 0 ? -x : x);
 	return result;
 }
 
@@ -797,7 +797,7 @@ s16_max(S16 a, S16 b)
 internal S16
 s16_abs(S16 x)
 {
-	S16 result = (x < 0 ? -x : x);
+	S16 result = (S16) (x < 0 ? -x : x);
 	return result;
 }
 

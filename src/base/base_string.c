@@ -3,10 +3,17 @@
 #if COMPILER_CLANG
 # pragma clang diagnostic push
 # pragma clang diagnostic ignored "-Wconversion"
+#elif COMPILER_GCC
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wconversion"
+# pragma GCC diagnostic ignored "-Wsign-conversion"
+# pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 #include "stb_sprintf.h"
 #if COMPILER_CLANG
 # pragma clang diagnostic pop
+#elif COMPILER_GCC
+# pragma GCC diagnostic pop
 #endif
 
 internal Str8

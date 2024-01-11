@@ -332,17 +332,17 @@ date_time_from_dense_time(DenseTime dense_time)
 {
 	DateTime result = { 0 };
 
-	result.millisecond = dense_time.time % 1000;
+	result.millisecond = (U16) (dense_time.time % 1000);
 	dense_time.time /= 1000;
-	result.second = dense_time.time % 61;
+	result.second = (U8) (dense_time.time % 61);
 	dense_time.time /= 61;
-	result.minute = dense_time.time % 60;
+	result.minute = (U8) (dense_time.time % 60);
 	dense_time.time /= 60;
-	result.hour = dense_time.time % 24;
+	result.hour = (U8) (dense_time.time % 24);
 	dense_time.time /= 24;
-	result.day = dense_time.time % 31;
+	result.day = (U8) (dense_time.time % 31);
 	dense_time.time /= 31;
-	result.month = dense_time.time % 12;
+	result.month = (U8) (dense_time.time % 12);
 	dense_time.time /= 12;
 	result.year = (S16) ((S32) dense_time.time - 0x8000);
 

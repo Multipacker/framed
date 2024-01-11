@@ -606,7 +606,7 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 				}
 				else
 				{
-					linux_iterator->write_index += (U64) actual_read;
+					linux_iterator->write_index += (U32) actual_read;
 				}
 			}
 		}
@@ -770,8 +770,8 @@ os_sleep_milliseconds(U64 time)
 	struct timespec sleep     = { 0 };
 	struct timespec remainder = { 0 };
 
-	sleep.tv_sec  = time / 1000;
-	sleep.tv_nsec = (time % 1000) * million(1);
+	sleep.tv_sec  = (time_t) (time / 1000);
+	sleep.tv_nsec = (long) (time % 1000) * million(1);
 
 	// NOTE(simon): The only errno we should get from this call is EINTR, so
 	// just loop until we succseed.

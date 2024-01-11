@@ -138,7 +138,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 						{
 							event->key = (Gfx_Key) (Gfx_Key_F1 + (sdl_keycode - SDLK_F1));
 						}
-						else if (sdl_keycode < array_count(linux_sdl_to_gfx_keycode))
+						else if (sdl_keycode < (SDL_Keycode) array_count(linux_sdl_to_gfx_keycode))
 						{
 							event->key = linux_sdl_to_gfx_keycode[sdl_keycode];
 						}
@@ -164,7 +164,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 
 				while (ptr < opl)
 				{
-					StringDecode decode = string_decode_utf8(ptr, int_from_ptr(opl - ptr));
+					StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
 					ptr += decode.size;
 
 					event->kind      = Gfx_EventKind_Char;

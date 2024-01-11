@@ -902,7 +902,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 			for (U32 x = 0; x < state.width * 4; ++x)
 			{
 				U8 previous_value = (U8) (previous >> bit_stride);
-				U8 new_value = row[x] + (previous_value + *previous_scanline) / 2;
+				U8 new_value = (U8) (row[x] + (previous_value + *previous_scanline) / 2);
 				unfiltered_data[x + y * state.width * 4] = new_value;
 				previous_scanline += (y != 0);
 				previous = previous << 8 | new_value;
