@@ -194,7 +194,7 @@ png_is_end(PNG_State *state)
 internal Void
 png_refill_bits(PNG_State *state, U32 count)
 {
-	assert(0 <= count && count <= 57);
+	assert(count <= 57);
 	while (state->bit_count < count)
 	{
 		state->bit_buffer |= (U64) png_get_byte(state) << state->bit_count;
