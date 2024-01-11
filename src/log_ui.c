@@ -71,17 +71,12 @@ ui_logger(Void)
 
 	ui_next_child_layout_axis(Axis2_X);
 
-	UI_Box *log_window = ui_box_make(
-									 UI_BoxFlag_DrawBackground |
-									 UI_BoxFlag_AnimateHeight,
-									 str8_lit("LogWindow")
-									 );
+	UI_Box *log_window = ui_box_make(0, str8_lit("LogWindow"));
 
 	ui_parent(log_window)
 	{
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
-		ui_next_extra_box_flags(UI_BoxFlag_AnimateHeight);
 		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
 
 		if (!log_ui_freeze && log_ui_entry_count != log_ui_previous_entry_count)
@@ -174,7 +169,6 @@ ui_logger(Void)
 
 		ui_next_width(ui_children_sum(1));
 		ui_next_height(ui_fill());
-		ui_next_extra_box_flags(UI_BoxFlag_AnimateHeight);
 		ui_push_scrollable_region(str8_lit("LogControls"));
 		ui_column()
 		{
