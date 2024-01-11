@@ -92,8 +92,9 @@ ui_begin_drag(Void)
 {
 	app_state->drag_tab = app_state->drag_candidate;
 	app_state->drag_candidate = 0;
-	if (app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
-		app_state->drag_tab->panel->tab_group.count == 1)
+	if ((app_state->drag_tab->panel == app_state->drag_tab->panel->window->root_panel &&
+		 app_state->drag_tab->panel->tab_group.count == 1) &&
+		app_state->drag_tab->panel->window != app_state->master_window)
 	{
 	}
 	else
@@ -949,9 +950,12 @@ ui_panel_draw_debug(Panel *root)
 internal Void
 ui_window_reorder_to_front(Window *window)
 {
-	if (!app_state->top_most_window_next_frame)
+	if (window != app_state->master_window)
 	{
-		app_state->top_most_window_next_frame = window;
+		if (!app_state->top_most_window_next_frame)
+		{
+			app_state->top_most_window_next_frame = window;
+		}
 	}
 }
 
