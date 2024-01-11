@@ -126,7 +126,8 @@ UI_COMMAND(panel_split)
 
 	if (data->alloc_new_tab)
 	{
-		Tab *tab = ui_tab_alloc(app_state->perm_arena);
+		TabViewInfo view_info = data->tab_view_info;
+		Tab *tab = ui_tab_make(app_state->perm_arena, view_info.function, view_info.data);
 		TabAttach attach =
 		{
 			.tab = tab,
@@ -170,12 +171,13 @@ UI_COMMAND(panel_split_and_attach)
 		}
 	}
 
+#if 0
 	if (releasing_on_same_panel)
 	{
 		// NOTE(hampus): This is needed because if we're releasing
 		// on the same panel as we dragged the tab away from, and it
 		// was the last tab, we will have to allocate a new tab for the split
-		Tab *tab = ui_tab_alloc(app_state->perm_arena);
+		Tab *tab = ui_tab_make(app_state->perm_arena, 0, 0);
 		TabAttach attach =
 		{
 			.tab = tab,
@@ -185,6 +187,7 @@ UI_COMMAND(panel_split_and_attach)
 
 		ui_command_tab_attach(&attach);
 	}
+#endif
 
 	Panel *panel = data->panel->parent->children[data->panel_side];
 

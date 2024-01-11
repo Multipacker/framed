@@ -40,6 +40,16 @@ struct SplitPanelResult
 	Panel *panels[Side_COUNT];
 };
 
+#define UI_TAB_VIEW(name) Void name(Void *data)
+typedef UI_TAB_VIEW(UI_TabViewProc);
+
+typedef struct TabViewInfo TabViewInfo;
+struct TabViewInfo
+{
+	UI_TabViewProc *function;
+	Void *data;
+};
+
 typedef struct Tab Tab;
 struct Tab
 {
@@ -50,7 +60,9 @@ struct Tab
 	B32 pinned;
 
 	Panel *panel;
-
+	
+	TabViewInfo view_info;
+	
 	// NOTE(hampus): For debugging
 	U64 frame_index;
 };
@@ -129,6 +141,7 @@ struct PanelSplit
 	Panel *panel;
 	Axis2  axis;
 	B32 alloc_new_tab;
+	TabViewInfo tab_view_info;
 };
 
 typedef struct PanelSplitAndAttach PanelSplitAndAttach;
@@ -189,7 +202,7 @@ struct AppState
 	U64 num_tabs;
 	U64 num_windows;
 
-	UI_Box *root_window;
+	UI_Box *window_container;
 	Window *master_window;
 	
 	Panel *focused_panel;
@@ -207,9 +220,9 @@ struct AppState
 	Tab *drag_candidate;
 	Tab *drag_tab;
 	Panel *hovering_panel;
-	Vec2F32 new_window_pct;
 	B8 tab_released;
 	B8 create_new_window;
+	Vec2F32 new_window_pct;
 
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;

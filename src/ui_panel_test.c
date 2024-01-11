@@ -51,7 +51,7 @@ ui_drag_prepare(Tab *tab, Vec2F32 mouse_offset)
 	// NOTE(hampus): Since the root window may not have
 	// it's origin on (0, 0), we have to account for it
 	app_state->start_drag_pos = v2f32_sub_v2f32(gfx_get_mouse_pos(g_ui_ctx->renderer->gfx),
-												app_state->root_window->rect.min);
+												app_state->window_container->rect.min);
 
 	// NOTE(hampus): Place it where the cursor placed
 	// it on the box, not only from the box's origin
@@ -139,8 +139,30 @@ internal Tab *
 ui_tab_alloc(Arena *arena)
 {
 	Tab *result = push_struct(arena, Tab);
-	result->string = str8_pushf(app_state->perm_arena, "Tab%"PRIS32, app_state->num_panels);
-	app_state->num_panels++;
+	result->string = str8_pushf(app_state->perm_arena, "Tab%"PRIS32, app_state->num_tabs);
+	app_state->num_tabs++;
+	return(result);
+}
+
+internal Void
+ui_tab_equip_view_info(Tab *tab, TabViewInfo view_info)
+{
+	tab->view_info = view_info;
+}
+
+UI_TAB_VIEW(ui_tab_view_default);
+internal Tab *
+ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data)
+{
+	Tab *result = ui_tab_alloc(arena);
+	TabViewInfo view_info = {function, data};
+	ui_tab_equip_view_info(result, view_info);
+	if (!function)
+	{
+		// NOTE(hampus): Equip with default view function
+		result->view_info.function = ui_tab_view_default;
+		result->view_info.data = result;
+	}
 	return(result);
 }
 
@@ -240,8 +262,8 @@ ui_tab_button(Tab *tab)
 					app_state->drag_candidate = 0;
 				}
 			}
-			// NOTE(hampus): Icon appearance
 
+			// NOTE(hampus): Icon appearance
 			UI_BoxFlags icon_hover_flags = UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawText;
 
 			if (pin_box_comm.hovering)
@@ -781,53 +803,13 @@ ui_panel(Panel *root)
 			if (tab == root->tab_group.active_tab)
 			{
 				// NOTE(hampus): Tab content
-				ui_next_width(ui_pct(1, 1));
+				ui_next_width(ui_pct(1, 0));
 				ui_next_height(ui_pct(1, 0));
 				UI_Box *content_box = ui_box_make(0,
 												  str8_lit("ContentBox"));
 				ui_parent(content_box)
 				{
-					ui_spacer(ui_em(0.5f, 1));
-					ui_next_width(ui_pct(1, 0));
-					ui_next_height(ui_pct(1, 0));
-					ui_row()
-					{
-						ui_spacer(ui_em(0.5f, 1));
-						ui_next_width(ui_pct(1, 0));
-						ui_next_height(ui_pct(1, 0));
-						ui_column()
-						{
-							if (ui_button(str8_lit("Split panel X")).pressed)
-							{
-								ui_panel_split(root, Axis2_X);
-							}
-							ui_spacer(ui_em(0.5f, 1));
-							if (ui_button(str8_lit("Split panel Y")).pressed)
-							{
-								ui_panel_split(root, Axis2_Y);
-							}
-							ui_spacer(ui_em(0.5f, 1));
-							if (ui_button(str8_lit("Close panel")).pressed)
-							{
-								PanelClose *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelClose);
-								data->panel = root;
-							}
-							ui_spacer(ui_em(1.0f, 1));
-							if (ui_button(str8_lit("Add tab")).pressed)
-							{
-								Tab *new_tab = ui_tab_alloc(app_state->perm_arena);
-								TabAttach *data = cmd_push(&app_state->cmd_buffer, CmdKind_TabAttach);
-								data->tab = new_tab;
-								data->panel = root;
-							}
-							ui_spacer(ui_em(0.5f, 1));
-							if (ui_button(str8_lit("Close tab")).pressed)
-							{
-								ui_tab_close(tab);
-							}
-							ui_spacer(ui_em(0.5f, 1));
-						}
-					}
+					tab->view_info.function(tab->view_info.data);
 				}
 			}
 		}
@@ -915,33 +897,6 @@ ui_panel(Panel *root)
 	}
 
 	ui_pop_parent();
-}
-
-internal Void
-ui_panel_draw_debug(Panel *root)
-{
-	local F32 indent_level = 0;
-	Str8 split_axis = root->split_axis == Axis2_X ? str8_lit("X") : str8_lit("Y");
-	ui_textf("%"PRISTR8": %"PRISTR8, str8_expand(root->string), str8_expand(split_axis));
-	indent_level += 1;
-	ui_row_begin();
-	ui_spacer(ui_em(indent_level, 1));
-
-	ui_column()
-	{
-		for (Side side = (Side) 0;
-			 side < Side_COUNT;
-			 side++)
-		{
-			if (root->children[side])
-			{
-				ui_panel_draw_debug(root->children[side]);
-			}
-		}
-	}
-
-	ui_row_end();
-	indent_level -= 1;
 }
 
 ////////////////////////////////
@@ -1141,6 +1096,57 @@ ui_builder_split_panel_(PanelSplit *data)
 }
 
 ////////////////////////////////
+//~ hampus: Tab views
+
+UI_TAB_VIEW(ui_tab_view_default)
+{
+	Tab *tab = data;
+	Panel *panel = tab->panel;
+	Window *window = panel->window;
+	ui_spacer(ui_em(0.5f, 1));
+	ui_next_width(ui_pct(1, 0));
+	ui_next_height(ui_pct(1, 0));
+	ui_row()
+	{
+		ui_spacer(ui_em(0.5f, 1));
+		ui_next_width(ui_pct(1, 0));
+		ui_next_height(ui_pct(1, 0));
+		ui_column()
+		{
+			if (ui_button(str8_lit("Split panel X")).pressed)
+			{
+				ui_panel_split(panel, Axis2_X);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			if (ui_button(str8_lit("Split panel Y")).pressed)
+			{
+				ui_panel_split(panel, Axis2_Y);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			if (ui_button(str8_lit("Close panel")).pressed)
+			{
+				PanelClose *panel_close_data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelClose);
+				panel_close_data->panel = panel;
+			}
+			ui_spacer(ui_em(1.0f, 1));
+			if (ui_button(str8_lit("Add tab")).pressed)
+			{
+				Tab *new_tab = ui_tab_make(app_state->perm_arena, 0, 0);
+				TabAttach *tab_attach_data = cmd_push(&app_state->cmd_buffer, CmdKind_TabAttach);
+				tab_attach_data->tab = new_tab;
+				tab_attach_data->panel = panel;
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			if (ui_button(str8_lit("Close tab")).pressed)
+			{
+				ui_tab_close(tab);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+		}
+	}
+}
+
+////////////////////////////////
 //~ hampus: Main
 
 internal S32
@@ -1178,7 +1184,7 @@ os_main(Str8List arguments)
 			{
 				TabAttach attach =
 				{
-					.tab = ui_tab_alloc(app_state->perm_arena),
+					.tab = ui_tab_make(app_state->perm_arena, 0, 0),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				ui_command_tab_attach(&attach);
@@ -1187,7 +1193,7 @@ os_main(Str8List arguments)
 			{
 				TabAttach attach =
 				{
-					.tab = ui_tab_alloc(app_state->perm_arena),
+					.tab = ui_tab_make(app_state->perm_arena, 0, 0),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				ui_command_tab_attach(&attach);
@@ -1335,7 +1341,6 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("Help"));
 		}
 
-
 		if (ui_drag_is_prepared() || ui_currently_dragging())
 		{
 			Vec2F32 mouse_delta = v2f32_sub_v2f32(mouse_pos, prev_mouse_pos);
@@ -1403,7 +1408,7 @@ os_main(Str8List arguments)
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		UI_Box *window_root_parent = ui_box_make(0, str8_lit("RootWindow"));
-		app_state->root_window = window_root_parent;
+		app_state->window_container = window_root_parent;
 		ui_parent(window_root_parent)
 		{
 			for (Window *window = app_state->window_list.first;
