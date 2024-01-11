@@ -7,7 +7,7 @@ mkdir -p build
 src_files="src/image_test.c"
 errors="-Werror -Wall -Wno-missing-braces -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable"
 common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1 -pthread"
-linker_flags="-lm -lSDL2 build/freetype/freetype"
+linker_flags="-fuse-ld=mold -lm -lSDL2 build/freetype/freetype"
 
 if [ "$mode" == "debug" ]; then
 	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
