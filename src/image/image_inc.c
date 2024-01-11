@@ -20,7 +20,7 @@
 	})
 #define PNG_TYPE_INVALID 0
 
-#define PNG_MAX_BITS 32
+#define PNG_HUFFMAN_MAX_BITS 15
 
 global U8 png_magic[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, };
 
@@ -241,17 +241,18 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 	result.values  = alphabet;
 	result.count   = count;
 
-	U32 bl_count[PNG_MAX_BITS] = { 0 };
+	U32 bl_count[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 	for (U32 i = 0; i < count; ++i)
 	{
+		assert(lengths[i] <= PNG_HUFFMAN_MAX_BITS);
 		++bl_count[lengths[i]];
 	}
 
-	U32 next_code[PNG_MAX_BITS] = { 0 };
+	U32 next_code[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
 	U32 code = 0;
 	bl_count[0] = 0;
-	for (U32 bits = 1; bits < PNG_MAX_BITS; ++bits)
+	for (U32 bits = 1; bits <= PNG_HUFFMAN_MAX_BITS; ++bits)
 	{
 		code = (code + bl_count[bits - 1]) << 1;
 		next_code[bits] = code;
@@ -266,6 +267,10 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 			U32 code = next_code[length]++;
 			result.codes[i] = u32_reverse(code) >> (32 - length);
 		}
+		else
+		{
+			result.codes[i] = U32_MAX;
+		}
 	}
 
 	return(result);
@@ -277,7 +282,7 @@ png_read_huffman(PNG_State *state, PNG_Huffman huffman)
 	for (U32 i = 0; i < huffman.count; ++i)
 	{
 		U32 bits = (U32) png_peek_bits(state, huffman.lengths[i]);
-		if (bits == huffman.codes[i])
+		if (huffman.lengths[i] && bits == huffman.codes[i])
 		{
 			png_consume_bits(state, huffman.lengths[i]);
 			U32 result = huffman.values[i];
@@ -286,7 +291,7 @@ png_read_huffman(PNG_State *state, PNG_Huffman huffman)
 	}
 
 	log_error("Unable to decode Huffman code");
-	return(0);
+	return(U32_MAX);
 }
 
 internal Void
@@ -544,7 +549,7 @@ png_zlib_decode_lengths(PNG_State *state, PNG_Huffman huffman, U32 *result_lengt
 	{
 		if (repeat_count == 0)
 		{
-			png_refill_bits(state, PNG_MAX_BITS + 7);
+			png_refill_bits(state, PNG_HUFFMAN_MAX_BITS + 7);
 			U32 operation = png_read_huffman(state, huffman);
 			if (operation <= 15)
 			{
@@ -731,7 +736,7 @@ png_zlib_inflate(PNG_State *state)
 
 			while (!png_is_end(state))
 			{
-				png_refill_bits(state, PNG_MAX_BITS);
+				png_refill_bits(state, 2 * PNG_HUFFMAN_MAX_BITS + 5 + 13);
 				U32 literal = png_read_huffman(state, literal_huffman);
 
 				if (literal <= 255 && state->zlib_ptr < state->zlib_opl)
