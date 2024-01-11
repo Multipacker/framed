@@ -9,7 +9,7 @@
 #define PNG_CHUNK_RESERVED_BIT  (0x20 << 16)
 // NOTE(simon): We don't care about this flag.
 //#define PNG_CHUNK_ANCILLARY_BIT (0x20 << 24)
-#define PNG_TYPE(tag) (((tag)[0]) << 0 | ((tag)[1]) << 8 | ((tag)[2]) << 16 | ((tag)[3]) << 24)
+#define PNG_TYPE(c0, c1, c2, c3) ((c0) << 0 | (c1) << 8 | (c2) << 16 | (c3) << 24)
 #define PNG_CHUNK_IHDR_SIZE 13
 #define PNG_CHUNK_TYPE_TO_CSTR(type) ((char[5]) { \
 		(char) ((type) >>  0),                    \
@@ -388,7 +388,7 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 				// signs of data corruption.
 				return(false);
 			} break;
-			case PNG_TYPE("IHDR"):
+			case PNG_TYPE('I', 'H', 'D', 'R'):
 			{
 				if (seen_ihdr)
 				{
@@ -483,7 +483,7 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 
 				seen_ihdr = true;
 			} break;
-			case PNG_TYPE("IDAT"):
+			case PNG_TYPE('I', 'D', 'A', 'T'):
 			{
 				if (!seen_ihdr)
 				{
@@ -496,7 +496,7 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 
 				queue_push(state->first_idat, state->last_idat, node);
 			} break;
-			case PNG_TYPE("IEND"):
+			case PNG_TYPE('I', 'E', 'N', 'D'):
 			{
 				if (!seen_ihdr)
 				{
