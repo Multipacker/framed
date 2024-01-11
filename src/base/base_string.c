@@ -820,7 +820,6 @@ f64_from_str8(Str8 string, F64 *destination)
 internal
 B32 is_num(U8 ch)
 {
-	U8 n = ch - '0';
-	B32 result = n >= 0 && n <= 9;
+	B32 result = ('0' <= ch && ch <= '9');
 	return(result);
 }
