@@ -24,7 +24,7 @@
 
 global U8 png_magic[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, };
 
-global U32 png_code_length_alphabet[] = {
+global U32 png_code_length_reorder[] = {
 	16, 17, 18, 0, 8,  7, 9,  6, 10, 5,
 	11, 4,  12, 3, 13, 2, 14, 1, 15
 };
@@ -707,13 +707,13 @@ png_zlib_inflate(PNG_State *state)
 
 			// NOTE(simon): We can always refill enough bits.
 			png_refill_bits(state, hclen * 3);
-			U32 *code_length_lengths = push_array(scratch.arena, U32, hclen);
+			U32 *code_length_lengths = push_array_zero(scratch.arena, U32, array_count(png_code_length_reorder));
 			for (U32 i = 0; i < hclen; ++i)
 			{
-				code_length_lengths[i] = (U32) png_get_bits_no_refill(state, 3);
+				code_length_lengths[png_code_length_reorder[i]] = (U32) png_get_bits_no_refill(state, 3);
 			}
 
-			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, hclen, code_length_lengths, png_code_length_alphabet);
+			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, array_count(png_code_length_reorder), code_length_lengths, png_linear_alphabet);
 
 			// NOTE(simon): Lengths for literals and distances are compressed together.
 			U32 *lengths          = push_array(scratch.arena, U32, hlit + hdist);
