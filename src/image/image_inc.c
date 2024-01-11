@@ -251,12 +251,12 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 
 	U32 next_code[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
-	U32 code = 0;
+	U32 first_code_for_length = 0;
 	bl_count[0] = 0;
 	for (U32 bits = 1; bits <= PNG_HUFFMAN_MAX_BITS; ++bits)
 	{
-		code = (code + bl_count[bits - 1]) << 1;
-		next_code[bits] = code;
+		first_code_for_length = (first_code_for_length + bl_count[bits - 1]) << 1;
+		next_code[bits] = first_code_for_length;
 	}
 
 	for (U32 i = 0; i < count; ++i)
