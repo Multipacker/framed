@@ -8,7 +8,7 @@ struct LogUI_Thread
 
 global LogUI_Thread *log_ui_previous_threads = 0;
 global LogUI_Thread *log_ui_current_threads  = 0;
-global Log_QueueEntry log_ui_entries[10];
+global Log_QueueEntry log_ui_entries[1000];
 global U32 log_ui_entry_count = 0;
 global U32 log_ui_has_new_entries = 0;
 global B32 log_ui_freeze = false;
