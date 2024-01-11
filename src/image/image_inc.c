@@ -334,22 +334,28 @@ png_parse_chunk(Str8 *contents)
 
 		// TODO(simon): Verify type is valid.
 
-		assert(length < (U32)S32_MAX);
-
-		if (contents->size >= length + sizeof(U32))
+		if (length < (U32) S32_MAX)
 		{
-			chunk.data = str8(contents->data, length);
-			*contents = str8_skip(*contents, length);
+			if (contents->size >= length + sizeof(U32))
+			{
+				chunk.data = str8(contents->data, length);
+				*contents = str8_skip(*contents, length);
 
-			chunk.crc = u32_big_to_local_endian(*(U32 *) contents->data);
-			*contents = str8_skip(*contents, sizeof(U32));
+				chunk.crc = u32_big_to_local_endian(*(U32 *) contents->data);
+				*contents = str8_skip(*contents, sizeof(U32));
 
-			// TODO(simon): Verify CRC.
+				// TODO(simon): Verify CRC.
+			}
+			else
+			{
+				chunk.type = PNG_TYPE_INVALID;
+				log_error("Not enough data for chunk");
+			}
 		}
 		else
 		{
-			chunk.type = 0;
-			log_error("Not enough data for chunk");
+			chunk.type = PNG_TYPE_INVALID;
+			log_error("Chunk has too much data");
 		}
 	}
 	else
