@@ -8,20 +8,32 @@ struct LogUI_Thread
 
 global LogUI_Thread *log_ui_previous_threads = 0;
 global LogUI_Thread *log_ui_current_threads  = 0;
-global Log_QueueEntry *log_ui_entries = 0;
+global Log_QueueEntry log_ui_entries[10];
 global U32 log_ui_entry_count = 0;
-global U32 log_ui_previous_entry_count = 0;
+global U32 log_ui_has_new_entries = 0;
 global B32 log_ui_freeze = false;
 
 internal Void ui_log_keep_alive(Arena *frame_arena)
 {
 	if (!log_ui_freeze)
 	{
-		log_update_entries(1000);
-	}
+		Log_EntryBuffer new_entries = *log_get_new_entries();
 
-	log_ui_previous_entry_count = log_ui_entry_count;
-	log_ui_entries = log_get_entries(&log_ui_entry_count);
+		if (log_ui_entry_count + new_entries.count > array_count(log_ui_entries))
+		{
+			U32 entries_to_keep     = (U32) s64_max(0, (S64) array_count(log_ui_entries) - (S64) new_entries.count);
+			U32 first_entry_to_keep = log_ui_entry_count - entries_to_keep;
+			memory_move(log_ui_entries, &log_ui_entries[first_entry_to_keep], entries_to_keep * sizeof(*log_ui_entries));
+			log_ui_entry_count = entries_to_keep;
+		}
+
+		U32 entries_to_copy     = u32_min(array_count(log_ui_entries) - log_ui_entry_count, new_entries.count);
+		U32 first_entry_to_copy = new_entries.count - entries_to_copy;
+		memory_copy(&log_ui_entries[log_ui_entry_count], &new_entries.buffer[first_entry_to_copy], entries_to_copy * sizeof(*new_entries.buffer));
+		log_ui_entry_count += entries_to_copy;
+
+		log_ui_has_new_entries = (entries_to_copy != 0);
+	}
 
 	// NOTE(simon): Find threads.
 	log_ui_current_threads = 0;
@@ -79,17 +91,15 @@ ui_logger(Void)
 		ui_next_height(ui_fill());
 		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
 
-		if (!log_ui_freeze && log_ui_entry_count != log_ui_previous_entry_count)
+		if (!log_ui_freeze && log_ui_has_new_entries)
 		{
 			ui_scrollabel_region_set_scroll(entries_list, F32_MAX);
+			log_ui_has_new_entries = false;
 		}
 
 		ui_push_font(mono);
 
 		local B32 only_info = false;
-
-		U32 entry_count = 0;
-		Log_QueueEntry *entries = log_get_entries(&entry_count);
 
 		B32 all_unselected = true;
 		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)

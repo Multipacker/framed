@@ -25,6 +25,13 @@ struct Log_QueueEntry
 	U8        volatile message[256];
 };
 
+typedef struct Log_EntryBuffer Log_EntryBuffer;
+struct Log_EntryBuffer
+{
+	Log_QueueEntry *buffer;
+	U32 volatile count;
+};
+
 internal Void log_init(Str8 log_file);
 
 #define log_info(...)    log_message(Log_Level_Info,    __FILE__, __LINE__, __VA_ARGS__)
@@ -38,7 +45,6 @@ internal Void log_init(Str8 log_file);
 
 internal Void log_message(Log_Level level, CStr file, U32 line, CStr format, ...);
 
-internal Log_QueueEntry *log_get_entries(U32 *entry_count);
-internal Void log_update_entries(U32 keep_count);
+internal Log_EntryBuffer *log_get_new_entries(Void);
 
 #endif // LOGGING_INC_H

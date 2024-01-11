@@ -10,7 +10,7 @@
 #define LOG_QUEUE_SIZE (1 << 9)
 #define LOG_QUEUE_MASK (LOG_QUEUE_SIZE - 1)
 
-#define LOG_BUFFER_SIZE (1 << 13)
+#define LOG_BUFFER_SIZE (1 << 10)
 #define LOG_BUFFER_MASK (LOG_BUFFER_SIZE - 1)
 
 typedef struct Logger Logger;
@@ -21,9 +21,9 @@ struct Logger
 
 	OS_Semaphore semaphore;
 
-	Log_QueueEntry *buffer;
-	U32 volatile buffer_write_index;
-	U32 volatile buffer_read_index;
+	Log_EntryBuffer buffers[2];
+	Log_EntryBuffer *volatile read_buffer;
+	Log_EntryBuffer *volatile write_buffer;
 
 	Log_QueueEntry *queue;
 	U32 volatile queue_write_index;
@@ -84,14 +84,12 @@ log_flusher_thread(Void *argument)
 			++logger->queue_read_index;
 
 			// NOTE(simon): Potentially save the entry for later retrieval.
-			if (logger->buffer_write_index < LOG_BUFFER_SIZE)
+			Log_EntryBuffer *buffer = logger->write_buffer;
+			if (buffer->count < LOG_BUFFER_SIZE)
 			{
-				logger->buffer[logger->buffer_write_index] = entry;
+				buffer->buffer[buffer->count] = entry;
 				memory_fence();
-				// TODO(simon): There is a possibility that
-				// `log_update_entries` is called *here*, causing the increment
-				// to point one past the valid entries.
-				++logger->buffer_write_index;
+				++buffer->count;
 			}
 
 			arena_scratch(0, 0)
@@ -110,7 +108,10 @@ log_init(Str8 log_file)
 
 	logger->arena = arena_create();
 	os_semaphore_create(&logger->semaphore, 0);
-	logger->buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);
+	logger->buffers[0].buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);
+	logger->buffers[1].buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);
+	logger->write_buffer = &logger->buffers[0];
+	logger->read_buffer  = &logger->buffers[1];
 	logger->queue = push_array_zero(logger->arena, Log_QueueEntry, LOG_QUEUE_SIZE);
 	os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
 
@@ -164,25 +165,14 @@ log_message(Log_Level level, CStr file, U32 line, CStr format, ...)
 	release_scratch(scratch);
 }
 
-internal Log_QueueEntry *
-log_get_entries(U32 *entry_count)
+internal Log_EntryBuffer *
+log_get_new_entries(Void)
 {
 	Logger *logger = &global_logger;
 
-	*entry_count = logger->buffer_write_index;
+	logger->read_buffer->count = 0;
+	swap(logger->read_buffer, logger->write_buffer, Log_EntryBuffer *);
 
-	return(logger->buffer);
-}
-
-internal Void
-log_update_entries(U32 keep_count)
-{
-	Logger *logger = &global_logger;
-
-	U32 current_count = logger->buffer_write_index;
-	U32 to_keep = u32_min(keep_count, current_count);
-
-	memory_move(logger->buffer, &logger->buffer[current_count - to_keep], to_keep * sizeof(*logger->buffer));
-	memory_fence();
-	logger->buffer_write_index = to_keep;
+	Log_EntryBuffer *result = logger->read_buffer;
+	return(result);
 }
