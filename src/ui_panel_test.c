@@ -23,6 +23,8 @@
 
 #include "ui_panel_test.h"
 
+#include "log_ui.c"
+
 ////////////////////////////////
 //~ hampus: Global state
 
@@ -151,8 +153,7 @@ ui_tab_equip_view_info(Tab *tab, TabViewInfo view_info)
 }
 
 UI_TAB_VIEW(ui_tab_view_default);
-internal Tab *
-ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data)
+internal Tab *ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data)
 {
 	Tab *result = ui_tab_alloc(arena);
 	TabViewInfo view_info = {function, data};
@@ -395,13 +396,12 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 	}
 
-	for (UI_Box *child = root->first;
+	for (UI_Box *child = root->last;
 		 child != 0;
-		 child = child->next)
+		 child = child->prev)
 	{
 		ui_draw(child);
 	}
-
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
 		F32 d = 0;
@@ -576,6 +576,7 @@ ui_panel(Panel *root)
 		Side    hover_side = 0;
 		UI_Comm tab_release_comms[TabReleaseKind_COUNT] = {0};
 		B32     hovering_any_symbols = false;
+
 		// NOTE(hampus): Drag & split symbols
 		if (app_state->drag_tab)
 		{
@@ -706,7 +707,67 @@ ui_panel(Panel *root)
 					ui_end_drag();
 				}
 			}
+		}
 
+		// NOTE(hampus): Drag & split overlay
+		if (hovering_any_symbols)
+		{
+			Vec4F32 top_color = ui_top_rect_style()->color[0];
+			top_color.r += 0.2f;
+			top_color.g += 0.2f;
+			top_color.b += 0.2f;
+			top_color.a = 0.5f;
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pct(1, 1));
+			UI_Box *container = ui_box_make(UI_BoxFlag_FloatingPos,
+											str8_lit("OverlayBoxContainer"));
+			ui_parent(container)
+			{
+				if (hover_axis == Axis2_COUNT)
+				{
+					ui_next_width(ui_pct(1, 1));
+					ui_next_height(ui_pct(1, 1));
+					ui_next_vert_gradient(top_color, top_color);
+					UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+													  str8_lit("OverlayBox"));
+				}
+				else
+				{
+					switch (hover_axis)
+					{
+						case Axis2_X:
+						{
+							container->layout_style.child_layout_axis = Axis2_X;
+							if (hover_side == Side_Max)
+							{
+								ui_spacer(ui_fill());
+							}
+							ui_next_width(ui_pct(0.5f, 1));
+							ui_next_height(ui_pct(1, 1));
+							ui_next_vert_gradient(top_color, top_color);
+							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+															  str8_lit("OverlayBox"));
+						} break;
+
+						case Axis2_Y:
+						{
+							container->layout_style.child_layout_axis = Axis2_Y;
+							if (hover_side == Side_Max)
+							{
+								ui_spacer(ui_fill());
+							}
+							ui_next_height(ui_pct(0.5f, 1));
+							ui_next_width(ui_pct(1, 1));
+							ui_next_vert_gradient(top_color, top_color);
+							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
+															  str8_lit("OverlayBox"));
+						} break;
+
+						default: break;
+					}
+				}
+			}
 		}
 
 		// NOTE(hampus): Title bar
@@ -810,67 +871,6 @@ ui_panel(Panel *root)
 				ui_parent(content_box)
 				{
 					tab->view_info.function(tab->view_info.data);
-				}
-			}
-		}
-
-		// NOTE(hampus): Drag & split overlay
-		if (hovering_any_symbols)
-		{
-			Vec4F32 top_color = ui_top_rect_style()->color[0];
-			top_color.r += 0.2f;
-			top_color.g += 0.2f;
-			top_color.b += 0.2f;
-			top_color.a = 0.5f;
-
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_pct(1, 1));
-			UI_Box *container = ui_box_make(UI_BoxFlag_FloatingPos,
-											str8_lit("OverlayBoxContainer"));
-			ui_parent(container)
-			{
-				if (hover_axis == Axis2_COUNT)
-				{
-					ui_next_width(ui_pct(1, 1));
-					ui_next_height(ui_pct(1, 1));
-					ui_next_vert_gradient(top_color, top_color);
-					UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-													  str8_lit("OverlayBox"));
-				}
-				else
-				{
-					switch (hover_axis)
-					{
-						case Axis2_X:
-						{
-							container->layout_style.child_layout_axis = Axis2_X;
-							if (hover_side == Side_Max)
-							{
-								ui_spacer(ui_fill());
-							}
-							ui_next_width(ui_pct(0.5f, 1));
-							ui_next_height(ui_pct(1, 1));
-							ui_next_vert_gradient(top_color, top_color);
-							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-															  str8_lit("OverlayBox"));
-						} break;
-
-						case Axis2_Y:
-						{
-							container->layout_style.child_layout_axis = Axis2_Y;
-							if (hover_side == Side_Max)
-							{
-								ui_spacer(ui_fill());
-							}
-							ui_next_height(ui_pct(0.5f, 1));
-							ui_next_width(ui_pct(1, 1));
-							ui_next_vert_gradient(top_color, top_color);
-							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-															  str8_lit("OverlayBox"));
-						} break;
-
-						default: break;
-					}
 				}
 			}
 		}
@@ -1146,12 +1146,21 @@ UI_TAB_VIEW(ui_tab_view_default)
 	}
 }
 
+UI_TAB_VIEW(ui_tab_view_logger)
+{
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
+	ui_logger();
+}
+
 ////////////////////////////////
 //~ hampus: Main
 
 internal S32
 os_main(Str8List arguments)
 {
+	log_init(str8_lit("log.txt"));
+
 	Arena *perm_arena = arena_create();
 	app_state = push_struct(perm_arena, AppState);
 	app_state->perm_arena = perm_arena;
@@ -1184,7 +1193,7 @@ os_main(Str8List arguments)
 			{
 				TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, 0, 0),
+					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_logger, 0),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				ui_command_tab_attach(&attach);
@@ -1404,6 +1413,8 @@ os_main(Str8List arguments)
 				}
 			}
 		}
+
+		ui_log_keep_alive(current_arena);
 
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
