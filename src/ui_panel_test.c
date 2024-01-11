@@ -10,6 +10,7 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
+#include "image/image_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
 #include "ui/ui_inc.h"
@@ -17,6 +18,7 @@
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 #include "log/log_inc.c"
+#include "image/image_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
 #include "ui/ui_inc.c"
@@ -24,6 +26,7 @@
 #include "ui_panel_test.h"
 
 #include "log_ui.c"
+#include "texture_ui.c"
 
 ////////////////////////////////
 //~ hampus: Global state
@@ -1153,6 +1156,14 @@ UI_TAB_VIEW(ui_tab_view_logger)
 	ui_logger();
 }
 
+UI_TAB_VIEW(ui_tab_view_texture_viewer)
+{
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
+	R_TextureSlice texture = *(R_TextureSlice *) data;
+	ui_texture_view(texture);
+}
+
 ////////////////////////////////
 //~ hampus: Main
 
@@ -1173,6 +1184,22 @@ os_main(Str8List arguments)
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
+
+	Str8 path = str8_lit("data/test.png");
+	R_TextureSlice image_texture = { 0 };
+
+	Str8 image_contents = { 0 };
+	arena_scratch(0, 0)
+	{
+		if (os_file_read(scratch, path, &image_contents))
+		{
+			image_load(app_state->perm_arena, renderer, image_contents, &image_texture);
+		}
+		else
+		{
+			log_error("Could not load file '%"PRISTR8"'", str8_expand(path));
+		}
+	}
 
 	UI_Context *ui = ui_init();
 
@@ -1202,7 +1229,7 @@ os_main(Str8List arguments)
 			{
 				TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, 0, 0),
+					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_texture_viewer, &image_texture),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				ui_command_tab_attach(&attach);
