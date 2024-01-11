@@ -338,7 +338,7 @@ png_parse_chunk(Str8 *contents)
 
 		// TODO(simon): Verify type is valid.
 
-		assert(length < S32_MAX);
+		assert(length < (U32)S32_MAX);
 
 		if (contents->size >= length + sizeof(U32))
 		{
@@ -410,13 +410,13 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 				U8 filter_method      = chunk.data.data[11];
 				U8 interlace_method   = chunk.data.data[12];
 
-				if (!(0 < width && width <= S32_MAX))
+				if (!(0 < width && width <= (U32)S32_MAX))
 				{
 					log_error("Width is outside of the permitted range");
 					return(false);
 				}
 
-				if (!(0 < height && height <= S32_MAX))
+				if (!(0 < height && height <= (U32)S32_MAX))
 				{
 					log_error("Height is outside of the permitted range");
 					return(false);
