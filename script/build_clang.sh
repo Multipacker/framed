@@ -12,9 +12,9 @@ linker_flags="-fuse-ld=mold -lSDL2 build/freetype/freetype -lm"
 if [ "$mode" == "debug" ]; then
 	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
 elif [ "$mode" == "optimized" ]; then
-	compiler_flags="-g -O3 -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_OPTIMIZED=1"
+	compiler_flags="-g -O3 -march=native -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_OPTIMIZED=1"
 elif [ "$mode" == "release" ]; then
-	compiler_flags="-O3 -DBUILD_MODE_RELEASE=1"
+	compiler_flags="-O3 -march=native -DBUILD_MODE_RELEASE=1"
 else
 	echo "ERROR: Unknown build type."
 	exit 1
