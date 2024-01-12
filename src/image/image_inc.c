@@ -852,7 +852,8 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels)
 		U8  *write = pixels;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
-			write[i] = (U8) (((U32) u16_big_to_local_endian(read[i]) * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+			U16 value = u16_big_to_local_endian(read[i]);
+			write[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 		}
 	}
 	else if (state->bit_depth != 8)
@@ -879,10 +880,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[0];
-				write[2] = read[0];
 				write[3] = 0xFF;
+				write[2] = read[0];
+				write[1] = read[0];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
@@ -892,10 +893,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[1];
-				write[2] = read[2];
 				write[3] = 0xFF;
+				write[2] = read[2];
+				write[1] = read[1];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
@@ -911,10 +912,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[0];
-				write[2] = read[0];
 				write[3] = read[1];
+				write[2] = read[0];
+				write[1] = read[0];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
