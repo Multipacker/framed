@@ -837,6 +837,35 @@ png_paeth_predictor(S32 a, S32 b, S32 c)
 }
 
 internal B32
+png_resample_to_8bit(PNG_State *state, U8 *pixels)
+{
+	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
+	{
+		// TODO(simon): Expand the indicies to 8-bit. Needs to be done starting from the end.
+		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
+		return(false);
+	}
+	else if (state->bit_depth == 16)
+	{
+		U32 byte_stride = png_stride_from_color_type(state->color_type);
+		U16 *read  = (U16 *) pixels;
+		U8  *write = pixels;
+		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		{
+			write[i] = (U8) (((U32) u16_big_to_local_endian(read[i]) * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+		}
+	}
+	else if (state->bit_depth != 8)
+	{
+		// TODO(simon): Resample data to be 8-bit. Need to be done starting from the end.
+		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
+		return(false);
+	}
+
+	return(true);
+}
+
+internal B32
 png_expand_to_rgba(PNG_State *state, U8 *pixels)
 {
 	// TODO(simon): Expand to RGBA
@@ -923,7 +952,7 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 	}
 
 	// TODO(simon): Better approximation for the unfiltered data
-	U64 unfiltered_size = 4 * state.width * state.height;
+	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
 	U32 bit_stride = u32_round_up_to_power_of_2(state.bit_depth, 8) * png_stride_from_color_type(state.color_type);
 	U32 stride = bit_stride / 8 * state.width;
@@ -999,16 +1028,8 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 		}
 	}
 
-	if (state.color_type == PNG_ColorType_IndexedColor && state.bit_depth != 8)
+	if (!png_resample_to_8bit(&state, unfiltered_data))
 	{
-		// TODO(simon): Expand the indicies to 8-bit. Needs to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state.bit_depth);
-		return(false);
-	}
-	else if (state.bit_depth != 8)
-	{
-		// TODO(simon): Resample data to be 8-bit. Need to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state.bit_depth);
 		return(false);
 	}
 
