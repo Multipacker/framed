@@ -837,6 +837,70 @@ png_paeth_predictor(S32 a, S32 b, S32 c)
 }
 
 internal B32
+png_expand_to_rgba(PNG_State *state, U8 *pixels)
+{
+	// TODO(simon): Expand to RGBA
+	U32 byte_stride = png_stride_from_color_type(state->color_type);
+	U8 *read  = &pixels[(state->width * state->height - 1) * byte_stride];
+	U8 *write = &pixels[(state->width * state->height - 1) * 4];
+
+	switch (state->color_type)
+	{
+		case PNG_ColorType_Greyscale:
+		{
+			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
+			{
+				write[0] = read[0];
+				write[1] = read[0];
+				write[2] = read[0];
+				write[3] = 0xFF;
+
+				read  -= byte_stride;
+				write -= 4;
+			}
+		} break;
+		case PNG_ColorType_Truecolor:
+		{
+			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
+			{
+				write[0] = read[0];
+				write[1] = read[1];
+				write[2] = read[2];
+				write[3] = 0xFF;
+
+				read  -= byte_stride;
+				write -= 4;
+			}
+		} break;
+		case PNG_ColorType_IndexedColor:
+		{
+			// TODO(simon): Change to return Void when we support all formats.
+			log_error("Indexed color is not yet supported");
+			return(false);
+		} break;
+		case PNG_ColorType_GreyscaleAlpha:
+		{
+			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
+			{
+				write[0] = read[0];
+				write[1] = read[0];
+				write[2] = read[0];
+				write[3] = read[1];
+
+				read  -= byte_stride;
+				write -= 4;
+			}
+		} break;
+		case PNG_ColorType_TruecolorAlpha:
+		{
+			// NOTE(simon): Nothing to do, already in the right format.
+		} break;
+	}
+
+	return(true);
+}
+
+internal B32
 image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *texture_result)
 {
 	PNG_State state = { 0 };
@@ -948,33 +1012,9 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 		return(false);
 	}
 
-	// TODO(simon): Expand to RGBA
-	switch (state.color_type)
+	if (!png_expand_to_rgba(&state, unfiltered_data))
 	{
-		case PNG_ColorType_Greyscale:
-		{
-			log_error("Greyscale is not yet supported");
-			return(false);
-		} break;
-		case PNG_ColorType_Truecolor:
-		{
-			log_error("RGB color is not yet supported");
-			return(false);
-		} break;
-		case PNG_ColorType_IndexedColor:
-		{
-			log_error("Indexed color is not yet supported");
-			return(false);
-		} break;
-		case PNG_ColorType_GreyscaleAlpha:
-		{
-			log_error("Greyscale + alpha is not yet supported");
-			return(false);
-		} break;
-		case PNG_ColorType_TruecolorAlpha:
-		{
-			// NOTE(simon): Nothing to do, already in the right format.
-		} break;
+		return(false);
 	}
 
 	R_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, R_ColorSpace_sRGB);
