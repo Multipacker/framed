@@ -1,5 +1,5 @@
 // NOTE(simon): Specifications used:
-//   * [PNG](https://www.w3.org/TR/png-3/#10Compression)
+//   * [PNG](https://www.w3.org/TR/png-3/)
 //   * [ZLIB](https://www.rfc-editor.org/rfc/rfc1950)
 //   * [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951)
 
@@ -104,7 +104,7 @@ typedef enum PNG_InterlaceMethod PNG_InterlaceMethod;
 enum PNG_InterlaceMethod
 {
 	PNG_InterlaceMethod_None  = 0,
-	PNG_InterlaceMethod_Adam7 = 2,
+	PNG_InterlaceMethod_Adam7 = 1,
 };
 
 typedef struct PNG_Huffman PNG_Huffman;
