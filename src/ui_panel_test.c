@@ -1185,7 +1185,7 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	Str8 path = str8_lit("data/test.png");
+	Str8 path = str8_lit("data/image.png");
 	R_TextureSlice image_texture = { 0 };
 
 	Str8 image_contents = { 0 };

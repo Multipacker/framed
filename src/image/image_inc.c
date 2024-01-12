@@ -932,6 +932,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 internal B32
 image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *texture_result)
 {
+	U64 before = os_now_nanoseconds();
 	PNG_State state = { 0 };
 	if (!png_parse_chunks(arena, contents, &state))
 	{
@@ -1038,7 +1039,10 @@ image_load(Arena *arena, R_Context *renderer, Str8 contents, R_TextureSlice *tex
 		return(false);
 	}
 
-	R_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, R_ColorSpace_sRGB);
+	U64 after = os_now_nanoseconds();
+	log_info("%.2fms to load PNG", (F64) (after - before) / (F64) million(1));
+
+lViR_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, R_ColorSpace_sRGB);
 	*texture_result = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
 
 	return(true);
