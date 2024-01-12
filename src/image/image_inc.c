@@ -952,6 +952,13 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 		return(false);
 	}
 
+	// TODO(simon): Implement interlacing
+	if (state.interlace_method != PNG_InterlaceMethod_None)
+	{
+		log_error("Interlaced images are not supported yet");
+		return(false);
+	}
+
 	// TODO(simon): Better approximation for the unfiltered data
 	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
