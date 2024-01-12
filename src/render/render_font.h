@@ -1,26 +1,26 @@
 #ifndef RENDER_FONT_H
 #define RENDER_FONT_H
 
-typedef enum R_FontRenderMode R_FontRenderMode;
-enum R_FontRenderMode
+typedef enum Render_FontRenderMode Render_FontRenderMode;
+enum Render_FontRenderMode
 {
-	R_FontRenderMode_Normal, // Default render mode. 8-bit AA bitmaps
-	R_FontRenderMode_LCD,    // Subpixel rendering for horizontally decimated LCD displays
-	R_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
+	Render_FontRenderMode_Normal, // Default render mode. 8-bit AA bitmaps
+	Render_FontRenderMode_LCD,    // Subpixel rendering for horizontally decimated LCD displays
+	Render_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
 	
-	R_FontRenderMode_COUNT,
+	Render_FontRenderMode_COUNT,
 };
 
-#define R_USE_SUBPIXEL_RENDERING 1
+#define RENDER_USE_SUBPIXEL_RENDERING 1
 
-typedef struct R_FontAtlasRegionNode R_FontAtlasRegionNode;
-struct R_FontAtlasRegionNode
+typedef struct Render_FontAtlasRegionNode Render_FontAtlasRegionNode;
+struct Render_FontAtlasRegionNode
 {
-	R_FontAtlasRegionNode *next_free;
-	R_FontAtlasRegionNode *prev_free;
+	Render_FontAtlasRegionNode *next_free;
+	Render_FontAtlasRegionNode *prev_free;
 
-	R_FontAtlasRegionNode *parent;
-	R_FontAtlasRegionNode *children[Corner_COUNT];
+	Render_FontAtlasRegionNode *parent;
+	Render_FontAtlasRegionNode *children[Corner_COUNT];
 	RectU32 region;
 
 	// NOTE(hampus): This will be true if either this
@@ -30,91 +30,91 @@ struct R_FontAtlasRegionNode
 	B32 used;
 };
 
-typedef struct R_FontAtlasRegion R_FontAtlasRegion;
-struct R_FontAtlasRegion
+typedef struct Render_FontAtlasRegion Render_FontAtlasRegion;
+struct Render_FontAtlasRegion
 {
-	R_FontAtlasRegionNode *node;
+	Render_FontAtlasRegionNode *node;
 	RectU32 region;
 };
 
-typedef struct R_FontAtlas R_FontAtlas;
-struct R_FontAtlas
+typedef struct Render_FontAtlas Render_FontAtlas;
+struct Render_FontAtlas
 {
-	R_FontAtlasRegionNode *first_free_region;
-	R_FontAtlasRegionNode *last_free_region;
+	Render_FontAtlasRegionNode *first_free_region;
+	Render_FontAtlasRegionNode *last_free_region;
 	Vec2U32 dim;
 	Void *memory;
 	U64 num_free_regions;
-	R_Texture texture;
+	Render_Texture texture;
 };
 
-typedef struct R_Glyph R_Glyph;
-struct R_Glyph
+typedef struct Render_Glyph Render_Glyph;
+struct Render_Glyph
 {
 	Vec2F32 size_in_pixels;
 	Vec2F32 bearing_in_pixels;
 	F32 advance_width;
-	R_TextureSlice slice;
+	Render_TextureSlice slice;
 };
 
-typedef struct R_GlyphIndexNode R_GlyphIndexNode;
-struct R_GlyphIndexNode
+typedef struct Render_GlyphIndexNode Render_GlyphIndexNode;
+struct Render_GlyphIndexNode
 {
-	R_GlyphIndexNode *next;
+	Render_GlyphIndexNode *next;
 	U32 codepoint;
 	U32 index; // NOTE(hampus): The index into the glyphs array in the font
 };
 
-typedef struct R_GlyphBucket R_GlyphBucket;
-struct R_GlyphBucket
+typedef struct Render_GlyphBucket Render_GlyphBucket;
+struct Render_GlyphBucket
 {
-	R_GlyphIndexNode *first;
-	R_GlyphIndexNode *last;
+	Render_GlyphIndexNode *first;
+	Render_GlyphIndexNode *last;
 };
 
 #define GLYPH_BUCKETS_ARRAY_SIZE 128
-#define R_FONT_CACHE_SIZE        8
+#define RENDER_FONT_CACHE_SIZE   8
 
-typedef struct R_KerningPair R_KerningPair;
-struct R_KerningPair
+typedef struct Render_KerningPair Render_KerningPair;
+struct Render_KerningPair
 {
 	U64 pair;
 	F32 value;
 };
 
-typedef enum R_FontState R_FontState;
-enum R_FontState 
+typedef enum Render_FontState Render_FontState;
+enum Render_FontState 
 {
-	R_FontState_Unloaded,
+	Render_FontState_Unloaded,
 	
-	R_FontState_InQueue,
-	R_FontState_Loading,
-	R_FontState_Loaded,
+	Render_FontState_InQueue,
+	Render_FontState_Loading,
+	Render_FontState_Loaded,
 };
 
-typedef struct R_FontLoadParams R_FontLoadParams;
-struct R_FontLoadParams
+typedef struct Render_FontLoadParams Render_FontLoadParams;
+struct Render_FontLoadParams
 {
-	R_FontRenderMode render_mode;
+	Render_FontRenderMode render_mode;
 	U32              size;
 	Str8             path;
 };
 
-typedef struct R_Font R_Font;
-struct R_Font
+typedef struct Render_Font Render_Font;
+struct Render_Font
 {
 	// TODO(hampus): Remove the arena from here and
 	// try to allocate from the renderer arena
 	Arena *arena;
 
-	R_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
-	R_Glyph *glyphs;
+	Render_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
+	Render_Glyph *glyphs;
 
 	U64 kern_map_size;
-	R_KerningPair *kern_pairs;
+	Render_KerningPair *kern_pairs;
 
 	U32 num_font_atlas_regions;
-	R_FontAtlasRegion *font_atlas_regions;
+	Render_FontAtlasRegion *font_atlas_regions;
 	F32 max_ascent;
 	F32 max_descent;
 
@@ -130,48 +130,48 @@ struct R_Font
 
 	U64 last_frame_index_used;
 	
-	R_FontState state;
-	R_FontLoadParams load_params;
+	Render_FontState state;
+	Render_FontLoadParams load_params;
 };
 
-typedef struct R_FontCache R_FontCache;
-struct R_FontCache
+typedef struct Render_FontCache Render_FontCache;
+struct Render_FontCache
 {
 	U32 entries_used;
-	R_Font entries[R_FONT_CACHE_SIZE];
+	Render_Font entries[RENDER_FONT_CACHE_SIZE];
 };
 
-typedef struct R_FontKey R_FontKey;
-struct R_FontKey
+typedef struct Render_FontKey Render_FontKey;
+struct Render_FontKey
 {
 	U32 font_size;
 	Str8 path;
 };
 
-typedef struct R_FontQueueEntry R_FontQueueEntry;
-struct R_FontQueueEntry
+typedef struct Render_FontQueueEntry Render_FontQueueEntry;
+struct Render_FontQueueEntry
 {
-	R_FontLoadParams params;
-	R_Font *font;
+	Render_FontLoadParams params;
+	Render_Font *font;
 };
 
 #define FONT_QUEUE_SIZE (1 << 6)
 #define FONT_QUEUE_MASK (FONT_QUEUE_SIZE - 1)
 
-typedef struct R_FontQueue R_FontQueue;
-struct R_FontQueue
+typedef struct Render_FontQueue Render_FontQueue;
+struct Render_FontQueue
 {
-	R_FontQueueEntry *queue;
+	Render_FontQueueEntry *queue;
 	U32 volatile write_index;
 	U32 volatile read_index;
 	OS_Semaphore semaphore;
 };
 
-internal R_FontAtlas      *render_make_font_atlas(R_Context *renderer, Vec2U32 dim);
-internal Void              render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);
-internal Void              render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node);
-internal R_FontAtlasRegion render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim);
-internal Void              render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region);
+internal Render_FontAtlas      *render_make_font_atlas(Render_Context *renderer, Vec2U32 dim);
+internal Void                   render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node);
+internal Void                   render_remove_free_region_from_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node);
+internal Render_FontAtlasRegion render_alloc_font_atlas_region(Render_Context *renderer, Render_FontAtlas *atlas, Vec2U32 dim);
+internal Void                   render_free_atlas_region(Render_FontAtlas *atlas, Render_FontAtlasRegion region);
 
 internal Void render_font_stream_thread(Void *data);
 

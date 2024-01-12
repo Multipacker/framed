@@ -25,7 +25,7 @@ os_main(Str8List arguments)
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
-	R_Context *renderer = render_init(&gfx);
+	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
@@ -33,7 +33,7 @@ os_main(Str8List arguments)
 	Arena *arena = arena_create();
 	Str8 path = str8_lit("data/test.png");
 	B32 loaded_image = false;
-	R_TextureSlice image_texture = { 0 };
+	Render_TextureSlice image_texture = { 0 };
 
 	Str8 image_contents = { 0 };
 	if (os_file_read(arena, path, &image_contents))
@@ -92,7 +92,7 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 		
-		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 7);
+		Render_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 7);
 		ui_push_font(font);
 		
 		ui_log_keep_alive(current_arena);

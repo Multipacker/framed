@@ -218,7 +218,7 @@ ui_tab_button(Tab *tab)
 	{
 		ui_next_height(ui_em(1, 1));
 		ui_next_width(ui_em(1, 1));
-		ui_next_icon(R_ICON_PIN);
+		ui_next_icon(RENDER_ICON_PIN);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 		UI_BoxFlags pin_box_flags = UI_BoxFlag_Clickable;
 		if (tab->pinned)
@@ -236,7 +236,7 @@ ui_tab_button(Tab *tab)
 
 		ui_next_height(ui_em(1, 1));
 		ui_next_width(ui_em(1, 1));
-		ui_next_icon(R_ICON_CROSS);
+		ui_next_icon(RENDER_ICON_CROSS);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 		UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable,
 										str8_lit("CloseButton"));
@@ -365,7 +365,7 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
 
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 
 	rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
 	rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
@@ -378,7 +378,7 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 	{
 		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
 		Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer,
+		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
 											   min,
 											   max,
 											   .softness = 15, .color = v4f32(0, 0, 0, 1));
@@ -388,7 +388,7 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 	{
 		// TODO(hampus): Correct darkening/lightening
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
+		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
 		memory_copy_array(instance->colors, rect_style->color);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
@@ -410,7 +410,7 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 		F32 d = 0;
 
 		rect_style->border_color = rect_style->border_color;
-		R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 }
@@ -814,7 +814,7 @@ ui_panel(Panel *root)
 
 					ui_next_height(ui_em(1.3f, 1));
 					ui_next_width(ui_em(1.3f, 1));
-					ui_next_icon(R_ICON_CROSS);
+					ui_next_icon(RENDER_ICON_CROSS);
 					ui_next_hover_cursor(Gfx_Cursor_Hand);
 					ui_next_color(v4f32(0.6f, 0.1f, 0.1f, 1.0f));
 					UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable |
@@ -1160,7 +1160,7 @@ UI_TAB_VIEW(ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
-	R_TextureSlice texture = *(R_TextureSlice *) data;
+	Render_TextureSlice texture = *(Render_TextureSlice *) data;
 	ui_texture_view(texture);
 }
 
@@ -1180,13 +1180,13 @@ os_main(Str8List arguments)
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
-	R_Context *renderer = render_init(&gfx);
+	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
 	Str8 path = str8_lit("data/image.png");
-	R_TextureSlice image_texture = { 0 };
+	Render_TextureSlice image_texture = { 0 };
 
 	Str8 image_contents = { 0 };
 	arena_scratch(0, 0)

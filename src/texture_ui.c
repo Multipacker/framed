@@ -1,5 +1,5 @@
 internal Void
-ui_texture_view(R_TextureSlice atlas)
+ui_texture_view(Render_TextureSlice atlas)
 {
 	ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
 	UI_Box *atlas_parent = ui_box_make(UI_BoxFlag_DrawBackground |

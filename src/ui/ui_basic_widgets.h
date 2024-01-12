@@ -10,8 +10,8 @@ struct UI_ScrollabelRegion
 
 internal Void    ui_text(Str8 string);
 internal Void    ui_textf(CStr fmt, ...);
-internal UI_Comm ui_image(R_TextureSlice slice, Str8 string);
-internal UI_Comm ui_imagef(R_TextureSlice slice, CStr fmt, ...);
+internal UI_Comm ui_image(Render_TextureSlice slice, Str8 string);
+internal UI_Comm ui_imagef(Render_TextureSlice slice, CStr fmt, ...);
 internal UI_Comm ui_button(Str8 string);
 internal UI_Comm ui_buttonf(CStr fmt, ...);
 internal UI_Comm ui_check(B32 *value, Str8 string);

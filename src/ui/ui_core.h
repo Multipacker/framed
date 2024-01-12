@@ -6,7 +6,7 @@ struct UI_Config
 {
 	B32 animations;
 	F32 animation_speed;
-	R_FontKey icon_font;
+	Render_FontKey icon_font;
 };
 
 typedef enum UI_BoxFlags UI_BoxFlags;
@@ -105,7 +105,7 @@ struct UI_RectStyle
 	F32     border_thickness;
 	Vec4F32 radies;
 	F32     softness;
-	R_TextureSlice slice;
+	Render_TextureSlice slice;
 	Gfx_Cursor hover_cursor;
 };
 
@@ -118,7 +118,7 @@ struct UI_TextStyle
 	UI_TextAlign align;
 	Vec2F32      padding;
 	U32          icon;
-	R_FontKey    font;
+	Render_FontKey    font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
@@ -310,7 +310,7 @@ struct UI_Context
 	UI_Key prev_active_key;
 	
 	Gfx_EventList *event_list;
-	R_Context     *renderer;
+	Render_Context     *renderer;
 
 	UI_Config config;
 
@@ -325,7 +325,7 @@ struct UI_Context
 
 internal UI_Context *ui_init(Void);
 
-internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt);
+internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
 internal Void ui_end(Void);
 
 internal Void ui_tooltip_begin(Void);

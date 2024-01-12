@@ -21,17 +21,17 @@ os_main(Str8List arguments)
 
 	gfx_show_window(&gfx);
 
-	R_Context *renderer = render_init(&gfx);
+	Render_Context *renderer = render_init(&gfx);
 
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
+	Render_TextureSlice texture = render_create_texture_slice(renderer, str8_lit("data/test.png"), Render_ColorSpace_sRGB);
 
 	Arena *perm_arena = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
+	Render_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 16);
 	B32 show_log = false;
 	F32 log_offset = 0;
 
@@ -115,7 +115,7 @@ os_main(Str8List arguments)
 			render_push_clip(renderer, log_pos, v2f32_add_v2f32(log_pos, log_size), false);
 			render_rect(renderer, v2f32(0, 0), log_size, .color = vec4f32_srgb_to_linear(v4f32(0.5, 0.5, 0.5, 1.0)));
 
-			R_Font *real_font = render_font_from_key(renderer, font);
+			Render_Font *real_font = render_font_from_key(renderer, font);
 			F32 y_offset = log_size.height - real_font->line_height + log_offset;
 
 			U32 entry_count = 0;

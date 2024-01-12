@@ -94,36 +94,36 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 	glEnableVertexArrayAttrib(vaobj,   attribindex);
 }
 
-internal R_BackendContext *
-render_backend_init(R_Context *renderer)
+internal Render_BackendContext *
+render_backend_init(Render_Context *renderer)
 {
 	// NOTE(simon): The alignment is needed for atomic access within the struct.
 	arena_align(renderer->permanent_arena, 8);
-    renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
-    R_BackendContext *backend = renderer->backend;
+    renderer->backend = push_struct(renderer->permanent_arena, Render_BackendContext);
+    Render_BackendContext *backend = renderer->backend;
 	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	glCreateBuffers(1, &backend->vbo);
-	glNamedBufferData(backend->vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
+	glNamedBufferData(backend->vbo, OPENGL_BATCH_SIZE * sizeof(Render_RectInstance), 0, GL_DYNAMIC_DRAW);
 
 	glCreateVertexArrays(1, &backend->vao);
 
-	opengl_vertex_array_instance_attribute(backend->vao, 0,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 1,  2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 2,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[0]), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 3,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[1]), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 4,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[2]), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 5,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(R_RectInstance, colors[3]), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 6,  4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 0,  2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, min), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 1,  2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, max), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 2,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(Render_RectInstance, colors[0]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 3,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(Render_RectInstance, colors[1]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 4,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(Render_RectInstance, colors[2]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 5,  4, GL_FLOAT, GL_FALSE, (GLuint)member_offset(Render_RectInstance, colors[3]), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 6,  4, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, radies), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, softness), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, border_thickness), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, omit_texture), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, is_subpixel_text), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 11, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, min_uv), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, max_uv), 0);
 
-	glVertexArrayVertexBuffer(backend->vao, 0, backend->vbo, 0, sizeof(R_RectInstance));
+	glVertexArrayVertexBuffer(backend->vao, 0, backend->vbo, 0, sizeof(Render_RectInstance));
 
 	GLuint shaders[] = {
 		opengl_create_shader(str8_lit("src/render/opengl/shader.vert"), GL_VERTEX_SHADER),
@@ -146,9 +146,9 @@ render_backend_init(R_Context *renderer)
 }
 
 internal Void
-render_backend_begin(R_Context *renderer)
+render_backend_begin(Render_Context *renderer)
 {
-    R_BackendContext *backend = renderer->backend;
+    Render_BackendContext *backend = renderer->backend;
 	backend->client_area = gfx_get_window_client_area(renderer->gfx);
 
 	glViewport(0, 0, (GLsizei) backend->client_area.width, (GLsizei) backend->client_area.height);
@@ -162,9 +162,9 @@ render_backend_begin(R_Context *renderer)
 }
 
 internal Void
-render_backend_end(R_Context *renderer)
+render_backend_end(Render_Context *renderer)
 {
-    R_BackendContext *backend = renderer->backend;
+    Render_BackendContext *backend = renderer->backend;
 
 	// NOTE(simon): Perform texture updates.
 	while (backend->texture_update_write_index - backend->texture_update_read_index != 0)
@@ -198,7 +198,7 @@ render_backend_end(R_Context *renderer)
 
 	for (OpenGL_Batch *batch = backend->batches.first; batch; batch = batch->next)
 	{
-		glNamedBufferSubData(backend->vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
+		glNamedBufferSubData(backend->vbo, 0, batch->size * sizeof(Render_RectInstance), batch->rects);
 		RectF32 clip_rect = batch->clip_node->rect;
 
 		// NOTE(simon): OpenGL has its origin in the lower left corner, not the
@@ -229,22 +229,22 @@ render_backend_end(R_Context *renderer)
 	backend->batches.batch_count = 0;
 	backend->clip_stack          = 0;
 
-	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
+	swap(renderer->render_stats[0], renderer->render_stats[1], Render_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
 	gfx_swap_buffers(renderer->gfx);
 }
 
 internal OpenGL_Batch *
-opengl_create_batch(R_Context *renderer)
+opengl_create_batch(Render_Context *renderer)
 {
-    R_BackendContext *backend = renderer->backend;
+    Render_BackendContext *backend = renderer->backend;
 	// NOTE(simon): No need to clear everything to zero, manually set the
 	// parameters we care about.
 	OpenGL_Batch *result = push_struct(renderer->frame_arena, OpenGL_Batch);
 
 	result->size      = 0;
 	result->clip_node = backend->clip_stack;
-	result->texture   = (R_Texture) { 0 };
+	result->texture   = (Render_Texture) { 0 };
 	dll_push_back(backend->batches.first, backend->batches.last, result);
 	++backend->batches.batch_count;
 
@@ -253,13 +253,13 @@ opengl_create_batch(R_Context *renderer)
 
 // TODO(simon): Test performance without pruning batches and rectangles once we
 // are rendering more complicated scenes.
-internal R_RectInstance *
-render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
+internal Render_RectInstance *
+render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 {
-    R_BackendContext *backend = renderer->backend;
+    Render_BackendContext *backend = renderer->backend;
 	assert(backend->clip_stack);
 
-	R_RectInstance *result = &render_rect_instance_null;
+	Render_RectInstance *result = &render_rect_instance_null;
 
 	// NOTE(simon): Account for softness.
 	RectF32 expanded_area = rectf32(
@@ -327,9 +327,9 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 }
 
 internal Void
-render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
-    R_BackendContext *backend = renderer->backend;
+    Render_BackendContext *backend = renderer->backend;
 	OpenGL_ClipNode *node = push_struct(renderer->frame_arena, OpenGL_ClipNode);
 
 	if (clip_to_parent)
@@ -351,15 +351,15 @@ render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_pare
 }
 
 internal Void
-render_pop_clip(R_Context *renderer)
+render_pop_clip(Render_Context *renderer)
 {
 	stack_pop(renderer->backend->clip_stack);
 }
 
-internal R_Texture
-render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
+internal Render_Texture
+render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
 {
-	R_Texture result = { 0 };
+	Render_Texture result = { 0 };
 
 	Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -394,8 +394,8 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 			GLenum internalformat = 0;
 			switch (color_space)
 			{
-				case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-				case R_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
+				case Render_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
+				case Render_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
 				invalid_case;
 			}
 
@@ -433,10 +433,10 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 	return(result);
 }
 
-internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U32 height, R_ColorSpace color_space)
+internal Render_Texture
+render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space)
 {
-	R_Texture result = { 0 };
+	Render_Texture result = { 0 };
 
 	GLuint texture = 0;
 	glCreateTextures(GL_TEXTURE_2D, 1, &texture);
@@ -444,8 +444,8 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 	GLenum internalformat = 0;
 	switch (color_space)
 	{
-		case R_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-		case R_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
+		case Render_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
+		case Render_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
 		invalid_case;
 	}
 	glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
@@ -470,7 +470,7 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *data, U32 width, U3
 }
 
 internal Void
-render_destroy_texture(R_Context *renderer, R_Texture texture)
+render_destroy_texture(Render_Context *renderer, Render_Texture texture)
 {
 	if (texture.u64[0])
 	{
@@ -480,11 +480,11 @@ render_destroy_texture(R_Context *renderer, R_Texture texture)
 }
 
 internal Void
-render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
+render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
 	if (texture.u64[0])
 	{
-		R_BackendContext *backend = renderer->backend;
+		Render_BackendContext *backend = renderer->backend;
 
 		U32 queue_index = u32_atomic_add(&backend->texture_update_write_index, 1);
 		while (queue_index - backend->texture_update_read_index >= OPENGL_TEXTURE_UPDATE_QUEUE_SIZE)

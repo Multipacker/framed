@@ -11,51 +11,51 @@
 // [ ] - Underline & strikethrough
 
 internal B32 
-render_font_valid_load_params(R_FontLoadParams params)
+render_font_valid_load_params(Render_FontLoadParams params)
 {
-	B32 result = params.size > 0 && params.path.size > 0 && params.render_mode < R_FontRenderMode_COUNT;
+	B32 result = params.size > 0 && params.path.size > 0 && params.render_mode < Render_FontRenderMode_COUNT;
 	return(result);
 }
 
 internal B32
-render_font_is_in_queue(R_Font *font)
+render_font_is_in_queue(Render_Font *font)
 {
-	B32 result = font->state == R_FontState_InQueue;
+	B32 result = font->state == Render_FontState_InQueue;
 	return(result);
 }
 
 internal B32
-render_font_is_being_loaded(R_Font *font)
+render_font_is_being_loaded(Render_Font *font)
 {
-	B32 result = font->state == R_FontState_Loading;
+	B32 result = font->state == Render_FontState_Loading;
 	return(result);
 }
 
 internal B32
-render_font_is_loaded(R_Font *font)
+render_font_is_loaded(Render_Font *font)
 {
-	B32 result = font->state == R_FontState_Loaded;
+	B32 result = font->state == Render_FontState_Loaded;
 	return(result != 0);
 }
 
 internal B32
-render_font_is_unloaded(R_Font *font)
+render_font_is_unloaded(Render_Font *font)
 {
-	B32 result = font->state == R_FontState_Unloaded;
+	B32 result = font->state == Render_FontState_Unloaded;
 	return(result != 0);
 }
 
-internal R_FontKey
+internal Render_FontKey
 render_key_from_font(Str8 path, U32 font_size)
 {
-	R_FontKey result = { 0 };
+	Render_FontKey result = { 0 };
 	result.path = path;
 	result.font_size = font_size;
 	return(result);
 }
 
-internal R_KerningPair
-render_kern_pair_from_glyph_indicies(R_Font *font, U32 index0, U32 index1)
+internal Render_KerningPair
+render_kern_pair_from_glyph_indicies(Render_Font *font, U32 index0, U32 index1)
 {
 	U64 pair = (U64) index0 << 32 | (U64) index1;
 	U64 mask = font->kern_map_size - 1;
@@ -66,26 +66,26 @@ render_kern_pair_from_glyph_indicies(R_Font *font, U32 index0, U32 index1)
 		index = (index + 1) & mask;
 	}
 
-	R_KerningPair result = font->kern_pairs[index];
+	Render_KerningPair result = font->kern_pairs[index];
 	return(result);
 }
 
-internal R_FontAtlas *
-render_make_font_atlas(R_Context *renderer, Vec2U32 dim)
+internal Render_FontAtlas *
+render_make_font_atlas(Render_Context *renderer, Vec2U32 dim)
 {
-	R_FontAtlas *result = push_struct(renderer->permanent_arena, R_FontAtlas);
+	Render_FontAtlas *result = push_struct(renderer->permanent_arena, Render_FontAtlas);
 	result->dim = dim;
-	R_FontAtlasRegionNode *first_free_region = push_struct(renderer->permanent_arena, R_FontAtlasRegionNode);
+	Render_FontAtlasRegionNode *first_free_region = push_struct(renderer->permanent_arena, Render_FontAtlasRegionNode);
 	first_free_region->region.min = v2u32(0, 0);
 	first_free_region->region.max = v2u32(dim.x, dim.x);
 	result->memory = push_array(renderer->permanent_arena, U8, dim.x * dim.y * 4);
 	render_push_free_region_to_atlas(result, first_free_region);
-	result->texture = render_create_texture_from_bitmap(renderer, result->memory, result->dim.x, result->dim.y, R_ColorSpace_Linear);
+	result->texture = render_create_texture_from_bitmap(renderer, result->memory, result->dim.x, result->dim.y, Render_ColorSpace_Linear);
 	return(result);
 }
 
 internal Void
-render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
+render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node)
 {
 	node->next_free = atlas->first_free_region;
 	node->prev_free = 0;
@@ -124,7 +124,7 @@ render_push_free_region_to_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node
 }
 
 internal Void
-render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *node)
+render_remove_free_region_from_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node)
 {
 	dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
 	node->next_free = 0;
@@ -132,15 +132,15 @@ render_remove_free_region_from_atlas(R_FontAtlas *atlas, R_FontAtlasRegionNode *
 	atlas->num_free_regions--;
 }
 
-internal R_FontAtlasRegion
-render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 dim)
+internal Render_FontAtlasRegion
+render_alloc_font_atlas_region(Render_Context *renderer, Render_FontAtlas *atlas, Vec2U32 dim)
 {
 	assert(atlas->num_free_regions > 0);
 	// TODO(hampus): Benchmark and eventually optimize.
-	R_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
+	Render_FontAtlasRegionNode *first_free_region = atlas->first_free_region;
 	// NOTE(hampus): Each region will always be the same size in
 	// x and y, so we only need to check the width
-	R_FontAtlasRegionNode *node = first_free_region;
+	Render_FontAtlasRegionNode *node = first_free_region;
 	U32 required_size = u32_max(dim.x, dim.y);
 	U32 region_size = node->region.max.x - node->region.min.x;
 	B32 can_halve_size = region_size >= (required_size*2);
@@ -165,7 +165,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 	B32 find_best_fit = true;
 	if (find_best_fit)
 	{
-		R_FontAtlasRegionNode *next = node->next_free;
+		Render_FontAtlasRegionNode *next = node->next_free;
 		while (next)
 		{
 			U32 next_region_size = next->region.max.x - next->region.min.x;
@@ -198,7 +198,7 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 
 		if (!node->children[0])
 		{
-			R_FontAtlasRegionNode *children = push_array(renderer->permanent_arena, R_FontAtlasRegionNode, Corner_COUNT);
+			Render_FontAtlasRegionNode *children = push_array(renderer->permanent_arena, Render_FontAtlasRegionNode, Corner_COUNT);
 
 			{
 				Vec2U32 bbox[Corner_COUNT] =
@@ -247,16 +247,16 @@ render_alloc_font_atlas_region(R_Context *renderer, R_FontAtlas *atlas, Vec2U32 
 	node->next_free = 0;
 	node->prev_free = 0;
 	node->used = true;
-	R_FontAtlasRegion result = { node, node->region };
+	Render_FontAtlasRegion result = { node, node->region };
 	return(result);
 }
 
 internal Void
-render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
+render_free_atlas_region(Render_FontAtlas *atlas, Render_FontAtlasRegion region)
 {
-	R_FontAtlasRegionNode *node = region.node;
+	Render_FontAtlasRegionNode *node = region.node;
 	assert(node->used);
-	R_FontAtlasRegionNode *parent = node->parent;
+	Render_FontAtlasRegionNode *parent = node->parent;
 	render_push_free_region_to_atlas(atlas, node);
 	if (parent)
 	{
@@ -266,7 +266,7 @@ render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 		B32 used = false;
 		for (U64 i = 0; i < Corner_COUNT; ++i)
 		{
-			R_FontAtlasRegionNode *child = parent->children[i];
+			Render_FontAtlasRegionNode *child = parent->children[i];
 			if (child->used)
 			{
 				used = true;
@@ -283,13 +283,13 @@ render_free_atlas_region(R_FontAtlas *atlas, R_FontAtlasRegion region)
 			{
 				render_remove_free_region_from_atlas(atlas, parent->children[i]);
 			}
-			render_free_atlas_region(atlas, (R_FontAtlasRegion) { parent, parent->region });
+			render_free_atlas_region(atlas, (Render_FontAtlasRegion) { parent, parent->region });
 		}
 	}
 }
 
 internal Void
-render_unload_font(R_Context *renderer, R_Font *font)
+render_unload_font(Render_Context *renderer, Render_Font *font)
 {
 	assert(font);
 	assert(renderer);
@@ -298,20 +298,20 @@ render_unload_font(R_Context *renderer, R_Font *font)
 	{
 	for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
 	{
-			R_FontAtlasRegion font_atlas_region = font->font_atlas_regions[i];
+			Render_FontAtlasRegion font_atlas_region = font->font_atlas_regions[i];
 			render_free_atlas_region(renderer->font_atlas, font_atlas_region);
 	}
 		}
 	arena_pop_to(font->arena, 0);
-	memory_zero((U8 *) font + sizeof(Arena *), member_offset(R_Font, state) - sizeof(Arena *));
+	memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
 
 internal Void
 render_font_stream_thread(Void *data)
 {
-	R_FontLoaderThreadData *thread_data = data;
-	R_Context *renderer = (R_Context *)thread_data->renderer;
-	R_FontQueue *font_queue = renderer->font_queue;
+	Render_FontLoaderThreadData *thread_data = data;
+	Render_Context *renderer = (Render_Context *)thread_data->renderer;
+	Render_FontQueue *font_queue = renderer->font_queue;
 
 	thread_ctx_init(thread_data->name);
 
@@ -328,16 +328,16 @@ render_font_stream_thread(Void *data)
 			// NOTE(simon): Grab the entry before attempting to change the
 			// index as that marks it as free for writing.
 			U32 queue_read_index = font_queue->read_index;
-			R_FontQueueEntry entry = font_queue->queue[queue_read_index & FONT_QUEUE_MASK];
+			Render_FontQueueEntry entry = font_queue->queue[queue_read_index & FONT_QUEUE_MASK];
 
 			memory_fence();
 
 			if (u32_atomic_compare_exchange(&font_queue->read_index, queue_read_index + 1, queue_read_index))
 			{
-				R_Font *font = entry.font;
+				Render_Font *font = entry.font;
 				
 				log_info("Starting to load in font: %"PRISTR8, str8_expand(entry.params.path));
-				font->state = R_FontState_Loading;
+				font->state = Render_FontState_Loading;
 				
 				render_unload_font(renderer, font);
 				
@@ -366,11 +366,11 @@ render_font_stream_thread(Void *data)
 				
 				if (success)
 				{
-					font->state = R_FontState_Loaded;
+					font->state = Render_FontState_Loaded;
 				}
 				else
 				{
-					font->state = R_FontState_Unloaded;
+					font->state = Render_FontState_Unloaded;
 				}
 			}
 		}
@@ -378,17 +378,17 @@ render_font_stream_thread(Void *data)
 }
 
 internal Void
-render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams params)
+render_push_font_to_queue(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params)
 {
 	// TODO(hampus): Check the pixel orientation of the monitor.
 	assert(renderer);
 	assert(render_font_valid_load_params(params));
 
-	R_FontQueue *font_queue = renderer->font_queue;
+	Render_FontQueue *font_queue = renderer->font_queue;
 
 	// NOTE(hampus): This is so that we can recongnize that the font
 	// is in the queue when we are looking in the cache
-	font->state = R_FontState_InQueue;
+	font->state = Render_FontState_InQueue;
 	font->load_params = params;
 
 	while (font_queue->write_index - font_queue->read_index >= LOG_QUEUE_SIZE)
@@ -397,7 +397,7 @@ render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 		// space in it.
 	}
 
-	R_FontQueueEntry *entry = &font_queue->queue[font_queue->write_index & FONT_QUEUE_MASK];
+	Render_FontQueueEntry *entry = &font_queue->queue[font_queue->write_index & FONT_QUEUE_MASK];
 	entry->font   = font;
 	entry->params = params;
 
@@ -411,13 +411,13 @@ render_push_font_to_queue(R_Context *renderer, R_Font *font, R_FontLoadParams pa
 }
 
 internal U32
-render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
+render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 {
 	assert(font);
 	U32 index = 0;
-	R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
+	Render_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
 
-	for (R_GlyphIndexNode *node = bucket->first;
+	for (Render_GlyphIndexNode *node = bucket->first;
 		 node != 0;
 		 node = node->next)
 	{
@@ -430,18 +430,18 @@ render_glyph_index_from_codepoint(R_Font *font, U32 codepoint)
 	return(index);
 }
 
-internal R_Font *
-render_font_from_key(R_Context *renderer, R_FontKey font_key)
+internal Render_Font *
+render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 {
 	assert(renderer);
 	assert(font_key.font_size > 0);
 	assert(font_key.path.size > 0);
-	R_Font *result = 0;
+	Render_Font *result = 0;
 	S32 unused_slot = -1;
 	U64 current_frame_index = renderer->frame_index;
-	for (S32 i = 0; i < R_FONT_CACHE_SIZE; ++i)
+	for (S32 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
 	{
-		R_Font *font = renderer->font_cache->entries + i;
+		Render_Font *font = renderer->font_cache->entries + i;
 		if (str8_equal(font->load_params.path, font_key.path) &&
 			font->load_params.size == font_key.font_size)
 		{
@@ -472,10 +472,10 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 	if (!result)
 	{
 		assert(unused_slot != -1 && "Cache is hot and full");
-		R_Font *empty_entry = renderer->font_cache->entries + unused_slot;
-		R_FontLoadParams params = 
+		Render_Font *empty_entry = renderer->font_cache->entries + unused_slot;
+		Render_FontLoadParams params = 
 		{
-			.render_mode = R_FontRenderMode_LCD,
+			.render_mode = Render_FontRenderMode_LCD,
 			.size = font_key.font_size,
 			.path = font_key.path,
 		};
@@ -489,9 +489,9 @@ render_font_from_key(R_Context *renderer, R_FontKey font_key)
 }
 
 internal void
-render_glyph(R_Context *renderer, Vec2F32 min, U32 index, R_Font *font, Vec4F32 color)
+render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font, Vec4F32 color)
 {
-	R_Glyph *glyph = font->glyphs + index;
+	Render_Glyph *glyph = font->glyphs + index;
 
 	F32 xpos = min.x + glyph->bearing_in_pixels.x;
 	F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
@@ -505,11 +505,11 @@ render_glyph(R_Context *renderer, Vec2F32 min, U32 index, R_Font *font, Vec4F32 
 					  ypos + height),
 				.slice = glyph->slice,
 				.color = color,
-				.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
+				.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
 }
 
 internal Void
-render_text_internal(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color)
+render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
 {
 	if (render_font_is_loaded(font))
 	{
@@ -522,7 +522,7 @@ render_text_internal(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, 
 			if ((i+1) < text.size)
 			{
 				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+				Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
 				min.x += kerning_pair.value;
 			}
 
@@ -533,16 +533,16 @@ render_text_internal(R_Context *renderer, Vec2F32 min, Str8 text, R_Font *font, 
 }
 
 internal Void
-render_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color)
+render_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
 {
-	R_Font *font = render_font_from_key(renderer, font_key);
+	Render_Font *font = render_font_from_key(renderer, font_key);
 	render_text_internal(renderer, min, text, font, color);
 }
 
 internal Void
-render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey font_key, Vec4F32 color)
+render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
 {
-	R_Font *font = render_font_from_key(renderer, font_key);
+	Render_Font *font = render_font_from_key(renderer, font_key);
 
 	if (render_font_is_loaded(font))
 	{
@@ -564,7 +564,7 @@ render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey fon
 				if ((i+1) < text.size)
 				{
 					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-					R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
 					min.x += kerning_pair.value;
 				}
 
@@ -576,13 +576,13 @@ render_multiline_text(R_Context *renderer, Vec2F32 min, Str8 text, R_FontKey fon
 }
 
 internal Void
-render_character_internal(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color)
+render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color)
 {
 	if (render_font_is_loaded(font))
 	{
 		U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-		R_Glyph *glyph = font->glyphs + index;
+		Render_Glyph *glyph = font->glyphs + index;
 
 		F32 xpos = min.x + glyph->bearing_in_pixels.x;
 		F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
@@ -596,19 +596,19 @@ render_character_internal(R_Context *renderer, Vec2F32 min, U32 codepoint, R_Fon
 						  ypos + height),
 					.slice = glyph->slice,
 					.color = color,
-					.is_subpixel_text = R_USE_SUBPIXEL_RENDERING);
+					.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
 	}
 }
 
 internal Void
-render_character(R_Context *renderer, Vec2F32 min, U32 codepoint, R_FontKey font_key, Vec4F32 color)
+render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_FontKey font_key, Vec4F32 color)
 {
-	R_Font *font = render_font_from_key(renderer, font_key);
+	Render_Font *font = render_font_from_key(renderer, font_key);
 	render_character_internal(renderer, min, codepoint, font, color);
 }
 
 internal Vec2F32
-render_measure_text(R_Font *font, Str8 text)
+render_measure_text(Render_Font *font, Str8 text)
 {
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
@@ -617,13 +617,13 @@ render_measure_text(R_Font *font, Str8 text)
 		for (S32 i = 0; i < length; ++i)
 		{
 			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-			R_Glyph *glyph = font->glyphs + index;
+			Render_Glyph *glyph = font->glyphs + index;
 			result.x += (glyph->advance_width);
 
 			if ((U64)(i+1) < text.size)
 			{
 				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				R_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+				Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
 				result.x += kerning_pair.value;
 			}
 		}
@@ -634,13 +634,13 @@ render_measure_text(R_Font *font, Str8 text)
 }
 
 internal Vec2F32
-render_measure_character(R_Font *font, U32 codepoint)
+render_measure_character(Render_Font *font, U32 codepoint)
 {
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
 	{
 		U32 index = render_glyph_index_from_codepoint(font, codepoint);
-		R_Glyph *glyph = font->glyphs + index;
+		Render_Glyph *glyph = font->glyphs + index;
 		result.x = (glyph->advance_width);
 		result.y = font->line_height;
 	}
@@ -648,7 +648,7 @@ render_measure_character(R_Font *font, U32 codepoint)
 }
 
 internal Vec2F32
-render_measure_multiline_text(R_Font *font, Str8 text)
+render_measure_multiline_text(Render_Font *font, Str8 text)
 {
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
@@ -667,7 +667,7 @@ render_measure_multiline_text(R_Font *font, Str8 text)
 			else
 			{
 				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-				R_Glyph *glyph = font->glyphs + index;
+				Render_Glyph *glyph = font->glyphs + index;
 				row_width += (glyph->advance_width);
 			}
 		}

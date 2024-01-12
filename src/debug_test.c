@@ -19,14 +19,14 @@ os_main(Str8List arguments)
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
-	R_Context *renderer = render_init(&gfx);
+	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
-	R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
-	R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
+	Render_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+	Render_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+	Render_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 
 	UI_Context *ui = ui_init();
 
@@ -72,7 +72,7 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
-		local U32 icon = R_ICON_STAR;
+		local U32 icon = RENDER_ICON_STAR;
 
 		ui_next_icon(icon);
 		UI_Comm star_comm = ui_comm_from_box(ui_box_make(UI_BoxFlag_DrawText |
@@ -85,13 +85,13 @@ os_main(Str8List arguments)
 
 		if (star_comm.pressed)
 		{
-			if (icon == R_ICON_STAR)
+			if (icon == RENDER_ICON_STAR)
 			{
-				icon = R_ICON_STAR_EMPTY;
+				icon = RENDER_ICON_STAR_EMPTY;
 			}
 			else
 			{
-				icon = R_ICON_STAR;
+				icon = RENDER_ICON_STAR;
 			}
 		}
 
