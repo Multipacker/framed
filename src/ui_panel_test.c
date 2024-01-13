@@ -4,7 +4,6 @@
 // @feature [ ] - Scroll tabs horizontally if there are too many to fit
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
-// @polish [ ] - Fixup close & pin button on tabs
 // @bug [ ] - Tab dropdown menu
 
 #include "base/base_inc.h"
@@ -163,22 +162,27 @@ ui_tab_button(Tab *tab)
 
 	Vec4F32 color = active ? v4f32(0.4f, 0.4f, 0.4f, 1.0f) : v4f32(0.2f, 0.2f, 0.2f, 1.0f);
 
+	F32 height_em = active ? 1.1f : 1;
+	F32 corner_radius = (F32) ui_top_font_size() * 0.5f;
+
 	ui_next_color(color);
-	ui_next_vert_corner_radius((F32) ui_top_font_size() * 0.5f, 0);
+	ui_next_vert_corner_radius(corner_radius, 0);
 	ui_next_child_layout_axis(Axis2_X);
 	ui_next_width(ui_children_sum(1));
-	ui_next_height(ui_em(active ? 1.1f : 1, 1));
+	ui_next_height(ui_em(height_em, 1));
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
 	UI_Box *title_container = ui_box_make(UI_BoxFlag_DrawBackground |
 										  UI_BoxFlag_HotAnimation |
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
-										  UI_BoxFlag_DrawBorder,
+										  UI_BoxFlag_DrawBorder |
+										  UI_BoxFlag_Clip,
 										  str8_lit("TitleContainer"));
 	tab->box = title_container;
 	ui_parent(title_container)
 	{
-		ui_next_height(ui_em(1, 1));
-		ui_next_width(ui_em(1, 1));
+		ui_next_height(ui_pct(1, 1));
+		ui_next_width(ui_em(height_em, 1));
 		ui_next_icon(RENDER_ICON_PIN);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 		UI_BoxFlags pin_box_flags = UI_BoxFlag_Clickable;
@@ -187,6 +191,8 @@ ui_tab_button(Tab *tab)
 			pin_box_flags |= UI_BoxFlag_DrawText;
 		}
 
+		ui_next_hover_cursor(Gfx_Cursor_Hand);
+		ui_next_corner_radies(corner_radius, 0, 0, 0);
 		UI_Box *pin_box = ui_box_make(pin_box_flags,
 									  str8_lit("PinButton"));
 
@@ -195,10 +201,12 @@ ui_tab_button(Tab *tab)
 
 		ui_box_equip_display_string(title, tab->string);
 
-		ui_next_height(ui_em(1, 1));
-		ui_next_width(ui_em(1, 1));
+		ui_next_height(ui_pct(1, 1));
+		ui_next_width(ui_em(height_em, 1));
 		ui_next_icon(RENDER_ICON_CROSS);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
+		ui_next_hover_cursor(Gfx_Cursor_Hand);
+		ui_next_corner_radies(0, corner_radius, 0, 0);
 		UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable,
 										str8_lit("CloseButton"));
 		// TODO(hampus): We shouldn't need to do this here
@@ -250,8 +258,8 @@ ui_tab_button(Tab *tab)
 				pin_box_comm.hovering ||
 				title_comm.hovering)
 			{
-				pin_box->flags   |= UI_BoxFlag_DrawText;
-				close_box->flags |= UI_BoxFlag_DrawText;
+				pin_box->flags   |= UI_BoxFlag_DrawText | UI_BoxFlag_DrawBorder;
+				close_box->flags |= UI_BoxFlag_DrawText | UI_BoxFlag_DrawBorder;
 			}
 
 			if (pin_box_comm.pressed)
@@ -1152,8 +1160,6 @@ os_main(Str8List arguments)
 	Arena *perm_arena = arena_create();
 	app_state = push_struct(perm_arena, AppState);
 	app_state->perm_arena = perm_arena;
-
-	log_init(str8_lit("log.txt"));
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
