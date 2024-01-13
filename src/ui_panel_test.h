@@ -40,6 +40,7 @@ enum DragStatus
 };
 
 typedef struct Panel Panel;
+typedef struct Tab Tab;
 typedef struct Cmd Cmd;
 typedef struct Window Window;
 
@@ -57,6 +58,14 @@ struct TabViewInfo
 {
 	UI_TabViewProc *function;
 	Void *data;
+};
+
+typedef struct DragData DragData;
+struct DragData
+{
+	Tab    *tab;
+	Panel  *hovered_panel;
+	Vec2F32 drag_origin;
 };
 
 typedef struct Tab Tab;
@@ -206,14 +215,6 @@ struct CmdBuffer
 	U64 pos;
 	U64 size;
 	Cmd *buffer;
-};
-
-typedef struct DragData DragData;
-struct DragData
-{
-	Tab    *tab;
-	Panel  *hovered_panel;
-	Vec2F32 drag_origin;
 };
 
 typedef struct AppState AppState;

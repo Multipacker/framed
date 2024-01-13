@@ -157,6 +157,7 @@ ui_tab_button(Tab *tab)
 
 	B32 active = ui_tab_is_active(tab);
 
+	ui_spacer(ui_em(0.1f, 1));
 	if (!active)
 	{
 		ui_spacer(ui_em(0.1f, 1));
@@ -400,7 +401,6 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 c
 					ui_size(axis, ui_pct(0.5f, 1))
 					ui_border_color(ui_top_rect_style()->color[0])
 				{
-
 					ui_next_border_thickness(2);
 					ui_box_make(UI_BoxFlag_DrawBorder |
 								UI_BoxFlag_HotAnimation,
@@ -448,14 +448,8 @@ ui_panel(Panel *root)
 	// NOTE(hampus): It is clickable so that it can consume
 	// all the click events at the end to prevent boxes
 	// from behind it to take click events
-	if (root == app_state->focused_panel)
-	{
-		ui_next_border_color(v4f32(1, 0.5f, 0, 1));
-		ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-	}
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
-							  UI_BoxFlag_Clickable |
-							  UI_BoxFlag_DrawBackground,
+							  UI_BoxFlag_Clickable,
 							  root->string);
 	root->box = box;
 
@@ -507,7 +501,6 @@ ui_panel(Panel *root)
 		ui_push_string(root->string);
 
 		box->layout_style.child_layout_axis = Axis2_Y;
-		box->flags |= UI_BoxFlag_DrawBorder;
 		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
 
 		{
@@ -839,7 +832,13 @@ ui_panel(Panel *root)
 				// NOTE(hampus): Tab content
 				ui_next_width(ui_pct(1, 0));
 				ui_next_height(ui_pct(1, 0));
-				UI_Box *content_box = ui_box_make(0,
+				if (root == app_state->focused_panel)
+				{
+					ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+					ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+				}
+				UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
+												  UI_BoxFlag_DrawBorder,
 												  str8_lit("ContentBox"));
 				ui_parent(content_box)
 				{
