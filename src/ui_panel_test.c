@@ -1,15 +1,18 @@
 ////////////////////////////////
 //~ hampus: TODO
 
+// @bug [ ] - Close button is rendered even though the tab is outside tab bar
+//          - Solved by removing the clip box flag, but this shouldn't solve it
+
 // @feature [ ] - Scroll tabs horizontally if there are too many to fit
+// @feature [ ] - Move around windows that have multiple panels
+
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
 // @feature [ ] - Tab dropdown menu
-// @bug [ ] - Close button is rendered even though the tab is outside tab bar
 // @bug [ ] - The user can drop a panel on the menu bar which will hide the tab bar
 // @cleanup [ ] - UI commands. Discriminated unions instead of data array?
 // @feature [ ] - UI startup builder
-// @feature [ ] - Move around windows that have multiple panels
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -181,8 +184,7 @@ ui_tab_button(Tab *tab)
 										  UI_BoxFlag_HotAnimation |
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
-										  UI_BoxFlag_DrawBorder |
-										  UI_BoxFlag_Clip,
+										  UI_BoxFlag_DrawBorder,
 										  str8_lit("TitleContainer"));
 	tab->box = title_container;
 	ui_parent(title_container)
@@ -681,23 +683,27 @@ ui_panel(Panel *root)
 				ui_next_height(ui_fill());
 				ui_row()
 				{
-					for (Tab *tab = root->tab_group.first;
-						 tab != 0;
-						 tab = tab->next)
+					ui_next_width(ui_fill());
+					ui_next_height(ui_pct(1, 1));
+					ui_next_extra_box_flags(UI_BoxFlag_Clip);
+					ui_named_row(str8_lit("TabsContainer"))
 					{
-						ui_next_width(ui_children_sum(1));
-						ui_next_height(ui_em(1.2f, 1));
-						ui_next_child_layout_axis(Axis2_Y);
-						UI_Box *container = ui_box_make(0, str8_lit(""));
-						ui_parent(container)
+						for (Tab *tab = root->tab_group.first;
+							 tab != 0;
+							 tab = tab->next)
 						{
+							ui_next_width(ui_children_sum(1));
+							ui_next_height(ui_em(1.2f, 1));
+							ui_next_child_layout_axis(Axis2_Y);
+							UI_Box *container = ui_box_make(0, str8_lit(""));
+							ui_parent(container)
+							{
+								ui_spacer(ui_em(0.2f, 1));
+								ui_tab_button(tab);
+							}
 							ui_spacer(ui_em(0.2f, 1));
-							ui_tab_button(tab);
 						}
-						ui_spacer(ui_em(0.2f, 1));
 					}
-
-					ui_spacer(ui_fill());
 
 					ui_next_height(ui_em(1.3f, 1));
 					ui_next_width(ui_em(1.3f, 1));
