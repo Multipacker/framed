@@ -7,6 +7,9 @@
 // @feature [ ] - Tab dropdown menu
 // @bug [ ] - Set focused panel when splitting
 // @bug [ ] - Set focused panel when closing the focused panel
+// @bug [ ] - Close button is rendered even though the tab is outside tab bar
+// @bug [ ] - The user can drop a panel on the menu bar which will hide the tab bar
+// @bug [ ] - Tab border is overdrawn by tab content
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -609,6 +612,7 @@ ui_panel(Panel *root)
 					drag_data->hovered_panel = root;
 				}
 			}
+
 			for (TabReleaseKind i = (TabReleaseKind) 0;
 				 i < TabReleaseKind_COUNT;
 				 ++i)
@@ -673,7 +677,7 @@ ui_panel(Panel *root)
 			}
 		}
 
-		//- hampus: Drag & split overlay
+		//- hampus: Drag & split preview overlay
 
 		if (hovering_any_symbols)
 		{
@@ -693,49 +697,26 @@ ui_panel(Panel *root)
 				{
 					ui_next_width(ui_pct(1, 1));
 					ui_next_height(ui_pct(1, 1));
-					ui_next_vert_gradient(top_color, top_color);
-					UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-													  str8_lit("OverlayBox"));
 				}
 				else
 				{
-					switch (hover_axis)
+					container->layout_style.child_layout_axis = hover_axis;
+					if (hover_side == Side_Max)
 					{
-						case Axis2_X:
-						{
-							container->layout_style.child_layout_axis = Axis2_X;
-							if (hover_side == Side_Max)
-							{
-								ui_spacer(ui_fill());
-							}
-							ui_next_width(ui_pct(0.5f, 1));
-							ui_next_height(ui_pct(1, 1));
-							ui_next_vert_gradient(top_color, top_color);
-							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-															  str8_lit("OverlayBox"));
-						} break;
-
-						case Axis2_Y:
-						{
-							container->layout_style.child_layout_axis = Axis2_Y;
-							if (hover_side == Side_Max)
-							{
-								ui_spacer(ui_fill());
-							}
-							ui_next_height(ui_pct(0.5f, 1));
-							ui_next_width(ui_pct(1, 1));
-							ui_next_vert_gradient(top_color, top_color);
-							UI_Box *overlay_box = ui_box_make(UI_BoxFlag_DrawBackground,
-															  str8_lit("OverlayBox"));
-						} break;
-
-						default: break;
+						ui_spacer(ui_fill());
 					}
+
+					ui_next_size(hover_axis, ui_pct(0.5f, 1));
+					ui_next_size(axis_flip(hover_axis), ui_pct(1, 1));
 				}
+
+				ui_next_vert_gradient(top_color, top_color);
+				ui_box_make(UI_BoxFlag_DrawBackground,
+							str8_lit("OverlayBox"));
 			}
 		}
 
-		//- hampus: Titlebar
+		//- hampus: Tab bar
 
 		ui_next_width(ui_fill());
 		ui_row()
@@ -819,15 +800,13 @@ ui_panel(Panel *root)
 			}
 		}
 
-		B32 has_tabs = root->tab_group.first != 0;
-
 		//- hampus: Tab content
 
 		if (root != app_state->focused_panel)
 		{
 			ui_next_width(ui_fill());
 			ui_next_height(ui_fill());
-			ui_next_color(v4f32(0.0f, 0.0f, 0.0f, 0.7f));
+			ui_next_color(v4f32(0.0f, 0.0f, 0.0f, 0.5f));
 			ui_box_make(UI_BoxFlag_DrawBackground |
 						UI_BoxFlag_FloatingPos,
 						str8_lit("ContentDim"));
