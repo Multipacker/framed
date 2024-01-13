@@ -109,7 +109,7 @@ os_main(Str8List arguments)
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
-	R_Context *renderer = render_init(&gfx);
+	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
@@ -119,7 +119,7 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
-	R_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), R_ColorSpace_sRGB);
+	Render_TextureSlice slice = render_create_texture_slice(renderer, str8_lit("data/test.png"), Render_ColorSpace_sRGB);
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -167,9 +167,9 @@ os_main(Str8List arguments)
 		
 		local S32 font_size = 15;
 		
-		R_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
-		R_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
-		R_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
+		Render_FontKey font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), (U32) font_size);
+		Render_FontKey font2 = render_key_from_font(str8_lit("data/fonts/segoeuib.ttf"), 16);
+		Render_FontKey icon_font = render_key_from_font(str8_lit("data/fonts/fontello.ttf"), 16);
 		
 		ui_push_font(font);
 		
@@ -227,9 +227,9 @@ os_main(Str8List arguments)
 				ui_next_width(ui_pct(1.0f / scale, 1));
 				ui_next_height(ui_pct(1.0f / scale, 1));
 
-				R_TextureSlice font_slice = render_slice_from_texture(renderer->font_atlas->texture,
-																	  rectf32(v2f32(0, 0), v2f32(1, 1))
-																	  );
+				Render_TextureSlice font_slice = render_slice_from_texture(renderer->font_atlas->texture,
+																	       rectf32(v2f32(0, 0), v2f32(1, 1))
+																	       );
 				ui_next_slice(font_slice);
 				ui_next_color(v4f32(1, 1, 1, 1));
 
@@ -257,7 +257,7 @@ os_main(Str8List arguments)
 
 		U64 result = 0;
 
-		local U32 icon = R_ICON_STAR;
+		local U32 icon = RENDER_ICON_STAR;
 
 		ui_next_width(ui_em(1.0f, 1));
 		ui_next_height(ui_em(1.0f, 1));
@@ -272,13 +272,13 @@ os_main(Str8List arguments)
 
 		if (star_comm.pressed)
 		{
-			if (icon == R_ICON_STAR)
+			if (icon == RENDER_ICON_STAR)
 			{
-				icon = R_ICON_STAR_EMPTY;
+				icon = RENDER_ICON_STAR_EMPTY;
 			}
 			else
 			{
-				icon = R_ICON_STAR;
+				icon = RENDER_ICON_STAR;
 			}
 		}
 

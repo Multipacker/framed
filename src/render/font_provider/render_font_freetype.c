@@ -15,7 +15,7 @@ render_get_ft_error_message(FT_Error err)
 }
 
 internal B32
-render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U32 codepoint, R_FontRenderMode render_mode)
+render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32 index, U32 codepoint, Render_FontRenderMode render_mode)
 {
 	assert(renderer);
 	assert(font);
@@ -29,8 +29,8 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 	
 	B32 index_already_allocated = false;
 	
-	R_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
-	for (R_GlyphIndexNode *node = bucket->first;
+	Render_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
+	for (Render_GlyphIndexNode *node = bucket->first;
 		 node != 0;
 		 node = node->next)
 	{
@@ -41,28 +41,28 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 		}
 	}
 	
-	R_GlyphIndexNode *node = push_struct(font->arena, R_GlyphIndexNode);
+	Render_GlyphIndexNode *node = push_struct(font->arena, Render_GlyphIndexNode);
 	node->codepoint = codepoint;
 	node->index = index;
 	sll_push_front(bucket->first, node);
 	
 	Str8 error = { 0 };
-	R_Glyph *glyph = font->glyphs + node->index;
+	Render_Glyph *glyph = font->glyphs + node->index;
 	// NOTE(hampus): Some codepoints may map to the same index
 	if (!index_already_allocated)
 	{
 		FT_Int32 ft_load_flags = 0;
 		FT_Render_Mode ft_render_flags = 0;
-		R_FontAtlasRegion *atlas_region;
+		Render_FontAtlasRegion *atlas_region;
 		switch (render_mode)
 		{
-			case R_FontRenderMode_Normal:
+			case Render_FontRenderMode_Normal:
 			{
 				ft_load_flags = FT_LOAD_DEFAULT;
 				ft_render_flags = FT_RENDER_MODE_NORMAL;
 			} break;
 			
-			case R_FontRenderMode_LCD:
+			case Render_FontRenderMode_LCD:
 			{
 				ft_load_flags = FT_LOAD_RENDER | FT_LOAD_TARGET_LCD;
 				ft_render_flags = FT_RENDER_MODE_LCD;
@@ -80,7 +80,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 			{
 				switch (render_mode)
 				{
-					case R_FontRenderMode_Normal:
+					case Render_FontRenderMode_Normal:
 					{
 						empty = face->glyph->bitmap.buffer == 0;
 						if (!empty)
@@ -130,7 +130,7 @@ render_make_glyph(R_Context *renderer, R_Font *font, FT_Face face, U32 index, U3
 						
 					} break;
 					
-					case R_FontRenderMode_LCD:
+					case Render_FontRenderMode_LCD:
 					{
 						empty = face->glyph->bitmap.buffer == 0;
 						if (!empty)
@@ -243,7 +243,7 @@ render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 }
 
 internal B32
-render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
+render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params)
 {
 	assert(font);
 	Arena_Temporary scratch = get_scratch(0, 0);
@@ -273,8 +273,8 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				
 				FT_Select_Charmap(face, ft_encoding_unicode);
 				U64 num_glyphs_to_load = 128;
-				font->font_atlas_regions = push_array(font->arena, R_FontAtlasRegion, num_glyphs_to_load+1);
-				font->glyphs             = push_array(font->arena, R_Glyph, (U64) face->num_glyphs);
+				font->font_atlas_regions = push_array(font->arena, Render_FontAtlasRegion, num_glyphs_to_load+1);
+				font->glyphs             = push_array(font->arena, Render_Glyph, (U64) face->num_glyphs);
 				font->num_glyphs         = (U32) face->num_glyphs;
 
 				U32 *glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
@@ -357,7 +357,7 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 
 					// NOTE(simon): Open addressed hash table with at least 75% fill.
 					font->kern_map_size = u64_ceil_to_power_of_2((kerning_pairs * 4 + 3) / 3);
-					font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
+					font->kern_pairs    = push_array_zero(font->arena, Render_KerningPair, font->kern_map_size);
 
 					for (U32 i = 0; i < glyph_count; ++i)
 					{
@@ -386,7 +386,7 @@ render_load_font(R_Context *renderer, R_Font *font, R_FontLoadParams params)
 				{
 					// NOTE(simon): We need a map of size 1 in order to be able to do lookups into it.
 					font->kern_map_size = 1;
-					font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
+					font->kern_pairs    = push_array_zero(font->arena, Render_KerningPair, font->kern_map_size);
 				}
 				
 				FT_Done_Face(face);

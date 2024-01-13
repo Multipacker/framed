@@ -30,7 +30,7 @@ struct D3D11_ClipRectStack
 typedef struct D3D11_BatchParams D3D11_BatchParams;
 struct D3D11_BatchParams
 {
-	R_Texture texture;
+	Render_Texture texture;
 	D3D11_ClipRect *clip_rect;
 };
 
@@ -39,7 +39,7 @@ struct D3D11_Batch
 {
 	D3D11_Batch *next;
 	D3D11_Batch *prev;
-	R_RectInstance *instances;
+	Render_RectInstance *instances;
 	U64 instance_count;
 	D3D11_BatchParams params;
 };
@@ -67,14 +67,14 @@ struct D3D11_TextureUpdate
 	Void *data;
 };
 
-typedef struct R_BackendContext R_BackendContext;
-struct R_BackendContext
+typedef struct Render_BackendContext Render_BackendContext;
+struct Render_BackendContext
 {
 	D3D11_BatchList batch_list;
 
 	D3D11_ClipRectStack clip_rect_stack;
 
-	R_Texture white_texture;
+	Render_Texture white_texture;
 
 	ID3D11Device        *device;
 	ID3D11DeviceContext *context;
@@ -103,6 +103,6 @@ struct R_BackendContext
 	U32 volatile texture_update_read_index;
 };
 
-internal R_BackendContext *render_backend_init(R_Context *renderer);
+internal Render_BackendContext *render_backend_init(Render_Context *renderer);
 
 #endif //RENDED3D11_H

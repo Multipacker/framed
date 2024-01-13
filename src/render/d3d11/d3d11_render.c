@@ -8,26 +8,26 @@
 #include <intrin.h>
 
 internal D3D11_ClipRect *
-d3d11_top_clip(R_Context *renderer)
+d3d11_top_clip(Render_Context *renderer)
 {
 	return(renderer->backend->clip_rect_stack.first);
 }
 
-internal R_RenderStats *
-d3d11_get_current_stats(R_Context *renderer)
+internal Render_RenderStats *
+d3d11_get_current_stats(Render_Context *renderer)
 {
 	return(&renderer->render_stats[1]);
 }
 
-internal R_BackendContext *
-render_backend_init(R_Context *renderer)
+internal Render_BackendContext *
+render_backend_init(Render_Context *renderer)
 {
 	Gfx_Context *gfx = renderer->gfx;
 
 	// NOTE(simon): The alignment is needed for atomic access within the struct.
 	arena_align(renderer->permanent_arena, 8);
-	renderer->backend = push_struct(renderer->permanent_arena, R_BackendContext);
-	R_BackendContext *backend = renderer->backend;
+	renderer->backend = push_struct(renderer->permanent_arena, Render_BackendContext);
+	Render_BackendContext *backend = renderer->backend;
 	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
 
 	HRESULT hr;
@@ -105,7 +105,7 @@ render_backend_init(R_Context *renderer)
 	{
 		D3D11_BUFFER_DESC desc =
 		{
-			.ByteWidth = D3D11_BATCH_SIZE * sizeof(R_RectInstance),
+			.ByteWidth = D3D11_BATCH_SIZE * sizeof(Render_RectInstance),
 			.Usage = D3D11_USAGE_DYNAMIC,
 			.BindFlags = D3D11_BIND_VERTEX_BUFFER,
 			.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE
@@ -119,43 +119,43 @@ render_backend_init(R_Context *renderer)
 		D3D11_INPUT_ELEMENT_DESC desc[] =
 		{
 			{ "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-				member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-				member_offset(R_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-				member_offset(R_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-				member_offset(R_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-				member_offset(R_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-				member_offset(R_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-				member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-				member_offset(R_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-				member_offset(R_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-				member_offset(R_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-				member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
-				member_offset(R_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
-				member_offset(R_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 		};
 
@@ -321,20 +321,20 @@ render_backend_init(R_Context *renderer)
 }
 
 internal D3D11_Batch *
-d3d11_push_batch(R_Context *renderer)
+d3d11_push_batch(Render_Context *renderer)
 {
 	D3D11_Batch *result     = push_struct_zero(renderer->frame_arena, D3D11_Batch);
-	result->instances = push_array(renderer->frame_arena, R_RectInstance, D3D11_BATCH_SIZE);
+	result->instances = push_array(renderer->frame_arena, Render_RectInstance, D3D11_BATCH_SIZE);
 	dll_push_back(renderer->backend->batch_list.first, renderer->backend->batch_list.last, result);
 	result->params.clip_rect = d3d11_top_clip(renderer);
 	renderer->backend->batch_list.batch_count++;
-	R_RenderStats *stats = d3d11_get_current_stats(renderer);
+	Render_RenderStats *stats = d3d11_get_current_stats(renderer);
 	stats->batch_count++;
 	return(result);
 }
 
 internal Void
-render_backend_begin(R_Context *renderer)
+render_backend_begin(Render_Context *renderer)
 {
 	// NOTE(hampus): Push clip rect
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
@@ -349,9 +349,9 @@ render_backend_begin(R_Context *renderer)
 }
 
 internal Void
-render_backend_end(R_Context *renderer)
+render_backend_end(Render_Context *renderer)
 {
-	R_BackendContext *backend = renderer->backend;
+	Render_BackendContext *backend = renderer->backend;
 
 	// NOTE(simon): Perform texture updates.
 	while (backend->texture_update_write_index - backend->texture_update_read_index != 0)
@@ -456,7 +456,7 @@ render_backend_end(R_Context *renderer)
 			.MaxDepth = 1,
 		};
 
-		R_RenderStats *stats = d3d11_get_current_stats(renderer);
+		Render_RenderStats *stats = d3d11_get_current_stats(renderer);
 		Vec4F32 bg_color = vec4f32_srgb_to_linear(v4f32(0.1f, 0.2f, 0.3f, 1.f));
 
 		FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
@@ -483,14 +483,14 @@ render_backend_end(R_Context *renderer)
 			{
 				D3D11_MAPPED_SUBRESOURCE mapped;
 				ID3D11DeviceContext_Map(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-				memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(R_RectInstance) * batch->instance_count);
+				memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(Render_RectInstance) * batch->instance_count);
 				ID3D11DeviceContext_Unmap(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0);
 			}
 
 			// NOTE(hampus): Input Assembler
 			ID3D11DeviceContext_IASetInputLayout(backend->context, backend->input_layout);
 			ID3D11DeviceContext_IASetPrimitiveTopology(backend->context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-			UINT stride = sizeof(R_RectInstance);
+			UINT stride = sizeof(Render_RectInstance);
 			UINT offset = 0;
 			ID3D11DeviceContext_IASetVertexBuffers(backend->context, 0, 1, &backend->vertex_buffer, &stride, &offset);
 
@@ -544,17 +544,17 @@ render_backend_end(R_Context *renderer)
 
 	// NOTE(hampus): Reset state
 	render_pop_clip(renderer);
-	swap(renderer->render_stats[0], renderer->render_stats[1], R_RenderStats);
+	swap(renderer->render_stats[0], renderer->render_stats[1], Render_RenderStats);
 	memory_zero_struct(&renderer->render_stats[0]);
 	backend->batch_list.first = 0;
 	backend->batch_list.last  = 0;
 	backend->batch_list.batch_count  = 0;
 }
 
-internal R_RectInstance *
-render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params)
+internal Render_RectInstance *
+render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 {
-	R_BackendContext *backend = renderer->backend;
+	Render_BackendContext *backend = renderer->backend;
 	if (params->slice.texture.u64[0] == 0)
 	{
 		params->slice.texture = backend->white_texture;
@@ -562,7 +562,7 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 	D3D11_BatchList *batch_list = &backend->batch_list;
 	D3D11_Batch *batch = batch_list->last;
 
-	R_RectInstance *instance = &render_rect_instance_null;
+	Render_RectInstance *instance = &render_rect_instance_null;
 
 	// NOTE(simon): Account for softness.
 	RectF32 expanded_area = rectf32(
@@ -635,14 +635,14 @@ render_rect_(R_Context *renderer, Vec2F32 min, Vec2F32 max, R_RectParams *params
 
 	batch->instance_count++;
 
-	R_RenderStats *stats = d3d11_get_current_stats(renderer);
+	Render_RenderStats *stats = d3d11_get_current_stats(renderer);
 	stats->rect_count++;
 
 	return(instance);
 }
 
 internal Void
-render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
 	RectF32 rect = { min, max };
 	if (clip_to_parent)
@@ -659,13 +659,13 @@ render_push_clip(R_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_pare
 }
 
 internal Void
-render_pop_clip(R_Context *renderer)
+render_pop_clip(Render_Context *renderer)
 {
 	stack_pop(renderer->backend->clip_rect_stack.first);
 }
 
-typedef struct R_D3D11_Texture R_D3D11_Texture;
-struct R_D3D11_Texture
+typedef struct Render_D3D11_Texture Render_D3D11_Texture;
+struct Render_D3D11_Texture
 {
 	ID3D11ShaderResourceView *texture_view;
 	U64 width;
@@ -673,15 +673,15 @@ struct R_D3D11_Texture
 	ID3D11Texture2D *texture;
 };
 
-internal R_Texture
-render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, U32 height, R_ColorSpace color_space)
+internal Render_Texture
+render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 width, U32 height, Render_ColorSpace color_space)
 {
-	R_Texture result = { 0 };
+	Render_Texture result = { 0 };
 	DXGI_FORMAT d3d11_format = { 0 };
 	switch (color_space)
 	{
-		case R_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-		case R_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+		case Render_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+		case Render_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
 		invalid_case;
 	}
 
@@ -716,10 +716,10 @@ render_create_texture_from_bitmap(R_Context *renderer, Void *memory, U32 width, 
 	return(result);
 }
 
-internal R_Texture
-render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
+internal Render_Texture
+render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
 {
-	R_Texture result = { 0 };
+	Render_Texture result = { 0 };
 	Str8 file  = { 0 };
 	Arena_Temporary scratch = get_scratch(0, 0);
 	if (os_file_read(scratch.arena, path, &file))
@@ -755,16 +755,16 @@ render_create_texture(R_Context *renderer, Str8 path, R_ColorSpace color_space)
 }
 
 internal Void
-render_destroy_texture(R_Context *renderer, R_Texture texture)
+render_destroy_texture(Render_Context *renderer, Render_Texture texture)
 {
-	R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *)texture.u64;
+	Render_D3D11_Texture *d3d11_texture = (Render_D3D11_Texture *)texture.u64;
 	// TODO(hampus): How to release texture view?
 }
 
 internal Void
-render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
+render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
-	R_BackendContext *backend = renderer->backend;
+	Render_BackendContext *backend = renderer->backend;
 
 	U32 queue_index = u32_atomic_add(&backend->texture_update_write_index, 1);
 	while (queue_index - backend->texture_update_read_index >= D3D11_TEXTURE_UPDATE_QUEUE_SIZE)
@@ -775,7 +775,7 @@ render_update_texture(R_Context *renderer, R_Texture texture, Void *memory, U32 
 
 	D3D11_TextureUpdate *update = &backend->texture_update_queue[queue_index & D3D11_TEXTURE_UPDATE_QUEUE_MASK];
 
-	R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *)texture.u64;
+	Render_D3D11_Texture *d3d11_texture = (Render_D3D11_Texture *)texture.u64;
 	ID3D11Resource *resource = (ID3D11Resource *)d3d11_texture->texture;
 
 	update->resource = resource;

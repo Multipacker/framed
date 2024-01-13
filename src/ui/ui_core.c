@@ -242,7 +242,7 @@ internal F32
 ui_top_font_line_height(Void)
 {
 	UI_TextStyle *text_style = ui_top_text_style();
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 	F32 result = 0;
 	if (render_font_is_loaded(font))
 	{
@@ -353,7 +353,7 @@ ui_ctx_menu_is_open(Void)
 }
 
 internal Void
-ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64 dt)
+ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt)
 {
 	g_ui_ctx = ui_ctx;
 
@@ -599,7 +599,7 @@ internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
-	R_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
 
 	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
 	{
@@ -868,7 +868,7 @@ ui_layout(UI_Box *root)
 }
 
 internal Vec2F32
-ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign align)
+ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align)
 {
 	Vec2F32 result = {0};
 
@@ -904,7 +904,7 @@ ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign alig
 }
 
 internal Vec2F32
-ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
+ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
 {
 	Vec2F32 result = {0};
 
@@ -974,7 +974,7 @@ ui_draw(UI_Box *root)
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
 
-		R_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 
 		rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
 		rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
@@ -987,7 +987,7 @@ ui_draw(UI_Box *root)
 		{
 			Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
 			Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
-			R_RectInstance *instance = render_rect(g_ui_ctx->renderer,
+			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
 												   min,
 												   max,
 												   .softness = 15, .color = v4f32(0, 0, 0, 1));
@@ -997,7 +997,7 @@ ui_draw(UI_Box *root)
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
 		{
 			// TODO(hampus): Correct darkening/lightening
-			R_RectInstance *instance = 0;
+			Render_RectInstance *instance = 0;
 
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
@@ -1029,7 +1029,7 @@ ui_draw(UI_Box *root)
 				d += f32_srgb_to_linear(0.4f);
 			}
 			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
-			R_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
 

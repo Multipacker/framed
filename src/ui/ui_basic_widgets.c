@@ -35,7 +35,7 @@ ui_textf(CStr fmt, ...)
 }
 
 internal UI_Comm
-ui_image(R_TextureSlice slice, Str8 string)
+ui_image(Render_TextureSlice slice, Str8 string)
 {
 	ui_next_slice(slice);
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground,
@@ -45,7 +45,7 @@ ui_image(R_TextureSlice slice, Str8 string)
 }
 
 internal UI_Comm
-ui_imagef(R_TextureSlice slice, CStr fmt, ...)
+ui_imagef(Render_TextureSlice slice, CStr fmt, ...)
 {
 	UI_Comm comm = {0};
 	va_list args;
@@ -107,7 +107,7 @@ ui_check(B32 *value, Str8 string)
 	{
 		if (*value)
 		{
-			ui_next_icon(R_ICON_CHECK);
+			ui_next_icon(RENDER_ICON_CHECK);
 		}
 		ui_next_width(ui_pct(1.0f, 1));
 		ui_next_height(ui_pct(1.0f, 1));

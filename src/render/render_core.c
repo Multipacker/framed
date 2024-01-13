@@ -19,29 +19,29 @@
 # pragma GCC diagnostic pop
 #endif
 
-internal R_TextureSlice
-render_slice_from_texture(R_Texture texture, RectF32 uv)
+internal Render_TextureSlice
+render_slice_from_texture(Render_Texture texture, RectF32 uv)
 {
-	R_TextureSlice result = { uv, texture };
+	Render_TextureSlice result = { uv, texture };
 	return(result);
 }
 
-internal R_TextureSlice
-render_slice_from_texture_region(R_Texture texture, RectU32 region)
+internal Render_TextureSlice
+render_slice_from_texture_region(Render_Texture texture, RectU32 region)
 {
 #if 0
 	RectF32 uv = rectf32_from_rectu32(region);
-	R_TextureSlice result = { region, texture };
+	Render_TextureSlice result = { region, texture };
 	return(result);
 #endif
-	R_TextureSlice result = { 0 };
+	Render_TextureSlice result = { 0 };
 	return(result);
 }
 
-internal R_TextureSlice
-render_create_texture_slice(R_Context *renderer, Str8 path, R_ColorSpace color_space)
+internal Render_TextureSlice
+render_create_texture_slice(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
 {
-	R_TextureSlice result;
+	Render_TextureSlice result;
 	result.texture = render_create_texture(renderer, path, color_space);
 	result.region.min = v2f32(0, 0);
 	result.region.max = v2f32(1, 1);
@@ -102,48 +102,48 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
 	return(result);
 }
 
-internal R_RenderStats
-render_get_stats(R_Context *renderer)
+internal Render_RenderStats
+render_get_stats(Render_Context *renderer)
 {
 	return(renderer->render_stats[1]);
 }
 
-typedef struct R_FontLoaderThreadData R_FontLoaderThreadData;
-struct R_FontLoaderThreadData
+typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
+struct Render_FontLoaderThreadData
 {
-	R_Context *renderer;
+	Render_Context *renderer;
 	U32 id;
 	Str8 name;
 };
 
-internal R_Context *
+internal Render_Context *
 render_init(Gfx_Context *gfx)
 {
 	Arena *arena = arena_create();
-	R_Context *renderer = push_struct(arena, R_Context);
+	Render_Context *renderer = push_struct(arena, Render_Context);
 	renderer->gfx             = gfx;
 	renderer->permanent_arena = arena;
 	renderer->frame_arena     = arena_create();
 	renderer->backend         = render_backend_init(renderer);
 
 	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
-	renderer->font_cache = push_struct(arena, R_FontCache);
-	for (U64 i = 0; i < R_FONT_CACHE_SIZE; ++i)
+	renderer->font_cache = push_struct(arena, Render_FontCache);
+	for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
 	{
 		renderer->font_cache->entries[i].arena = arena_create();
 	}
 
 	// NOTE(simon): This is needed for atomic reads.
 	arena_align(arena, 8);
-	renderer->font_queue = push_struct(arena, R_FontQueue);
-	renderer->font_queue->queue = push_array(arena, R_FontQueueEntry, FONT_QUEUE_SIZE);
+	renderer->font_queue = push_struct(arena, Render_FontQueue);
+	renderer->font_queue->queue = push_array(arena, Render_FontQueueEntry, FONT_QUEUE_SIZE);
 	os_semaphore_create(&renderer->font_queue->semaphore, 0);
 
 	os_mutex_create(&renderer->font_atlas_mutex);
 
 	for (U32 i = 0; i < 4; ++i)
 	{
-		R_FontLoaderThreadData *data = push_struct( renderer->permanent_arena, R_FontLoaderThreadData);
+		Render_FontLoaderThreadData *data = push_struct( renderer->permanent_arena, Render_FontLoaderThreadData);
 		data->id = i;
 		data->renderer = renderer;
 		data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
@@ -154,13 +154,13 @@ render_init(Gfx_Context *gfx)
 }
 
 internal Void
-render_begin(R_Context *renderer)
+render_begin(Render_Context *renderer)
 {
 	render_backend_begin(renderer);
 }
 
 internal Void
-render_end(R_Context *renderer)
+render_end(Render_Context *renderer)
 {
 	render_backend_end(renderer);
 	renderer->frame_index++;
