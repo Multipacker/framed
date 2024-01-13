@@ -33,7 +33,7 @@ struct Render_RectInstance
 	F32     radies[4];
 	F32     softness;
 	F32     border_thickness;
-	F32     emit_texture;
+	F32     omit_texture;
 	F32     is_subpixel_text;
 	F32     use_nearest;
 };
