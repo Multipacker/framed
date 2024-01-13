@@ -118,7 +118,7 @@ render_backend_init(Render_Context *renderer)
 	opengl_vertex_array_instance_attribute(backend->vao, 6,  4, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, radies), 0);
 	opengl_vertex_array_instance_attribute(backend->vao, 7,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, softness), 0);
 	opengl_vertex_array_instance_attribute(backend->vao, 8,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, border_thickness), 0);
-	opengl_vertex_array_instance_attribute(backend->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, emit_texture), 0);
+	opengl_vertex_array_instance_attribute(backend->vao, 9,  1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, omit_texture), 0);
 	opengl_vertex_array_instance_attribute(backend->vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, is_subpixel_text), 0);
 	opengl_vertex_array_instance_attribute(backend->vao, 11, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, use_nearest), 0);
 	opengl_vertex_array_instance_attribute(backend->vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, min_uv), 0);
@@ -319,7 +319,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 	result->radies[3]        = params->radius;
 	result->softness         = params->softness;
 	result->border_thickness = params->border_thickness;
-	result->emit_texture     = (F32) (params->slice.texture.u64[0] == 0);
+	result->omit_texture     = (F32) (params->slice.texture.u64[0] == 0);
 	result->is_subpixel_text = (F32) params->is_subpixel_text;
 	result->use_nearest      = (F32) params->use_nearest;
 
