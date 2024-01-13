@@ -823,28 +823,29 @@ ui_panel(Panel *root)
 
 		//- hampus: Tab content
 
-		for (Tab *tab = root->tab_group.first;
-			 tab != 0;
-			 tab = tab->next)
+		if (root != app_state->focused_panel)
 		{
-			if (tab == root->tab_group.active_tab)
-			{
-				// NOTE(hampus): Tab content
-				ui_next_width(ui_pct(1, 0));
-				ui_next_height(ui_pct(1, 0));
-				if (root == app_state->focused_panel)
-				{
-					ui_next_border_color(v4f32(1, 0.5f, 0, 1));
-					ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-				}
-				UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-												  UI_BoxFlag_DrawBorder,
-												  str8_lit("ContentBox"));
-				ui_parent(content_box)
-				{
-					tab->view_info.function(tab->view_info.data);
-				}
-			}
+			ui_next_width(ui_fill());
+			ui_next_height(ui_fill());
+			ui_next_color(v4f32(0.0f, 0.0f, 0.0f, 0.7f));
+			ui_box_make(UI_BoxFlag_DrawBackground |
+						UI_BoxFlag_FloatingPos,
+						str8_lit("ContentDim"));
+		}
+
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
+		if (root == app_state->focused_panel)
+		{
+			ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+		}
+		UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
+										  UI_BoxFlag_DrawBorder,
+										  str8_lit("ContentBox"));
+		ui_parent(content_box)
+		{
+			Tab *tab = root->tab_group.active_tab;
+			tab->view_info.function(tab->view_info.data);
 		}
 
 		ui_pop_string();
