@@ -18,6 +18,7 @@ ui_texture_view(Render_TextureSlice atlas)
 		ui_next_width(ui_pct(1.0f / scale, 1));
 		ui_next_height(ui_pct(1.0f / scale, 1));
 
+		ui_next_texture_filter(Render_TextureFilter_Nearest);
 		ui_next_slice(atlas);
 		ui_next_color(v4f32(1, 1, 1, 1));
 

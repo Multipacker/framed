@@ -10,6 +10,7 @@ struct VS_INPUT
 	float border_thickness : BORDER_THICKNESS;
 	float omit_texture     : OMIT_TEXTURE;
 	float is_subpixel_text : IS_SUBPIXEL_TEXT;
+	float use_nearest      : USE_NEAREST;
 	uint vertex_id         : SV_VertexID;
 };
 
@@ -27,6 +28,7 @@ struct PS_INPUT
 	float is_subpixel_text : IS_SUBPIXEL_TEXT;
 	float2 min_uv          : MIN_UV;
 	float2 max_uv          : MAX_UV;
+	float use_nearest      : USE_NEAREST;
     float vertex_id        : VERTEX_ID;
 };
 
@@ -69,6 +71,7 @@ PS_INPUT vs(VS_INPUT input)
 	output.is_subpixel_text = input.is_subpixel_text;
 	output.min_uv = input.min_uv;
 	output.max_uv = input.max_uv;
+	output.use_nearest = input.use_nearest;
 	return output;
 }
 
@@ -131,7 +134,15 @@ ps_out ps(PS_INPUT input)
 	float4 sample_color = float4(1, 1, 1, 1);
 	if (input.omit_texture < 1)
 	{
-		sample_color = texture0.Sample(sampler0, input.uv);
+		float2 size;
+		texture0.GetDimensions(size.x, size.y);
+		float2 uv = input.uv;
+		if (input.use_nearest == 1)
+		{
+			uv = (floor(uv*size) + 0.5) / size;
+		}
+
+		sample_color = texture0.Sample(sampler0, uv);
 	}
 
 	ps_out output;

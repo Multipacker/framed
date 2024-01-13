@@ -152,10 +152,13 @@ render_backend_init(Render_Context *renderer)
 				member_offset(Render_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
-				member_offset(Render_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+				member_offset(Render_RectInstance, emit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 			{ "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
 				member_offset(Render_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+			{ "USE_NEAREST", 0, DXGI_FORMAT_R32_FLOAT, 0,
+				member_offset(Render_RectInstance, use_nearest), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
 
 		};
 
@@ -630,8 +633,9 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 	instance->radies[3]        = params->radius;
 	instance->softness         = params->softness;
 	instance->border_thickness = params->border_thickness;
-	instance->omit_texture     = (F32) (params->slice.texture.u64[0] == backend->white_texture.u64[0]);
+	instance->emit_texture     = (F32) (params->slice.texture.u64[0] == backend->white_texture.u64[0]);
 	instance->is_subpixel_text = (F32) params->is_subpixel_text;
+	instance->use_nearest = (F32)params->use_nearest;
 
 	batch->instance_count++;
 

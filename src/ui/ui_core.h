@@ -431,6 +431,11 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_slice()    ui_pop_rect_style()
 #define ui_slice(x)       defer_loop(ui_push_slice(x), ui_pop_slice())
 
+#define ui_next_texture_filter(x)  ui_get_auto_pop_rect_style()->texture_filter = x
+#define ui_push_texture_filter(x)  ui_push_rect_style()->texture_filter = x
+#define ui_pop_texture_filter()    ui_pop_rect_style()
+#define ui_texture_filter(x)       defer_loop(ui_push_texture_filter(x), ui_pop_texture_filter())
+
 #define ui_next_hover_cursor(x)  ui_get_auto_pop_rect_style()->hover_cursor = x
 #define ui_push_hover_cursor(x)  ui_push_rect_style()->hover_cursor = x
 #define ui_pop_hover_cursor()    ui_pop_rect_style()

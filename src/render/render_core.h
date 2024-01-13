@@ -33,8 +33,9 @@ struct Render_RectInstance
 	F32     radies[4];
 	F32     softness;
 	F32     border_thickness;
-	F32     omit_texture;
+	F32     emit_texture;
 	F32     is_subpixel_text;
+	F32     use_nearest;
 };
 
 typedef struct Render_RenderStats Render_RenderStats;
@@ -55,6 +56,15 @@ enum Render_ColorSpace
 	Render_ColorSpace_Linear,
 
 	Render_ColorSpace_COUNT,
+};
+
+typedef enum Render_TextureFilter Render_TextureFilter;
+enum Render_TextureFilter
+{
+	Render_TextureFilter_Bilinear,
+	Render_TextureFilter_Nearest,
+
+	Render_TextureFilter_COUNT
 };
 
 typedef struct Render_BackendContext    Render_BackendContext;
@@ -96,6 +106,7 @@ struct Render_RectParams
 	F32            border_thickness;
 	Render_TextureSlice slice;
 	B32            is_subpixel_text;
+	B32            use_nearest;
 };
 
 // TODO(hampus): Test performance with/without passing by pointer
