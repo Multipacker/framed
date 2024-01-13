@@ -4,7 +4,9 @@
 // @feature [ ] - Scroll tabs horizontally if there are too many to fit
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
-// @bug [ ] - Tab dropdown menu
+// @feature [ ] - Tab dropdown menu
+// @bug [ ] - Set focused panel when splitting
+// @bug [ ] - Set focused panel when closing the focused panel
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
