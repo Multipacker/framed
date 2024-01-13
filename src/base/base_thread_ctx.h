@@ -3,7 +3,7 @@
 
 #define THREAD_SCRATCH_ARENA_POOL_SIZE 4
 
-#define THREAD_CONTEXT_NAME_SIZE 32
+#define THREAD_CONTEXT_NAME_SIZE 16
 
 typedef struct ThreadContext ThreadContext;
 struct ThreadContext

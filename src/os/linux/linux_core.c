@@ -917,6 +917,20 @@ os_thread_create(ThreadProc *proc, Void *data)
 	pthread_create(&thread, 0, linux_thread_proc, arguments);
 }
 
+internal
+Void os_thread_set_name(Str8 name)
+{
+	// NOTE(simon): Size limit for thread names on Linux.
+	assert(name.size + 1 <= 16);
+
+	arena_scratch(0, 0)
+	{
+		CStr cstr_name = cstr_from_str8(scratch, name);
+		pthread_t thread = pthread_self();
+		pthread_setname_np(thread, cstr_name);
+	}
+}
+
 internal B32
 os_run(Str8 program, Str8List arguments)
 {
