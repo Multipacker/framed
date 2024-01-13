@@ -32,7 +32,7 @@ enum TabReleaseKind
 
 typedef struct Panel Panel;
 typedef struct Cmd Cmd;
-typedef struct Window Window ;
+typedef struct Window Window;
 
 typedef struct SplitPanelResult SplitPanelResult;
 struct SplitPanelResult
@@ -60,9 +60,11 @@ struct Tab
 	B32 pinned;
 
 	Panel *panel;
-	
+
+	UI_Box *box;
+
 	TabViewInfo view_info;
-	
+
 	// NOTE(hampus): For debugging
 	U64 frame_index;
 };
@@ -106,6 +108,7 @@ struct Window
 
 	Vec2F32 pos;
 	Vec2F32 size;
+
 	Panel *root_panel;
 
 	B32 dragging;
@@ -194,6 +197,23 @@ struct CmdBuffer
 	Cmd *buffer;
 };
 
+typedef enum DragStatus DragStatus;
+enum DragStatus
+{
+	DragStatus_Inactive,
+	DragStatus_WaitingForDragThreshold,
+	DragStatus_Dragging,
+	DragStatus_Released,
+};
+
+typedef struct DragData DragData;
+struct DragData
+{
+	Tab    *tab;
+	Panel  *hovered_panel;
+	Vec2F32 drag_origin;
+};
+
 typedef struct AppState AppState;
 struct AppState
 {
@@ -204,34 +224,23 @@ struct AppState
 
 	UI_Box *window_container;
 	Window *master_window;
-	
+	Window *next_top_most_window;
+
 	Panel *focused_panel;
 	Panel *next_focused_panel;
-	
+
 	CmdBuffer cmd_buffer;
 
 	WindowList window_list;
-	
-	Window *top_most_window_next_frame;
-	
-	// NOTE(hampus): Dragging stuff
-	Vec2F32 start_drag_pos;
-	Vec2F32 current_drag_pos;
-	Tab *drag_candidate;
-	Tab *drag_tab;
-	Panel *hovering_panel;
-	B8 tab_released;
-	B8 create_new_window;
-	Vec2F32 new_window_pct;
+
+	// NOTE(hampus): Dragging
+
+	DragStatus drag_status;
+	DragData   drag_data;
 
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
 };
-
-////////////////////////////////
-//~ hampus: Tab dragging
-
-internal Void ui_end_drag(Void);
 
 ////////////////////////////////
 //~ hampus: Panels
@@ -245,5 +254,7 @@ internal Void ui_window_reorder_to_front(Window *window);
 internal Void ui_window_push_to_front(Window *window);
 internal Void ui_window_remove_from_list(Window *window);
 
+#define UI_COMMAND(name) Void ui_command_##name(Void *params)
+UI_COMMAND(tab_close);
 
 #endif

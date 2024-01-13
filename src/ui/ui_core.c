@@ -498,22 +498,22 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, R_Context *renderer, F64
 								 str8_lit("Root"));
 
 	ui_push_parent(g_ui_ctx->root);
-	
+
 	ui_next_relative_pos(Axis2_X, g_ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, g_ui_ctx->mouse_pos.y);
 	g_ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										 str8_lit("TooltipRoot"));
-	
+
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
 	g_ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
 										  str8_lit("CtxMenuRoot"));
-	
+
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
 	g_ui_ctx->normal_root = ui_box_make(0,
 										str8_lit("NormalRoot"));
-	
+
 	if (ui_ctx_menu_is_open())
 	{
 

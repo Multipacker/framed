@@ -1,5 +1,3 @@
-#define UI_COMMAND(name) Void ui_command_##name(Void *params)
-
 UI_COMMAND(panel_close);
 
 ////////////////////////////////
@@ -201,7 +199,7 @@ UI_COMMAND(panel_split_and_attach)
 	app_state->next_focused_panel = panel;
 	if (data->panel->window != app_state->master_window)
 	{
-		app_state->top_most_window_next_frame = data->panel->window;
+		app_state->next_top_most_window = data->panel->window;
 	}
 
 	ui_command_tab_attach(&tab_attach_data);
