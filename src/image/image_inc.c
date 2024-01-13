@@ -1,5 +1,5 @@
 // NOTE(simon): Specifications used:
-//   * [PNG](https://www.w3.org/TR/png-3/#10Compression)
+//   * [PNG](https://www.w3.org/TR/png-3/)
 //   * [ZLIB](https://www.rfc-editor.org/rfc/rfc1950)
 //   * [DEFLATE](https://www.rfc-editor.org/rfc/rfc1951)
 
@@ -104,7 +104,7 @@ typedef enum PNG_InterlaceMethod PNG_InterlaceMethod;
 enum PNG_InterlaceMethod
 {
 	PNG_InterlaceMethod_None  = 0,
-	PNG_InterlaceMethod_Adam7 = 2,
+	PNG_InterlaceMethod_Adam7 = 1,
 };
 
 typedef struct PNG_Huffman PNG_Huffman;
@@ -852,7 +852,8 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels)
 		U8  *write = pixels;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
-			write[i] = (U8) (((U32) u16_big_to_local_endian(read[i]) * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+			U16 value = u16_big_to_local_endian(read[i]);
+			write[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 		}
 	}
 	else if (state->bit_depth != 8)
@@ -879,10 +880,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[0];
-				write[2] = read[0];
 				write[3] = 0xFF;
+				write[2] = read[0];
+				write[1] = read[0];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
@@ -892,10 +893,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[1];
-				write[2] = read[2];
 				write[3] = 0xFF;
+				write[2] = read[2];
+				write[1] = read[1];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
@@ -911,10 +912,10 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
 			{
-				write[0] = read[0];
-				write[1] = read[0];
-				write[2] = read[0];
 				write[3] = read[1];
+				write[2] = read[0];
+				write[1] = read[0];
+				write[0] = read[0];
 
 				read  -= byte_stride;
 				write -= 4;
@@ -949,6 +950,13 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 
 	if (!png_zlib_inflate(&state))
 	{
+		return(false);
+	}
+
+	// TODO(simon): Implement interlacing
+	if (state.interlace_method != PNG_InterlaceMethod_None)
+	{
+		log_error("Interlaced images are not supported yet");
 		return(false);
 	}
 
