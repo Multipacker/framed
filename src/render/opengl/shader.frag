@@ -9,6 +9,7 @@ in float vertex_id;
 in flat vec4 vert_radies;
 in flat float vert_omit_texture;
 in flat float vert_is_subpixel_text;
+in flat float vert_use_nearest;
 // TODO(simon): See if we can avoid passing these
 in flat vec2 vert_center;
 in flat vec2 vert_half_size;
@@ -75,7 +76,13 @@ main()
 	vec4 sample_color = vec4(1.0);
 	if (vert_omit_texture < 1)
 	{
-		sample_color = texture(uniform_sampler, clamp(vert_uv, vert_min_uv, vert_max_uv));
+		vec2 uv = vert_uv;
+		if (vert_use_nearest > 0)
+		{
+			vec2 texture_size = textureSize(uniform_sampler, 0);
+			uv = (floor(uv * texture_size) + 0.5) / texture_size;
+		}
+		sample_color = texture(uniform_sampler, clamp(uv, vert_min_uv, vert_max_uv));
 	}
 
 	if (vert_is_subpixel_text < 1)
