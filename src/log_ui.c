@@ -144,12 +144,12 @@ ui_logger(Void)
 			Str8 message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
 			ui_next_text_color(color);
 			UI_Box *log_entry = ui_box_make(
-				UI_BoxFlag_DrawText |
-				UI_BoxFlag_HotAnimation |
-				UI_BoxFlag_ActiveAnimation |
-				UI_BoxFlag_Clickable,
-				str8_pushf(ui_frame_arena(), "LogEntry%p", entry)
-			);
+											UI_BoxFlag_DrawText |
+											UI_BoxFlag_HotAnimation |
+											UI_BoxFlag_ActiveAnimation |
+											UI_BoxFlag_Clickable,
+											str8_pushf(ui_frame_arena(), "LogEntry%p", entry)
+											);
 			ui_box_equip_display_string(log_entry, message);
 			UI_Comm entry_comm = ui_comm_from_box(log_entry);
 

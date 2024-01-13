@@ -988,9 +988,9 @@ ui_draw(UI_Box *root)
 			Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
 			Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
 			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
-												   min,
-												   max,
-												   .softness = 15, .color = v4f32(0, 0, 0, 1));
+														min,
+														max,
+														.softness = 15, .color = v4f32(0, 0, 0, 1));
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
 

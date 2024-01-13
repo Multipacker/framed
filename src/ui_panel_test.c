@@ -4,7 +4,6 @@
 // @feature [ ] - Scroll tabs horizontally if there are too many to fit
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
-// @feature [ ] - Highlight focused panel background
 // @polish [ ] - Fixup close & pin button on tabs
 // @bug [ ] - Tab dropdown menu
 
@@ -453,10 +452,11 @@ ui_panel(Panel *root)
 	if (root == app_state->focused_panel)
 	{
 		ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+		ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 	}
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
-							  UI_BoxFlag_DrawBackground |
-							  UI_BoxFlag_Clickable,
+							  UI_BoxFlag_Clickable |
+							  UI_BoxFlag_DrawBackground,
 							  root->string);
 	root->box = box;
 
@@ -1012,7 +1012,9 @@ ui_update_window(Window *window)
 		else
 		{
 			Vec2F32 pos = window->pos;
+			// NOTE(hampus): Screen pos -> Container pos
 			pos = v2f32_sub_v2f32(pos, app_state->window_container->rect.min);
+			// NOTE(hampus): Container pos -> Window pos
 			pos.x -= ui_em(0.4f, 1).value;
 			pos.y -= ui_em(0.4f, 1).value;
 			ui_next_width(ui_pct(window->size.x, 1));
@@ -1096,7 +1098,7 @@ UI_TAB_VIEW(ui_tab_view_default)
 				ui_panel_split(panel, Axis2_X);
 			}
 			ui_spacer(ui_em(0.5f, 1));
-			if (ui_button(str8_lit("Split panel Y")).pressed)
+			if (ui_button(str8_lit("Split panelF Y")).pressed)
 			{
 				ui_panel_split(panel, Axis2_Y);
 			}

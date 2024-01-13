@@ -137,7 +137,6 @@ ui_push_scrollable_region(Str8 string)
 	B32 smooth_scroll = true;
 	UI_Box *view_region = ui_box_make(UI_BoxFlag_Clip |
 									  UI_BoxFlag_ViewScroll |
-									  UI_BoxFlag_DrawBackground |
 									  UI_BoxFlag_DrawBorder,
 									  string);
 	ui_push_parent(view_region);
