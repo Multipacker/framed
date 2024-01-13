@@ -964,7 +964,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
 	U32 bit_stride = u32_round_up_to_power_of_2(state.bit_depth, 8) * png_stride_from_color_type(state.color_type);
-	U32 stride = bit_stride / 8 * state.width;
+	U32 stride = u32_round_up_to_power_of_2(state.bit_depth * png_stride_from_color_type(state.color_type) * state.width, 8) / 8;
 	for (U32 y = 0; y < state.height; ++y)
 	{
 		U8 *row = state.zlib_output + y * (1 + stride);
