@@ -51,6 +51,8 @@ thread_set_name(Str8 string)
 
 	memory_copy(ctx->name, string.data, string.size);
 	ctx->name[string.size] = 0;
+
+	os_thread_set_name(string);
 }
 
 internal Str8
