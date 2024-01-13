@@ -215,17 +215,32 @@ UI_COMMAND(panel_close)
 		Panel *replacement = root->sibling;
 		if (root->parent->parent)
 		{
+			if (root == app_state->focused_panel)
+			{
+				if (root->sibling)
+				{
+					app_state->next_focused_panel = root->sibling;
+				}
+				else
+				{
+					app_state->next_focused_panel = root->parent;
+				}
+			}
 			Side parent_side = ui_get_panel_side(root->parent);
 			Side flipped_parent_side = side_flip(parent_side);
 
 			root->parent->parent->children[parent_side] = replacement;
 			root->parent->parent->children[flipped_parent_side]->sibling = replacement;
-			replacement->sibling           = root->parent->parent->children[flipped_parent_side];
-			replacement->pct_of_parent     = 1.0f - replacement->sibling->pct_of_parent;
-			replacement->parent            = root->parent->parent;
+			replacement->sibling = root->parent->parent->children[flipped_parent_side];
+			replacement->pct_of_parent = 1.0f - replacement->sibling->pct_of_parent;
+			replacement->parent = root->parent->parent;
 		}
 		else if (root->parent)
 		{
+			if (root == app_state->focused_panel)
+			{
+				app_state->next_focused_panel = root->sibling;
+			}
 			// NOTE(hampus): We closed one of the root's children
 			root->window->root_panel = replacement;
 			root->window->root_panel->sibling = 0;

@@ -13,7 +13,8 @@ global U32 log_ui_entry_count = 0;
 global U32 log_ui_has_new_entries = 0;
 global B32 log_ui_freeze = false;
 
-internal Void ui_log_keep_alive(Arena *frame_arena)
+internal Void
+ui_log_keep_alive(Arena *frame_arena)
 {
 	if (!log_ui_freeze)
 	{

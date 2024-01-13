@@ -377,12 +377,12 @@ render_backend_end(Render_Context *renderer)
 		box.front     = 0;
 		box.back      = 1;
 		ID3D11DeviceContext_UpdateSubresource(
-			backend->context,
-			resource, 0,
-			&box,
-			update.data,
-			(U32) update.width * 4, 0
-		);
+											  backend->context,
+											  resource, 0,
+											  &box,
+											  update.data,
+											  (U32) update.width * 4, 0
+											  );
 #else
 		D3D11_MAPPED_SUBRESOURCE mapped;
 		ID3D11DeviceContext_Map(backend->context, update.resource, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
@@ -457,9 +457,9 @@ render_backend_end(Render_Context *renderer)
 		};
 
 		Render_RenderStats *stats = d3d11_get_current_stats(renderer);
-		Vec4F32 bg_color = vec4f32_srgb_to_linear(v4f32(0.1f, 0.2f, 0.3f, 1.f));
+		Vec4F32 clear_color = vec4f32_srgb_to_linear(v4f32(1, 0, 1, 1.f));
 
-		FLOAT color[] = { bg_color.r, bg_color.g, bg_color.b, bg_color.a };
+		FLOAT color[] = { clear_color.r, clear_color.g, clear_color.b, clear_color.a };
 		ID3D11DeviceContext_ClearRenderTargetView(backend->context, backend->render_target_view, color);
 		ID3D11DeviceContext_ClearDepthStencilView(backend->context, backend->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 		D3D11_BatchList *batch_list = &backend->batch_list;

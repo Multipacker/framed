@@ -5,11 +5,11 @@
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
 // @feature [ ] - Tab dropdown menu
-// @bug [ ] - Set focused panel when splitting
-// @bug [ ] - Set focused panel when closing the focused panel
 // @bug [ ] - Close button is rendered even though the tab is outside tab bar
 // @bug [ ] - The user can drop a panel on the menu bar which will hide the tab bar
-// @bug [ ] - Tab border is overdrawn by tab content
+// @cleanup [ ] - UI commands. Discriminated unions instead of data array?
+// @feature [ ] - UI startup builder
+// @feature [ ] - Move around windows that have multiple panels
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -327,63 +327,6 @@ ui_attach_and_split_tab_to_panel(Panel *panel, Tab *tab, Axis2 axis, Side side)
 	data->panel_side    = side;
 }
 
-UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
-{
-	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
-
-	UI_RectStyle *rect_style = &root->rect_style;
-	UI_TextStyle *text_style = &root->text_style;
-
-	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
-
-	rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
-	rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
-	rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
-	rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
-
-	text_style->color = vec4f32_srgb_to_linear(text_style->color);
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
-	{
-		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
-		Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
-		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
-													min,
-													max,
-													.softness = 15, .color = v4f32(0, 0, 0, 1));
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
-	{
-		// TODO(hampus): Correct darkening/lightening
-		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .softness = rect_style->softness, .slice = rect_style->slice);
-		memory_copy_array(instance->colors, rect_style->color);
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-
-	render_pop_clip(g_ui_ctx->renderer);
-	if (g_ui_ctx->show_debug_lines)
-	{
-		render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
-	}
-
-	for (UI_Box *child = root->last;
-		 child != 0;
-		 child = child->prev)
-	{
-		ui_draw(child);
-	}
-	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
-	{
-		F32 d = 0;
-
-		rect_style->border_color = rect_style->border_color;
-		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->rect.min, root->rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
-		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
-	}
-}
-
 internal UI_Comm
 ui_hover_panel_type(Str8 string, F32 width_in_em, Panel *root, Axis2 axis, B32 center, Side side)
 {
@@ -452,7 +395,8 @@ ui_panel(Panel *root)
 	// all the click events at the end to prevent boxes
 	// from behind it to take click events
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
-							  UI_BoxFlag_Clickable,
+							  UI_BoxFlag_Clickable |
+							  UI_BoxFlag_DrawBackground,
 							  root->string);
 	root->box = box;
 
@@ -504,7 +448,6 @@ ui_panel(Panel *root)
 		ui_push_string(root->string);
 
 		box->layout_style.child_layout_axis = Axis2_Y;
-		ui_box_equip_custom_draw_proc(box, ui_panel_leaf_custom_draw);
 
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -814,19 +757,37 @@ ui_panel(Panel *root)
 
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
-		if (root == app_state->focused_panel)
+		UI_Box *content_box_container = ui_box_make(0,
+													str8_lit("ContentBoxContainer"));
+		ui_parent(content_box_container)
 		{
-			ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+			if (root == app_state->focused_panel)
+			{
+				ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+			}
+			ui_next_width(ui_fill());
+			ui_next_height(ui_fill());
+			ui_next_child_layout_axis(Axis2_Y);
+			UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
+											  UI_BoxFlag_DrawBorder,
+											  str8_lit("ContentBox"));
+			// NOTE(hampus): Add some padding for the content
+			ui_parent(content_box)
+			{
+				UI_Size padding = ui_em(0.3f, 1);
+				ui_spacer(padding);
+				ui_next_width(ui_fill());
+				ui_next_height(ui_fill());
+				ui_row()
+				{
+					ui_spacer(padding);
+					Tab *tab = root->tab_group.active_tab;
+					tab->view_info.function(tab->view_info.data);
+					ui_spacer(padding);
+				}
+				ui_spacer(padding);
+			}
 		}
-		UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-										  UI_BoxFlag_DrawBorder,
-										  str8_lit("ContentBox"));
-		ui_parent(content_box)
-		{
-			Tab *tab = root->tab_group.active_tab;
-			tab->view_info.function(tab->view_info.data);
-		}
-
 		ui_pop_string();
 	}
 
@@ -1061,12 +1022,10 @@ UI_TAB_VIEW(ui_tab_view_default)
 	Tab *tab = data;
 	Panel *panel = tab->panel;
 	Window *window = panel->window;
-	ui_spacer(ui_em(0.5f, 1));
-	ui_next_width(ui_pct(1, 0));
-	ui_next_height(ui_pct(1, 0));
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
 	ui_row()
 	{
-		ui_spacer(ui_em(0.5f, 1));
 		ui_next_width(ui_pct(1, 0));
 		ui_next_height(ui_pct(1, 0));
 		ui_column()
@@ -1099,7 +1058,6 @@ UI_TAB_VIEW(ui_tab_view_default)
 			{
 				ui_tab_close(tab);
 			}
-			ui_spacer(ui_em(0.5f, 1));
 		}
 	}
 }
@@ -1191,7 +1149,7 @@ os_main(Str8List arguments)
 		}
 
 		app_state->master_window = master_window;
-		app_state->focused_panel = first_panel;
+		app_state->next_focused_panel = first_panel;
 	}
 
 	app_state->frame_index = 1;
@@ -1455,11 +1413,6 @@ os_main(Str8List arguments)
 			ui_drag_end();
 		}
 
-		if (!app_state->next_focused_panel)
-		{
-			app_state->next_focused_panel = app_state->focused_panel;
-		}
-
 		if (app_state->next_top_most_window)
 		{
 			Window *window = app_state->next_top_most_window;
@@ -1487,6 +1440,11 @@ os_main(Str8List arguments)
 				case CmdKind_WindowRemoveFromList: ui_command_window_remove_from_list(cmd->data); break;
 				case CmdKind_WindowPushToFront:    ui_command_window_push_to_front(cmd->data);    break;
 			}
+		}
+
+		if (!app_state->next_focused_panel)
+		{
+			app_state->next_focused_panel = app_state->focused_panel;
 		}
 
 		app_state->cmd_buffer.pos = 0;
