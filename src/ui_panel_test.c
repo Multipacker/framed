@@ -182,7 +182,7 @@ ui_tab_button(Tab *tab)
 	ui_parent(title_container)
 	{
 		ui_next_height(ui_pct(1, 1));
-		ui_next_width(ui_em(height_em, 1));
+		ui_next_width(ui_em(1, 1));
 		ui_next_icon(RENDER_ICON_PIN);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 		UI_BoxFlags pin_box_flags = UI_BoxFlag_Clickable;
@@ -202,7 +202,7 @@ ui_tab_button(Tab *tab)
 		ui_box_equip_display_string(title, tab->string);
 
 		ui_next_height(ui_pct(1, 1));
-		ui_next_width(ui_em(height_em, 1));
+		ui_next_width(ui_em(1, 1));
 		ui_next_icon(RENDER_ICON_CROSS);
 		ui_next_color(v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 		ui_next_hover_cursor(Gfx_Cursor_Hand);
@@ -212,7 +212,7 @@ ui_tab_button(Tab *tab)
 		// TODO(hampus): We shouldn't need to do this here
 		// since there shouldn't even be any input events
 		// left in the queue if dragging is ocurring.
-		if (ui_drag_is_inactive())
+		if (!ui_currently_dragging())
 		{
 			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
 			UI_Comm close_box_comm = ui_comm_from_box(close_box);
@@ -229,17 +229,6 @@ ui_tab_button(Tab *tab)
 				data->tab = tab;
 				data->panel = tab->panel;
 			}
-
-#if 0
-			// TODO(hampus): Do we need this?
-			if (title_comm.released)
-			{
-				if (app_state->drag_candidate == tab)
-				{
-					app_state->drag_candidate = 0;
-				}
-			}
-#endif
 
 			// NOTE(hampus): Icon appearance
 			UI_BoxFlags icon_hover_flags = UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawText;
