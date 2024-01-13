@@ -134,6 +134,9 @@ struct PNG_State
 	U8 bit_depth;
 	PNG_InterlaceMethod interlace_method;
 
+	U8 *palette;
+	U32 palette_size;
+
 	// NOTE(simon): Bit level reading
 	U64 bit_buffer;
 	U32 bit_count;
@@ -484,6 +487,53 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 				state->interlace_method = interlace_method;
 
 				seen_ihdr = true;
+			} break;
+			case PNG_TYPE('P', 'L', 'T', 'E'):
+			{
+				if (state->palette)
+				{
+					log_error("Duplicate 'PLTE' chunk, corrupted PNG");
+					return(false);
+				}
+
+				if (!seen_ihdr)
+				{
+					log_error("Expected 'IHDR' chunk but got 'PLTE'");
+					return(false);
+				}
+
+				if (state->first_idat)
+				{
+					log_error("'PLTE' chunk must be before the first 'IDAT' chunk, corrupted PNG");
+					return(false);
+				}
+
+				if (state->color_type == PNG_ColorType_Greyscale || state->color_type == PNG_ColorType_GreyscaleAlpha)
+				{
+					log_error("'PLTE' chunk should not be present when the color type is greyscale or greyscale + alpha, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size == 0)
+				{
+					log_error("'PLTE' chunk must contain at least one palette entry, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size % 3 != 0)
+				{
+					log_error("'PLTE' chunk size is not a multiple of 3, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size / 3 > (1 << state->bit_depth))
+				{
+					log_error("'PLTE' chunk has more entries than can be represented with the specified bit depth, corrupted PNG");
+					return(false);
+				}
+
+				state->palette      = chunk.data.data;
+				state->palette_size = (U32) (chunk.data.size / 3);
 			} break;
 			case PNG_TYPE('I', 'D', 'A', 'T'):
 			{
@@ -888,7 +938,6 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 internal B32
 png_expand_to_rgba(PNG_State *state, U8 *pixels)
 {
-	// TODO(simon): Expand to RGBA
 	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	U8 *read  = &pixels[(state->width * state->height - 1) * byte_stride];
 	U8 *write = &pixels[(state->width * state->height - 1) * 4];
@@ -923,9 +972,25 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		} break;
 		case PNG_ColorType_IndexedColor:
 		{
-			// TODO(simon): Change to return Void when we support all formats.
-			log_error("Indexed color is not yet supported");
-			return(false);
+			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
+			{
+				// TODO(simon): Try allowing you to always index in to the
+				// palette and check at the end of the loop. Profile!
+				U32 index = *read;
+				if (index >= state->palette_size)
+				{
+					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+					return(false);
+				}
+
+				write[3] = 0xFF;
+				write[2] = state->palette[index * 3 + 2];
+				write[1] = state->palette[index * 3 + 1];
+				write[0] = state->palette[index * 3 + 0];
+
+				read  -= byte_stride;
+				write -= 4;
+			}
 		} break;
 		case PNG_ColorType_GreyscaleAlpha:
 		{
@@ -956,6 +1021,12 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	PNG_State state = { 0 };
 	if (!png_parse_chunks(arena, contents, &state))
 	{
+		return(false);
+	}
+
+	if (state.color_type == PNG_ColorType_IndexedColor && !state.palette)
+	{
+		log_error("Using indexed color without a 'PLTE' chunk, corrupted PNG");
 		return(false);
 	}
 
