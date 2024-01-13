@@ -79,7 +79,7 @@ internal Void ui_log_keep_alive(Arena *frame_arena)
 internal Void
 ui_logger(Void)
 {
-	Render_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 9);
+	Render_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 11);
 
 	ui_next_child_layout_axis(Axis2_X);
 
@@ -89,6 +89,7 @@ ui_logger(Void)
 	{
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
+		ui_next_extra_box_flags(UI_BoxFlag_DrawBorder);
 		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
 
 		if (!log_ui_freeze && log_ui_has_new_entries)
