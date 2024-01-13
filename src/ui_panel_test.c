@@ -6,7 +6,7 @@
 // @feature [ ] - Be able to pin windows which disables closing
 // @feature [ ] - Highlight focused panel background
 // @polish [ ] - Fixup close & pin button on tabs
-// @bug [ ] - Tab drag offset is slightly off
+// @bug [ ] - Tab dropdown menu
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -346,9 +346,9 @@ UI_CUSTOM_DRAW_PROC(ui_panel_leaf_custom_draw)
 		Vec2F32 min = v2f32_sub_v2f32(root->rect.min, v2f32(10, 10));
 		Vec2F32 max = v2f32_add_v2f32(root->rect.max, v2f32(15, 15));
 		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
-											   min,
-											   max,
-											   .softness = 15, .color = v4f32(0, 0, 0, 1));
+													min,
+													max,
+													.softness = 15, .color = v4f32(0, 0, 0, 1));
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
@@ -547,7 +547,8 @@ ui_panel(Panel *root)
 		UI_Comm tab_release_comms[TabReleaseKind_COUNT] = {0};
 		B32     hovering_any_symbols = false;
 
-		// NOTE(hampus): Drag & split symbols
+		//- hampus: Drag & split symbols
+
 		if (ui_currently_dragging())
 		{
 			DragData *drag_data = &app_state->drag_data;
@@ -680,7 +681,8 @@ ui_panel(Panel *root)
 			}
 		}
 
-		// NOTE(hampus): Drag & split overlay
+		//- hampus: Drag & split overlay
+
 		if (hovering_any_symbols)
 		{
 			Vec4F32 top_color = ui_top_rect_style()->color[0];
@@ -741,7 +743,8 @@ ui_panel(Panel *root)
 			}
 		}
 
-		// NOTE(hampus): Title bar
+		//- hampus: Titlebar
+
 		ui_next_width(ui_fill());
 		ui_row()
 		{
@@ -826,7 +829,8 @@ ui_panel(Panel *root)
 
 		B32 has_tabs = root->tab_group.first != 0;
 
-		// NOTE(hampus): Active tab's content
+		//- hampus: Tab content
+
 		for (Tab *tab = root->tab_group.first;
 			 tab != 0;
 			 tab = tab->next)
@@ -1009,6 +1013,8 @@ ui_update_window(Window *window)
 		{
 			Vec2F32 pos = window->pos;
 			pos = v2f32_sub_v2f32(pos, app_state->window_container->rect.min);
+			pos.x -= ui_em(0.4f, 1).value;
+			pos.y -= ui_em(0.4f, 1).value;
 			ui_next_width(ui_pct(window->size.x, 1));
 			ui_next_height(ui_pct(window->size.y, 1));
 			ui_next_relative_pos(Axis2_X, pos.v[Axis2_X]);
@@ -1017,6 +1023,7 @@ ui_update_window(Window *window)
 			UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
 												   UI_BoxFlag_DrawDropShadow,
 												   str8_lit(""));
+			window->box = window_container;
 			ui_parent(window_container)
 			{
 				ui_next_height(ui_fill());
@@ -1177,7 +1184,8 @@ os_main(Str8List arguments)
 	app_state->cmd_buffer.buffer = push_array(app_state->perm_arena, Cmd, CMD_BUFFER_SIZE);
 	app_state->cmd_buffer.size = CMD_BUFFER_SIZE;
 
-	// NOTE(hampus): Build default UI
+	//- hampus: Build startup UI
+
 	{
 		Window *master_window = ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
 
@@ -1350,6 +1358,8 @@ os_main(Str8List arguments)
 
 		ui_log_keep_alive(current_arena);
 
+		//- hampus: Update Windows
+
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		UI_Box *window_root_parent = ui_box_make(0, str8_lit("RootWindow"));
@@ -1363,6 +1373,8 @@ os_main(Str8List arguments)
 				ui_update_window(window);
 			}
 		}
+
+		//- hampus: Update tab drag
 
 		if (left_mouse_released &&
 			ui_currently_dragging())
@@ -1403,7 +1415,6 @@ os_main(Str8List arguments)
 					B32 create_new_window = !(tab->panel == tab->panel->window->root_panel &&
 											  tab_panel->tab_group.count == 1 &&
 											  tab_panel->window != app_state->master_window);
-
 					if (create_new_window)
 					{
 						// NOTE(hampus): Close the tab from the old panel
@@ -1432,9 +1443,10 @@ os_main(Str8List arguments)
 						drag_data->tab->panel->sibling = 0;
 						ui_window_reorder_to_front(drag_data->tab->panel->window);
 					}
+
+					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->box->rect.min);
 					app_state->next_focused_panel = drag_data->tab->panel;
 					app_state->drag_status = DragStatus_Dragging;
-					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, drag_data->tab->box->rect.min);
 					drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, offset);
 				}
 
@@ -1455,6 +1467,8 @@ os_main(Str8List arguments)
 				memory_zero_struct(&app_state->drag_data);
 				app_state->drag_status = DragStatus_Inactive;
 			} break;
+
+			invalid_case;
 		}
 
 		if (left_mouse_released &&
@@ -1496,8 +1510,6 @@ os_main(Str8List arguments)
 				case CmdKind_WindowPushToFront:    ui_command_window_push_to_front(cmd->data);    break;
 			}
 		}
-
-		// Hampus
 
 		app_state->cmd_buffer.pos = 0;
 

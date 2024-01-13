@@ -30,6 +30,15 @@ enum TabReleaseKind
 	TabReleaseKind_COUNT
 };
 
+typedef enum DragStatus DragStatus;
+enum DragStatus
+{
+	DragStatus_Inactive,
+	DragStatus_WaitingForDragThreshold,
+	DragStatus_Dragging,
+	DragStatus_Released,
+};
+
 typedef struct Panel Panel;
 typedef struct Cmd Cmd;
 typedef struct Window Window;
@@ -110,6 +119,8 @@ struct Window
 	Vec2F32 size;
 
 	Panel *root_panel;
+
+	UI_Box *box;
 
 	B32 dragging;
 
@@ -197,15 +208,6 @@ struct CmdBuffer
 	Cmd *buffer;
 };
 
-typedef enum DragStatus DragStatus;
-enum DragStatus
-{
-	DragStatus_Inactive,
-	DragStatus_WaitingForDragThreshold,
-	DragStatus_Dragging,
-	DragStatus_Released,
-};
-
 typedef struct DragData DragData;
 struct DragData
 {
@@ -232,8 +234,6 @@ struct AppState
 	CmdBuffer cmd_buffer;
 
 	WindowList window_list;
-
-	// NOTE(hampus): Dragging
 
 	DragStatus drag_status;
 	DragData   drag_data;
