@@ -837,30 +837,49 @@ png_paeth_predictor(S32 a, S32 b, S32 c)
 }
 
 internal B32
-png_resample_to_8bit(PNG_State *state, U8 *pixels)
+png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 {
+	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
 	{
-		// TODO(simon): Expand the indicies to 8-bit. Needs to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
-		return(false);
+		U32 bit_max = (1 << state->bit_depth) - 1;
+		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		{
+			U64 bit_position = i * state->bit_depth;
+			U64 byte_index   = bit_position / 8;
+			U64 bit_index    = bit_position % 8;
+			U8 byte          = pixels[byte_index];
+			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+			output[i] = value;
+		}
 	}
 	else if (state->bit_depth == 16)
 	{
-		U32 byte_stride = png_stride_from_color_type(state->color_type);
-		U16 *read  = (U16 *) pixels;
-		U8  *write = pixels;
+		U16 *pixels_u16 = (U16 *) pixels;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
-			U16 value = u16_big_to_local_endian(read[i]);
-			write[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+			U16 value = u16_big_to_local_endian(pixels_u16[i]);
+			output[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 		}
 	}
 	else if (state->bit_depth != 8)
 	{
-		// TODO(simon): Resample data to be 8-bit. Need to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
-		return(false);
+		U32 bit_max = (1 << state->bit_depth) - 1;
+		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		{
+			U64 bit_position = i * state->bit_depth;
+			U64 byte_index   = bit_position / 8;
+			U64 bit_index    = bit_position % 8;
+			U8 byte          = pixels[byte_index];
+			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+			output[i] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+		}
+	}
+	else
+	{
+		memory_copy(output, pixels, state->width * state->height * byte_stride);
 	}
 
 	return(true);
@@ -1037,12 +1056,13 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 		}
 	}
 
-	if (!png_resample_to_8bit(&state, unfiltered_data))
+	U8 *output = push_array(arena, U8, state.width * state.height * 4);
+	if (!png_resample_to_8bit(&state, unfiltered_data, output))
 	{
 		return(false);
 	}
 
-	if (!png_expand_to_rgba(&state, unfiltered_data))
+	if (!png_expand_to_rgba(&state, output))
 	{
 		return(false);
 	}
@@ -1050,7 +1070,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	U64 after = os_now_nanoseconds();
 	log_info("%.2fms to load PNG", (F64) (after - before) / (F64) million(1));
 
-	Render_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, Render_ColorSpace_sRGB);
+	Render_Texture texture = render_create_texture_from_bitmap(renderer, output, state.width, state.height, Render_ColorSpace_sRGB);
 	*texture_result = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
 
 	return(true);
