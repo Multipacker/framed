@@ -223,7 +223,12 @@ ui_tab_button(Tab *tab)
 		if (!ui_currently_dragging())
 		{
 			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
-			UI_Comm close_box_comm = ui_comm_from_box(close_box);
+			UI_Comm close_box_comm = {0};
+			if (!tab->pinned)
+			{
+				close_box_comm = ui_comm_from_box(close_box);
+			}
+
 			UI_Comm title_comm = ui_comm_from_box(title_container);
 
 			if (title_comm.pressed)
@@ -248,7 +253,10 @@ ui_tab_button(Tab *tab)
 
 			if (close_box_comm.hovering)
 			{
-				close_box->flags |= icon_hover_flags;
+				if (!tab->pinned)
+				{
+					close_box->flags |= icon_hover_flags;
+				}
 			}
 
 			if (close_box_comm.hovering ||
@@ -256,7 +264,10 @@ ui_tab_button(Tab *tab)
 				title_comm.hovering)
 			{
 				pin_box->flags   |= UI_BoxFlag_DrawText | UI_BoxFlag_DrawBorder;
-				close_box->flags |= UI_BoxFlag_DrawText | UI_BoxFlag_DrawBorder;
+				if (!tab->pinned)
+				{
+					close_box->flags |= UI_BoxFlag_DrawText | UI_BoxFlag_DrawBorder;
+				}
 			}
 
 			if (pin_box_comm.pressed)
