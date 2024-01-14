@@ -1396,7 +1396,6 @@ os_main(Str8List arguments)
 					{
 						gfx_toggle_fullscreen(&gfx);
 					}
-					log_info("Key press!");
 				} break;
 
 				case Gfx_EventKind_KeyRelease:
