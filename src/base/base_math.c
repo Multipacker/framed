@@ -16,7 +16,7 @@ v2f32_sub_v2f32(Vec2F32 a, Vec2F32 b)
 	return((Vec2F32) { a.x - b.x, a.y - b.y });
 }
 
-internal Vec2F32 
+internal Vec2F32
 v2f32_hadamard_div_v2f32(Vec2F32 a, Vec2F32 b)
 {
 	Vec2F32 result;

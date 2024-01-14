@@ -840,23 +840,33 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 		ui_animations_enabled())
 	{
+		if (root->first_frame_touched_index == root->last_frame_touched_index)
+		{
+			root->rel_pos_animated.v[axis]    = root->rel_pos.v[axis];
+		}
+
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos_animated.v[axis];
 	}
 	else
 	{
+
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos.v[axis];
 	}
 
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 		ui_animations_enabled())
 	{
+		if (root->first_frame_touched_index == root->last_frame_touched_index)
+		{
+			root->fixed_size_animated.v[axis] = root->fixed_size.v[axis];
+		}
+
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size_animated.v[axis];
 	}
 	else
 	{
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size.v[axis];
 	}
-
 
 	root->fixed_rect.min.v[axis] = f32_floor(root->fixed_rect.min.v[axis]);
 	root->fixed_rect.max.v[axis] = f32_floor(root->fixed_rect.max.v[axis]);
@@ -1466,6 +1476,22 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
+			 ui_key_is_null(result->key) &&
+			 "Why would you animate a keyless box"));
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
+			 ui_key_is_null(result->key) &&
+			 "Why would you animate a keyless box"));
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
+			 ui_key_is_null(result->key) &&
+			 "Why would you animate a keyless box"));
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
+			 ui_key_is_null(result->key) &&
+			 "Why would you animate a keyless box"));
 
 	result->last_frame_touched_index = g_ui_ctx->frame_index;
 

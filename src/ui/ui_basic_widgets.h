@@ -25,11 +25,15 @@ internal Void    ui_spacer(UI_Size size);
 
 internal UI_Box *ui_named_row_begin(Str8 string);
 internal Void    ui_named_row_end(Void);
+internal UI_Box *ui_named_row_beginfv(CStr fmt, va_list args);
+internal UI_Box *ui_named_row_beginf(CStr fmt, ...);
 internal UI_Box *ui_row_begin(Void);
 internal Void    ui_row_end(Void);
 
 internal UI_Box *ui_named_column_begin(Str8 string);
 internal Void    ui_named_column_end(Void);
+internal UI_Box *ui_named_column_beginfv(CStr fmt, va_list args);
+internal UI_Box *ui_named_column_beginf(CStr fmt, ...);
 internal UI_Box *ui_column_begin(Void);
 internal Void    ui_column_end(Void);
 
@@ -37,6 +41,7 @@ internal Void    ui_column_end(Void);
 #define ui_row()             defer_loop(ui_row_begin(), ui_row_end())
 
 #define ui_named_column(string) defer_loop(ui_named_column_begin(string), ui_named_column_end())
+#define ui_named_columnf(string, ...) defer_loop(ui_named_column_beginf(string, __VA_ARGS__), ui_named_column_end())
 #define ui_column()             defer_loop(ui_column_begin(), ui_column_end())
 
 #define ui_scrollable_region(string) defer_loop(ui_push_scrollable_region(string), ui_pop_scrollable_region())

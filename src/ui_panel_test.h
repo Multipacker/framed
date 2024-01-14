@@ -94,6 +94,7 @@ struct TabGroup
 	Tab *active_tab;
 	Tab *first;
 	Tab *last;
+	F32 overflow;
 };
 
 typedef struct Panel Panel;
@@ -130,8 +131,6 @@ struct Window
 	Panel *root_panel;
 
 	UI_Box *box;
-
-	B32 dragging;
 
 	Str8 string;
 };

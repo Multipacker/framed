@@ -197,6 +197,27 @@ ui_named_row_end(Void)
 }
 
 internal UI_Box *
+ui_named_row_beginfv(CStr fmt, va_list args)
+{
+	UI_Comm comm = {0};
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	UI_Box *box = ui_named_row_begin(string);
+	return(box);
+}
+
+internal UI_Box *
+ui_named_row_beginf(CStr fmt, ...)
+{
+	UI_Comm comm = {0};
+	va_list args;
+	va_start(args, fmt);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	UI_Box *box = ui_named_row_beginfv(fmt, args);
+	va_end(args);
+	return(box);
+}
+
+internal UI_Box *
 ui_row_begin(Void)
 {
 	UI_Box *box = ui_named_row_begin(str8_lit(""));
@@ -223,6 +244,27 @@ internal Void
 ui_named_column_end(Void)
 {
 	ui_pop_parent();
+}
+
+internal UI_Box *
+ui_named_column_beginfv(CStr fmt, va_list args)
+{
+	UI_Comm comm = {0};
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	UI_Box *box = ui_named_column_begin(string);
+	return(box);
+}
+
+internal UI_Box *
+ui_named_column_beginf(CStr fmt, ...)
+{
+	UI_Comm comm = {0};
+	va_list args;
+	va_start(args, fmt);
+	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+	UI_Box *box = ui_named_column_beginfv(fmt, args);
+	va_end(args);
+	return(box);
 }
 
 internal UI_Box *

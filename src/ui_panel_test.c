@@ -171,7 +171,7 @@ ui_tab_close(Tab *tab)
 	}
 }
 
-internal Void
+internal UI_Box *
 ui_tab_button(Tab *tab)
 {
 	assert(tab->frame_index != app_state->frame_index);
@@ -302,6 +302,7 @@ ui_tab_button(Tab *tab)
 		}
 	}
 	ui_pop_string();
+	return(title_container);
 }
 
 ////////////////////////////////
@@ -785,17 +786,53 @@ ui_panel(Panel *root)
 					ui_next_width(ui_fill());
 					ui_next_height(ui_pct(1, 1));
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
-					ui_named_row(str8_lit("TabsContainer"))
+					UI_Box *tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
+						if (root->tab_group.count)
+						{
+							Tab *active_tab = root->tab_group.active_tab;
+							if (active_tab->box)
+							{
+								RectF32 rect = active_tab->box->fixed_rect;
+								rect.x0 += active_tab->box->parent->rel_pos.x - active_tab->box->parent->rel_pos_animated.x;
+								rect.x1 += active_tab->box->parent->rel_pos.x - active_tab->box->parent->rel_pos_animated.x;
+
+								rect.y0 += active_tab->box->parent->rel_pos.y - active_tab->box->parent->rel_pos_animated.y;
+								rect.y1 += active_tab->box->parent->rel_pos.y - active_tab->box->parent->rel_pos_animated.y;
+
+								RectF32 rect2 = tabs_container->fixed_rect;
+
+								F32 tab_x0 = rect.x0;
+								F32 tab_x1 = rect.x1;
+
+								B32 overflow_left  = tab_x0 < rect2.x0;
+								B32 overflow_right = tab_x1 >= rect2.x1;
+
+								if (overflow_right)
+								{
+									root->tab_group.overflow += tab_x1 - rect2.x1;
+								}
+								else if (overflow_left)
+								{
+									root->tab_group.overflow += tab_x0 - rect2.x0;
+								}
+
+								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
+							}
+						}
+						else
+						{
+							root->tab_group.overflow = 0;
+						}
+
 						for (Tab *tab = root->tab_group.first;
 							 tab != 0;
 							 tab = tab->next)
 						{
 							ui_next_width(ui_children_sum(1));
 							ui_next_height(ui_em(tab_button_height_em, 1));
-							ui_next_child_layout_axis(Axis2_Y);
-							UI_Box *container = ui_box_make(0, str8_lit(""));
-							ui_parent(container)
+							ui_next_extra_box_flags(UI_BoxFlag_AnimateX);
+							ui_named_columnf("TabColumn%p", tab)
 							{
 								ui_spacer(ui_em(d_em, 1));
 								ui_tab_button(tab);
@@ -803,6 +840,7 @@ ui_panel(Panel *root)
 							ui_spacer(ui_em(d_em, 1));
 						}
 					}
+					ui_named_row_end();
 
 					if (root->tab_group.count)
 					{
@@ -857,8 +895,8 @@ ui_panel(Panel *root)
 								data->tab = root->tab_group.first;
 							}
 						}
-
 					}
+
 					ui_next_height(ui_em(title_bar_height_em, 1));
 					ui_next_width(ui_em(title_bar_height_em, 1));
 					ui_next_icon(RENDER_ICON_CROSS);
