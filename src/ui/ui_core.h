@@ -191,20 +191,13 @@ struct UI_Box
 	U64    first_frame_touched_index;
 	U64    last_frame_touched_index;
 	
-	// NOTE(hampus): This is the current
-	// size and position of the box.
-	// These are the same as target when
-	// animations are turned off.
-	Vec2F32 calc_size;
-	Vec2F32 calc_pos;
-	Vec2F32 calc_rel_pos;
+	Vec2F32 rel_pos_animated;
+	Vec2F32 fixed_size_animated;
 	
-	// NOTE(hampus): This is the destination size
-	// and position.
-	Vec2F32 target_size;
-	Vec2F32 target_pos;
+	Vec2F32 rel_pos;
+	Vec2F32 fixed_size;
 	
-	RectF32 rect;
+	RectF32 fixed_rect;
 	
 	UI_BoxFlags flags;
 	Str8        string;

@@ -203,7 +203,7 @@ ui_tab_button(Tab *tab)
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
 										  UI_BoxFlag_DrawBorder|
-										  (!ui_tab_is_dragged(tab)) * UI_BoxFlag_AnimateY,
+										  (!ui_currently_dragging()) * UI_BoxFlag_AnimatePos,
 										  str8_lit("TitleContainer"));
 
 	tab->box = title_container;
@@ -469,8 +469,8 @@ ui_panel(Panel *root)
 
 		if (dragging)
 		{
-			child0->pct_of_parent -= drag_delta / box->calc_size.v[root->split_axis];
-			child1->pct_of_parent += drag_delta / box->calc_size.v[root->split_axis];
+			child0->pct_of_parent -= drag_delta / box->fixed_size.v[root->split_axis];
+			child1->pct_of_parent += drag_delta / box->fixed_size.v[root->split_axis];
 
 			child0->pct_of_parent = f32_clamp(0, child0->pct_of_parent, 1.0f);
 			child1->pct_of_parent = f32_clamp(0, child1->pct_of_parent, 1.0f);
@@ -758,10 +758,10 @@ ui_panel(Panel *root)
 					ui_named_column(str8_lit("TabDropDownContainer"))
 					{
 						F32 corner_radius = (F32) ui_top_font_size() * 0.25f;
-						ui_spacer(ui_em(0.2f, 1));
+						ui_spacer(ui_em(0.3f, 1));
 						ui_next_icon(RENDER_ICON_LIST);
 						ui_next_width(ui_em(title_bar_height_em, 1));
-						ui_next_height(ui_em(title_bar_height_em, 1));
+						ui_next_height(ui_em(title_bar_height_em-0.1f, 1));
 						ui_next_font_size(12);
 						ui_next_hover_cursor(Gfx_Cursor_Hand);
 						ui_next_vert_corner_radius(corner_radius, 0);
@@ -1057,7 +1057,7 @@ ui_update_window(Window *window)
 		{
 			Vec2F32 pos = window->pos;
 			// NOTE(hampus): Screen pos -> Container pos
-			pos = v2f32_sub_v2f32(pos, app_state->window_container->rect.min);
+			pos = v2f32_sub_v2f32(pos, app_state->window_container->fixed_rect.min);
 			// NOTE(hampus): Container pos -> Window pos
 			pos.x -= ui_em(0.4f, 1).value;
 			pos.y -= ui_em(0.4f, 1).value;
@@ -1493,7 +1493,7 @@ os_main(Str8List arguments)
 						ui_window_reorder_to_front(drag_data->tab->panel->window);
 					}
 
-					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->box->rect.min);
+					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->box->fixed_rect.min);
 					app_state->next_focused_panel = drag_data->tab->panel;
 					app_state->drag_status = DragStatus_Dragging;
 					drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, offset);
