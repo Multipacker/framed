@@ -308,16 +308,20 @@ ui_ctx_menu_begin(UI_Key key)
 {
 	B32 is_open = ui_key_match(key, g_ui_ctx->ctx_menu_key);
 
-	if (is_open)
-	{
-		g_ui_ctx->ctx_menu_root->flags |= UI_BoxFlag_DrawDropShadow;
-	}
-
 	ui_push_parent(g_ui_ctx->ctx_menu_root);
 	ui_push_clip_rect(&g_ui_ctx->root->rect, 0);
 
-	ui_next_extra_box_flags(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder);
-	ui_column_begin();
+	if (is_open)
+	{
+		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground |
+								UI_BoxFlag_DrawBorder |
+								UI_BoxFlag_AnimateHeight |
+								UI_BoxFlag_DrawDropShadow |
+								UI_BoxFlag_Clip);
+	}
+
+	ui_push_seed(key);
+	ui_named_column_begin(str8_lit("CtxMenuColumn"));
 
 	return(is_open);
 }
@@ -325,24 +329,25 @@ ui_ctx_menu_begin(UI_Key key)
 internal Void
 ui_ctx_menu_end(Void)
 {
-	ui_pop_parent();
 	ui_column_end();
+	ui_pop_seed();
 	ui_pop_clip_rect();
+	ui_pop_parent();
 }
 
 internal Void
 ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu)
 {
-	g_ui_ctx->ctx_menu_key = menu;
-	g_ui_ctx->ctx_menu_anchor_key = anchor;
-	g_ui_ctx->anchor_offset = offset;
+	g_ui_ctx->next_ctx_menu_key = menu;
+	g_ui_ctx->next_ctx_menu_anchor_key = anchor;
+	g_ui_ctx->next_anchor_offset = offset;
 }
 
 internal Void
 ui_ctx_menu_close(Void)
 {
-	g_ui_ctx->ctx_menu_key = ui_key_null();
-	g_ui_ctx->ctx_menu_anchor_key = ui_key_null();
+	g_ui_ctx->next_ctx_menu_key        = ui_key_null();
+	g_ui_ctx->next_ctx_menu_anchor_key = ui_key_null();
 }
 
 internal B32
@@ -364,6 +369,10 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	g_ui_ctx->prev_active_key = g_ui_ctx->active_key;
 
 	g_ui_ctx->mouse_pos = gfx_get_mouse_pos(g_ui_ctx->renderer->gfx);
+
+	g_ui_ctx->ctx_menu_key        = g_ui_ctx->next_ctx_menu_key;
+	g_ui_ctx->ctx_menu_anchor_key = g_ui_ctx->next_ctx_menu_anchor_key;
+	g_ui_ctx->anchor_offset       = g_ui_ctx->next_anchor_offset;
 
 	B32 left_mouse_released = false;
 	B32 left_mouse_pressed = false;
@@ -453,7 +462,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 
 	// NOTE(hampus): Setup default config
 	g_ui_ctx->config.animations = true;
-	g_ui_ctx->config.animation_speed = 10;
+	g_ui_ctx->config.animation_speed = 20;
 
 	g_ui_ctx->hot_key = ui_key_null();
 
@@ -810,6 +819,11 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 		ui_animations_enabled())
 	{
+		if (root->last_frame_touched_index == root->first_frame_touched_index)
+		{
+			root->calc_pos.v[axis] = root->target_pos.v[axis];
+		}
+
 		if (f32_abs(root->calc_pos.v[axis] - root->target_pos.v[axis]) <= 0.5f)
 		{
 			root->calc_pos.v[axis] = root->target_pos.v[axis];
@@ -827,6 +841,11 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 		ui_animations_enabled())
 	{
+		if (root->last_frame_touched_index == root->first_frame_touched_index)
+		{
+			root->calc_size.v[axis] = root->target_size.v[axis];
+		}
+
 		if (f32_abs(root->calc_size.v[axis] - root->target_size.v[axis]) <= 0.5f)
 		{
 			root->calc_size.v[axis] = root->target_size.v[axis];
@@ -1109,6 +1128,7 @@ ui_end(Void)
 
 	ui_layout(g_ui_ctx->root);
 	ui_draw(g_ui_ctx->root);
+
 	g_ui_ctx->prev_mouse_pos = g_ui_ctx->mouse_pos;
 	g_ui_ctx->parent_stack = 0;
 	g_ui_ctx->seed_stack = 0;
@@ -1411,6 +1431,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	{
 		result = ui_box_alloc();
 		result->key = key;
+		result->first_frame_touched_index = g_ui_ctx->frame_index;
 
 		U64 slot_index = result->key.value % g_ui_ctx->box_hash_map_count;
 		UI_Box *box = g_ui_ctx->box_hash_map[slot_index];
@@ -1451,6 +1472,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
 
+	result->last_frame_touched_index = g_ui_ctx->frame_index;
+
 	if (ui_box_has_flag(result, UI_BoxFlag_FloatingX))
 	{
 		result->calc_rel_pos.v[Axis2_X] = result->layout_style.relative_pos.v[Axis2_X];
@@ -1479,7 +1502,6 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 		g_ui_ctx->layout_style_stack.auto_pop = false;
 	}
 
-	result->last_frame_touched_index = g_ui_ctx->frame_index;
 	return(result);
 }
 

@@ -1,6 +1,8 @@
 ////////////////////////////////
 //~ hampus: TODO
 
+// @feature [ ] - Tab dropdown menu
+
 // @bug [ ] - Close button is rendered even though the tab is outside tab bar
 //          - Solved by removing the clip box flag, but this shouldn't solve it
 
@@ -9,10 +11,11 @@
 
 // @feature [ ] - Reorder tabs
 // @feature [ ] - Be able to pin windows which disables closing
-// @feature [ ] - Tab dropdown menu
 // @bug [ ] - The user can drop a panel on the menu bar which will hide the tab bar
 // @cleanup [ ] - UI commands. Discriminated unions instead of data array?
 // @feature [ ] - UI startup builder
+
+// @feature [ ] - Only change panel focus with mouse presses
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -144,6 +147,20 @@ ui_tab_is_active(Tab *tab)
 	return(result);
 }
 
+internal B32
+ui_tab_is_dragged(Tab *tab)
+{
+	B32 result = false;
+	if (app_state->drag_status == DragStatus_Dragging)
+	{
+		if (app_state->drag_data.tab == tab)
+		{
+			result = true;
+		}
+	}
+	return(result);
+}
+
 internal Void
 ui_tab_close(Tab *tab)
 {
@@ -180,12 +197,15 @@ ui_tab_button(Tab *tab)
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_em(height_em, 1));
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
+
 	UI_Box *title_container = ui_box_make(UI_BoxFlag_DrawBackground |
 										  UI_BoxFlag_HotAnimation |
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
-										  UI_BoxFlag_DrawBorder,
+										  UI_BoxFlag_DrawBorder|
+										  (!ui_tab_is_dragged(tab)) * UI_BoxFlag_AnimateY,
 										  str8_lit("TitleContainer"));
+
 	tab->box = title_container;
 	ui_parent(title_container)
 	{
@@ -674,12 +694,16 @@ ui_panel(Panel *root)
 
 		//- hampus: Tab bar
 
+		F32 title_bar_height_em = 1.2f;
+		F32 d_em = 0.2f;
+		F32 tab_button_height_em = title_bar_height_em-d_em;
+
 		ui_next_width(ui_fill());
 		ui_row()
 		{
 			ui_next_color(v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 			ui_next_width(ui_fill());
-			ui_next_height(ui_em(1.4f, 1));
+			ui_next_height(ui_em(title_bar_height_em, 1));
 			if (root->tab_group.count == 1)
 			{
 				ui_next_extra_box_flags(UI_BoxFlag_Clickable |
@@ -690,10 +714,74 @@ ui_panel(Panel *root)
 											str8_lit("TitleBar"));
 			ui_parent(title_bar)
 			{
+
+				//- hampus: Tab dropdown menu
+
 				ui_next_width(ui_fill());
 				ui_next_height(ui_fill());
 				ui_row()
 				{
+					UI_Key tab_dropown_menu_key = ui_key_from_string(title_bar->key, str8_lit("TabDropdownMenu"));
+
+					ui_ctx_menu(tab_dropown_menu_key)
+						ui_width(ui_em(4, 1))
+					{
+
+						ui_corner_radius(0)
+						{
+							for (Tab *tab = root->tab_group.first;
+								 tab != 0;
+								 tab = tab->next)
+							{
+								ui_next_hover_cursor(Gfx_Cursor_Hand);
+								ui_next_height(ui_em(1, 0.0f));
+								UI_Box *tab_box = ui_box_make(UI_BoxFlag_DrawText |
+															  UI_BoxFlag_DrawBorder |
+															  UI_BoxFlag_HotAnimation |
+															  UI_BoxFlag_ActiveAnimation |
+															  UI_BoxFlag_Clickable |
+															  UI_BoxFlag_DrawBackground,
+															  tab->string);
+								UI_Comm tab_comm = ui_comm_from_box(tab_box);
+								if (tab_comm.pressed)
+								{
+									PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab);
+									data->tab = tab;
+									data->panel = tab->panel;
+								}
+							}
+						}
+					}
+
+					ui_next_extra_box_flags(UI_BoxFlag_Clip);
+					ui_next_height(ui_pct(1, 1));
+					ui_named_column(str8_lit("TabDropDownContainer"))
+					{
+						F32 corner_radius = (F32) ui_top_font_size() * 0.25f;
+						ui_spacer(ui_em(0.2f, 1));
+						ui_next_icon(RENDER_ICON_LIST);
+						ui_next_width(ui_em(title_bar_height_em, 1));
+						ui_next_height(ui_em(title_bar_height_em, 1));
+						ui_next_font_size(12);
+						ui_next_hover_cursor(Gfx_Cursor_Hand);
+						ui_next_vert_corner_radius(corner_radius, 0);
+						UI_Box *tab_dropdown_list_box = ui_box_make(UI_BoxFlag_DrawBackground |
+																	UI_BoxFlag_DrawBorder |
+																	UI_BoxFlag_HotAnimation |
+																	UI_BoxFlag_ActiveAnimation |
+																	UI_BoxFlag_Clickable |
+																	UI_BoxFlag_DrawText,
+																	str8_lit("TabDropdownList"));
+						UI_Comm tab_dropdown_list_comm = ui_comm_from_box(tab_dropdown_list_box);
+						if (tab_dropdown_list_comm.pressed)
+						{
+							ui_ctx_menu_open(tab_dropdown_list_comm.box->key,
+											 v2f32(0, 0), tab_dropown_menu_key);
+						}
+					}
+
+					//- hampus: Tab buttons
+
 					ui_next_width(ui_fill());
 					ui_next_height(ui_pct(1, 1));
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
@@ -704,20 +792,20 @@ ui_panel(Panel *root)
 							 tab = tab->next)
 						{
 							ui_next_width(ui_children_sum(1));
-							ui_next_height(ui_em(1.2f, 1));
+							ui_next_height(ui_em(tab_button_height_em, 1));
 							ui_next_child_layout_axis(Axis2_Y);
 							UI_Box *container = ui_box_make(0, str8_lit(""));
 							ui_parent(container)
 							{
-								ui_spacer(ui_em(0.2f, 1));
+								ui_spacer(ui_em(d_em, 1));
 								ui_tab_button(tab);
 							}
-							ui_spacer(ui_em(0.2f, 1));
+							ui_spacer(ui_em(d_em, 1));
 						}
 					}
 
-					ui_next_height(ui_em(1.3f, 1));
-					ui_next_width(ui_em(1.3f, 1));
+					ui_next_height(ui_em(title_bar_height_em, 1));
+					ui_next_width(ui_em(title_bar_height_em, 1));
 					ui_next_icon(RENDER_ICON_CROSS);
 					ui_next_hover_cursor(Gfx_Cursor_Hand);
 					ui_next_color(v4f32(0.6f, 0.1f, 0.1f, 1.0f));
@@ -1062,7 +1150,7 @@ UI_TAB_VIEW(ui_tab_view_default)
 				PanelClose *panel_close_data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelClose);
 				panel_close_data->panel = panel;
 			}
-			ui_spacer(ui_em(1.0f, 1));
+			ui_spacer(ui_em(0.5f, 1));
 			if (ui_button(str8_lit("Add tab")).pressed)
 			{
 				Tab *new_tab = ui_tab_make(app_state->perm_arena, 0, 0);
@@ -1074,6 +1162,13 @@ UI_TAB_VIEW(ui_tab_view_default)
 			if (ui_button(str8_lit("Close tab")).pressed)
 			{
 				ui_tab_close(tab);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+			{
+				ui_check(&g_ui_ctx->show_debug_lines, str8_lit("ShowDebugLines"));
+				ui_spacer(ui_em(0.5f, 1));
+				ui_text(str8_lit("Show debug lines"));
 			}
 		}
 	}
@@ -1220,6 +1315,7 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
+
 		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 
 		ui_ctx_menu(my_ctx_menu)

@@ -10,7 +10,7 @@
 // [ ] - Subpixel positioning
 // [ ] - Underline & strikethrough
 
-internal B32 
+internal B32
 render_font_valid_load_params(Render_FontLoadParams params)
 {
 	B32 result = params.size > 0 && params.path.size > 0 && params.render_mode < Render_FontRenderMode_COUNT;
@@ -293,15 +293,15 @@ render_unload_font(Render_Context *renderer, Render_Font *font)
 {
 	assert(font);
 	assert(renderer);
-	
+
 	os_mutex(&renderer->font_atlas_mutex)
 	{
-	for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
-	{
+		for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
+		{
 			Render_FontAtlasRegion font_atlas_region = font->font_atlas_regions[i];
 			render_free_atlas_region(renderer->font_atlas, font_atlas_region);
-	}
 		}
+	}
 	arena_pop_to(font->arena, 0);
 	memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
@@ -335,14 +335,14 @@ render_font_stream_thread(Void *data)
 			if (u32_atomic_compare_exchange(&font_queue->read_index, queue_read_index + 1, queue_read_index))
 			{
 				Render_Font *font = entry.font;
-				
+
 				log_info("Starting to load in font: %"PRISTR8, str8_expand(entry.params.path));
 				font->state = Render_FontState_Loading;
-				
+
 				render_unload_font(renderer, font);
-				
+
 				B32 success = render_load_font(renderer, font, entry.params);
-				
+
 				if (success)
 				{
 					log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(entry.params.path));
@@ -352,18 +352,18 @@ render_font_stream_thread(Void *data)
 					log_warning("Failed to load font `%"PRISTR8"`", str8_expand(entry.params.path));
 					render_unload_font(renderer, font);
 				}
-				
+
 				memory_fence();
-				
+
 				render_update_texture(
-					renderer,
-					renderer->font_atlas->texture,
-					renderer->font_atlas->memory,
-					renderer->font_atlas->dim.width,
-					renderer->font_atlas->dim.height,
-					0
-				);
-				
+									  renderer,
+									  renderer->font_atlas->texture,
+									  renderer->font_atlas->memory,
+									  renderer->font_atlas->dim.width,
+									  renderer->font_atlas->dim.height,
+									  0
+									  );
+
 				if (success)
 				{
 					font->state = Render_FontState_Loaded;
@@ -445,12 +445,12 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 		if (str8_equal(font->load_params.path, font_key.path) &&
 			font->load_params.size == font_key.font_size)
 		{
-				result = font;
-				break;
+			result = font;
+			break;
 		}
 
 		B32 slot_is_cold = false;
-			
+
 		if (render_font_is_loaded(font))
 		{
 			slot_is_cold = font->last_frame_index_used < (current_frame_index-1);
@@ -460,9 +460,9 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 			// NOTE(hampus): This would only be the case
 			// if the font hasn't been initialized since
 			// the program's start.
-				slot_is_cold = true;
+			slot_is_cold = true;
 		}
-		
+
 		if (slot_is_cold && (unused_slot == -1))
 		{
 			unused_slot = i;
@@ -473,14 +473,14 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 	{
 		assert(unused_slot != -1 && "Cache is hot and full");
 		Render_Font *empty_entry = renderer->font_cache->entries + unused_slot;
-		Render_FontLoadParams params = 
+		Render_FontLoadParams params =
 		{
 			.render_mode = Render_FontRenderMode_LCD,
 			.size = font_key.font_size,
 			.path = font_key.path,
 		};
-			render_push_font_to_queue(renderer, empty_entry, params);
-			result = empty_entry;
+		render_push_font_to_queue(renderer, empty_entry, params);
+		result = empty_entry;
 	}
 
 	result->last_frame_index_used = renderer->frame_index;
