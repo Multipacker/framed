@@ -526,7 +526,7 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 					return(false);
 				}
 
-				if (chunk.data.size / 3 > (1 << state->bit_depth))
+				if (chunk.data.size / 3 > (1llu << state->bit_depth))
 				{
 					log_error("'PLTE' chunk has more entries than can be represented with the specified bit depth, corrupted PNG");
 					return(false);
