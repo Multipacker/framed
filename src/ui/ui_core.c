@@ -15,6 +15,13 @@
 global UI_Context *g_ui_ctx;
 
 internal B32
+ui_box_created_this_frame(UI_Box *box)
+{
+	B32 result = box->first_frame_touched_index == box->last_frame_touched_index;
+	return(result);
+}
+
+internal B32
 ui_mouse_is_inside_box(UI_Box *box)
 {
 	B32 result = rectf32_contains_v2f32(box->fixed_rect, g_ui_ctx->mouse_pos);

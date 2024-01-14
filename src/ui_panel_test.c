@@ -783,6 +783,8 @@ ui_panel(Panel *root)
 
 					//- hampus: Tab buttons
 
+					B32 tab_overflow = false;
+
 					ui_next_width(ui_fill());
 					ui_next_height(ui_pct(1, 1));
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
@@ -835,14 +837,20 @@ ui_panel(Panel *root)
 							ui_named_columnf("TabColumn%p", tab)
 							{
 								ui_spacer(ui_em(d_em, 1));
-								ui_tab_button(tab);
+								UI_Box *tab_box = ui_tab_button(tab);
+								if ((tab_box->fixed_rect.x0 < tabs_container->fixed_rect.x0 ||
+									 tab_box->fixed_rect.x1 >= tabs_container->fixed_rect.x1) &&
+									!ui_box_created_this_frame(tab_box))
+								{
+									tab_overflow = true;
+								}
 							}
 							ui_spacer(ui_em(d_em, 1));
 						}
 					}
 					ui_named_row_end();
 
-					if (root->tab_group.count)
+					if (root->tab_group.count && tab_overflow)
 					{
 						ui_next_height(ui_em(title_bar_height_em, 1));
 						ui_next_width(ui_em(title_bar_height_em, 1));
