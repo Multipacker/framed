@@ -277,3 +277,69 @@ ui_column_end(Void)
 {
 	ui_named_column_end();
 }
+
+internal U32
+ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
+{
+	U32 result = selected_index;
+
+	ui_row()
+	{
+		ui_text(name);
+
+		ui_next_width(ui_children_sum(1));
+		ui_next_height(ui_children_sum(1));
+		ui_next_child_layout_axis(Axis2_X);
+		UI_Box *combo_box = ui_box_make(UI_BoxFlag_DrawBackground |
+		                                UI_BoxFlag_DrawBorder |
+		                                UI_BoxFlag_HotAnimation |
+		                                UI_BoxFlag_ActiveAnimation |
+		                                UI_BoxFlag_Clickable,
+		                                name);
+		UI_Comm comm = ui_comm_from_box(combo_box);
+
+		ui_parent(combo_box)
+		{
+			ui_text(item_names[selected_index]);
+
+			ui_next_height(ui_em(1, 1));
+			ui_next_width(ui_em(1, 1));
+			ui_next_font_size(12);
+			ui_next_icon(ui_ctx_menu_is_open() ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
+			ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+
+			UI_Key combo_box_key = ui_key_from_string(comm.box->key, str8_lit("Items"));
+
+			if (comm.clicked || (ui_ctx_menu_is_open() && comm.hovering))
+			{
+				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), combo_box_key);
+			}
+
+			ui_ctx_menu(combo_box_key)
+			{
+				for (U32 i = 0; i < item_count; ++i)
+				{
+					UI_Box *item = ui_box_make(UI_BoxFlag_DrawText |
+					                           UI_BoxFlag_Clickable |
+					                           UI_BoxFlag_HotAnimation |
+					                           UI_BoxFlag_ActiveAnimation,
+					                           item_names[i]);
+					ui_box_equip_display_string(item, item_names[i]);
+
+					UI_Comm item_comm = ui_comm_from_box(item);
+					if (item_comm.hovering)
+					{
+						item->flags |= UI_BoxFlag_DrawBackground;
+					}
+					if (item_comm.clicked)
+					{
+						result = i;
+						ui_ctx_menu_close();
+					}
+				}
+			}
+		}
+	}
+
+	return(result);
+}
