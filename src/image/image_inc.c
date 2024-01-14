@@ -134,6 +134,9 @@ struct PNG_State
 	U8 bit_depth;
 	PNG_InterlaceMethod interlace_method;
 
+	U8 *palette;
+	U32 palette_size;
+
 	// NOTE(simon): Bit level reading
 	U64 bit_buffer;
 	U32 bit_count;
@@ -484,6 +487,53 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 				state->interlace_method = interlace_method;
 
 				seen_ihdr = true;
+			} break;
+			case PNG_TYPE('P', 'L', 'T', 'E'):
+			{
+				if (state->palette)
+				{
+					log_error("Duplicate 'PLTE' chunk, corrupted PNG");
+					return(false);
+				}
+
+				if (!seen_ihdr)
+				{
+					log_error("Expected 'IHDR' chunk but got 'PLTE'");
+					return(false);
+				}
+
+				if (state->first_idat)
+				{
+					log_error("'PLTE' chunk must be before the first 'IDAT' chunk, corrupted PNG");
+					return(false);
+				}
+
+				if (state->color_type == PNG_ColorType_Greyscale || state->color_type == PNG_ColorType_GreyscaleAlpha)
+				{
+					log_error("'PLTE' chunk should not be present when the color type is greyscale or greyscale + alpha, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size == 0)
+				{
+					log_error("'PLTE' chunk must contain at least one palette entry, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size % 3 != 0)
+				{
+					log_error("'PLTE' chunk size is not a multiple of 3, corrupted PNG");
+					return(false);
+				}
+
+				if (chunk.data.size / 3 > (1 << state->bit_depth))
+				{
+					log_error("'PLTE' chunk has more entries than can be represented with the specified bit depth, corrupted PNG");
+					return(false);
+				}
+
+				state->palette      = chunk.data.data;
+				state->palette_size = (U32) (chunk.data.size / 3);
 			} break;
 			case PNG_TYPE('I', 'D', 'A', 'T'):
 			{
@@ -837,30 +887,49 @@ png_paeth_predictor(S32 a, S32 b, S32 c)
 }
 
 internal B32
-png_resample_to_8bit(PNG_State *state, U8 *pixels)
+png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 {
+	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
 	{
-		// TODO(simon): Expand the indicies to 8-bit. Needs to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
-		return(false);
+		U32 bit_max = (1 << state->bit_depth) - 1;
+		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		{
+			U64 bit_position = i * state->bit_depth;
+			U64 byte_index   = bit_position / 8;
+			U64 bit_index    = bit_position % 8;
+			U8 byte          = pixels[byte_index];
+			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+			output[i] = value;
+		}
 	}
 	else if (state->bit_depth == 16)
 	{
-		U32 byte_stride = png_stride_from_color_type(state->color_type);
-		U16 *read  = (U16 *) pixels;
-		U8  *write = pixels;
+		U16 *pixels_u16 = (U16 *) pixels;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
-			U16 value = u16_big_to_local_endian(read[i]);
-			write[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+			U16 value = u16_big_to_local_endian(pixels_u16[i]);
+			output[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 		}
 	}
 	else if (state->bit_depth != 8)
 	{
-		// TODO(simon): Resample data to be 8-bit. Need to be done starting from the end.
-		log_error("Bit depth of %"PRIU8" is not supported yet", state->bit_depth);
-		return(false);
+		U32 bit_max = (1 << state->bit_depth) - 1;
+		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		{
+			U64 bit_position = i * state->bit_depth;
+			U64 byte_index   = bit_position / 8;
+			U64 bit_index    = bit_position % 8;
+			U8 byte          = pixels[byte_index];
+			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+			output[i] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+		}
+	}
+	else
+	{
+		memory_copy(output, pixels, state->width * state->height * byte_stride);
 	}
 
 	return(true);
@@ -869,7 +938,6 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels)
 internal B32
 png_expand_to_rgba(PNG_State *state, U8 *pixels)
 {
-	// TODO(simon): Expand to RGBA
 	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	U8 *read  = &pixels[(state->width * state->height - 1) * byte_stride];
 	U8 *write = &pixels[(state->width * state->height - 1) * 4];
@@ -904,9 +972,25 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		} break;
 		case PNG_ColorType_IndexedColor:
 		{
-			// TODO(simon): Change to return Void when we support all formats.
-			log_error("Indexed color is not yet supported");
-			return(false);
+			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
+			{
+				// TODO(simon): Try allowing you to always index in to the
+				// palette and check at the end of the loop. Profile!
+				U32 index = *read;
+				if (index >= state->palette_size)
+				{
+					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+					return(false);
+				}
+
+				write[3] = 0xFF;
+				write[2] = state->palette[index * 3 + 2];
+				write[1] = state->palette[index * 3 + 1];
+				write[0] = state->palette[index * 3 + 0];
+
+				read  -= byte_stride;
+				write -= 4;
+			}
 		} break;
 		case PNG_ColorType_GreyscaleAlpha:
 		{
@@ -940,6 +1024,12 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 		return(false);
 	}
 
+	if (state.color_type == PNG_ColorType_IndexedColor && !state.palette)
+	{
+		log_error("Using indexed color without a 'PLTE' chunk, corrupted PNG");
+		return(false);
+	}
+
 	state.current_node = state.first_idat;
 
 	// TODO(simon): Better approximation for the inflated stream.
@@ -964,7 +1054,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
 	U32 bit_stride = u32_round_up_to_power_of_2(state.bit_depth, 8) * png_stride_from_color_type(state.color_type);
-	U32 stride = bit_stride / 8 * state.width;
+	U32 stride = u32_round_up_to_power_of_2(state.bit_depth * png_stride_from_color_type(state.color_type) * state.width, 8) / 8;
 	for (U32 y = 0; y < state.height; ++y)
 	{
 		U8 *row = state.zlib_output + y * (1 + stride);
@@ -1037,12 +1127,13 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 		}
 	}
 
-	if (!png_resample_to_8bit(&state, unfiltered_data))
+	U8 *output = push_array(arena, U8, state.width * state.height * 4);
+	if (!png_resample_to_8bit(&state, unfiltered_data, output))
 	{
 		return(false);
 	}
 
-	if (!png_expand_to_rgba(&state, unfiltered_data))
+	if (!png_expand_to_rgba(&state, output))
 	{
 		return(false);
 	}
@@ -1050,7 +1141,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	U64 after = os_now_nanoseconds();
 	log_info("%.2fms to load PNG", (F64) (after - before) / (F64) million(1));
 
-	Render_Texture texture = render_create_texture_from_bitmap(renderer, unfiltered_data, state.width, state.height, Render_ColorSpace_sRGB);
+	Render_Texture texture = render_create_texture_from_bitmap(renderer, output, state.width, state.height, Render_ColorSpace_sRGB);
 	*texture_result = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
 
 	return(true);
