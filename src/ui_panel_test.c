@@ -203,7 +203,7 @@ ui_tab_button(Tab *tab)
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
 										  UI_BoxFlag_DrawBorder|
-										  (!ui_currently_dragging()) * UI_BoxFlag_AnimatePos,
+										  UI_BoxFlag_AnimatePos,
 										  str8_lit("TitleContainer"));
 
 	tab->box = title_container;
@@ -758,10 +758,10 @@ ui_panel(Panel *root)
 					ui_named_column(str8_lit("TabDropDownContainer"))
 					{
 						F32 corner_radius = (F32) ui_top_font_size() * 0.25f;
-						ui_spacer(ui_em(0.3f, 1));
+						ui_spacer(ui_em(0.2f, 1));
 						ui_next_icon(RENDER_ICON_LIST);
-						ui_next_width(ui_em(title_bar_height_em, 1));
-						ui_next_height(ui_em(title_bar_height_em-0.1f, 1));
+						ui_next_width(ui_em(title_bar_height_em+0.1f, 1));
+						ui_next_height(ui_em(title_bar_height_em+0.1f, 1));
 						ui_next_font_size(12);
 						ui_next_hover_cursor(Gfx_Cursor_Hand);
 						ui_next_vert_corner_radius(corner_radius, 0);
@@ -804,6 +804,61 @@ ui_panel(Panel *root)
 						}
 					}
 
+					if (root->tab_group.count)
+					{
+						ui_next_height(ui_em(title_bar_height_em, 1));
+						ui_next_width(ui_em(title_bar_height_em, 1));
+						ui_next_icon(RENDER_ICON_LEFT_OPEN);
+						ui_next_hover_cursor(Gfx_Cursor_Hand);
+						UI_Box *prev_tab_button = ui_box_make(UI_BoxFlag_Clickable |
+															  UI_BoxFlag_DrawText |
+															  UI_BoxFlag_HotAnimation |
+															  UI_BoxFlag_ActiveAnimation |
+															  UI_BoxFlag_DrawBackground,
+															  str8_lit("PrevTabButton"));
+
+						UI_Comm prev_tab_comm = ui_comm_from_box(prev_tab_button);
+						if (prev_tab_comm.pressed)
+						{
+							PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab);
+							data->panel = root;
+							if (root->tab_group.active_tab->prev)
+							{
+								data->tab = root->tab_group.active_tab->prev;
+							}
+							else
+							{
+								data->tab = root->tab_group.last;
+							}
+						}
+
+						ui_next_height(ui_em(title_bar_height_em, 1));
+						ui_next_width(ui_em(title_bar_height_em, 1));
+						ui_next_icon(RENDER_ICON_RIGHT_OPEN);
+						ui_next_hover_cursor(Gfx_Cursor_Hand);
+						UI_Box *next_tab_button = ui_box_make(UI_BoxFlag_Clickable |
+															  UI_BoxFlag_DrawText |
+															  UI_BoxFlag_HotAnimation |
+															  UI_BoxFlag_ActiveAnimation |
+															  UI_BoxFlag_DrawBackground,
+															  str8_lit("NextTabButton"));
+
+						UI_Comm next_tab_comm = ui_comm_from_box(next_tab_button);
+						if (next_tab_comm.pressed)
+						{
+							PanelSetActiveTab *data = cmd_push(&app_state->cmd_buffer, CmdKind_PanelSetActiveTab);
+							data->panel = root;
+							if (root->tab_group.active_tab->next)
+							{
+								data->tab = root->tab_group.active_tab->next;
+							}
+							else
+							{
+								data->tab = root->tab_group.first;
+							}
+						}
+
+					}
 					ui_next_height(ui_em(title_bar_height_em, 1));
 					ui_next_width(ui_em(title_bar_height_em, 1));
 					ui_next_icon(RENDER_ICON_CROSS);
