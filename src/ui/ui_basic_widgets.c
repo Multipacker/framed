@@ -211,7 +211,6 @@ ui_named_row_beginf(CStr fmt, ...)
 	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
-	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_row_beginfv(fmt, args);
 	va_end(args);
 	return(box);
@@ -261,7 +260,6 @@ ui_named_column_beginf(CStr fmt, ...)
 	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
-	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_column_beginfv(fmt, args);
 	va_end(args);
 	return(box);
