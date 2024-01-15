@@ -813,14 +813,14 @@ ui_panel(UI_Panel *root)
 									if (required_tab_bar_width > available_tab_bar_width &&
 										last_box->fixed_rect.x1 < tab_bar_rect.x1)
 									{
-										root->tab_group.overflow -= tab_bar_rect.x1 - tab_rect.x1;
+										root->tab_group.overflow -= tab_bar_rect.x1 - last_box->fixed_rect.x1;
 									}
 								}
 								else
 								{
 									B32 overflow_left  = tab_rect.x0 < tab_bar_rect.x0;
 									B32 overflow_right = tab_rect.x1 >= tab_bar_rect.x1;
-									if (available_tab_bar_width > first_box->fixed_size.x)
+									if (available_tab_bar_width > active_tab->box->fixed_size.x)
 									{
 										if (overflow_right)
 										{
@@ -831,9 +831,16 @@ ui_panel(UI_Panel *root)
 											root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
 										}
 									}
+									else
+									{
+										root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
+									}
 								}
 
-								root->tab_group.overflow = f32_clamp(0, root->tab_group.overflow, required_tab_bar_width);
+								if (root->tab_group.overflow < 0)
+								{
+									root->tab_group.overflow = 0;
+								}
 
 								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
 							}
