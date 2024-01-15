@@ -1,111 +1,112 @@
 #ifndef UI_PANEL_TEST_H
 #define UI_PANEL_TEST_H
 
-typedef enum CmdKind CmdKind;
-enum CmdKind
+#define UI_COMMAND(name) Void ui_command_##name(Void *params)
+
+
+typedef enum UI_CommandKind UI_CommandKind;
+enum UI_CommandKind
 {
-	CmdKind_TabAttach,
-	CmdKind_TabClose,
+	UI_CommandKind_TabAttach,
+	UI_CommandKind_TabClose,
 
-	CmdKind_PanelSplit,
-	CmdKind_PanelSplitAndAttach,
-	CmdKind_PanelSetActiveTab,
-	CmdKind_PanelClose,
+	UI_CommandKind_PanelSplit,
+	UI_CommandKind_PanelSplitAndAttach,
+	UI_CommandKind_PanelSetActiveTab,
+	UI_CommandKind_PanelClose,
 
-	CmdKind_WindowRemoveFromList,
-	CmdKind_WindowPushToFront,
+	UI_CommandKind_WindowRemoveFromList,
+	UI_CommandKind_WindowPushToFront,
 };
 
-typedef enum TabReleaseKind TabReleaseKind;
-enum TabReleaseKind
+typedef enum UI_TabReleaseKind UI_TabReleaseKind;
+enum UI_TabReleaseKind
 {
-	TabReleaseKind_Center,
+	UI_TabReleaseKind_Center,
+	UI_TabReleaseKind_Left,
+	UI_TabReleaseKind_Right,
+	UI_TabReleaseKind_Top,
+	UI_TabReleaseKind_Bottom,
 
-	TabReleaseKind_Left,
-	TabReleaseKind_Right,
-
-	TabReleaseKind_Top,
-	TabReleaseKind_Bottom,
-
-	TabReleaseKind_COUNT
+	UI_TabReleaseKind_COUNT
 };
 
-typedef enum DragStatus DragStatus;
-enum DragStatus
+typedef enum UI_DragStatus UI_DragStatus;
+enum UI_DragStatus
 {
-	DragStatus_Inactive,
-	DragStatus_WaitingForDragThreshold,
-	DragStatus_Dragging,
-	DragStatus_Released,
+	UI_DragStatus_Inactive,
+	UI_DragStatus_WaitingForDragThreshold,
+	UI_DragStatus_Dragging,
+	UI_DragStatus_Released,
 };
 
-typedef struct Panel Panel;
-typedef struct Tab Tab;
-typedef struct Cmd Cmd;
-typedef struct Window Window;
+typedef struct UI_Panel UI_Panel;
+typedef struct UI_Tab UI_Tab;
+typedef struct UI_Cmd UI_Cmd;
+typedef struct UI_Window UI_Window;
 
-typedef struct SplitPanelResult SplitPanelResult;
-struct SplitPanelResult
+typedef struct UI_SplitPanelResult UI_SplitPanelResult;
+struct UI_SplitPanelResult
 {
-	Panel *panels[Side_COUNT];
+	UI_Panel *panels[Side_COUNT];
 };
 
 #define UI_TAB_VIEW(name) Void name(Void *data)
 typedef UI_TAB_VIEW(UI_TabViewProc);
 
-typedef struct TabViewInfo TabViewInfo;
-struct TabViewInfo
+typedef struct UI_TabViewInfo UI_TabViewInfo;
+struct UI_TabViewInfo
 {
 	UI_TabViewProc *function;
 	Void *data;
 };
 
-typedef struct DragData DragData;
-struct DragData
+typedef struct UI_DragData UI_DragData;
+struct UI_DragData
 {
-	Tab    *tab;
-	Panel  *hovered_panel;
+	UI_Tab    *tab;
+	UI_Panel  *hovered_panel;
 	Vec2F32 drag_origin;
 };
 
-typedef struct Tab Tab;
-struct Tab
+typedef struct UI_Tab UI_Tab;
+struct UI_Tab
 {
-	Tab *next;
-	Tab *prev;
+	UI_Tab *next;
+	UI_Tab *prev;
 
 	Str8 string;
 	B32 pinned;
 
-	Panel *panel;
+	UI_Panel *panel;
 
 	UI_Box *box;
 
-	TabViewInfo view_info;
+	UI_TabViewInfo view_info;
 
 	// NOTE(hampus): For debugging
 	U64 frame_index;
 };
 
-typedef struct TabGroup TabGroup;
-struct TabGroup
+typedef struct UI_TabGroup UI_TabGroup;
+struct UI_TabGroup
 {
 	U64 count;
-	Tab *active_tab;
-	Tab *first;
-	Tab *last;
+	UI_Tab *active_tab;
+	UI_Tab *first;
+	UI_Tab *last;
 	F32 overflow;
 };
 
-typedef struct Panel Panel;
-struct Panel
+typedef struct UI_Panel UI_Panel;
+struct UI_Panel
 {
-	Panel *children[Side_COUNT];
-	Panel *sibling;
-	Panel *parent;
-	Window *window;
+	UI_Panel *children[Side_COUNT];
+	UI_Panel *sibling;
+	UI_Panel *parent;
+	UI_Window *window;
 
-	TabGroup tab_group;
+	UI_TabGroup tab_group;
 
 	Axis2 split_axis;
 	F32 pct_of_parent;
@@ -119,101 +120,101 @@ struct Panel
 	U64 frame_index;
 };
 
-typedef struct Window Window;
-struct Window
+typedef struct UI_Window UI_Window;
+struct UI_Window
 {
-	Window *next;
-	Window *prev;
+	UI_Window *next;
+	UI_Window *prev;
 
 	Vec2F32 pos;
 	Vec2F32 size;
 
-	Panel *root_panel;
+	UI_Panel *root_panel;
 
 	UI_Box *box;
 
 	Str8 string;
 };
 
-typedef struct WindowList WindowList;
-struct WindowList
+typedef struct UI_WindowList UI_WindowList;
+struct UI_WindowList
 {
-	Window *first;
-	Window *last;
+	UI_Window *first;
+	UI_Window *last;
 	U64 count;
 };
 
-typedef struct TabDelete TabDelete;
-struct TabDelete
+typedef struct UI_TabDelete UI_TabDelete;
+struct UI_TabDelete
 {
-	Tab *tab;
+	UI_Tab *tab;
 };
 
-typedef struct TabAttach TabAttach;
-struct TabAttach
+typedef struct UI_TabAttach UI_TabAttach;
+struct UI_TabAttach
 {
-	Tab   *tab;
-	Panel *panel;
+	UI_Tab   *tab;
+	UI_Panel *panel;
 	B32    set_active;
 };
 
-typedef struct PanelSplit PanelSplit;
-struct PanelSplit
+typedef struct UI_PanelSplit UI_PanelSplit;
+struct UI_PanelSplit
 {
-	Panel *panel;
+	UI_Panel *panel;
 	Axis2  axis;
 	B32 alloc_new_tab;
-	TabViewInfo tab_view_info;
+	UI_TabViewInfo tab_view_info;
 };
 
-typedef struct PanelSplitAndAttach PanelSplitAndAttach;
-struct PanelSplitAndAttach
+typedef struct UI_PanelSplitAndAttach UI_PanelSplitAndAttach;
+struct UI_PanelSplitAndAttach
 {
-	Panel *panel;
-	Tab *tab;
+	UI_Panel *panel;
+	UI_Tab *tab;
 	Axis2 axis;
 	Side panel_side;  // Which side to put this panel on
 };
 
-typedef struct PanelSetActiveTab PanelSetActiveTab;
-struct PanelSetActiveTab
+typedef struct UI_PanelSetActiveTab UI_PanelSetActiveTab;
+struct UI_PanelSetActiveTab
 {
-	Panel *panel;
-	Tab *tab;
+	UI_Panel *panel;
+	UI_Tab *tab;
 };
 
-typedef struct PanelClose PanelClose;
-struct PanelClose
+typedef struct UI_PanelClose UI_PanelClose;
+struct UI_PanelClose
 {
-	Panel *panel;
+	UI_Panel *panel;
 };
 
-typedef struct WindowRemoveFromList WindowRemoveFromList;
-struct WindowRemoveFromList
+typedef struct UI_WindowRemoveFromList UI_WindowRemoveFromList;
+struct UI_WindowRemoveFromList
 {
-	Window *window;
+	UI_Window *window;
 };
 
-typedef struct WindowPushToFront WindowPushToFront;
-struct WindowPushToFront
+typedef struct UI_WindowPushToFront UI_WindowPushToFront;
+struct UI_WindowPushToFront
 {
-	Window *window;
+	UI_Window *window;
 };
 
-typedef struct Cmd Cmd;
-struct Cmd
+typedef struct UI_Cmd UI_Cmd;
+struct UI_Cmd
 {
-	CmdKind kind;
+	UI_CommandKind kind;
 	U8 data[512];
 };
 
 #define CMD_BUFFER_SIZE 16
-typedef struct CmdBuffer CmdBuffer;
-struct CmdBuffer
+typedef struct UI_CommandBuffer UI_CommandBuffer;
+struct UI_CommandBuffer
 {
 	U64 pos;
 	U64 size;
-	Cmd *buffer;
+	UI_Cmd *buffer;
 };
 
 typedef struct AppState AppState;
@@ -225,36 +226,35 @@ struct AppState
 	U64 num_windows;
 
 	UI_Box *window_container;
-	Window *master_window;
-	Window *next_top_most_window;
+	UI_Window *master_window;
+	UI_Window *next_top_most_window;
 
-	Panel *focused_panel;
-	Panel *next_focused_panel;
+	UI_Panel *focused_panel;
+	UI_Panel *next_focused_panel;
 
-	CmdBuffer cmd_buffer;
+	UI_CommandBuffer cmd_buffer;
 
-	WindowList window_list;
+	UI_WindowList window_list;
 
-	DragStatus drag_status;
-	DragData   drag_data;
+	UI_DragStatus drag_status;
+	UI_DragData   drag_data;
 
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
 };
 
-////////////////////////////////
-//~ hampus: Panels
+UI_COMMAND(tab_close);
 
-internal Void ui_attach_tab_to_panel(Panel *panel, Tab *tab, B32 set_active);
+////////////////////////////////
+//~ hampus: UI_Panels
+
+internal Void ui_attach_tab_to_panel(UI_Panel *panel, UI_Tab *tab, B32 set_active);
 
 ////////////////////////////////
 //~ hampus: Window
 
-internal Void ui_window_reorder_to_front(Window *window);
-internal Void ui_window_push_to_front(Window *window);
-internal Void ui_window_remove_from_list(Window *window);
-
-#define UI_COMMAND(name) Void ui_command_##name(Void *params)
-UI_COMMAND(tab_close);
+internal Void ui_window_reorder_to_front(UI_Window *window);
+internal Void ui_window_push_to_front(UI_Window *window);
+internal Void ui_window_remove_from_list(UI_Window *window);
 
 #endif

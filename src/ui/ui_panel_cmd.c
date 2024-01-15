@@ -5,10 +5,10 @@ UI_COMMAND(panel_close);
 
 UI_COMMAND(tab_close)
 {
-	TabDelete *data = (TabDelete *)params;
+	UI_TabDelete *data = (UI_TabDelete *)params;
 
-	Tab *tab = data->tab;
-	Panel *panel = tab->panel;
+	UI_Tab *tab = data->tab;
+	UI_Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
 	{
 		if (tab->prev)
@@ -30,7 +30,7 @@ UI_COMMAND(tab_close)
 	tab->prev = 0;
 	if (panel->tab_group.count == 0)
 	{
-		PanelClose close =
+		UI_PanelClose close =
 		{
 			.panel = panel,
 		};
@@ -40,10 +40,10 @@ UI_COMMAND(tab_close)
 
 UI_COMMAND(tab_attach)
 {
-	TabAttach *data = (TabAttach *)params;
+	UI_TabAttach *data = (UI_TabAttach *)params;
 
-	Panel *panel = data->panel;
-	Tab *tab = data->tab;
+	UI_Panel *panel = data->panel;
+	UI_Tab *tab = data->tab;
 	dll_push_back(panel->tab_group.first, panel->tab_group.last, tab);
 	tab->panel = panel;
 	B32 set_active = panel->tab_group.count == 0 || data->set_active;
@@ -55,13 +55,13 @@ UI_COMMAND(tab_attach)
 }
 
 ////////////////////////////////
-//~ hampus: Panel commands
+//~ hampus: UI_Panel commands
 
 UI_COMMAND(panel_set_active_tab)
 {
-	PanelSetActiveTab *data = (PanelSetActiveTab *)params;
-	Panel *panel = data->panel;
-	Tab *tab = data->tab;
+	UI_PanelSetActiveTab *data = (UI_PanelSetActiveTab *)params;
+	UI_Panel *panel = data->panel;
+	UI_Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
 }
 
@@ -76,16 +76,16 @@ UI_COMMAND(panel_split)
 	//             a   b
 	//
 	// where c is ´new_parent´, and b is ´child1´
-	PanelSplit *data  = (PanelSplit *)params;
+	UI_PanelSplit *data  = (UI_PanelSplit *)params;
 	Axis2 split_axis  = data->axis;
-	Panel *child0     = data->panel;
-	Panel *child1     = ui_panel_alloc(app_state->perm_arena);
+	UI_Panel *child0     = data->panel;
+	UI_Panel *child1     = ui_panel_alloc(app_state->perm_arena);
 	child1->window = child0->window;
-	Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+	UI_Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
-	Panel *children[Side_COUNT] = {child0, child1};
+	UI_Panel *children[Side_COUNT] = {child0, child1};
 
 	// NOTE(hampus): Hook the new parent as a sibling
 	// to the panel's sibling
@@ -124,9 +124,9 @@ UI_COMMAND(panel_split)
 
 	if (data->alloc_new_tab)
 	{
-		TabViewInfo view_info = data->tab_view_info;
-		Tab *tab = ui_tab_make(app_state->perm_arena, view_info.function, view_info.data);
-		TabAttach attach =
+		UI_TabViewInfo view_info = data->tab_view_info;
+		UI_Tab *tab = ui_tab_make(app_state->perm_arena, view_info.function, view_info.data);
+		UI_TabAttach attach =
 		{
 			.tab = tab,
 			.panel = child1,
@@ -138,13 +138,13 @@ UI_COMMAND(panel_split)
 
 UI_COMMAND(panel_split_and_attach)
 {
-	PanelSplitAndAttach *data = (PanelSplitAndAttach *)params;
+	UI_PanelSplitAndAttach *data = (UI_PanelSplitAndAttach *)params;
 
 	B32 releasing_on_same_panel =
 		data->panel == data->tab->panel &&
 		data->panel->tab_group.count == 0;
 
-	PanelSplit split_data =
+	UI_PanelSplit split_data =
 	{
 		.panel      = data->panel,
 		.axis       = data->axis,
@@ -158,14 +158,14 @@ UI_COMMAND(panel_split_and_attach)
 	{
 		if (data->panel_side == Side_Max)
 		{
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], UI_Panel *);
 		}
 	}
 	else
 	{
 		if (data->panel_side == Side_Min)
 		{
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], UI_Panel *);
 		}
 	}
 
@@ -176,7 +176,7 @@ UI_COMMAND(panel_split_and_attach)
 		// on the same panel as we dragged the tab away from, and it
 		// was the last tab, we will have to allocate a new tab for the split
 		Tab *tab = ui_tab_make(app_state->perm_arena, 0, 0);
-		TabAttach attach =
+		UI_TabAttach attach =
 		{
 			.tab = tab,
 			.panel = data->panel->parent->children[side_flip(data->panel_side)],
@@ -187,9 +187,9 @@ UI_COMMAND(panel_split_and_attach)
 	}
 #endif
 
-	Panel *panel = data->panel->parent->children[data->panel_side];
+	UI_Panel *panel = data->panel->parent->children[data->panel_side];
 
-	TabAttach tab_attach_data =
+	UI_TabAttach tab_attach_data =
 	{
 		.tab        = data->tab,
 		.panel      = panel,
@@ -207,12 +207,12 @@ UI_COMMAND(panel_split_and_attach)
 
 UI_COMMAND(panel_close)
 {
-	PanelClose *data = (PanelClose *)params;
-	Panel *root = data->panel;
+	UI_PanelClose *data = (UI_PanelClose *)params;
+	UI_Panel *root = data->panel;
 	if (root->parent)
 	{
 		B32 is_first       = root->parent->children[0] == root;
-		Panel *replacement = root->sibling;
+		UI_Panel *replacement = root->sibling;
 		if (root->parent->parent)
 		{
 			if (root == app_state->focused_panel)
@@ -249,7 +249,7 @@ UI_COMMAND(panel_close)
 	}
 	else
 	{
-		Window *window = root->window;
+		UI_Window *window = root->window;
 		if (window != app_state->master_window)
 		{
 			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
@@ -259,14 +259,14 @@ UI_COMMAND(panel_close)
 
 UI_COMMAND(window_push_to_front)
 {
-	WindowPushToFront *data = params;
-	Window *window = data->window;
+	UI_WindowPushToFront *data = params;
+	UI_Window *window = data->window;
 	ui_window_push_to_front(window);
 }
 
 UI_COMMAND(window_remove_from_list)
 {
-	WindowRemoveFromList *data = params;
-	Window *window = data->window;
+	UI_WindowRemoveFromList *data = params;
+	UI_Window *window = data->window;
 	ui_window_remove_from_list(window);
 }
