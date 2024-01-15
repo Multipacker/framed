@@ -358,10 +358,10 @@ ui_ctx_menu_close(Void)
 }
 
 internal B32
-ui_ctx_menu_is_open(Void)
+ui_ctx_menu_is_open(UI_Key key)
 {
-	B32 result = ui_key_is_null(g_ui_ctx->ctx_menu_key);
-	return(!result);
+	B32 result = ui_key_match(g_ui_ctx->ctx_menu_key, key);
+	return(result);
 }
 
 internal Void
@@ -530,9 +530,8 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	g_ui_ctx->normal_root = ui_box_make(0,
 										str8_lit("NormalRoot"));
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
-
 		if (left_mouse_pressed)
 		{
 			UI_Box *ctx_menu_root = g_ui_ctx->ctx_menu_root;
@@ -1105,7 +1104,7 @@ ui_end(Void)
 	// NOTE(hampus): Root clip rect
 	ui_pop_clip_rect();
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
 		Vec2F32 anchor_pos = {0};
 		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
@@ -1180,7 +1179,7 @@ ui_comm_from_box(UI_Box *box)
 		}
 	}
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
 		// NOTE(hampus): Check to see if this box is a
 		// part of the context menu

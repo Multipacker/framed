@@ -320,6 +320,8 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 
 		ui_parent(combo_box)
 		{
+			UI_Key combo_box_key = ui_key_from_string_f(ui_key_null(), "%"PRISTR8"ComboItems", str8_expand(name));
+
 			ui_next_width(params->item_size);
 			ui_next_height(ui_text_content(1));
 			ui_next_text_align(UI_TextAlign_Left);
@@ -329,12 +331,10 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 			ui_next_height(ui_em(1, 1));
 			ui_next_width(ui_em(1, 1));
 			ui_next_font_size(12);
-			ui_next_icon(ui_ctx_menu_is_open() ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
+			ui_next_icon(ui_ctx_menu_is_open(combo_box_key) ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
 			ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 
-			UI_Key combo_box_key = ui_key_from_string(comm.box->key, str8_lit("Items"));
-
-			if (comm.clicked || (ui_ctx_menu_is_open() && comm.hovering))
+			if (comm.clicked || (ui_ctx_menu_is_open(combo_box_key) && comm.hovering))
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), combo_box_key);
 			}
