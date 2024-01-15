@@ -811,9 +811,9 @@ ui_panel(UI_Panel *root)
 									// the window width, empty space would be left on the tab
 									// bar. This just fixes that.
 									if (required_tab_bar_width > available_tab_bar_width &&
-										last_box->fixed_rect.x1 < tab_bar_rect.x1)
+										ui_box_get_fixed_rect(last_box).x1 < tab_bar_rect.x1)
 									{
-										root->tab_group.overflow -= tab_bar_rect.x1 - last_box->fixed_rect.x1;
+										root->tab_group.overflow -= tab_bar_rect.x1 - ui_box_get_fixed_rect(last_box).x1;
 									}
 								}
 								else
@@ -837,10 +837,7 @@ ui_panel(UI_Panel *root)
 									}
 								}
 
-								if (root->tab_group.overflow < 0)
-								{
-									root->tab_group.overflow = 0;
-								}
+								root->tab_group.overflow = f32_max(0, root->tab_group.overflow);
 
 								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
 							}
