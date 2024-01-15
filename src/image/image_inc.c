@@ -29,27 +29,6 @@ global U32 png_code_length_reorder[] = {
 	11, 4,  12, 3, 13, 2, 14, 1, 15
 };
 
-global U32 png_linear_alphabet[] = {
-	0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,  12,  13,  14,  15,
-	16,  17,  18,  19,  20,  21,  22,  23,  24,  25,  26,  27,  28,  29,  30,  31,
-	32,  33,  34,  35,  36,  37,  38,  39,  40,  41,  42,  43,  44,  45,  46,  47,
-	48,  49,  50,  51,  52,  53,  54,  55,  56,  57,  58,  59,  60,  61,  62,  63,
-	64,  65,  66,  67,  68,  69,  70,  71,  72,  73,  74,  75,  76,  77,  78,  79,
-	80,  81,  82,  83,  84,  85,  86,  87,  88,  89,  90,  91,  92,  93,  94,  95,
-	96,  97,  98,  99,  100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-	112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
-	128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143,
-	144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159,
-	160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175,
-	176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191,
-	192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207,
-	208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223,
-	224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
-	240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
-	256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271,
-	272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287,
-};
-
 // TODO(simon): Maybe we should store dummy value until index 257. Profile!
 // NOTE(simon): Base index is 257
 global U32 png_length_extra_bits[] = {
@@ -239,12 +218,12 @@ png_align_to_byte(PNG_State *state)
 }
 
 internal PNG_Huffman
-png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
+png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 {
 	PNG_Huffman result = { 0 };
 	result.codes   = push_array(arena, U32, count);
 	result.lengths = lengths;
-	result.values  = alphabet;
+	result.values  = push_array(arena, U32, count);
 	result.count   = count;
 
 	U32 bit_length_count[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
@@ -271,7 +250,8 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 		{
 			// NOTE(simon): The codes here have the reverse bit order of what we need.
 			U32 code = next_code_for_length[length]++;
-			result.codes[i] = u32_reverse(code) >> (32 - length);
+			result.codes[i]  = u32_reverse(code) >> (32 - length);
+			result.values[i] = i;
 		}
 	}
 
@@ -838,7 +818,7 @@ png_zlib_inflate(PNG_State *state)
 				code_length_lengths[png_code_length_reorder[i]] = (U32) png_get_bits_no_refill(state, 3);
 			}
 
-			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, array_count(png_code_length_reorder), code_length_lengths, png_linear_alphabet);
+			PNG_Huffman code_length_huffman = png_make_huffman(scratch.arena, array_count(png_code_length_reorder), code_length_lengths);
 
 			// NOTE(simon): Lengths for literals and distances are compressed together.
 			U32 *lengths          = push_array(scratch.arena, U32, hlit + hdist);
@@ -851,8 +831,8 @@ png_zlib_inflate(PNG_State *state)
 				return(false);
 			}
 
-			PNG_Huffman literal_huffman  = png_make_huffman(scratch.arena, hlit,  literal_lengths,  png_linear_alphabet);
-			PNG_Huffman distance_huffman = png_make_huffman(scratch.arena, hdist, distance_lengths, png_linear_alphabet);
+			PNG_Huffman literal_huffman  = png_make_huffman(scratch.arena, hlit,  literal_lengths);
+			PNG_Huffman distance_huffman = png_make_huffman(scratch.arena, hdist, distance_lengths);
 
 			if (!png_zlib_decode_huffman_block(state, &literal_huffman, &distance_huffman))
 			{
@@ -1068,14 +1048,14 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	{
 		fixed_lengths[i] = 8;
 	}
-	state.fixed_literal_huffman = png_make_huffman(arena, 288, fixed_lengths, png_linear_alphabet);
+	state.fixed_literal_huffman = png_make_huffman(arena, 288, fixed_lengths);
 
 	U32 fixed_distances[32];
 	for (U32 i = 0; i <= 31; ++i)
 	{
 		fixed_distances[i] = 5;
 	}
-	state.fixed_distance_huffman = png_make_huffman(arena, 32, fixed_distances, png_linear_alphabet);
+	state.fixed_distance_huffman = png_make_huffman(arena, 32, fixed_distances);
 
 	if (!png_zlib_inflate(&state))
 	{
