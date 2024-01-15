@@ -47,7 +47,7 @@ global U32 png_linear_alphabet[] = {
 	224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239,
 	240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255,
 	256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271,
-	272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285,
+	272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287,
 };
 
 // TODO(simon): Maybe we should store dummy value until index 257. Profile!
@@ -144,6 +144,8 @@ struct PNG_State
 	PNG_IDATNode *current_node;
 	U64 current_offset;
 
+	PNG_Huffman fixed_literal_huffman;
+	PNG_Huffman fixed_distance_huffman;
 	U8 *zlib_output;
 	U8 *zlib_ptr;
 	U8 *zlib_opl;
@@ -277,15 +279,15 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths, U32 *alphabet)
 }
 
 internal U32
-png_read_huffman(PNG_State *state, PNG_Huffman huffman)
+png_read_huffman(PNG_State *state, PNG_Huffman *huffman)
 {
-	for (U32 i = 0; i < huffman.count; ++i)
+	for (U32 i = 0; i < huffman->count; ++i)
 	{
-		U32 bits = (U32) png_peek_bits(state, huffman.lengths[i]);
-		if (huffman.lengths[i] && bits == huffman.codes[i])
+		U32 bits = (U32) png_peek_bits(state, huffman->lengths[i]);
+		if (huffman->lengths[i] && bits == huffman->codes[i])
 		{
-			png_consume_bits(state, huffman.lengths[i]);
-			U32 result = huffman.values[i];
+			png_consume_bits(state, huffman->lengths[i]);
+			U32 result = huffman->values[i];
 			return(result);
 		}
 	}
@@ -594,7 +596,7 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 }
 
 internal B32
-png_zlib_decode_lengths(PNG_State *state, PNG_Huffman huffman, U32 *result_lengths, U32 count)
+png_zlib_decode_lengths(PNG_State *state, PNG_Huffman *huffman, U32 *result_lengths, U32 count)
 {
 	U32 repeat_value = 0;
 	U32 repeat_count = 0;
@@ -656,6 +658,69 @@ png_zlib_decode_lengths(PNG_State *state, PNG_Huffman huffman, U32 *result_lengt
 	{
 		log_error("Too much data, corrupted PNG");
 		return(false);
+	}
+
+	return(true);
+}
+
+internal B32
+png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PNG_Huffman *distance_huffman)
+{
+	while (!png_is_end(state))
+	{
+		png_refill_bits(state, 2 * PNG_HUFFMAN_MAX_BITS + 5 + 13);
+		U32 literal = png_read_huffman(state, literal_huffman);
+
+		if (literal <= 255 && state->zlib_ptr < state->zlib_opl)
+		{
+			*state->zlib_ptr++ = (U8) literal;
+		}
+		else if (literal == 256)
+		{
+			// NOTE(simon): Normal exit
+			break;
+		}
+		else if (literal <= 285)
+		{
+			U32 length = png_length_base[literal - 257] + (U32) png_get_bits_no_refill(state, png_length_extra_bits[literal - 257]);
+			U32 distance_code = png_read_huffman(state, distance_huffman);
+			U32 distance = png_distance_base[distance_code] + (U32) png_get_bits_no_refill(state, png_distance_extra_bits[distance_code]);
+
+			// TODO(simon): Verify that no "unused" codes appear in the input stream.
+
+			if (distance > state->zlib_ptr - state->zlib_output)
+			{
+				log_error("Attempt to reference data that is outside of the ZLIB stream, corrupted PNG");
+				return(false);
+			}
+
+			if (length > state->zlib_opl - state->zlib_ptr)
+			{
+				log_error("ZLIB dynamic Huffman compressed block contains too much data, corrupted PNG");
+				return(false);
+			}
+
+			// TODO(simon): Special case for when the regions don't overlap? Profile!
+			// NOTE(simon): memory_copy will not work as the two regions might overlap.
+			for (U32 i = 0; i < length; ++i)
+			{
+				*state->zlib_ptr = *(state->zlib_ptr - distance);
+				++state->zlib_ptr;
+			}
+		}
+		else
+		{
+			log_error("ZLIB dynamic Huffman compressed block contains too much data, corruped PNG");
+			return(false);
+		}
+	}
+
+	// NOTE(simon): Because there is a check sum at the end of the ZLIB stream,
+	// the data is corrupted if we have reached the end by this point.
+	if (png_is_end(state))
+	{
+		//log_error("Not enough data in ZLIB stream, corrupted PNG");
+		//return(false);
 	}
 
 	return(true);
@@ -750,8 +815,10 @@ png_zlib_inflate(PNG_State *state)
 		else if (block_type == 1)
 		{
 			// NOTE(simon): Fixed Huffman codes
-			log_error("Fixed Huffman codes are not supported yet!");
-			return(false);
+			if (!png_zlib_decode_huffman_block(state, &state->fixed_literal_huffman, &state->fixed_distance_huffman))
+			{
+				return(false);
+			}
 		}
 		else if (block_type == 2)
 		{
@@ -778,7 +845,7 @@ png_zlib_inflate(PNG_State *state)
 			U32 *literal_lengths  = lengths;
 			U32 *distance_lengths = lengths + hlit;
 
-			if (!png_zlib_decode_lengths(state, code_length_huffman, lengths, hlit + hdist))
+			if (!png_zlib_decode_lengths(state, &code_length_huffman, lengths, hlit + hdist))
 			{
 				release_scratch(scratch);
 				return(false);
@@ -787,67 +854,13 @@ png_zlib_inflate(PNG_State *state)
 			PNG_Huffman literal_huffman  = png_make_huffman(scratch.arena, hlit,  literal_lengths,  png_linear_alphabet);
 			PNG_Huffman distance_huffman = png_make_huffman(scratch.arena, hdist, distance_lengths, png_linear_alphabet);
 
-			while (!png_is_end(state))
+			if (!png_zlib_decode_huffman_block(state, &literal_huffman, &distance_huffman))
 			{
-				png_refill_bits(state, 2 * PNG_HUFFMAN_MAX_BITS + 5 + 13);
-				U32 literal = png_read_huffman(state, literal_huffman);
-
-				if (literal <= 255 && state->zlib_ptr < state->zlib_opl)
-				{
-					*state->zlib_ptr++ = (U8) literal;
-				}
-				else if (literal == 256)
-				{
-					// NOTE(simon): Normal exit
-					break;
-				}
-				else if (literal <= 285)
-				{
-					U32 length = png_length_base[literal - 257] + (U32) png_get_bits_no_refill(state, png_length_extra_bits[literal - 257]);
-					U32 distance_code = png_read_huffman(state, distance_huffman);
-					U32 distance = png_distance_base[distance_code] + (U32) png_get_bits_no_refill(state, png_distance_extra_bits[distance_code]);
-
-					// TODO(simon): Verify that no "unused" codes appear in the input stream.
-
-					if (distance > state->zlib_ptr - state->zlib_output)
-					{
-						release_scratch(scratch);
-						log_error("Attempt to reference data that is outside of the ZLIB stream, corrupted PNG");
-						return(false);
-					}
-
-					if (length > state->zlib_opl - state->zlib_ptr)
-					{
-						release_scratch(scratch);
-						log_error("ZLIB dynamic Huffman compressed block contains too much data, corrupted PNG");
-						return(false);
-					}
-
-					// TODO(simon): Special case for when the regions don't overlap? Profile!
-					// NOTE(simon): memory_copy will not work as the two regions might overlap.
-					for (U32 i = 0; i < length; ++i)
-					{
-						*state->zlib_ptr = *(state->zlib_ptr - distance);
-						++state->zlib_ptr;
-					}
-				}
-				else
-				{
-					release_scratch(scratch);
-					log_error("ZLIB dynamic Huffman compressed block contains too much data, corruped PNG");
-					return(false);
-				}
+				release_scratch(scratch);
+				return(false);
 			}
 
 			release_scratch(scratch);
-
-			// NOTE(simon): Because there is a check sum at the end of the ZLIB stream,
-			// the data is corrupted if we have reached the end by this point.
-			if (png_is_end(state))
-			{
-				//log_error("Not enough data in ZLIB stream, corrupted PNG");
-				//return(false);
-			}
 		}
 		else
 		{
@@ -1037,6 +1050,32 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	state.zlib_output = push_array(arena, U8, inflated_size);
 	state.zlib_ptr = state.zlib_output;
 	state.zlib_opl = state.zlib_ptr + inflated_size;
+
+	U32 fixed_lengths[288];
+	for (U32 i = 0; i <= 143; ++i)
+	{
+		fixed_lengths[i] = 8;
+	}
+	for (U32 i = 144; i <= 255; ++i)
+	{
+		fixed_lengths[i] = 9;
+	}
+	for (U32 i = 256; i <= 279; ++i)
+	{
+		fixed_lengths[i] = 7;
+	}
+	for (U32 i = 280; i <= 287; ++i)
+	{
+		fixed_lengths[i] = 8;
+	}
+	state.fixed_literal_huffman = png_make_huffman(arena, 288, fixed_lengths, png_linear_alphabet);
+
+	U32 fixed_distances[32];
+	for (U32 i = 0; i <= 31; ++i)
+	{
+		fixed_distances[i] = 5;
+	}
+	state.fixed_distance_huffman = png_make_huffman(arena, 32, fixed_distances, png_linear_alphabet);
 
 	if (!png_zlib_inflate(&state))
 	{
