@@ -899,7 +899,7 @@ ui_layout(UI_Box *root)
 }
 
 internal Vec2F32
-ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align)
+ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
 {
 	Vec2F32 result = {0};
 
@@ -917,13 +917,13 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 		case UI_TextAlign_Right:
 		{
 			result.y = (rect_dim.y - text_dim.y) / 2;
-			result.x = rect_dim.x - text_dim.x;
+			result.x = rect_dim.x - text_dim.x - padding.width / 2;
 		} break;
 
 		case UI_TextAlign_Left:
 		{
 			result.y = (rect_dim.y - text_dim.y) / 2;
-			result.x = 0;
+			result.x = padding.width / 2;
 		} break;
 
 		invalid_case;
@@ -1073,7 +1073,7 @@ ui_draw(UI_Box *root)
 			}
 			else
 			{
-				Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align);
+				Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 				render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 			}
 		}
