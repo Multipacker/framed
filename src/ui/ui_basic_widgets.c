@@ -300,7 +300,17 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 
 		ui_parent(combo_box)
 		{
-			ui_text(item_names[selected_index]);
+			F32 largest_width = 0.0f;
+			Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_top_text_style()->font);
+			for (U32 i = 0; i < item_count; ++i)
+			{
+				Vec2F32 size = render_measure_text(font, item_names[i]);
+				largest_width = f32_max(largest_width, size.width);
+			}
+			ui_next_width(ui_pixels(largest_width + ui_top_text_style()->padding.width, 1));
+			ui_next_height(ui_text_content(1));
+			UI_Box *display = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+			ui_box_equip_display_string(display, item_names[selected_index]);
 
 			ui_next_height(ui_em(1, 1));
 			ui_next_width(ui_em(1, 1));
@@ -316,6 +326,8 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 			}
 
 			ui_ctx_menu(combo_box_key)
+			  ui_width(ui_pixels(combo_box->fixed_size.width, 1))
+			  ui_text_align(UI_TextAlign_Left)
 			{
 				for (U32 i = 0; i < item_count; ++i)
 				{
