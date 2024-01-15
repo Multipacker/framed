@@ -14,6 +14,7 @@
 //
 // [ ] @feature Only change panel focus with mouse presses
 // [ ] @code @feature UI startup builder
+// [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -769,6 +770,8 @@ ui_panel(UI_Panel *root)
 						}
 					}
 
+					ui_spacer(ui_em(d_em, 1));
+
 					//- hampus: Tab buttons
 
 					B32 tab_overflow = false;
@@ -778,13 +781,14 @@ ui_panel(UI_Panel *root)
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
 					UI_Box *tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
+						// TODO(hampus): This is whack as hell. Cleanup!
 						if (root->tab_group.count)
 						{
 							UI_Tab *active_tab = root->tab_group.active_tab;
 							if (active_tab->box)
 							{
 								RectF32 tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
-								RectF32 tab_bar_rect = ui_box_get_fixed_rect(tabs_container);
+								RectF32 tab_bar_rect = tabs_container->fixed_rect;
 
 								B32 overflow_left  = tab_rect.x0 < tab_bar_rect.x0;
 								B32 overflow_right = tab_rect.x1 >= tab_bar_rect.x1;
@@ -796,6 +800,28 @@ ui_panel(UI_Panel *root)
 								else if (overflow_left)
 								{
 									root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
+								}
+
+								UI_Box *first_box = root->tab_group.first->box;
+								UI_Box *last_box = root->tab_group.last->box;
+
+								if (first_box && last_box)
+								{
+									RectF32 first_rect = ui_box_get_fixed_rect(first_box);
+									RectF32 last_rect  = ui_box_get_fixed_rect(last_box);
+									if ((last_rect.x1 - first_rect.x0) < tabs_container->fixed_size.x)
+									{
+										root->tab_group.overflow = 0;
+									}
+								}
+								else
+								{
+									root->tab_group.overflow = 0;
+								}
+
+								if (root->tab_group.overflow < 0)
+								{
+									root->tab_group.overflow = 0;
 								}
 
 								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
@@ -829,7 +855,7 @@ ui_panel(UI_Panel *root)
 					}
 					ui_named_row_end();
 
-					if (root->tab_group.count && tab_overflow)
+					if (tab_overflow)
 					{
 						ui_next_height(ui_em(title_bar_height_em, 1));
 						ui_next_width(ui_em(title_bar_height_em, 1));

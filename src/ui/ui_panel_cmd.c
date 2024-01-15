@@ -28,6 +28,7 @@ UI_COMMAND(tab_close)
 	panel->tab_group.count--;
 	tab->next = 0;
 	tab->prev = 0;
+	panel->tab_group.overflow -= tab->box->fixed_size.x;
 	if (panel->tab_group.count == 0)
 	{
 		UI_PanelClose close =
