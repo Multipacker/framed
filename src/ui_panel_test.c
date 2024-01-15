@@ -1482,7 +1482,7 @@ os_main(Str8List arguments)
 
 			if (comm.hovering)
 			{
-				if (ui_ctx_menu_is_open())
+				if (ui_ctx_menu_is_open(my_ctx_menu))
 				{
 					ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 				}
@@ -1496,7 +1496,7 @@ os_main(Str8List arguments)
 
 			if (comm2.hovering)
 			{
-				if (ui_ctx_menu_is_open())
+				if (ui_ctx_menu_is_open(my_ctx_menu2))
 				{
 					ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
 				}

@@ -369,10 +369,10 @@ ui_ctx_menu_close(Void)
 }
 
 internal B32
-ui_ctx_menu_is_open(Void)
+ui_ctx_menu_is_open(UI_Key key)
 {
-	B32 result = ui_key_is_null(g_ui_ctx->ctx_menu_key);
-	return(!result);
+	B32 result = ui_key_match(g_ui_ctx->ctx_menu_key, key);
+	return(result);
 }
 
 internal Void
@@ -541,9 +541,8 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	g_ui_ctx->normal_root = ui_box_make(0,
 										str8_lit("NormalRoot"));
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
-
 		if (left_mouse_pressed)
 		{
 			UI_Box *ctx_menu_root = g_ui_ctx->ctx_menu_root;
@@ -907,7 +906,7 @@ ui_layout(UI_Box *root)
 }
 
 internal Vec2F32
-ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align)
+ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
 {
 	Vec2F32 result = {0};
 
@@ -925,13 +924,13 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 		case UI_TextAlign_Right:
 		{
 			result.y = (rect_dim.y - text_dim.y) / 2;
-			result.x = rect_dim.x - text_dim.x;
+			result.x = rect_dim.x - text_dim.x - padding.width / 2;
 		} break;
 
 		case UI_TextAlign_Left:
 		{
 			result.y = (rect_dim.y - text_dim.y) / 2;
-			result.x = 0;
+			result.x = padding.width / 2;
 		} break;
 
 		invalid_case;
@@ -1081,7 +1080,7 @@ ui_draw(UI_Box *root)
 			}
 			else
 			{
-				Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align);
+				Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 				render_text_internal(g_ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 			}
 		}
@@ -1113,7 +1112,7 @@ ui_end(Void)
 	// NOTE(hampus): Root clip rect
 	ui_pop_clip_rect();
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
 		Vec2F32 anchor_pos = {0};
 		if (!ui_key_is_null(g_ui_ctx->ctx_menu_anchor_key))
@@ -1188,7 +1187,7 @@ ui_comm_from_box(UI_Box *box)
 		}
 	}
 
-	if (ui_ctx_menu_is_open())
+	if (!ui_key_is_null(g_ui_ctx->ctx_menu_key))
 	{
 		// NOTE(hampus): Check to see if this box is a
 		// part of the context menu

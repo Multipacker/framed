@@ -4,8 +4,6 @@ internal Void
 ui_texture_view(Render_TextureSlice atlas)
 {
 	ui_next_child_layout_axis(Axis2_X);
-	ui_next_width(ui_fill());
-	ui_next_height(ui_fill());
 	UI_Box *texture_viewer = ui_box_make(0, str8_lit(""));
 
 	ui_parent(texture_viewer)
@@ -57,7 +55,7 @@ ui_texture_view(Render_TextureSlice atlas)
 				[Render_TextureFilter_Nearest]  = str8_lit("Nearest"),
 			};
 
-			texture_view_ui_filtering_mode = ui_combo_box(str8_lit("Filtering:"), texture_view_ui_filtering_mode, names, array_count(names));
+			ui_combo_box(str8_lit("Filtering:"), &texture_view_ui_filtering_mode, names, array_count(names));
 		}
 	}
 }

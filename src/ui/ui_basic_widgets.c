@@ -278,10 +278,30 @@ ui_column_end(Void)
 	ui_named_column_end();
 }
 
-internal U32
-ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
+typedef struct UI_ComboBoxParams UI_ComboBoxParams;
+struct UI_ComboBoxParams
 {
-	U32 result = selected_index;
+	UI_Size item_size;
+};
+#define ui_combo_box(name, selected_index, item_names, item_count, ...) ui_combo_box_internal(name, selected_index, item_names, item_count, &(UI_ComboBoxParams) { 0, __VA_ARGS__ });
+
+// TODO(simon): Maybe we only want to return true if the value changes.
+	internal B32
+ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count, UI_ComboBoxParams *params)
+{
+	B32 result = false;
+
+	if (params->item_size.kind == UI_SizeKind_Null)
+	{
+		F32 largest_width = 0.0f;
+		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_top_text_style()->font);
+		for (U32 i = 0; i < item_count; ++i)
+		{
+			Vec2F32 size = render_measure_text(font, item_names[i]);
+			largest_width = f32_max(largest_width, size.width);
+		}
+		params->item_size = ui_pixels(largest_width + ui_top_text_style()->padding.width, 1);
+	}
 
 	ui_row()
 	{
@@ -300,22 +320,28 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 
 		ui_parent(combo_box)
 		{
-			ui_text(item_names[selected_index]);
+			UI_Key combo_box_key = ui_key_from_string_f(ui_key_null(), "%"PRISTR8"ComboItems", str8_expand(name));
+
+			ui_next_width(params->item_size);
+			ui_next_height(ui_text_content(1));
+			ui_next_text_align(UI_TextAlign_Left);
+			UI_Box *display = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+			ui_box_equip_display_string(display, item_names[*selected_index]);
 
 			ui_next_height(ui_em(1, 1));
 			ui_next_width(ui_em(1, 1));
 			ui_next_font_size(12);
-			ui_next_icon(ui_ctx_menu_is_open() ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
+			ui_next_icon(ui_ctx_menu_is_open(combo_box_key) ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
 			ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 
-			UI_Key combo_box_key = ui_key_from_string(comm.box->key, str8_lit("Items"));
-
-			if (comm.clicked || (ui_ctx_menu_is_open() && comm.hovering))
+			if (comm.clicked || (ui_ctx_menu_is_open(combo_box_key) && comm.hovering))
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), combo_box_key);
 			}
 
 			ui_ctx_menu(combo_box_key)
+			  ui_width(ui_pixels(combo_box->fixed_size.width, 1))
+			  ui_text_align(UI_TextAlign_Left)
 			{
 				for (U32 i = 0; i < item_count; ++i)
 				{
@@ -333,7 +359,8 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 					}
 					if (item_comm.clicked)
 					{
-						result = i;
+						result = true;
+						*selected_index = i;
 						ui_ctx_menu_close();
 					}
 				}

@@ -892,7 +892,7 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
 	{
-		U32 bit_max = (1 << state->bit_depth) - 1;
+		U32 bit_max = (1U << state->bit_depth) - 1;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
 			U64 bit_position = i * state->bit_depth;
@@ -915,7 +915,7 @@ png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	}
 	else if (state->bit_depth != 8)
 	{
-		U32 bit_max = (1 << state->bit_depth) - 1;
+		U32 bit_max = (1U << state->bit_depth) - 1;
 		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
 		{
 			U64 bit_position = i * state->bit_depth;
