@@ -278,10 +278,11 @@ ui_column_end(Void)
 	ui_named_column_end();
 }
 
-internal U32
-ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
+// TODO(simon): Maybe we only want to return true if the value changes.
+internal B32
+ui_combo_box(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count)
 {
-	U32 result = selected_index;
+	B32 result = false;
 
 	ui_row()
 	{
@@ -310,7 +311,7 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 			ui_next_width(ui_pixels(largest_width + ui_top_text_style()->padding.width, 1));
 			ui_next_height(ui_text_content(1));
 			UI_Box *display = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
-			ui_box_equip_display_string(display, item_names[selected_index]);
+			ui_box_equip_display_string(display, item_names[*selected_index]);
 
 			ui_next_height(ui_em(1, 1));
 			ui_next_width(ui_em(1, 1));
@@ -345,7 +346,8 @@ ui_combo_box(Str8 name, U32 selected_index, Str8 *item_names, U32 item_count)
 					}
 					if (item_comm.clicked)
 					{
-						result = i;
+						result = true;
+						*selected_index = i;
 						ui_ctx_menu_close();
 					}
 				}
