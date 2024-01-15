@@ -14,6 +14,17 @@
 
 global UI_Context *g_ui_ctx;
 
+internal RectF32
+ui_box_get_fixed_rect(UI_Box *box)
+{
+	RectF32 result = {0};
+	result.x0 = box->fixed_rect.x0 + box->rel_pos.x - box->rel_pos_animated.x;
+	result.x1 = box->fixed_rect.x1 + box->rel_pos.x - box->rel_pos_animated.x;
+	result.y0 = box->fixed_rect.y0 + box->rel_pos.y - box->rel_pos_animated.y;
+	result.y1 = box->fixed_rect.y1 + box->rel_pos.y - box->rel_pos_animated.y;
+	return(result);
+}
+
 internal B32
 ui_box_created_this_frame(UI_Box *box)
 {
