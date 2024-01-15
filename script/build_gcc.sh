@@ -4,7 +4,7 @@ mode=${1:-debug}
 
 mkdir -p build
 
-src_files="src/ui_panel_test.c"
+src_files="src/profiler/profiler_main.c"
 errors="-Werror -Wall -Wextra -Wno-missing-braces -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable -Wconversion -Wno-comment"
 common_flags="-Isrc -Ivendor -o build/out -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-fuse-ld=mold -lm -lSDL2 build/freetype/freetype"
