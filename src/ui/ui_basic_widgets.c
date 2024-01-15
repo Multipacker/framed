@@ -278,11 +278,30 @@ ui_column_end(Void)
 	ui_named_column_end();
 }
 
+typedef struct UI_ComboBoxParams UI_ComboBoxParams;
+struct UI_ComboBoxParams
+{
+	UI_Size item_size;
+};
+#define ui_combo_box(name, selected_index, item_names, item_count, ...) ui_combo_box_internal(name, selected_index, item_names, item_count, &(UI_ComboBoxParams) { 0, __VA_ARGS__ });
+
 // TODO(simon): Maybe we only want to return true if the value changes.
-internal B32
-ui_combo_box(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count)
+	internal B32
+ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count, UI_ComboBoxParams *params)
 {
 	B32 result = false;
+
+	if (params->item_size.kind == UI_SizeKind_Null)
+	{
+		F32 largest_width = 0.0f;
+		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_top_text_style()->font);
+		for (U32 i = 0; i < item_count; ++i)
+		{
+			Vec2F32 size = render_measure_text(font, item_names[i]);
+			largest_width = f32_max(largest_width, size.width);
+		}
+		params->item_size = ui_pixels(largest_width + ui_top_text_style()->padding.width, 1);
+	}
 
 	ui_row()
 	{
@@ -301,15 +320,9 @@ ui_combo_box(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count)
 
 		ui_parent(combo_box)
 		{
-			F32 largest_width = 0.0f;
-			Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_top_text_style()->font);
-			for (U32 i = 0; i < item_count; ++i)
-			{
-				Vec2F32 size = render_measure_text(font, item_names[i]);
-				largest_width = f32_max(largest_width, size.width);
-			}
-			ui_next_width(ui_pixels(largest_width + ui_top_text_style()->padding.width, 1));
+			ui_next_width(params->item_size);
 			ui_next_height(ui_text_content(1));
+			ui_next_text_align(UI_TextAlign_Left);
 			UI_Box *display = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 			ui_box_equip_display_string(display, item_names[*selected_index]);
 
