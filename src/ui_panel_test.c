@@ -1,21 +1,29 @@
 ////////////////////////////////
-//~ hampus: TODO
+//~ hampus: Short term
+//
+// [ ] @feature Tabs
+//  [ ] @feature Removing tabs to the right should bring in tabs from the left
+//  [ ] @feature Reordering
+//  [ ] @feature Scroll tabs horizontally if there are too many to fit
+//                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
+//  [ ] @feature Rename tabs
+//  [ ] @bug Tab dropdown menu is slightly off from the anchor
 
-// @feature [ ] - Tab dropdown menu
+////////////////////////////////
+//~ hampus: Medium term
+//
+// [ ] @feature Only change panel focus with mouse presses
+// [ ] @code @feature UI startup builder
 
-// @bug [ ] - Close button is rendered even though the tab is outside tab bar
-//          - Solved by removing the clip box flag, but this shouldn't solve it
-
-// @feature [ ] - Scroll tabs horizontally if there are too many to fit
-// @feature [ ] - Move around windows that have multiple panels
-
-// @feature [ ] - Reorder tabs
-// @feature [ ] - Be able to pin windows which disables closing
-// @bug [ ] - The user can drop a panel on the menu bar which will hide the tab bar
-// @cleanup [ ] - UI commands. Discriminated unions instead of data array?
-// @feature [ ] - UI startup builder
-
-// @feature [ ] - Only change panel focus with mouse presses
+////////////////////////////////
+//~ hampus: Long term
+//
+// [ ] @bug Close button is rendered even though the tab is outside tab bar
+//            - Solved by removing the clip box flag, but this shouldn't solve it
+// [ ] @feature Move around windows that have multiple panels
+// [ ] @feature Be able to pin windows which disables closing
+// [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
+// [ ] @code @cleanup UI commands. Discriminated unions instead of data array?
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
