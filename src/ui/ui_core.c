@@ -615,10 +615,7 @@ ui_em(F32 value, F32 strictness)
 internal UI_Size
 ui_fill(Void)
 {
-	UI_Size result = {0};
-	result.kind = UI_SizeKind_Pct;
-	result.value = 1;
-	result.strictness = 0;
+	UI_Size result = ui_pct(1, 0);
 	return(result);
 }
 
