@@ -781,6 +781,7 @@ ui_panel(UI_Panel *root)
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
 					UI_Box *tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
+
 						// TODO(hampus): This is whack as hell. Cleanup!
 						if (root->tab_group.count)
 						{
@@ -790,39 +791,49 @@ ui_panel(UI_Panel *root)
 								RectF32 tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
 								RectF32 tab_bar_rect = tabs_container->fixed_rect;
 
-								B32 overflow_left  = tab_rect.x0 < tab_bar_rect.x0;
-								B32 overflow_right = tab_rect.x1 >= tab_bar_rect.x1;
-
-								if (overflow_right)
-								{
-									root->tab_group.overflow += tab_rect.x1 - tab_bar_rect.x1;
-								}
-								else if (overflow_left)
-								{
-									root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
-								}
-
 								UI_Box *first_box = root->tab_group.first->box;
 								UI_Box *last_box = root->tab_group.last->box;
 
+								F32 available_tab_bar_width = tabs_container->fixed_size.x;
+								F32 required_tab_bar_width = first_box->fixed_size.x;
+
 								if (first_box && last_box)
 								{
-									RectF32 first_rect = ui_box_get_fixed_rect(first_box);
-									RectF32 last_rect  = ui_box_get_fixed_rect(last_box);
-									if ((last_rect.x1 - first_rect.x0) < tabs_container->fixed_size.x)
+									required_tab_bar_width = (last_box->fixed_rect.x1 - first_box->fixed_rect.x0);
+								}
+
+								B32 active_tab_is_visible = tab_rect.x0 >= tab_bar_rect.x0 && tab_rect.x1 < tab_bar_rect.x1;
+								if (active_tab_is_visible)
+								{
+									// NOTE(hampus): Are we able to push new tabs onto
+									// the tab bar? This would typically be the case
+									// if we reduce the window width, and then enlarge
+									// the window width, empty space would be left on the tab
+									// bar. This just fixes that.
+									if (required_tab_bar_width > available_tab_bar_width &&
+										last_box->fixed_rect.x1 < tab_bar_rect.x1)
 									{
-										root->tab_group.overflow = 0;
+										root->tab_group.overflow -= tab_bar_rect.x1 - tab_rect.x1;
 									}
 								}
 								else
 								{
-									root->tab_group.overflow = 0;
+									B32 overflow_left  = tab_rect.x0 < tab_bar_rect.x0;
+									B32 overflow_right = tab_rect.x1 >= tab_bar_rect.x1;
+									if (available_tab_bar_width > first_box->fixed_size.x)
+									{
+										if (overflow_right)
+										{
+											root->tab_group.overflow += tab_rect.x1 - tab_bar_rect.x1;
+										}
+										else if (overflow_left)
+										{
+											root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
+										}
+									}
 								}
 
-								if (root->tab_group.overflow < 0)
-								{
-									root->tab_group.overflow = 0;
-								}
+								root->tab_group.overflow = f32_clamp(0, root->tab_group.overflow, required_tab_bar_width);
 
 								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
 							}
@@ -843,6 +854,9 @@ ui_panel(UI_Panel *root)
 							{
 								ui_spacer(ui_em(d_em, 1));
 								UI_Box *tab_box = ui_tab_button(tab);
+								// TODO(hampus): Optimize this. We can do this by
+								// only checking if last_box.rect.x1 - first_box.rect.x0
+								// is greater then the tab bar width.
 								if ((tab_box->fixed_rect.x0 < tabs_container->fixed_rect.x0 ||
 									 tab_box->fixed_rect.x1 >= tabs_container->fixed_rect.x1) &&
 									!ui_box_created_this_frame(tab_box))
