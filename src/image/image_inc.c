@@ -1008,19 +1008,24 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 }
 
 internal B32
-png_deinterlace_and_defilter(PNG_State *state, U8 *output)
+png_unfilter(PNG_State *state, U8 *result)
 {
 	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * png_stride_from_color_type(state->color_type);
 	U32 stride = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * state->width, 8) / 8;
 
+	U8 *input  = state->zlib_output;
+	U8 *output = result;
+
 	for (U32 y = 0; y < state->height; ++y)
 	{
-		U8 *row = state->zlib_output + y * (1 + stride);
-		U8 filter_type = *row++;
+		U8 filter_type = *input++;
+
 		if (filter_type == 0 || (filter_type == 2 && y == 0))
 		{
 			// NOTE(simon): No filtering and up filtering at y == 0
-			memory_copy(&output[y * stride], row, stride);
+			memory_copy(output, input, stride);
+			input  += stride;
+			output += stride;
 		}
 		else if (filter_type == 1)
 		{
@@ -1028,19 +1033,27 @@ png_deinterlace_and_defilter(PNG_State *state, U8 *output)
 			U64 previous = 0;
 			for (U32 x = 0; x < stride; ++x)
 			{
-				U8 new_value = row[x] + (U8) (previous >> (bit_stride - 8));
-				output[x + y * stride] = new_value;
+				U8 a = (U8) (previous >> (bit_stride - 8));
+				U8 xx = *input++;
+
+				U8 new_value = xx + a;
+				*output++ = new_value;
+
 				previous = previous << 8 | new_value;
 			}
 		}
 		else if (filter_type == 2)
 		{
 			// NOTE(simon): Up filter at y != 0
-			U8 *previous_scanline = &output[(y - 1) * stride];
+			U8 *previous_scanline = output - stride;
 			for (U32 x = 0; x < stride; ++x)
 			{
-				U8 new_value = row[x] + *previous_scanline;
-				output[x + y * stride] = new_value;
+				U8 b = *previous_scanline;
+				U8 xx = *input++;
+
+				U8 new_value = xx + b;
+				*output++ = new_value;
+
 				++previous_scanline;
 			}
 		}
@@ -1048,13 +1061,17 @@ png_deinterlace_and_defilter(PNG_State *state, U8 *output)
 		{
 			// NOTE(simon): Average filter
 			U8 zero = 0;
-			U8 *previous_scanline = (y == 0 ? &zero : &output[(y - 1) * stride]);
+			U8 *previous_scanline = (y == 0 ? &zero : output - stride);
 			U64 previous = 0;
 			for (U32 x = 0; x < stride; ++x)
 			{
-				U8 previous_value = (U8) (previous >> (bit_stride - 8));
-				U8 new_value = (U8) (row[x] + (previous_value + *previous_scanline) / 2);
-				output[x + y * stride] = new_value;
+				U8 a = (U8) (previous >> (bit_stride - 8));
+				U8 b = *previous_scanline;
+				U8 xx = *input++;
+
+				U8 new_value = (U8) (xx + (a + b) / 2);
+				*output++ = new_value;
+
 				previous_scanline += (y != 0);
 				previous = previous << 8 | new_value;
 			}
@@ -1063,17 +1080,20 @@ png_deinterlace_and_defilter(PNG_State *state, U8 *output)
 		{
 			// NOTE(simon): Paeth filter
 			U8 zero = 0;
-			U8 *previous_scanline = (y == 0 ? &zero : &output[(y - 1) * stride]);
+			U8 *previous_scanline = (y == 0 ? &zero : output - stride);
 			U64 previous_scanline_previous = 0;
 			U64 previous = 0;
 			for (U32 x = 0; x < stride; ++x)
 			{
-				U8 previous_value = (U8) (previous >> (bit_stride - 8));
-				U8 previous_scanline_previous_value = (U8) (previous_scanline_previous >> (bit_stride - 8));
-				U8 new_value = row[x] + png_paeth_predictor(previous_value, *previous_scanline, previous_scanline_previous_value);
-				output[x + y * stride] = new_value;
+				U8 a = (U8) (previous >> (bit_stride - 8));
+				U8 b = *previous_scanline;
+				U8 c = (U8) (previous_scanline_previous >> (bit_stride - 8));
+				U8 xx = *input++;
 
-				previous_scanline_previous = previous_scanline_previous << 8 | *previous_scanline;
+				U8 new_value = xx + png_paeth_predictor(a, b, c);
+				*output++ = new_value;
+
+				previous_scanline_previous = previous_scanline_previous << 8 | b;
 				previous_scanline += (y != 0);
 				previous = previous << 8 | new_value;
 			}
@@ -1153,7 +1173,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	// TODO(simon): Better approximation for the unfiltered data
 	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
-	if (!png_deinterlace_and_defilter(&state, unfiltered_data))
+	if (!png_unfilter(&state, unfiltered_data))
 	{
 		return(false);
 	}
