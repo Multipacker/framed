@@ -90,7 +90,7 @@ os_main(Str8List arguments)
 			{
 				UI_TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_logger, 0),
+					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_logger, 0, str8_lit("Log")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				ui_command_tab_attach(&attach);
@@ -99,7 +99,7 @@ os_main(Str8List arguments)
 			{
 				UI_TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, 0, 0),
+					.tab = ui_tab_make(app_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				ui_command_tab_attach(&attach);

@@ -122,19 +122,6 @@ UI_COMMAND(panel_split)
 	{
 		child0->window->root_panel = new_parent;
 	}
-
-	if (data->alloc_new_tab)
-	{
-		UI_TabViewInfo view_info = data->tab_view_info;
-		UI_Tab *tab = ui_tab_make(app_state->perm_arena, view_info.function, view_info.data);
-		UI_TabAttach attach =
-		{
-			.tab = tab,
-			.panel = child1,
-			.set_active = true,
-		};
-		ui_command_tab_attach(&attach);
-	}
 }
 
 UI_COMMAND(panel_split_and_attach)

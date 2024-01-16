@@ -2,21 +2,23 @@
 //~ hampus: Short term
 //
 // [ ] @feature Tabs
+//  [x] @feature Name tabs
 //  [ ] @feature Reordering
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
-//  [ ] @feature Rename tabs
 //  [ ] @bug Tab dropdown menu is slightly off from the anchor
+//  [ ] @code @feature UI startup builder
 
 ////////////////////////////////
 //~ hampus: Medium term
 //
 // [ ] @feature Only change panel focus with mouse presses
-// [ ] @code @feature UI startup builder
 // [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
-// [ ] @bug Resizing with tab animation doesn't look perfect right now.
-// [ ] @bug Decreasing panel size and then increase it again should not drag in
-//          from the right first.
+//
+// [ ] @feature Finish tab offseting
+//  [ ] @bug Resizing with tab animation doesn't look perfect right now.
+//  [ ] @bug Decreasing panel size and then increase it again should not drag in
+//           tabs from the right first.
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -104,8 +106,6 @@ internal UI_Tab *
 ui_tab_alloc(Arena *arena)
 {
 	UI_Tab *result = push_struct(arena, UI_Tab);
-	result->string = str8_pushf(app_state->perm_arena, "Tab%"PRIS32, app_state->num_tabs);
-	app_state->num_tabs++;
 	return(result);
 }
 
@@ -117,9 +117,20 @@ ui_tab_equip_view_info(UI_Tab *tab, UI_TabViewInfo view_info)
 
 UI_TAB_VIEW(ui_tab_view_default);
 internal UI_Tab *
-ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data)
+ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data, Str8 name)
 {
 	UI_Tab *result = ui_tab_alloc(arena);
+	if (name.size == 0)
+	{
+		// NOTE(hampus): We probably won't do this in the future because
+		// you won't probably be able to have unnamed tabs.
+		result->string = str8_pushf(app_state->perm_arena, "Tab%"PRIS32, app_state->num_tabs);
+	}
+	else
+	{
+		result->string = str8_copy(app_state->perm_arena, name);
+	}
+	// TODO(hampus): Check for name collision with other tabs
 	UI_TabViewInfo view_info = {function, data};
 	ui_tab_equip_view_info(result, view_info);
 	if (!function)
@@ -128,6 +139,7 @@ ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data)
 		result->view_info.function = ui_tab_view_default;
 		result->view_info.data = result;
 	}
+	app_state->num_tabs++;
 	return(result);
 }
 
@@ -331,7 +343,6 @@ ui_panel_split(UI_Panel *first, Axis2 split_axis)
 	UI_PanelSplit *data = ui_command_push(&app_state->cmd_buffer, UI_CommandKind_PanelSplit);
 	data->panel = first;
 	data->axis = split_axis;
-	data->alloc_new_tab = true;
 }
 
 internal B32
@@ -1275,7 +1286,7 @@ UI_TAB_VIEW(ui_tab_view_default)
 			ui_spacer(ui_em(0.5f, 1));
 			if (ui_button(str8_lit("Add tab")).pressed)
 			{
-				UI_Tab *new_tab = ui_tab_make(app_state->perm_arena, 0, 0);
+				UI_Tab *new_tab = ui_tab_make(app_state->perm_arena, 0, 0, str8_lit(""));
 				UI_TabAttach *tab_attach_data = ui_command_push(&app_state->cmd_buffer, UI_CommandKind_TabAttach);
 				tab_attach_data->tab = new_tab;
 				tab_attach_data->panel = panel;

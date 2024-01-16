@@ -163,7 +163,6 @@ struct UI_PanelSplit
 {
 	UI_Panel *panel;
 	Axis2  axis;
-	B32 alloc_new_tab;
 	UI_TabViewInfo tab_view_info;
 };
 
