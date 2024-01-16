@@ -692,7 +692,7 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 
 			if (length > state->zlib_opl - state->zlib_ptr)
 			{
-				log_error("ZLIB dynamic Huffman compressed block contains too much data, corrupted PNG");
+				log_error("ZLIB Huffman compressed block contains too much data, corrupted PNG");
 				return(false);
 			}
 
@@ -704,9 +704,14 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 				++state->zlib_ptr;
 			}
 		}
+		else if (literal > 285)
+		{
+			log_error("ZLIB Huffman compressed block contains unknown literal value, corrupted PNG");
+			return(false);
+		}
 		else
 		{
-			log_error("ZLIB dynamic Huffman compressed block contains too much data, corruped PNG");
+			log_error("ZLIB Huffman compressed block contains too much data, corruped PNG");
 			return(false);
 		}
 	}
