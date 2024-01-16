@@ -916,6 +916,11 @@ png_unfilter(PNG_State *state, U8 *result)
 
 	for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 	{
+		if (column_offsets[pass_index] >= state->width)
+		{
+			continue;
+		}
+
 		for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 		{
 			U8 filter_type      = *input++;
