@@ -54,30 +54,7 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	Str8 path = str8_lit("data/image.png");
-	Render_TextureSlice image_texture = { 0 };
-
-	Str8 image_contents = { 0 };
-	arena_scratch(0, 0)
-	{
-		if (os_file_read(scratch, path, &image_contents))
-		{
-			Image image = { 0 };
-			if (image_load(app_state->perm_arena, image_contents, &image))
-			{
-				Render_Texture texture = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
-				image_texture = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
-			}
-			else
-			{
-				log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
-			}
-		}
-		else
-		{
-			log_error("Could not load file '%"PRISTR8"'", str8_expand(path));
-		}
-	}
+	Render_TextureSlice image_texture = render_create_texture_slice(renderer, str8_lit("data/image.png"));
 
 	UI_Context *ui = ui_init();
 
@@ -105,6 +82,14 @@ os_main(Str8List arguments)
 				ui_command_tab_attach(&attach);
 			}
 
+			{
+				UI_TabAttach attach =
+				{
+					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
+					.panel = split_panel_result.panels[Side_Max],
+				};
+				ui_command_tab_attach(&attach);
+			}
 			{
 				UI_TabAttach attach =
 				{

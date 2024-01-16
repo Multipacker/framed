@@ -721,29 +721,17 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 wi
 }
 
 internal Render_Texture
-render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
+render_create_texture(Render_Context *renderer, Str8 path)
 {
 	Render_Texture result = { 0 };
 	Str8 file  = { 0 };
 	Arena_Temporary scratch = get_scratch(0, 0);
 	if (os_file_read(scratch.arena, path, &file))
 	{
-		S32 width, height, channels;
-		// NOTE(hampus): We only want images with 4 components, RGBA
-		S32 req_components = 4;
-		assert(file.size <= U32_MAX);
-		Void *memory = stbi_load_from_memory(file.data, (U32) file.size, &width, &height, &channels, req_components);
-		if (memory)
+		Image image = { 0 };
+		if (image_load(scratch.arena, file, &image))
 		{
-			if (width && height)
-			{
-				result = render_create_texture_from_bitmap(renderer, memory, width, height, color_space);
-				stbi_image_free(memory);
-			}
-			else
-			{
-				// TODO(hampus): Logging
-			}
+			result = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
 		}
 		else
 		{

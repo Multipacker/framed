@@ -120,12 +120,12 @@ internal Void render_pop_clip(Render_Context *renderer);
 
 internal Render_RenderStats render_get_stats(Render_Context *renderer);
 
-internal Render_Texture      render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace color_space);
+internal Render_Texture      render_create_texture(Render_Context *renderer, Str8 path);
 internal Render_Texture      render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space);
 
 internal Void                render_destroy_texture(Render_Context *renderer, Render_Texture texture);
 internal Render_TextureSlice render_slice_from_texture(Render_Texture texture, RectF32 region);
-internal Render_TextureSlice render_create_texture_slice(Render_Context *renderer, Str8 path, Render_ColorSpace color_space);
+internal Render_TextureSlice render_create_texture_slice(Render_Context *renderer, Str8 path);
 internal Void                render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
 
 internal F32     f32_srgb_to_linear(F32 value);
