@@ -1214,8 +1214,14 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 
 	state.current_node = state.first_idat;
 
-	// TODO(simon): Better approximation for the inflated stream.
-	U64 inflated_size = 4 * sizeof(U16) * state.width * state.height + state.height;
+	U32 scanline_count = 0;
+	for (U32 pass_index = 0; pass_index < png_interlace_pass_count[state.interlace_method]; ++pass_index)
+	{
+		U32 *row_offsets  = png_interlace_row_offsets[state.interlace_method];
+		U32 *row_advances = png_interlace_row_advances[state.interlace_method];
+		scanline_count += (state.height - row_offsets[pass_index] + row_advances[pass_index] - 1) / row_advances[pass_index];
+	}
+	U64 inflated_size = 4 * sizeof(U16) * state.width * state.height + scanline_count;
 	state.zlib_output = push_array(arena, U8, inflated_size);
 	state.zlib_ptr = state.zlib_output;
 	state.zlib_opl = state.zlib_ptr + inflated_size;
