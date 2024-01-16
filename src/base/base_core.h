@@ -293,9 +293,9 @@ typedef Void VoidFunction(Void);
 
 #define swap(a, b, type) \
 { \
-type temp = a; \
+type temp##__LINE__ = a; \
 a = b; \
-b = temp; \
+b = temp##__LINE__; \
 }
 
 #define axis_flip(axis) (!(axis))
