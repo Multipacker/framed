@@ -12,4 +12,6 @@ struct Image
 
 internal B32 image_load(Arena *arena, Str8 contents, Image *result);
 
+#include "png.h"
+
 #endif // IMAGE_INC_H
