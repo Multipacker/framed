@@ -154,9 +154,9 @@ ui_push_scrollable_region(Str8 string)
 internal Void
 ui_scrollabel_region_set_scroll(UI_ScrollabelRegion region, F32 offset)
 {
-	UI_Box *view_region = region.view_region;
 	UI_Box *container   = region.container;
-	container->scroll.y = f32_clamp(0, offset, container->fixed_size.v[Axis2_Y] - view_region->fixed_size.v[Axis2_Y]);
+	UI_Box *view_region = region.view_region;
+	container->scroll.y = f32_clamp(0, offset, container->fixed_size.height - view_region->fixed_size.height);
 }
 
 internal Void
@@ -168,8 +168,7 @@ ui_pop_scrollable_region(Void)
 
 	UI_Comm comm = ui_comm_from_box(view_region);
 	container->scroll.y += (F32)(comm.scroll.y * g_ui_ctx->dt * 5000.0);
-	container->scroll.y = f32_clamp(0, container->scroll.y,
-									container->fixed_size.v[Axis2_Y] - view_region->fixed_size.v[Axis2_Y]);
+	container->scroll.y = f32_clamp(0, container->scroll.y, container->fixed_size.height - view_region->fixed_size.height);
 }
 
 internal Void
