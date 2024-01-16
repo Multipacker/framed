@@ -1206,15 +1206,19 @@ internal B32
 image_load(Arena *arena, Str8 contents, Image *result)
 {
 	U64 before = os_now_nanoseconds();
+	Arena_Temporary scratch = get_scratch(&arena, 1);
+
 	PNG_State state = { 0 };
-	if (!png_parse_chunks(arena, contents, &state))
+	if (!png_parse_chunks(scratch.arena, contents, &state))
 	{
+		release_scratch(scratch);
 		return(false);
 	}
 
 	if (state.color_type == PNG_ColorType_IndexedColor && !state.palette)
 	{
 		log_error("Using indexed color without a 'PLTE' chunk, corrupted PNG");
+		release_scratch(scratch);
 		return(false);
 	}
 
@@ -1228,7 +1232,7 @@ image_load(Arena *arena, Str8 contents, Image *result)
 		scanline_count += (state.height - row_offsets[pass_index] + row_advances[pass_index] - 1) / row_advances[pass_index];
 	}
 	U64 inflated_size = 4 * sizeof(U16) * state.width * state.height + scanline_count;
-	state.zlib_output = push_array(arena, U8, inflated_size);
+	state.zlib_output = push_array(scratch.arena, U8, inflated_size);
 	state.zlib_ptr = state.zlib_output;
 	state.zlib_opl = state.zlib_ptr + inflated_size;
 
@@ -1249,36 +1253,43 @@ image_load(Arena *arena, Str8 contents, Image *result)
 	{
 		fixed_lengths[i] = 8;
 	}
-	state.fixed_literal_huffman = png_make_huffman(arena, 288, fixed_lengths);
+	state.fixed_literal_huffman = png_make_huffman(scratch.arena, 288, fixed_lengths);
 
 	U32 fixed_distances[32];
 	for (U32 i = 0; i <= 31; ++i)
 	{
 		fixed_distances[i] = 5;
 	}
-	state.fixed_distance_huffman = png_make_huffman(arena, 32, fixed_distances);
+	state.fixed_distance_huffman = png_make_huffman(scratch.arena, 32, fixed_distances);
 
 	if (!png_zlib_inflate(&state))
 	{
+		release_scratch(scratch);
 		return(false);
 	}
 
 	// TODO(simon): Better approximation for the unfiltered data
 	U64 unfiltered_size = 8 * state.width * state.height;
-	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
+	U8 *unfiltered_data = push_array(scratch.arena, U8, unfiltered_size);
 	if (!png_unfilter(&state, unfiltered_data))
 	{
+		release_scratch(scratch);
 		return(false);
 	}
 
+	Arena_Temporary restore_point = arena_begin_temporary(arena);
 	U8 *output = push_array(arena, U8, state.width * state.height * 4);
 	if (!png_deinterlace_and_resample_to_8bit(&state, unfiltered_data, output))
 	{
+		arena_end_temporary(restore_point);
+		release_scratch(scratch);
 		return(false);
 	}
 
 	if (!png_expand_to_rgba(&state, output))
 	{
+		arena_end_temporary(restore_point);
+		release_scratch(scratch);
 		return(false);
 	}
 
@@ -1290,5 +1301,6 @@ image_load(Arena *arena, Str8 contents, Image *result)
 	result->pixels = output;
 	result->color_space = Render_ColorSpace_sRGB;
 
+	release_scratch(scratch);
 	return(true);
 }
