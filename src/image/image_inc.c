@@ -61,6 +61,22 @@ global U32 png_distance_base[] = {
 	4097, 6145, 8193, 12289, 16385, 24577,
 };
 
+global U32 png_interlace_null_row_offsets[]     = { 0, };
+global U32 png_interlace_null_row_advances[]    = { 1, };
+global U32 png_interlace_null_column_offsets[]  = { 0, };
+global U32 png_interlace_null_column_advances[] = { 1, };
+
+global U32 png_interlace_adam7_row_offsets[]     = { 0, 0, 4, 0, 2, 0, 1, };
+global U32 png_interlace_adam7_row_advances[]    = { 8, 8, 8, 4, 4, 2, 2, };
+global U32 png_interlace_adam7_column_offsets[]  = { 0, 4, 0, 2, 0, 1, 0, };
+global U32 png_interlace_adam7_column_advances[] = { 8, 8, 4, 4, 2, 2, 1, };
+
+global U32 *png_interlace_row_offsets[]     = { png_interlace_null_row_offsets,     png_interlace_adam7_row_offsets, };
+global U32 *png_interlace_row_advances[]    = { png_interlace_null_row_advances,    png_interlace_adam7_row_advances, };
+global U32 *png_interlace_column_offsets[]  = { png_interlace_null_column_offsets,  png_interlace_adam7_column_offsets, };
+global U32 *png_interlace_column_advances[] = { png_interlace_null_column_advances, png_interlace_adam7_column_advances, };
+global U32  png_interlace_pass_count[]      = { 1, 7, };
+
 typedef struct PNG_Chunk PNG_Chunk;
 struct PNG_Chunk
 {
@@ -880,6 +896,117 @@ png_paeth_predictor(S32 a, S32 b, S32 c)
 }
 
 internal B32
+png_unfilter(PNG_State *state, U8 *result)
+{
+	U32 *row_offsets     = png_interlace_row_offsets[state->interlace_method];
+	U32 *row_advances    = png_interlace_row_advances[state->interlace_method];
+	U32 *column_offsets  = png_interlace_column_offsets[state->interlace_method];
+	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
+	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
+
+	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * png_stride_from_color_type(state->color_type);
+
+	U8 *input  = state->zlib_output;
+	U8 *output = result;
+
+	for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
+	{
+		for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
+		{
+			U8 filter_type      = *input++;
+			U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
+			U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+
+			if (filter_type == 0 || (filter_type == 2 && y == row_offsets[pass_index]))
+			{
+				// NOTE(simon): No filtering and up filtering at y == 0
+				memory_copy(output, input, scanline_size);
+				input  += scanline_size;
+				output += scanline_size;
+			}
+			else if (filter_type == 1)
+			{
+				// NOTE(simon): Sub filter
+				U64 previous = 0;
+				for (U32 x = 0; x < scanline_size; ++x)
+				{
+					U8 a = (U8) (previous >> (bit_stride - 8));
+					U8 xx = *input++;
+
+					U8 new_value = xx + a;
+					*output++ = new_value;
+
+					previous = previous << 8 | new_value;
+				}
+			}
+			else if (filter_type == 2)
+			{
+				// NOTE(simon): Up filter at y != 0
+				U8 *previous_scanline = output - scanline_size;
+				for (U32 x = 0; x < scanline_size; ++x)
+				{
+					U8 b = *previous_scanline;
+					U8 xx = *input++;
+
+					U8 new_value = xx + b;
+					*output++ = new_value;
+
+					++previous_scanline;
+				}
+			}
+			else if (filter_type == 3)
+			{
+				// NOTE(simon): Average filter
+				U8 zero = 0;
+				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : output - scanline_size);
+				U64 previous = 0;
+				for (U32 x = 0; x < scanline_size; ++x)
+				{
+					U8 a = (U8) (previous >> (bit_stride - 8));
+					U8 b = *previous_scanline;
+					U8 xx = *input++;
+
+					U8 new_value = (U8) (xx + (a + b) / 2);
+					*output++ = new_value;
+
+					previous_scanline += (y != row_offsets[pass_index]);
+					previous = previous << 8 | new_value;
+				}
+			}
+			else if (filter_type == 4)
+			{
+				// NOTE(simon): Paeth filter
+				U8 zero = 0;
+				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : output - scanline_size);
+				U64 previous_scanline_previous = 0;
+				U64 previous = 0;
+				for (U32 x = 0; x < scanline_size; ++x)
+				{
+					U8 a = (U8) (previous >> (bit_stride - 8));
+					U8 b = *previous_scanline;
+					U8 c = (U8) (previous_scanline_previous >> (bit_stride - 8));
+					U8 xx = *input++;
+
+					U8 new_value = xx + png_paeth_predictor(a, b, c);
+					*output++ = new_value;
+
+					previous_scanline_previous = previous_scanline_previous << 8 | b;
+					previous_scanline += (y != row_offsets[pass_index]);
+					previous = previous << 8 | new_value;
+				}
+			}
+			else
+			{
+				log_error("Unknown filter (%"PRIU8"), corrupted PNG", filter_type);
+				return(false);
+			}
+		}
+	}
+
+	return(true);
+}
+
+internal B32
 png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 {
 	U32 byte_stride = png_stride_from_color_type(state->color_type);
@@ -1002,107 +1129,6 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 		{
 			// NOTE(simon): Nothing to do, already in the right format.
 		} break;
-	}
-
-	return(true);
-}
-
-internal B32
-png_unfilter(PNG_State *state, U8 *result)
-{
-	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * png_stride_from_color_type(state->color_type);
-	U32 stride = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * state->width, 8) / 8;
-
-	U8 *input  = state->zlib_output;
-	U8 *output = result;
-
-	for (U32 y = 0; y < state->height; ++y)
-	{
-		U8 filter_type = *input++;
-
-		if (filter_type == 0 || (filter_type == 2 && y == 0))
-		{
-			// NOTE(simon): No filtering and up filtering at y == 0
-			memory_copy(output, input, stride);
-			input  += stride;
-			output += stride;
-		}
-		else if (filter_type == 1)
-		{
-			// NOTE(simon): Sub filter
-			U64 previous = 0;
-			for (U32 x = 0; x < stride; ++x)
-			{
-				U8 a = (U8) (previous >> (bit_stride - 8));
-				U8 xx = *input++;
-
-				U8 new_value = xx + a;
-				*output++ = new_value;
-
-				previous = previous << 8 | new_value;
-			}
-		}
-		else if (filter_type == 2)
-		{
-			// NOTE(simon): Up filter at y != 0
-			U8 *previous_scanline = output - stride;
-			for (U32 x = 0; x < stride; ++x)
-			{
-				U8 b = *previous_scanline;
-				U8 xx = *input++;
-
-				U8 new_value = xx + b;
-				*output++ = new_value;
-
-				++previous_scanline;
-			}
-		}
-		else if (filter_type == 3)
-		{
-			// NOTE(simon): Average filter
-			U8 zero = 0;
-			U8 *previous_scanline = (y == 0 ? &zero : output - stride);
-			U64 previous = 0;
-			for (U32 x = 0; x < stride; ++x)
-			{
-				U8 a = (U8) (previous >> (bit_stride - 8));
-				U8 b = *previous_scanline;
-				U8 xx = *input++;
-
-				U8 new_value = (U8) (xx + (a + b) / 2);
-				*output++ = new_value;
-
-				previous_scanline += (y != 0);
-				previous = previous << 8 | new_value;
-			}
-		}
-		else if (filter_type == 4)
-		{
-			// NOTE(simon): Paeth filter
-			U8 zero = 0;
-			U8 *previous_scanline = (y == 0 ? &zero : output - stride);
-			U64 previous_scanline_previous = 0;
-			U64 previous = 0;
-			for (U32 x = 0; x < stride; ++x)
-			{
-				U8 a = (U8) (previous >> (bit_stride - 8));
-				U8 b = *previous_scanline;
-				U8 c = (U8) (previous_scanline_previous >> (bit_stride - 8));
-				U8 xx = *input++;
-
-				U8 new_value = xx + png_paeth_predictor(a, b, c);
-				*output++ = new_value;
-
-				previous_scanline_previous = previous_scanline_previous << 8 | b;
-				previous_scanline += (y != 0);
-				previous = previous << 8 | new_value;
-			}
-		}
-		else
-		{
-			log_error("Unknown filter (%"PRIU8"), corrupted PNG", filter_type);
-			return(false);
-		}
 	}
 
 	return(true);
