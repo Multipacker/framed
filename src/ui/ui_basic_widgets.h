@@ -38,6 +38,7 @@ internal UI_Box *ui_column_begin(Void);
 internal Void    ui_column_end(Void);
 
 #define ui_named_row(string) defer_loop(ui_named_row_begin(string), ui_named_row_end())
+#define ui_named_rowf(string, ...) defer_loop(ui_named_row_beginf(string, __VA_ARGS__), ui_named_row_end())
 #define ui_row()             defer_loop(ui_row_begin(), ui_row_end())
 
 #define ui_named_column(string) defer_loop(ui_named_column_begin(string), ui_named_column_end())

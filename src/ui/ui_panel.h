@@ -95,7 +95,7 @@ struct UI_TabGroup
 	UI_Tab *active_tab;
 	UI_Tab *first;
 	UI_Tab *last;
-	F32 overflow;
+	F32 view_offset_x;
 };
 
 typedef struct UI_Panel UI_Panel;
@@ -231,6 +231,8 @@ struct AppState
 
 	UI_Panel *focused_panel;
 	UI_Panel *next_focused_panel;
+
+	UI_Panel *resizing_panel;
 
 	UI_CommandBuffer cmd_buffer;
 

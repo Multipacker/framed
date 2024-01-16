@@ -2,7 +2,6 @@
 //~ hampus: Short term
 //
 // [ ] @feature Tabs
-//  [ ] @feature Removing tabs to the right should bring in tabs from the left
 //  [ ] @feature Reordering
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
@@ -15,6 +14,9 @@
 // [ ] @feature Only change panel focus with mouse presses
 // [ ] @code @feature UI startup builder
 // [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
+// [ ] @bug Resizing with tab animation doesn't look perfect right now.
+// [ ] @bug Decreasing panel size and then increase it again should not drag in
+//          from the right first.
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -191,8 +193,7 @@ ui_tab_button(UI_Tab *tab)
 										  UI_BoxFlag_HotAnimation |
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
-										  UI_BoxFlag_DrawBorder|
-										  UI_BoxFlag_AnimatePos,
+										  UI_BoxFlag_DrawBorder,
 										  str8_lit("TitleContainer"));
 
 	tab->box = title_container;
@@ -452,6 +453,7 @@ ui_panel(UI_Panel *root)
 			{
 				dragging = true;
 				drag_delta = comm.drag_delta.v[root->split_axis];
+				app_state->resizing_panel = root;
 			}
 		}
 
@@ -781,70 +783,65 @@ ui_panel(UI_Panel *root)
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
 					UI_Box *tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
-
-						// TODO(hampus): This is whack as hell. Cleanup!
-						if (root->tab_group.count)
+						if (root->tab_group.count > 1)
 						{
 							UI_Tab *active_tab = root->tab_group.active_tab;
-							if (active_tab->box)
+							if (active_tab->box && root->tab_group.last->box)
 							{
-								RectF32 tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
-								RectF32 tab_bar_rect = tabs_container->fixed_rect;
+								RectF32 active_tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
+								RectF32 first_tab_rect  = ui_box_get_fixed_rect(root->tab_group.first->box->parent);
+								RectF32 last_tab_rect   = ui_box_get_fixed_rect(root->tab_group.last->box->parent);
+								RectF32 tab_bar_rect    = tabs_container->fixed_rect;
 
-								UI_Box *first_box = root->tab_group.first->box;
-								UI_Box *last_box = root->tab_group.last->box;
+								F32 active_tab_width = active_tab_rect.x1 - active_tab_rect.x0;
 
-								F32 available_tab_bar_width = tabs_container->fixed_size.x;
-								F32 required_tab_bar_width = first_box->fixed_size.x;
+								F32 available_tab_bar_width = tab_bar_rect.x1 - tab_bar_rect.x0;
+								F32 required_tab_bar_width = last_tab_rect.x1 - first_tab_rect.x0;
 
-								if (first_box && last_box)
+								B32 active_tab_is_visible =
+									active_tab_rect.x0 >= tab_bar_rect.x0 &&
+									active_tab_rect.x1 < tab_bar_rect.x1;
+								if (!active_tab_is_visible)
 								{
-									required_tab_bar_width = (last_box->fixed_rect.x1 - first_box->fixed_rect.x0);
-								}
-
-								B32 active_tab_is_visible = tab_rect.x0 >= tab_bar_rect.x0 && tab_rect.x1 < tab_bar_rect.x1;
-								if (active_tab_is_visible)
-								{
-									// NOTE(hampus): Are we able to push new tabs onto
-									// the tab bar? This would typically be the case
-									// if we reduce the window width, and then enlarge
-									// the window width, empty space would be left on the tab
-									// bar. This just fixes that.
-									if (required_tab_bar_width > available_tab_bar_width &&
-										ui_box_get_fixed_rect(last_box).x1 < tab_bar_rect.x1)
-									{
-										root->tab_group.overflow -= tab_bar_rect.x1 - ui_box_get_fixed_rect(last_box).x1;
-									}
-								}
-								else
-								{
-									B32 overflow_left  = tab_rect.x0 < tab_bar_rect.x0;
-									B32 overflow_right = tab_rect.x1 >= tab_bar_rect.x1;
-									if (available_tab_bar_width > active_tab->box->fixed_size.x)
+									B32 overflow_left  = active_tab_rect.x0 < tab_bar_rect.x0;
+									B32 overflow_right = active_tab_rect.x1 >= tab_bar_rect.x1;
+									if (available_tab_bar_width > active_tab_width)
 									{
 										if (overflow_right)
 										{
-											root->tab_group.overflow += tab_rect.x1 - tab_bar_rect.x1;
+											root->tab_group.view_offset_x -= active_tab_rect.x1 - tab_bar_rect.x1;
 										}
 										else if (overflow_left)
 										{
-											root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
+											root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
 										}
 									}
 									else
 									{
-										root->tab_group.overflow += tab_rect.x0 - tab_bar_rect.x0;
+										root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
 									}
 								}
 
-								root->tab_group.overflow = f32_max(0, root->tab_group.overflow);
+								root->tab_group.view_offset_x = f32_min(0, root->tab_group.view_offset_x);
 
-								ui_spacer(ui_pixels(-root->tab_group.overflow, 1));
+								if (required_tab_bar_width > available_tab_bar_width)
+								{
+									if (root->tab_group.view_offset_x < (available_tab_bar_width - required_tab_bar_width))
+									{
+										root->tab_group.view_offset_x = available_tab_bar_width - required_tab_bar_width;
+									}
+								}
+
+								ui_spacer(ui_pixels(root->tab_group.view_offset_x, 1));
+							}
+							else
+							{
+								root->tab_group.view_offset_x = 0;
 							}
 						}
 						else
 						{
-							root->tab_group.overflow = 0;
+							root->tab_group.view_offset_x= 0;
 						}
 
 						for (UI_Tab *tab = root->tab_group.first;
@@ -858,6 +855,7 @@ ui_panel(UI_Panel *root)
 							{
 								ui_spacer(ui_em(d_em, 1));
 								UI_Box *tab_box = ui_tab_button(tab);
+
 								// TODO(hampus): Optimize this. We can do this by
 								// only checking if last_box.rect.x1 - first_box.rect.x0
 								// is greater then the tab bar width.
@@ -1482,6 +1480,8 @@ ui_panel_update(Render_Context *renderer, Gfx_EventList *event_list)
 	{
 		app_state->next_focused_panel = app_state->focused_panel;
 	}
+
+	app_state->resizing_panel = 0;
 
 	app_state->cmd_buffer.pos = 0;
 

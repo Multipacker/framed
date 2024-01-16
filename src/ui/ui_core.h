@@ -197,6 +197,7 @@ struct UI_Box
 	Vec2F32 fixed_size_animated;
 	Vec2F32 fixed_size;
 
+	RectF32 fixed_rect_animated; // NOTE(hampus): Let's try to add this here and see what happens...
 	RectF32 fixed_rect;
 
 	UI_BoxFlags flags;
