@@ -406,9 +406,9 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 				switch (node->key)
 				{
 					case Gfx_Key_MouseLeft:
+					case Gfx_Key_MouseLeftDouble:
 					{
 						left_mouse_released = true;
-
 					} break;
 
 					default:
@@ -1263,6 +1263,11 @@ ui_comm_from_box(UI_Box *box)
 								{
 									result.clicked = true;
 								}
+							} break;
+
+							case Gfx_Key_MouseLeftDouble:
+							{
+								dll_remove(event_list->first, event_list->last, node);
 							} break;
 
 							case Gfx_Key_MouseRight:
