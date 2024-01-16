@@ -1,17 +1,17 @@
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
-#include "image/image_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
+#include "image/image_inc.h"
 #include "ui/ui_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 #include "log/log_inc.c"
-#include "image/image_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
+#include "image/image_inc.c"
 #include "ui/ui_inc.c"
 
 #include "profiler/profiler_log_ui.c"
@@ -62,7 +62,16 @@ os_main(Str8List arguments)
 	{
 		if (os_file_read(scratch, path, &image_contents))
 		{
-			image_load(app_state->perm_arena, renderer, image_contents, &image_texture);
+			Image image = { 0 };
+			if (image_load(app_state->perm_arena, image_contents, &image))
+			{
+				Render_Texture texture = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
+				image_texture = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
+			}
+			else
+			{
+				log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
+			}
 		}
 		else
 		{

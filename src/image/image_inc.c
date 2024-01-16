@@ -147,7 +147,7 @@ struct PNG_State
 };
 
 internal U32
-png_stride_from_color_type(PNG_ColorType type)
+png_component_count_from_color_type(PNG_ColorType type)
 {
 	switch (type)
 	{
@@ -909,7 +909,8 @@ png_unfilter(PNG_State *state, U8 *result)
 	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
 	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
 
-	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * png_stride_from_color_type(state->color_type);
+	U32 components = png_component_count_from_color_type(state->color_type);
+	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * components;
 
 	U8 *input  = state->zlib_output;
 	U8 *output = result;
@@ -925,7 +926,7 @@ png_unfilter(PNG_State *state, U8 *result)
 		{
 			U8 filter_type      = *input++;
 			U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-			U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+			U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
 
 			if (filter_type == 0 || (filter_type == 2 && y == row_offsets[pass_index]))
 			{
@@ -1025,7 +1026,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
 	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
 
-	U32 byte_stride = png_stride_from_color_type(state->color_type);
+	U32 components = png_component_count_from_color_type(state->color_type);
 	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
 	{
 		U8 *input = pixels;
@@ -1036,7 +1037,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
@@ -1046,7 +1047,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * byte_stride] = value;
+					output[(x + y * state->width) * components] = value;
 
 					bit_position += state->bit_depth;
 				}
@@ -1064,10 +1065,10 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 			{
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					for (U32 i = 0; i < byte_stride; ++i)
+					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
-						output[(x + y * state->width) * byte_stride + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						output[(x + y * state->width) * components + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 					}
 				}
 			}
@@ -1084,7 +1085,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
@@ -1094,7 +1095,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * byte_stride] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					output[(x + y * state->width) * components] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
 
 					bit_position += state->bit_depth;
 				}
@@ -1112,8 +1113,8 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 			{
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					memory_copy(&output[(x + y * state->width) * byte_stride], input, byte_stride);
-					input += byte_stride;
+					memory_copy(&output[(x + y * state->width) * components], input, components);
+					input += components;
 				}
 			}
 		}
@@ -1125,8 +1126,8 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 internal B32
 png_expand_to_rgba(PNG_State *state, U8 *pixels)
 {
-	U32 byte_stride = png_stride_from_color_type(state->color_type);
-	U8 *read  = &pixels[(state->width * state->height - 1) * byte_stride];
+	U32 components = png_component_count_from_color_type(state->color_type);
+	U8 *read  = &pixels[(state->width * state->height - 1) * components];
 	U8 *write = &pixels[(state->width * state->height - 1) * 4];
 
 	switch (state->color_type)
@@ -1140,7 +1141,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 				write[1] = read[0];
 				write[0] = read[0];
 
-				read  -= byte_stride;
+				read  -= components;
 				write -= 4;
 			}
 		} break;
@@ -1153,7 +1154,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 				write[1] = read[1];
 				write[0] = read[0];
 
-				read  -= byte_stride;
+				read  -= components;
 				write -= 4;
 			}
 		} break;
@@ -1175,7 +1176,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 				write[1] = state->palette[index * 3 + 1];
 				write[0] = state->palette[index * 3 + 0];
 
-				read  -= byte_stride;
+				read  -= components;
 				write -= 4;
 			}
 		} break;
@@ -1188,7 +1189,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 				write[1] = read[0];
 				write[0] = read[0];
 
-				read  -= byte_stride;
+				read  -= components;
 				write -= 4;
 			}
 		} break;
@@ -1202,7 +1203,7 @@ png_expand_to_rgba(PNG_State *state, U8 *pixels)
 }
 
 internal B32
-image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_TextureSlice *texture_result)
+image_load(Arena *arena, Str8 contents, Image *result)
 {
 	U64 before = os_now_nanoseconds();
 	PNG_State state = { 0 };
@@ -1282,10 +1283,12 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	}
 
 	U64 after = os_now_nanoseconds();
-	log_info("%.2fms to load PNG", (F64) (after - before) / (F64) million(1));
+	log_info("Our: %.2fms to load PNG", (F64) (after - before) / (F64) million(1));
 
-	Render_Texture texture = render_create_texture_from_bitmap(renderer, output, state.width, state.height, Render_ColorSpace_sRGB);
-	*texture_result = render_slice_from_texture(texture, rectf32(v2f32(0, 0), v2f32(1, 1)));
+	result->width  = state.width;
+	result->height = state.height;
+	result->pixels = output;
+	result->color_space = Render_ColorSpace_sRGB;
 
 	return(true);
 }
