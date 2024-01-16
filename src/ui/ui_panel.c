@@ -993,39 +993,43 @@ ui_panel(UI_Panel *root)
 						str8_lit("ContentDim"));
 		}
 
-		ui_next_width(ui_fill());
-		ui_next_height(ui_fill());
-		UI_Box *content_box_container = ui_box_make(0,
-													str8_lit("ContentBoxContainer"));
-		ui_parent(content_box_container)
+		if (root->tab_group.active_tab)
 		{
-			if (root == app_state->focused_panel)
-			{
-				ui_next_border_color(v4f32(1, 0.5f, 0, 1));
-			}
 			ui_next_width(ui_fill());
 			ui_next_height(ui_fill());
-			ui_next_child_layout_axis(Axis2_Y);
-			UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-											  UI_BoxFlag_DrawBorder,
-											  str8_lit("ContentBox"));
-			// NOTE(hampus): Add some padding for the content
-			ui_parent(content_box)
+			UI_Box *content_box_container = ui_box_make(0,
+														str8_lit("ContentBoxContainer"));
+			ui_parent(content_box_container)
 			{
-				UI_Size padding = ui_em(0.3f, 1);
-				ui_spacer(padding);
+				if (root == app_state->focused_panel)
+				{
+					ui_next_border_color(v4f32(1, 0.5f, 0, 1));
+				}
 				ui_next_width(ui_fill());
 				ui_next_height(ui_fill());
-				ui_row()
+				ui_next_child_layout_axis(Axis2_Y);
+				UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
+												  UI_BoxFlag_DrawBorder,
+												  str8_lit("ContentBox"));
+				// NOTE(hampus): Add some padding for the content
+				ui_parent(content_box)
 				{
+					UI_Size padding = ui_em(0.3f, 1);
 					ui_spacer(padding);
-					UI_Tab *tab = root->tab_group.active_tab;
-					tab->view_info.function(tab->view_info.data);
+					ui_next_width(ui_fill());
+					ui_next_height(ui_fill());
+					ui_row()
+					{
+						ui_spacer(padding);
+						UI_Tab *tab = root->tab_group.active_tab;
+						tab->view_info.function(tab->view_info.data);
+						ui_spacer(padding);
+					}
 					ui_spacer(padding);
 				}
-				ui_spacer(padding);
 			}
 		}
+
 		ui_pop_string();
 	}
 
