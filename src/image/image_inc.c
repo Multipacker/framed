@@ -1007,49 +1007,106 @@ png_unfilter(PNG_State *state, U8 *result)
 }
 
 internal B32
-png_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
+png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 {
+	U32 *row_offsets     = png_interlace_row_offsets[state->interlace_method];
+	U32 *row_advances    = png_interlace_row_advances[state->interlace_method];
+	U32 *column_offsets  = png_interlace_column_offsets[state->interlace_method];
+	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
+	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
+
 	U32 byte_stride = png_stride_from_color_type(state->color_type);
 	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
 	{
-		U32 bit_max = (1U << state->bit_depth) - 1;
-		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
-		{
-			U64 bit_position = i * state->bit_depth;
-			U64 byte_index   = bit_position / 8;
-			U64 bit_index    = bit_position % 8;
-			U8 byte          = pixels[byte_index];
-			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+		U8 *input = pixels;
 
-			output[i] = value;
+		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
+		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
+		{
+			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
+			{
+				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U64 bit_position    = 0;
+
+				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
+				{
+					U64 byte_index   = bit_position / 8;
+					U64 bit_index    = bit_position % 8;
+					U8 byte          = input[byte_index];
+					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+					output[(x + y * state->width) * byte_stride] = value;
+
+					bit_position += state->bit_depth;
+				}
+
+				input += scanline_size;
+			}
 		}
 	}
 	else if (state->bit_depth == 16)
 	{
-		U16 *pixels_u16 = (U16 *) pixels;
-		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
+		U16 *input = (U16 *) pixels;
+		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
-			U16 value = u16_big_to_local_endian(pixels_u16[i]);
-			output[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
+			{
+				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
+				{
+					for (U32 i = 0; i < byte_stride; ++i)
+					{
+						U16 value = u16_big_to_local_endian(*input++);
+						output[(x + y * state->width) * byte_stride + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+					}
+				}
+			}
 		}
 	}
 	else if (state->bit_depth != 8)
 	{
+		U8 *input = pixels;
 		U32 bit_max = (1U << state->bit_depth) - 1;
-		for (U64 i = 0; i < (U64) state->width * (U64) state->height * (U64) byte_stride; ++i)
-		{
-			U64 bit_position = i * state->bit_depth;
-			U64 byte_index   = bit_position / 8;
-			U64 bit_index    = bit_position % 8;
-			U8 byte          = pixels[byte_index];
-			U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-			output[i] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
+		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
+		{
+			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
+			{
+				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_stride_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U64 bit_position    = 0;
+
+				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
+				{
+					U64 byte_index   = bit_position / 8;
+					U64 bit_index    = bit_position % 8;
+					U8 byte          = input[byte_index];
+					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+
+					output[(x + y * state->width) * byte_stride] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+
+					bit_position += state->bit_depth;
+				}
+
+				input += scanline_size;
+			}
 		}
 	}
 	else
 	{
-		memory_copy(output, pixels, state->width * state->height * byte_stride);
+		U8 *input = pixels;
+		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
+		{
+			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
+			{
+				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
+				{
+					memory_copy(&output[(x + y * state->width) * byte_stride], input, byte_stride);
+					input += byte_stride;
+				}
+			}
+		}
 	}
 
 	return(true);
@@ -1189,13 +1246,6 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 		return(false);
 	}
 
-	// TODO(simon): Implement interlacing
-	if (state.interlace_method != PNG_InterlaceMethod_None)
-	{
-		log_error("Interlaced images are not supported yet");
-		return(false);
-	}
-
 	// TODO(simon): Better approximation for the unfiltered data
 	U64 unfiltered_size = 8 * state.width * state.height;
 	U8 *unfiltered_data = push_array(arena, U8, unfiltered_size);
@@ -1205,7 +1255,7 @@ image_load(Arena *arena, Render_Context *renderer, Str8 contents, Render_Texture
 	}
 
 	U8 *output = push_array(arena, U8, state.width * state.height * 4);
-	if (!png_resample_to_8bit(&state, unfiltered_data, output))
+	if (!png_deinterlace_and_resample_to_8bit(&state, unfiltered_data, output))
 	{
 		return(false);
 	}
