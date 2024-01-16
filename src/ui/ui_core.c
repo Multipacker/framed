@@ -1257,17 +1257,23 @@ ui_comm_from_box(UI_Box *box)
 						{
 							case Gfx_Key_MouseLeft:
 							{
-								result.released = true;
-								dll_remove(event_list->first, event_list->last, node);
-								if (ui_key_match(box->key, g_ui_ctx->prev_active_key))
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
 								{
-									result.clicked = true;
+									result.released = true;
+									dll_remove(event_list->first, event_list->last, node);
+									if (ui_key_match(box->key, g_ui_ctx->prev_active_key))
+									{
+										result.clicked = true;
+									}
 								}
 							} break;
 
 							case Gfx_Key_MouseLeftDouble:
 							{
-								dll_remove(event_list->first, event_list->last, node);
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									dll_remove(event_list->first, event_list->last, node);
+								}
 							} break;
 
 							case Gfx_Key_MouseRight:
