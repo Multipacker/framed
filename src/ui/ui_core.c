@@ -39,6 +39,13 @@ ui_mouse_is_inside_box(UI_Box *box)
 	return(result);
 }
 
+internal B32
+ui_mouse_is_inside_rect(RectF32 rect)
+{
+	B32 result = rectf32_contains_v2f32(rect, g_ui_ctx->mouse_pos);
+	return(result);
+}
+
 internal Arena *
 ui_permanent_arena(Void)
 {
