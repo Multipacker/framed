@@ -37,6 +37,7 @@ UI_COMMAND(tab_close)
 		};
 		ui_command_panel_close(&close);
 	}
+	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
 }
 
 UI_COMMAND(tab_attach)
@@ -64,6 +65,7 @@ UI_COMMAND(panel_set_active_tab)
 	UI_Panel *panel = data->panel;
 	UI_Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
+	log_info("Executed command: panel_set_active_tab");
 }
 
 // NOTE(hampus): This _always_ put the new child to the right or bottom
@@ -122,6 +124,7 @@ UI_COMMAND(panel_split)
 	{
 		child0->window->root_panel = new_parent;
 	}
+	log_info("Executed command: panel_split");
 }
 
 UI_COMMAND(panel_split_and_attach)
@@ -146,6 +149,7 @@ UI_COMMAND(panel_split_and_attach)
 	{
 		if (data->panel_side == Side_Max)
 		{
+
 			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], UI_Panel *);
 		}
 	}
@@ -191,6 +195,7 @@ UI_COMMAND(panel_split_and_attach)
 	}
 
 	ui_command_tab_attach(&tab_attach_data);
+	log_info("Executed command: panel_split_and_attach");
 }
 
 UI_COMMAND(panel_close)
@@ -243,6 +248,7 @@ UI_COMMAND(panel_close)
 			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
 		}
 	}
+	log_info("Executed command: panel_close");
 }
 
 UI_COMMAND(window_push_to_front)
@@ -250,6 +256,7 @@ UI_COMMAND(window_push_to_front)
 	UI_WindowPushToFront *data = params;
 	UI_Window *window = data->window;
 	ui_window_push_to_front(window);
+	log_info("Executed command: window_push_to_front");
 }
 
 UI_COMMAND(window_remove_from_list)
@@ -257,4 +264,5 @@ UI_COMMAND(window_remove_from_list)
 	UI_WindowRemoveFromList *data = params;
 	UI_Window *window = data->window;
 	ui_window_remove_from_list(window);
+	log_info("Executed command: window_remove_from_list");
 }
