@@ -33,7 +33,8 @@ ui_log_keep_alive(Arena *frame_arena)
 		memory_copy(&log_ui_entries[log_ui_entry_count], &new_entries.buffer[first_entry_to_copy], entries_to_copy * sizeof(*new_entries.buffer));
 		log_ui_entry_count += entries_to_copy;
 
-		log_ui_has_new_entries = (entries_to_copy != 0);
+		// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
+		log_ui_has_new_entries |= (entries_to_copy != 0 ? 2 : 0);
 	}
 
 	// NOTE(simon): Find threads.
@@ -93,15 +94,14 @@ ui_logger(Void)
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBorder);
 		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
 
+		// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
 		if (!log_ui_freeze && log_ui_has_new_entries)
 		{
 			ui_scrollabel_region_set_scroll(entries_list, F32_MAX);
-			log_ui_has_new_entries = false;
+			--log_ui_has_new_entries;
 		}
 
 		ui_push_font(mono);
-
-		local B32 only_info = false;
 
 		B32 all_unselected = true;
 		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)

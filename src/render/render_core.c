@@ -1,24 +1,3 @@
-#define STB_IMAGE_IMPLEMENTATION
-#define STBI_ONLY_PNG
-#define STBI_ONLY_BMP
-#define STBI_NO_STDIO
-
-#if COMPILER_CLANG
-# pragma clang diagnostic push
-# pragma clang diagnostic ignored "-Wconversion"
-#elif COMPILER_GCC
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wconversion"
-# pragma GCC diagnostic ignored "-Wsign-conversion"
-# pragma GCC diagnostic ignored "-Wsign-compare"
-#endif
-#include "stb_image.h"
-#if COMPILER_CLANG
-# pragma clang diagnostic pop
-#elif COMPILER_GCC
-# pragma GCC diagnostic pop
-#endif
-
 internal Render_TextureSlice
 render_slice_from_texture(Render_Texture texture, RectF32 uv)
 {
@@ -39,10 +18,10 @@ render_slice_from_texture_region(Render_Texture texture, RectU32 region)
 }
 
 internal Render_TextureSlice
-render_create_texture_slice(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
+render_create_texture_slice(Render_Context *renderer, Str8 path)
 {
 	Render_TextureSlice result;
-	result.texture = render_create_texture(renderer, path, color_space);
+	result.texture = render_create_texture(renderer, path);
 	result.region.min = v2f32(0, 0);
 	result.region.max = v2f32(1, 1);
 	return(result);

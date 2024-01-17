@@ -359,7 +359,7 @@ render_pop_clip(Render_Context *renderer)
 }
 
 internal Render_Texture
-render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace color_space)
+render_create_texture(Render_Context *renderer, Str8 path)
 {
 	Render_Texture result = { 0 };
 
@@ -368,40 +368,21 @@ render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace col
 	Str8 contents = { 0 };
 	if (os_file_read(scratch.arena, path, &contents))
 	{
-		int width         = 0;
-		int height        = 0;
-		int channel_count = 0;
-		stbi_uc *pixels = stbi_load_from_memory(
-												(stbi_uc const *) contents.data, (int) contents.size,
-												&width, &height,
-												&channel_count, 4
-												);
-
-		if (pixels)
+		Image image = { 0 };
+		if (image_load(scratch.arena, contents, &image))
 		{
-			// TODO(simon): Add support for greyscale and greyscale + alpha.
-			GLenum byte_layout = 0;
-			switch (channel_count)
-			{
-				case 1: assert(true); break;
-				case 2: assert(true); break;
-				case 3: byte_layout = GL_RGB;  break;
-				case 4: byte_layout = GL_RGBA; break;
-				invalid_case;
-			}
-
 			GLuint texture = 0;
 			glCreateTextures(GL_TEXTURE_2D, 1, &texture);
 
 			GLenum internalformat = 0;
-			switch (color_space)
+			switch (image.color_space)
 			{
 				case Render_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
 				case Render_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
 				invalid_case;
 			}
 
-			glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
+			glTextureStorage2D(texture, 1, internalformat, (GLsizei) image.width, (GLsizei) image.height);
 			glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 			glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -410,16 +391,14 @@ render_create_texture(Render_Context *renderer, Str8 path, Render_ColorSpace col
 								texture,
 								0,
 								0, 0,
-								(GLsizei) width, (GLsizei) height,
-								byte_layout, GL_UNSIGNED_BYTE,
-								(const Void *) pixels
+								(GLsizei) image.width, (GLsizei) image.height,
+								GL_RGBA, GL_UNSIGNED_BYTE,
+								(const Void *) image.pixels
 								);
 
 			result.u64[0] = (U64) texture;
-			result.u64[1] = (U64) width;
-			result.u64[2] = (U64) height;
-
-			STBI_FREE(pixels);
+			result.u64[1] = (U64) image.width;
+			result.u64[2] = (U64) image.height;
 		}
 		else
 		{
