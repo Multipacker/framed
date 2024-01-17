@@ -877,7 +877,6 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	}
 	else
 	{
-
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos.v[axis];
 	}
 
@@ -1073,7 +1072,6 @@ ui_draw(UI_Box *root)
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 		{
-
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
 				ui_box_is_active(root))
@@ -1195,6 +1193,9 @@ ui_comm_from_box(UI_Box *box)
 	{
 		if (ui_box_has_flag(parent, UI_BoxFlag_Clip))
 		{
+			// NOTE(hampus): This should never fire
+			// because you can't push the rect of
+			// a keyless box
 			assert(!ui_key_is_null(parent->key) &&
 				   "Clipping to an unstable rectangle");
 			hover_region = rectf32_intersect_rectf32(hover_region, parent->fixed_rect);

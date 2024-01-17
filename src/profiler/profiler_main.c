@@ -143,17 +143,14 @@ os_main(Str8List arguments)
 		{
 			if (ui_button(str8_lit("Test")).pressed)
 			{
-				printf("Hello world!");
 			}
 
 			if (ui_button(str8_lit("Test2")).pressed)
 			{
-				printf("Hello world!");
 			}
 
 			if (ui_button(str8_lit("Test3")).pressed)
 			{
-				printf("Hello world!");
 			}
 		}
 
@@ -164,23 +161,19 @@ os_main(Str8List arguments)
 		{
 			if (ui_button(str8_lit("Test5")).pressed)
 			{
-				printf("Hello world!");
 			}
 
 			ui_row()
 			{
 				if (ui_button(str8_lit("Test52")).pressed)
 				{
-					printf("Hello world!");
 				}
 				if (ui_button(str8_lit("Test5251")).pressed)
 				{
-					printf("Hello world2!");
 				}
 			}
 			if (ui_button(str8_lit("Test53")).pressed)
 			{
-				printf("Hello world!");
 			}
 		}
 

@@ -54,6 +54,41 @@ UI_COMMAND(tab_attach)
 		panel->tab_group.active_tab = tab;
 	}
 	panel->tab_group.count++;
+	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
+}
+
+UI_COMMAND(tab_reorder)
+{
+	UI_TabReorder *data = (UI_TabReorder *)params;
+	UI_Panel *panel = data->tab->panel;
+
+	UI_Tab *tab = data->tab;
+	UI_Tab *next = data->next;
+
+	if (next == panel->tab_group.first)
+	{
+		panel->tab_group.first = tab;
+	}
+
+	if (data->side == Side_Min)
+	{
+		if (next->prev)
+		{
+			next->prev->next = tab;
+		}
+		tab->prev = next->prev;
+
+		next->next = tab->next;
+		if (tab->next)
+		{
+			tab->next->prev = next;
+		}
+
+		tab->next = next;
+		next->prev = tab;
+	}
+
+	log_info("Executed command: tab_reorder");
 }
 
 ////////////////////////////////

@@ -3,12 +3,12 @@
 
 #define UI_COMMAND(name) Void ui_command_##name(Void *params)
 
-
 typedef enum UI_CommandKind UI_CommandKind;
 enum UI_CommandKind
 {
 	UI_CommandKind_TabAttach,
 	UI_CommandKind_TabClose,
+	UI_CommandKind_TabReorder,
 
 	UI_CommandKind_PanelSplit,
 	UI_CommandKind_PanelSplitAndAttach,
@@ -35,6 +35,7 @@ typedef enum UI_DragStatus UI_DragStatus;
 enum UI_DragStatus
 {
 	UI_DragStatus_Inactive,
+	UI_DragStatus_Reordering,
 	UI_DragStatus_WaitingForDragThreshold,
 	UI_DragStatus_Dragging,
 	UI_DragStatus_Released,
@@ -66,7 +67,7 @@ struct UI_DragData
 {
 	UI_Tab    *tab;
 	UI_Panel  *hovered_panel;
-	Vec2F32 drag_origin;
+	Vec2F32   drag_origin;
 };
 
 typedef struct UI_Tab UI_Tab;
@@ -158,6 +159,14 @@ struct UI_TabAttach
 	B32    set_active;
 };
 
+typedef struct UI_TabReorder UI_TabReorder;
+struct UI_TabReorder
+{
+	UI_Tab *tab;
+	UI_Tab *next;
+	Side side;
+};
+
 typedef struct UI_PanelSplit UI_PanelSplit;
 struct UI_PanelSplit
 {
@@ -232,6 +241,8 @@ struct AppState
 	UI_Panel *next_focused_panel;
 
 	UI_Panel *resizing_panel;
+
+	UI_Tab *reordering_tab;
 
 	UI_CommandBuffer cmd_buffer;
 

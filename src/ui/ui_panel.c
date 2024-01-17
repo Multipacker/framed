@@ -3,7 +3,7 @@
 //
 // [ ] @feature Tabs
 //  [x] @feature Name tabs
-//  [ ] @feature Reordering
+//  [x] @feature Reordering
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 //  [ ] @bug Tab dropdown menu is slightly off from the anchor
@@ -16,9 +16,7 @@
 // [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
 //
 // [ ] @feature Finish tab offseting
-//  [ ] @bug Resizing with tab animation doesn't look perfect right now.
-//  [ ] @bug Decreasing panel size and then increase it again should not drag in
-//           tabs from the right first.
+//  [ ] @bug Resizing panels with tab animation doesn't look perfect right now.
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -50,10 +48,13 @@ ui_command_push(UI_CommandBuffer *buffer, UI_CommandKind kind)
 }
 
 ////////////////////////////////
+//~ hampus: Command helpers
+
+////////////////////////////////
 //~ hampus: Tab dragging
 
 internal Void
-ui_drag_prepare(UI_Tab *tab, Vec2F32 mouse_offset)
+ui_drag_begin_reordering(UI_Tab *tab, Vec2F32 mouse_offset)
 {
 	UI_DragData *drag_data = &app_state->drag_data;
 	drag_data->tab = tab;
@@ -62,13 +63,24 @@ ui_drag_prepare(UI_Tab *tab, Vec2F32 mouse_offset)
 
 	// NOTE(hampus): Since the root window may not have
 	// it's origin on (0, 0), we have to account for it
+	app_state->drag_status = UI_DragStatus_Reordering;
+	log_info("Drag: reordering");
+}
+
+internal Void
+ui_wait_for_drag_threshold(Void)
+{
+	// NOTE(hampus): Since the root window may not have
+	// it's origin on (0, 0), we have to account for it
 	app_state->drag_status = UI_DragStatus_WaitingForDragThreshold;
+	log_info("Drag: waiting for drag threshold");
 }
 
 internal Void
 ui_drag_release(Void)
 {
 	app_state->drag_status = UI_DragStatus_Released;
+	log_info("Drag: released");
 }
 
 internal Void
@@ -76,12 +88,20 @@ ui_drag_end(Void)
 {
 	app_state->drag_status = UI_DragStatus_Inactive;
 	memory_zero_struct(&app_state->drag_data);
+	log_info("Drag: end");
 }
 
 internal B32
 ui_currently_dragging(Void)
 {
 	B32 result = app_state->drag_status == UI_DragStatus_Dragging;
+	return(result);
+}
+
+internal B32
+ui_drag_reordering(Void)
+{
+	B32 result = app_state->drag_status == UI_DragStatus_Reordering;
 	return(result);
 }
 
@@ -140,6 +160,7 @@ ui_tab_make(Arena *arena, UI_TabViewProc *function, Void *data, Str8 name)
 		result->view_info.data = result;
 	}
 	app_state->num_tabs++;
+	log_info("Allocated tab: %"PRISTR8, str8_expand(result->string));
 	return(result);
 }
 
@@ -183,17 +204,10 @@ ui_tab_button(UI_Tab *tab)
 
 	B32 active = ui_tab_is_active(tab);
 
-	ui_spacer(ui_em(0.1f, 1));
-	if (!active)
-	{
-		ui_spacer(ui_em(0.1f, 1));
-	}
-
-	Vec4F32 color = active ? v4f32(0.4f, 0.4f, 0.4f, 1.0f) : v4f32(0.2f, 0.2f, 0.2f, 1.0f);
-
-	F32 height_em = active ? 1.1f : 1;
+	F32 height_em = active ? 1.2f : 1.1f;
 	F32 corner_radius = (F32) ui_top_font_size() * 0.5f;
 
+	Vec4F32 color = active ? v4f32(0.4f, 0.4f, 0.4f, 1.0f) : v4f32(0.2f, 0.2f, 0.2f, 1.0f);
 	ui_next_color(color);
 	ui_next_vert_corner_radius(corner_radius, 0);
 	ui_next_child_layout_axis(Axis2_X);
@@ -205,7 +219,8 @@ ui_tab_button(UI_Tab *tab)
 										  UI_BoxFlag_HotAnimation |
 										  UI_BoxFlag_ActiveAnimation |
 										  UI_BoxFlag_Clickable  |
-										  UI_BoxFlag_DrawBorder,
+										  UI_BoxFlag_DrawBorder |
+										  UI_BoxFlag_AnimateY,
 										  str8_lit("TitleContainer"));
 
 	tab->box = title_container;
@@ -242,6 +257,41 @@ ui_tab_button(UI_Tab *tab)
 		// TODO(hampus): We shouldn't need to do this here
 		// since there shouldn't even be any input events
 		// left in the queue if dragging is ocurring.
+		if (ui_drag_reordering())
+		{
+			if (tab != app_state->drag_data.tab)
+			{
+				if (tab != app_state->reordering_tab)
+				{
+					RectF32 rect = ui_box_get_fixed_rect(title_container->parent);
+					B32 hovered  = ui_mouse_is_inside_rect(rect);
+					if (hovered)
+					{
+						UI_TabReorder *data = ui_command_push(&app_state->cmd_buffer, UI_CommandKind_TabReorder);
+						if (app_state->drag_data.tab == tab->next)
+						{
+							data->next = tab;
+							data->tab = app_state->drag_data.tab;
+						}
+						else
+						{
+							data->next = app_state->drag_data.tab;
+							data->tab = tab;
+						}
+						app_state->reordering_tab = tab;
+					}
+				}
+				else
+				{
+					B32 finished_animation = title_container->parent->rel_pos_animated.x == title_container->parent->rel_pos.x;
+					if (finished_animation)
+					{
+						app_state->reordering_tab = 0;
+					}
+				}
+			}
+		}
+
 		if (!ui_currently_dragging())
 		{
 			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
@@ -252,12 +302,11 @@ ui_tab_button(UI_Tab *tab)
 			}
 
 			UI_Comm title_comm = ui_comm_from_box(title_container);
-
 			if (title_comm.pressed)
 			{
 				if (!tab->pinned)
 				{
-					ui_drag_prepare(tab, title_comm.rel_mouse);
+					ui_drag_begin_reordering(tab, title_comm.rel_mouse);
 				}
 
 				UI_PanelSetActiveTab *data = ui_command_push(&app_state->cmd_buffer, UI_CommandKind_PanelSetActiveTab);
@@ -316,6 +365,7 @@ ui_panel_alloc(Arena *arena)
 	UI_Panel *result = push_struct(arena, UI_Panel);
 	result->string = str8_pushf(app_state->perm_arena, "UI_Panel%"PRIS32, app_state->num_panels);
 	app_state->num_panels++;
+	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
 	return(result);
 }
 
@@ -369,7 +419,8 @@ ui_hover_panel_type(Str8 string, F32 width_in_em, UI_Panel *root, Axis2 axis, B3
 	ui_next_height(ui_em(width_in_em, 1));
 	ui_next_color(ui_top_text_style()->color);
 
-	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground,
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+							  UI_BoxFlag_Clickable,
 							  string);
 
 	if (!center)
@@ -422,8 +473,8 @@ ui_panel(UI_Panel *root)
 	}
 	else
 	{
-		ui_next_width(ui_pct(1, 0));
-		ui_next_height(ui_pct(1, 0));
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
 	}
 
 	// NOTE(hampus): It is clickable so that it can consume
@@ -701,6 +752,8 @@ ui_panel(UI_Panel *root)
 		F32 d_em = 0.2f;
 		F32 tab_button_height_em = title_bar_height_em-d_em;
 
+		UI_Box *title_bar = 0;
+		UI_Box *tabs_container = 0;
 		ui_next_width(ui_fill());
 		ui_row()
 		{
@@ -713,8 +766,8 @@ ui_panel(UI_Panel *root)
 										UI_BoxFlag_HotAnimation |
 										UI_BoxFlag_ActiveAnimation);
 			}
-			UI_Box *title_bar = ui_box_make(UI_BoxFlag_DrawBackground,
-											str8_lit("TitleBar"));
+			title_bar = ui_box_make(UI_BoxFlag_DrawBackground,
+									str8_lit("TitleBar"));
 			ui_parent(title_bar)
 			{
 
@@ -782,105 +835,116 @@ ui_panel(UI_Panel *root)
 											 v2f32(0, 0), tab_dropown_menu_key);
 						}
 					}
-
 					ui_spacer(ui_em(d_em, 1));
 
 					//- hampus: Tab buttons
 
-					B32 tab_overflow = false;
-
 					ui_next_width(ui_fill());
 					ui_next_height(ui_pct(1, 1));
 					ui_next_extra_box_flags(UI_BoxFlag_Clip);
-					UI_Box *tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
+					tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
-						if (root->tab_group.count > 1)
-						{
-							UI_Tab *active_tab = root->tab_group.active_tab;
-							if (active_tab->box && root->tab_group.last->box)
-							{
-								RectF32 active_tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
-								RectF32 first_tab_rect  = ui_box_get_fixed_rect(root->tab_group.first->box->parent);
-								RectF32 last_tab_rect   = ui_box_get_fixed_rect(root->tab_group.last->box->parent);
-								RectF32 tab_bar_rect    = tabs_container->fixed_rect;
+						ui_spacer(ui_pixels(root->tab_group.view_offset_x, 1));
 
-								F32 active_tab_width = active_tab_rect.x1 - active_tab_rect.x0;
-
-								F32 available_tab_bar_width = tab_bar_rect.x1 - tab_bar_rect.x0;
-								F32 required_tab_bar_width = last_tab_rect.x1 - first_tab_rect.x0;
-
-								B32 active_tab_is_visible =
-									active_tab_rect.x0 >= tab_bar_rect.x0 &&
-									active_tab_rect.x1 < tab_bar_rect.x1;
-								if (!active_tab_is_visible)
-								{
-									B32 overflow_left  = active_tab_rect.x0 < tab_bar_rect.x0;
-									B32 overflow_right = active_tab_rect.x1 >= tab_bar_rect.x1;
-									if (available_tab_bar_width > active_tab_width)
-									{
-										if (overflow_right)
-										{
-											root->tab_group.view_offset_x -= active_tab_rect.x1 - tab_bar_rect.x1;
-										}
-										else if (overflow_left)
-										{
-											root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
-										}
-									}
-									else
-									{
-										root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
-									}
-								}
-
-								root->tab_group.view_offset_x = f32_min(0, root->tab_group.view_offset_x);
-
-								if (required_tab_bar_width > available_tab_bar_width)
-								{
-									if (root->tab_group.view_offset_x < (available_tab_bar_width - required_tab_bar_width))
-									{
-										root->tab_group.view_offset_x = available_tab_bar_width - required_tab_bar_width;
-									}
-								}
-
-								ui_spacer(ui_pixels(root->tab_group.view_offset_x, 1));
-							}
-							else
-							{
-								root->tab_group.view_offset_x = 0;
-							}
-						}
-						else
-						{
-							root->tab_group.view_offset_x= 0;
-						}
+						// NOTE(hampus): Build tabs
 
 						for (UI_Tab *tab = root->tab_group.first;
 							 tab != 0;
 							 tab = tab->next)
 						{
+							ui_next_height(ui_pct(1, 1));
 							ui_next_width(ui_children_sum(1));
-							ui_next_height(ui_em(tab_button_height_em, 1));
-							ui_next_extra_box_flags(UI_BoxFlag_AnimateX);
-							ui_named_columnf("TabColumn%p", tab)
+							ui_next_child_layout_axis(Axis2_Y);
+							UI_Box *tab_column = ui_box_make_f(UI_BoxFlag_AnimateX,
+															   "TabColumn%p", tab);
+							ui_parent(tab_column)
 							{
-								ui_spacer(ui_em(d_em, 1));
-								UI_Box *tab_box = ui_tab_button(tab);
-
-								// TODO(hampus): Optimize this. We can do this by
-								// only checking if last_box.rect.x1 - first_box.rect.x0
-								// is greater then the tab bar width.
-								if ((tab_box->fixed_rect.x0 < tabs_container->fixed_rect.x0 ||
-									 tab_box->fixed_rect.x1 >= tabs_container->fixed_rect.x1) &&
-									!ui_box_created_this_frame(tab_box))
+								if (tab != root->tab_group.active_tab)
 								{
-									tab_overflow = true;
+									ui_spacer(ui_em(0.1f, 1));
 								}
+								ui_spacer(ui_em(0.1f, 1));
+								UI_Box *tab_box = ui_tab_button(tab);
 							}
 							ui_spacer(ui_em(d_em, 1));
 						}
 					}
 					ui_named_row_end();
+
+					B32 tab_overflow = false;
+					UI_Tab *active_tab = root->tab_group.active_tab;
+					if (root->tab_group.count > 1)
+					{
+						// NOTE(hampus): Calculate required tab bar offset for
+						// viewing the active tab group
+
+						RectF32 active_tab_rect = ui_box_get_fixed_rect(active_tab->box);
+						RectF32 first_tab_rect  = ui_box_get_fixed_rect(root->tab_group.first->box);
+						RectF32 tab_bar_rect    = tabs_container->fixed_rect;
+
+						UI_Tab *last_tab_with_size = root->tab_group.last;
+						while (ui_box_created_this_frame(last_tab_with_size->box))
+						{
+							if (last_tab_with_size == root->tab_group.first)
+							{
+								break;
+							}
+							last_tab_with_size = last_tab_with_size->prev;
+						}
+
+						F32 start = first_tab_rect.x0;
+						F32 end   = first_tab_rect.x1;
+
+						F32 active_tab_width = active_tab_rect.x1 - active_tab_rect.x0;
+						F32 available_tab_bar_width = tab_bar_rect.x1 - tab_bar_rect.x0;
+						F32 required_tab_bar_width = end - start;
+						if (last_tab_with_size != root->tab_group.first)
+						{
+							RectF32 last_tab_rect = ui_box_get_fixed_rect(last_tab_with_size->box);
+							end = last_tab_rect.x1;
+							required_tab_bar_width = end - start;
+							if (required_tab_bar_width > available_tab_bar_width)
+							{
+								tab_overflow = true;
+							}
+						}
+
+						B32 active_tab_is_visible =
+							active_tab_rect.x0 >= tab_bar_rect.x0 &&
+							active_tab_rect.x1 < tab_bar_rect.x1;
+						if (!active_tab_is_visible)
+						{
+							B32 overflow_left  = active_tab_rect.x0 < tab_bar_rect.x0;
+							B32 overflow_right = active_tab_rect.x1 >= tab_bar_rect.x1;
+							if (available_tab_bar_width > active_tab_width)
+							{
+								if (overflow_right)
+								{
+									root->tab_group.view_offset_x -= active_tab_rect.x1 - tab_bar_rect.x1;
+								}
+								else if (overflow_left)
+								{
+									root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
+								}
+							}
+							else
+							{
+								root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
+							}
+						}
+
+						root->tab_group.view_offset_x = f32_min(0, root->tab_group.view_offset_x);
+
+						if (required_tab_bar_width > available_tab_bar_width)
+						{
+							if (root->tab_group.view_offset_x < (available_tab_bar_width - required_tab_bar_width))
+							{
+								root->tab_group.view_offset_x = available_tab_bar_width - required_tab_bar_width;
+							}
+						}
+					}
+
+					// NOTE(hampus): Build prev/next tab buttons
 
 					if (tab_overflow)
 					{
@@ -937,6 +1001,8 @@ ui_panel(UI_Panel *root)
 						}
 					}
 
+					// NOTE(hampus): Build close tab button
+
 					ui_next_height(ui_em(title_bar_height_em, 1));
 					ui_next_width(ui_em(title_bar_height_em, 1));
 					ui_next_icon(RENDER_ICON_CROSS);
@@ -976,21 +1042,27 @@ ui_panel(UI_Panel *root)
 				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
 				if (title_bar_comm.pressed)
 				{
-					ui_drag_prepare(root->tab_group.active_tab, title_bar_comm.rel_mouse);
+					ui_drag_begin_reordering(root->tab_group.active_tab, title_bar_comm.rel_mouse);
+					ui_wait_for_drag_threshold();
 				}
 			}
 		}
 
 		//- hampus: Tab content
 
-		if (root != app_state->focused_panel)
+
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
+		ui_next_color(v4f32(0.0f, 0.0f, 0.0f, 0.5f));
+		UI_Box *content_dim = ui_box_make(UI_BoxFlag_FloatingPos,
+										  str8_lit("ContentDim"));
+		content_dim->flags |= UI_BoxFlag_DrawBackground * (root != app_state->focused_panel);
+
+		if (ui_mouse_is_inside_box(content_dim) &&
+			ui_drag_reordering() &&
+			!ui_mouse_is_inside_box(title_bar))
 		{
-			ui_next_width(ui_fill());
-			ui_next_height(ui_fill());
-			ui_next_color(v4f32(0.0f, 0.0f, 0.0f, 0.5f));
-			ui_box_make(UI_BoxFlag_DrawBackground |
-						UI_BoxFlag_FloatingPos,
-						str8_lit("ContentDim"));
+			ui_wait_for_drag_threshold();
 		}
 
 		if (root->tab_group.active_tab)
@@ -1098,6 +1170,7 @@ ui_window_make(Arena *arena, Vec2F32 size)
 	result->size = size;
 	ui_window_push_to_front(result);
 	result->root_panel = panel;
+	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
 	return(result);
 }
 
@@ -1372,9 +1445,13 @@ ui_panel_update(Render_Context *renderer, Gfx_EventList *event_list)
 	{
 		case UI_DragStatus_Inactive: {} break;
 
+		case UI_DragStatus_Reordering:
+		{
+		} break;
+
 		case UI_DragStatus_WaitingForDragThreshold:
 		{
-			F32 drag_threshold = ui_em(2, 1).value;
+			F32 drag_threshold = ui_em(3, 1).value;
 			Vec2F32 delta = v2f32_sub_v2f32(g_ui_ctx->mouse_pos, drag_data->drag_origin);
 			if (f32_abs(delta.x) > drag_threshold ||
 				f32_abs(delta.y) > drag_threshold)
@@ -1433,6 +1510,7 @@ ui_panel_update(Render_Context *renderer, Gfx_EventList *event_list)
 				app_state->next_focused_panel = drag_data->tab->panel;
 				app_state->drag_status = UI_DragStatus_Dragging;
 				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, offset);
+				log_info("Drag: dragging");
 			}
 
 		} break;
@@ -1457,7 +1535,8 @@ ui_panel_update(Render_Context *renderer, Gfx_EventList *event_list)
 	}
 
 	if (left_mouse_released &&
-		ui_drag_is_prepared())
+		(ui_drag_is_prepared() ||
+		 ui_drag_reordering()))
 	{
 		ui_drag_end();
 	}
@@ -1480,6 +1559,7 @@ ui_panel_update(Render_Context *renderer, Gfx_EventList *event_list)
 		{
 			case UI_CommandKind_TabAttach: ui_command_tab_attach(cmd->data); break;
 			case UI_CommandKind_TabClose:  ui_command_tab_close(cmd->data); break;
+			case UI_CommandKind_TabReorder:  ui_command_tab_reorder(cmd->data); break;
 
 			case UI_CommandKind_PanelSplit:          ui_command_panel_split(cmd->data);            break;
 			case UI_CommandKind_PanelSplitAndAttach: ui_command_panel_split_and_attach(cmd->data); break;
