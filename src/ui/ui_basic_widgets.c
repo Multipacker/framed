@@ -285,7 +285,7 @@ struct UI_ComboBoxParams
 #define ui_combo_box(name, selected_index, item_names, item_count, ...) ui_combo_box_internal(name, selected_index, item_names, item_count, &(UI_ComboBoxParams) { 0, __VA_ARGS__ });
 
 // TODO(simon): Maybe we only want to return true if the value changes.
-	internal B32
+internal B32
 ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count, UI_ComboBoxParams *params)
 {
 	B32 result = false;
@@ -327,20 +327,22 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 			UI_Box *display = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 			ui_box_equip_display_string(display, item_names[*selected_index]);
 
+			B32 combo_box_ctx_is_open = ui_key_match(ui_ctx_menu_key(), combo_box_key);
 			ui_next_height(ui_em(1, 1));
 			ui_next_width(ui_em(1, 1));
 			ui_next_font_size(12);
-			ui_next_icon(ui_ctx_menu_is_open(combo_box_key) ? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
+			ui_next_icon(combo_box_ctx_is_open? RENDER_ICON_DOWN_OPEN : RENDER_ICON_LEFT_OPEN);
 			ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 
-			if (comm.clicked || (ui_ctx_menu_is_open(combo_box_key) && comm.hovering))
+			if (comm.clicked ||
+				(combo_box_ctx_is_open && comm.hovering))
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), combo_box_key);
 			}
 
 			ui_ctx_menu(combo_box_key)
-			  ui_width(ui_pixels(combo_box->fixed_size.width, 1))
-			  ui_text_align(UI_TextAlign_Left)
+				ui_width(ui_pixels(combo_box->fixed_size.width, 1))
+				ui_text_align(UI_TextAlign_Left)
 			{
 				for (U32 i = 0; i < item_count; ++i)
 				{

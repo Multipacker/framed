@@ -369,9 +369,16 @@ ui_ctx_menu_close(Void)
 }
 
 internal B32
-ui_ctx_menu_is_open(UI_Key key)
+ui_ctx_menu_is_open(Void)
 {
-	B32 result = ui_key_match(g_ui_ctx->ctx_menu_key, key);
+	B32 result = !ui_key_is_null(g_ui_ctx->ctx_menu_key);
+	return(result);
+}
+
+internal UI_Key
+ui_ctx_menu_key(Void)
+{
+	UI_Key result = g_ui_ctx->ctx_menu_key;
 	return(result);
 }
 
