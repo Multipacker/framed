@@ -1,12 +1,12 @@
-typedef struct Prof Prof;
-struct Prof
+typedef struct Debug Debug;
+struct Debug
 {
 };
 
-internal Prof_Time
-prof_begin_internal(CStr file, U32 line, CStr name)
+internal Debug_Time
+debug_begin_internal(CStr file, U32 line, CStr name)
 {
-	Prof_Time result = { 0 };
+	Debug_Time result = { 0 };
 
 	result.file     = file;
 	result.line     = line;
@@ -17,7 +17,7 @@ prof_begin_internal(CStr file, U32 line, CStr name)
 }
 
 internal Void
-prof_end(Prof_Time time)
+debug_end(Debug_Time time)
 {
 	U64 end_ns = os_now_nanoseconds();
 }
