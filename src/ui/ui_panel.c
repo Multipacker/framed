@@ -2,12 +2,12 @@
 //~ hampus: Short term
 //
 // [ ] @feature Tabs
-//  [x] @feature Name tabs
-//  [x] @feature Reordering
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
-//  [x] @bug Tab dropdown menu is slightly off from the anchor
 //  [ ] @code @feature UI startup builder
+//  [ ] @bug If you begin to reorder a tab, and then drag it out, the offset will be wrong.
+//  [ ] @bug Reordering tabs at the end of the tab bar list when the tab bar is full is
+//           kinda yuck.
 
 ////////////////////////////////
 //~ hampus: Medium term
@@ -16,7 +16,7 @@
 // [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
 //
 // [ ] @feature Finish tab offseting
-//  [ ] @bug Resizing panels with tab animation doesn't look perfect right now.
+//  [ ] @bug Resizing panels with tab animation doesn't look that good right now.
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -46,9 +46,6 @@ ui_command_push(UI_CommandBuffer *buffer, UI_CommandKind kind)
 	buffer->pos++;
 	return(result->data);
 }
-
-////////////////////////////////
-//~ hampus: Command helpers
 
 ////////////////////////////////
 //~ hampus: Tab dragging
