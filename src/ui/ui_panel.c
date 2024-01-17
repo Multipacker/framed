@@ -6,7 +6,7 @@
 //  [x] @feature Reordering
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
-//  [ ] @bug Tab dropdown menu is slightly off from the anchor
+//  [x] @bug Tab dropdown menu is slightly off from the anchor
 //  [ ] @code @feature UI startup builder
 
 ////////////////////////////////
@@ -749,8 +749,8 @@ ui_panel(UI_Panel *root)
 		//- hampus: Tab bar
 
 		F32 title_bar_height_em = 1.2f;
-		F32 d_em = 0.2f;
-		F32 tab_button_height_em = title_bar_height_em-d_em;
+		F32 tab_spacing_em = 0.2f;
+		F32 tab_button_height_em = title_bar_height_em - 0.2f;;
 
 		UI_Box *title_bar = 0;
 		UI_Box *tabs_container = 0;
@@ -832,10 +832,10 @@ ui_panel(UI_Panel *root)
 						if (tab_dropdown_list_comm.pressed)
 						{
 							ui_ctx_menu_open(tab_dropdown_list_comm.box->key,
-											 v2f32(0, 0), tab_dropown_menu_key);
+											 v2f32(0, -ui_em(0.1f, 1).value), tab_dropown_menu_key);
 						}
 					}
-					ui_spacer(ui_em(d_em, 1));
+					ui_spacer(ui_em(tab_spacing_em, 1));
 
 					//- hampus: Tab buttons
 
@@ -866,7 +866,7 @@ ui_panel(UI_Panel *root)
 								ui_spacer(ui_em(0.1f, 1));
 								UI_Box *tab_box = ui_tab_button(tab);
 							}
-							ui_spacer(ui_em(d_em, 1));
+							ui_spacer(ui_em(tab_spacing_em, 1));
 						}
 					}
 					ui_named_row_end();
