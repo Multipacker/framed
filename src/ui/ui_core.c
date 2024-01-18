@@ -2,7 +2,6 @@
 
 // []  - Make tooltip stay on the first position it got
 // []  - Makes switching font & font size more robust
-// []  - Horizontal scrolling
 // []  - Context menu's inside other context menu's
 // []  - Death animations
 // []  - Change animation speed per-box
