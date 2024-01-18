@@ -6,22 +6,13 @@ struct LogUI_Thread
 	B32 show;
 };
 
-typedef enum LogUI_PathDisplay LogUI_PathDisplay;
-enum LogUI_PathDisplay
-{
-	LogUI_PathDisplay_Full,
-	LogUI_PathDisplay_File,
-
-	LogUI_FilePath_COUNT,
-};
-
 global LogUI_Thread *log_ui_previous_threads = 0;
 global LogUI_Thread *log_ui_current_threads  = 0;
 global Log_QueueEntry log_ui_entries[1000];
 global U32 log_ui_entry_count = 0;
 global U32 log_ui_has_new_entries = 0;
 global B32 log_ui_freeze = false;
-global LogUI_PathDisplay log_ui_path_display = LogUI_PathDisplay_Full;
+global B32 log_ui_compact_display = false;
 
 internal Void
 ui_log_keep_alive(Arena *frame_arena)
@@ -142,6 +133,31 @@ ui_logger(Void)
 				continue;
 			}
 
+			Str8 message = { 0 };
+			if (log_ui_compact_display)
+			{
+				Str8 path_display = str8_cstr(entry->file);
+				U64 slash_index = 0;
+				if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
+				{
+					++slash_index;
+				}
+				path_display = str8_skip(path_display, slash_index);
+
+				message = str8_pushf(ui_frame_arena(),
+									 "%.2u:%.2u:%.2u.%03u %s %"PRISTR8":%u: %s",
+									 entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
+									 entry->thread_name,
+									 str8_expand(path_display), entry->line,
+									 entry->message
+									 );
+			}
+			else
+			{
+				// NOTE(simon): Skip the trailing newline.
+				message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
+			}
+
 			Vec4F32 color = { 0 };
 			switch (entry->level)
 			{
@@ -151,47 +167,6 @@ ui_logger(Void)
 				case Log_Level_Trace:   color = v4f32_mul_f32(v4f32(121.4f, 229.0f,  91.4f, 255.0f), 1.0f / 255.0f); break;
 				invalid_case;
 			}
-
-			Str8 path_display = str8_cstr(entry->file);
-			switch (log_ui_path_display)
-			{
-				case LogUI_PathDisplay_Full:
-				{
-					// NOTE(simon): Already done.
-				} break;
-				case LogUI_PathDisplay_File:
-				{
-					U64 slash_index = 0;
-					if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
-					{
-						++slash_index;
-					}
-					path_display = str8_skip(path_display, slash_index);
-				} break;
-				invalid_case;
-			}
-
-			// NOTE(simon): Skip the trailing new-line.
-			CStr cstr_level = "";
-			switch (entry->level)
-			{
-				case Log_Level_Info:    cstr_level = "INFO";    break;
-				case Log_Level_Warning: cstr_level = "WARNING"; break;
-				case Log_Level_Error:   cstr_level = "ERROR";   break;
-				case Log_Level_Trace:   cstr_level = "TRACE";   break;
-				invalid_case;
-			}
-
-			Str8 message = str8_pushf(
-									  ui_frame_arena(),
-									  "%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %s %"PRISTR8":%u: %s",
-									  entry->time.year, entry->time.month + 1, entry->time.day + 1,
-									  entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
-									  cstr_level,
-									  entry->thread_name,
-									  str8_expand(path_display), entry->line,
-									  entry->message
-									  );
 
 			ui_next_text_color(color);
 			UI_Box *log_entry = ui_box_make(UI_BoxFlag_DrawText |
@@ -244,11 +219,13 @@ ui_logger(Void)
 
 			ui_spacer(ui_em(0.4f, 1));
 
-			Str8 path_displays[] = {
-				[LogUI_PathDisplay_Full] = str8_lit("Full path"),
-				[LogUI_PathDisplay_File] = str8_lit("File only"),
-			};
-			ui_combo_box(str8_lit("Path display: "), (U32 *)&log_ui_path_display, path_displays, array_count(path_displays));
+			ui_row()
+			{
+				ui_spacer(ui_em(0.4f, 1));
+				ui_check(&log_ui_compact_display, str8_lit("LogCompact"));
+				ui_spacer(ui_em(0.4f, 1));
+				ui_text(str8_lit("Compact display"));
+			}
 
 			ui_spacer(ui_em(0.4f, 1));
 
