@@ -85,12 +85,89 @@ ui_logger(Void)
 {
 	Render_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 11);
 
-	ui_next_child_layout_axis(Axis2_X);
+	ui_next_child_layout_axis(Axis2_Y);
 
 	UI_Box *log_window = ui_box_make(0, str8_lit("LogWindow"));
 
 	ui_parent(log_window)
 	{
+		ui_next_width(ui_fill());
+		ui_next_height(ui_em(10, 1));
+		ui_push_scrollable_region(str8_lit("LogControls"));
+		ui_row()
+		{
+			ui_column()
+			{
+				ui_spacer(ui_em(0.4f, 1));
+
+				ui_row()
+				{
+					ui_spacer(ui_em(0.4f, 1));
+					ui_check(&log_ui_freeze, str8_lit("LogFreeze"));
+					ui_spacer(ui_em(0.4f, 1));
+					ui_text(str8_lit("Freeze entries"));
+				}
+
+				ui_spacer(ui_em(0.4f, 1));
+
+				ui_row()
+				{
+					ui_spacer(ui_em(0.4f, 1));
+					ui_check(&log_ui_compact_display, str8_lit("LogCompact"));
+					ui_spacer(ui_em(0.4f, 1));
+					ui_text(str8_lit("Compact display"));
+				}
+
+
+			}
+
+			ui_spacer(ui_em(0.4f, 1));
+
+			ui_column()
+			{
+				ui_text(str8_lit("Threads:"));
+
+				for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+				{
+					ui_spacer(ui_em(0.4f, 1));
+					ui_row()
+					{
+						ui_spacer(ui_em(0.8f, 1));
+						ui_check(&thread->show, thread->name);
+						ui_spacer(ui_em(0.4f, 1));
+						ui_text(thread->name);
+					}
+				}
+			}
+
+			ui_spacer(ui_em(0.4f, 1));
+
+			ui_column()
+			{
+				ui_text(str8_lit("Level filter:"));
+
+				Str8 level_names[] = {
+					[Log_Level_Info]    = str8_lit("Infos"),
+					[Log_Level_Warning] = str8_lit("Warnings"),
+					[Log_Level_Error]   = str8_lit("Errors"),
+					[Log_Level_Trace]   = str8_lit("Traces"),
+				};
+				for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
+				{
+					ui_spacer(ui_em(0.4f, 1));
+					ui_row()
+					{
+						B32 test = false;
+						ui_spacer(ui_em(0.8f, 1));
+						ui_check(&log_ui_level_fillters[level], level_names[level]);
+						ui_spacer(ui_em(0.4f, 1));
+						ui_text(level_names[level]);
+					}
+				}
+			}
+		}
+		ui_pop_scrollable_region();
+
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBorder);
@@ -208,72 +285,6 @@ ui_logger(Void)
 		}
 
 		ui_pop_font();
-		ui_pop_scrollable_region();
-
-		ui_next_width(ui_em(10, 1));
-		ui_next_height(ui_fill());
-		ui_push_scrollable_region(str8_lit("LogControls"));
-		ui_column()
-		{
-			ui_spacer(ui_em(0.4f, 1));
-
-			ui_row()
-			{
-				ui_spacer(ui_em(0.4f, 1));
-				ui_check(&log_ui_freeze, str8_lit("LogFreeze"));
-				ui_spacer(ui_em(0.4f, 1));
-				ui_text(str8_lit("Freeze entries"));
-			}
-
-			ui_spacer(ui_em(0.4f, 1));
-
-			ui_row()
-			{
-				ui_spacer(ui_em(0.4f, 1));
-				ui_check(&log_ui_compact_display, str8_lit("LogCompact"));
-				ui_spacer(ui_em(0.4f, 1));
-				ui_text(str8_lit("Compact display"));
-			}
-
-			ui_spacer(ui_em(0.4f, 1));
-
-			ui_text(str8_lit("Threads:"));
-
-			for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
-			{
-				ui_spacer(ui_em(0.4f, 1));
-				ui_row()
-				{
-					ui_spacer(ui_em(0.8f, 1));
-					ui_check(&thread->show, thread->name);
-					ui_spacer(ui_em(0.4f, 1));
-					ui_text(thread->name);
-				}
-			}
-
-			ui_spacer(ui_em(0.4f, 1));
-
-			ui_text(str8_lit("Level filter:"));
-
-			Str8 level_names[] = {
-				[Log_Level_Info]    = str8_lit("Infos"),
-				[Log_Level_Warning] = str8_lit("Warnings"),
-				[Log_Level_Error]   = str8_lit("Errors"),
-				[Log_Level_Trace]   = str8_lit("Traces"),
-			};
-			for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
-			{
-				ui_spacer(ui_em(0.4f, 1));
-				ui_row()
-				{
-					B32 test = false;
-					ui_spacer(ui_em(0.8f, 1));
-					ui_check(&log_ui_level_fillters[level], level_names[level]);
-					ui_spacer(ui_em(0.4f, 1));
-					ui_text(level_names[level]);
-				}
-			}
-		}
 		ui_pop_scrollable_region();
 	}
 }
