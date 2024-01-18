@@ -210,7 +210,7 @@ ui_logger(Void)
 		ui_pop_font();
 		ui_pop_scrollable_region();
 
-		ui_next_width(ui_children_sum(1));
+		ui_next_width(ui_em(10, 1));
 		ui_next_height(ui_fill());
 		ui_push_scrollable_region(str8_lit("LogControls"));
 		ui_column()
