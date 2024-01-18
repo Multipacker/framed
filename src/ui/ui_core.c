@@ -14,6 +14,18 @@
 
 global UI_Context *g_ui_ctx;
 
+internal Vec2F32
+ui_mouse_pos(Void)
+{
+	return(g_ui_ctx->mouse_pos);
+}
+
+internal Vec2F32
+ui_prev_mouse_pos(Void)
+{
+	return(g_ui_ctx->prev_mouse_pos);
+}
+
 internal RectF32
 ui_box_get_fixed_rect(UI_Box *box)
 {

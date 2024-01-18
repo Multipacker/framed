@@ -3,6 +3,14 @@
 
 #define UI_COMMAND(name) Void ui_command_##name(Void *params)
 
+#define UI_TAB_VIEW(name) Void name(Void *data)
+typedef UI_TAB_VIEW(UI_TabViewProc);
+
+typedef struct UI_Panel UI_Panel;
+typedef struct UI_Tab UI_Tab;
+typedef struct UI_Cmd UI_Cmd;
+typedef struct UI_Window UI_Window;
+
 typedef enum UI_CommandKind UI_CommandKind;
 enum UI_CommandKind
 {
@@ -41,19 +49,11 @@ enum UI_DragStatus
 	UI_DragStatus_Released,
 };
 
-typedef struct UI_Panel UI_Panel;
-typedef struct UI_Tab UI_Tab;
-typedef struct UI_Cmd UI_Cmd;
-typedef struct UI_Window UI_Window;
-
 typedef struct UI_SplitPanelResult UI_SplitPanelResult;
 struct UI_SplitPanelResult
 {
 	UI_Panel *panels[Side_COUNT];
 };
-
-#define UI_TAB_VIEW(name) Void name(Void *data)
-typedef UI_TAB_VIEW(UI_TabViewProc);
 
 typedef struct UI_TabViewInfo UI_TabViewInfo;
 struct UI_TabViewInfo
@@ -145,6 +145,50 @@ struct UI_WindowList
 	U64 count;
 };
 
+typedef struct UI_Cmd UI_Cmd;
+struct UI_Cmd
+{
+	UI_CommandKind kind;
+	U8 data[512];
+};
+
+#define CMD_BUFFER_SIZE 16
+typedef struct UI_CommandBuffer UI_CommandBuffer;
+struct UI_CommandBuffer
+{
+	U64 pos;
+	U64 size;
+	UI_Cmd *buffer;
+};
+
+typedef struct AppState AppState;
+struct AppState
+{
+	Arena *perm_arena;
+	U64 num_panels;
+	U64 num_tabs;
+	U64 num_windows;
+
+	UI_Box *window_container;
+	UI_Window *master_window;
+	UI_Window *next_top_most_window;
+
+	UI_Panel *focused_panel;
+	UI_Panel *next_focused_panel;
+
+	UI_Panel *resizing_panel;
+
+	UI_CommandBuffer cmd_buffer;
+
+	UI_WindowList window_list;
+
+	UI_DragStatus drag_status;
+	UI_DragData   drag_data;
+
+	// NOTE(hampus): Debug purposes
+	U64 frame_index;
+};
+
 typedef struct UI_TabDelete UI_TabDelete;
 struct UI_TabDelete
 {
@@ -209,58 +253,21 @@ struct UI_WindowPushToFront
 	UI_Window *window;
 };
 
-typedef struct UI_Cmd UI_Cmd;
-struct UI_Cmd
-{
-	UI_CommandKind kind;
-	U8 data[512];
-};
-
-#define CMD_BUFFER_SIZE 16
-typedef struct UI_CommandBuffer UI_CommandBuffer;
-struct UI_CommandBuffer
-{
-	U64 pos;
-	U64 size;
-	UI_Cmd *buffer;
-};
-
-typedef struct AppState AppState;
-struct AppState
-{
-	Arena *perm_arena;
-	U64 num_panels;
-	U64 num_tabs;
-	U64 num_windows;
-
-	UI_Box *window_container;
-	UI_Window *master_window;
-	UI_Window *next_top_most_window;
-
-	UI_Panel *focused_panel;
-	UI_Panel *next_focused_panel;
-
-	UI_Panel *resizing_panel;
-
-	UI_Tab *reordering_tab;
-
-	UI_CommandBuffer cmd_buffer;
-
-	UI_WindowList window_list;
-
-	UI_DragStatus drag_status;
-	UI_DragData   drag_data;
-
-	// NOTE(hampus): Debug purposes
-	U64 frame_index;
-};
-
 UI_COMMAND(tab_close);
+
+////////////////////////////////
+//~ hampus: Command helpers
+
+internal Void ui_tab_close(UI_Tab *tab);
+
+internal Void ui_panel_attach_tab(UI_Panel *panel, UI_Tab *tab, B32 set_active);
+internal Void ui_panel_split(UI_Panel *first, Axis2 split_axis);
+internal Void ui_panel_split_and_attach_tab(UI_Panel *panel, UI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////
 //~ hampus: UI_Panels
 
-internal Void ui_attach_tab_to_panel(UI_Panel *panel, UI_Tab *tab, B32 set_active);
+internal Void ui_panel_split_and_attach_tab(UI_Panel *panel, UI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////
 //~ hampus: Window
