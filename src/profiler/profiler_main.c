@@ -49,8 +49,8 @@ os_main(Str8List arguments)
 	log_init(str8_lit("log.txt"));
 
 	Arena *perm_arena = arena_create();
-	app_state = push_struct(perm_arena, AppState);
-	app_state->perm_arena = perm_arena;
+	profiler_ui_state = push_struct(perm_arena, ProfilerUI_State);
+	profiler_ui_state->perm_arena = perm_arena;
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
 
@@ -66,13 +66,24 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
-	app_state->cmd_buffer.buffer = push_array(app_state->perm_arena, ProfilerUI_Command, CMD_BUFFER_SIZE);
-	app_state->cmd_buffer.size = CMD_BUFFER_SIZE;
+	profiler_ui_state->cmd_buffer.buffer = push_array(profiler_ui_state->perm_arena, ProfilerUI_Command, CMD_BUFFER_SIZE);
+	profiler_ui_state->cmd_buffer.size = CMD_BUFFER_SIZE;
 
 	//- hampus: Build startup UI
 
+	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(0.9f, 0.5f, 0.0f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.5f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+
 	{
-		ProfilerUI_Window *master_window = profiler_ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
+		ProfilerUI_Window *master_window = profiler_ui_window_make(profiler_ui_state->perm_arena, v2f32(1.0f, 1.0f));
 
 		ProfilerUI_Panel *first_panel = master_window->root_panel;
 
@@ -81,7 +92,7 @@ os_main(Str8List arguments)
 			{
 				ProfilerUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(app_state->perm_arena,
+					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
 												profiler_ui_tab_view_logger,
 												0,
 												str8_lit("Log")),
@@ -89,11 +100,20 @@ os_main(Str8List arguments)
 				};
 				profiler_ui_command_tab_attach(&attach);
 			}
-
 			{
 				ProfilerUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(app_state->perm_arena,
+					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
+												profiler_ui_theme_tab,
+												0, str8_lit("Theme")),
+					.panel = split_panel_result.panels[Side_Min],
+				};
+				profiler_ui_command_tab_attach(&attach);
+			}
+			{
+				ProfilerUI_TabAttach attach =
+				{
+					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
 												profiler_ui_tab_view_texture_viewer,
 												&image_texture,
 												str8_lit("Texture Viewer")),
@@ -104,18 +124,18 @@ os_main(Str8List arguments)
 			{
 				ProfilerUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(app_state->perm_arena, 0, 0, str8_lit("")),
+					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				profiler_ui_command_tab_attach(&attach);
 			}
 		}
 
-		app_state->master_window = master_window;
-		app_state->next_focused_panel = first_panel;
+		profiler_ui_state->master_window = master_window;
+		profiler_ui_state->next_focused_panel = first_panel;
 	}
 
-	app_state->frame_index = 1;
+	profiler_ui_state->frame_index = 1;
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -241,7 +261,7 @@ os_main(Str8List arguments)
 		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 		start_counter = end_counter;
 
-		app_state->frame_index++;
+		profiler_ui_state->frame_index++;
 	}
 
 	return(0);

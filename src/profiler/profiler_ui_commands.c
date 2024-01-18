@@ -117,9 +117,9 @@ PROFILER_UI_COMMAND(panel_split)
 	ProfilerUI_PanelSplit *data  = (ProfilerUI_PanelSplit *)params;
 	Axis2 split_axis  = data->axis;
 	ProfilerUI_Panel *child0     = data->panel;
-	ProfilerUI_Panel *child1     = profiler_ui_panel_alloc(app_state->perm_arena);
+	ProfilerUI_Panel *child1     = profiler_ui_panel_alloc(profiler_ui_state->perm_arena);
 	child1->window = child0->window;
-	ProfilerUI_Panel *new_parent = profiler_ui_panel_alloc(app_state->perm_arena);
+	ProfilerUI_Panel *new_parent = profiler_ui_panel_alloc(profiler_ui_state->perm_arena);
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
@@ -202,7 +202,7 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 		// NOTE(hampus): This is needed because if we're releasing
 		// on the same panel as we dragged the tab away from, and it
 		// was the last tab, we will have to allocate a new tab for the split
-		Tab *tab = ui_tab_make(app_state->perm_arena, 0, 0);
+		Tab *tab = ui_tab_make(profiler_ui_state->perm_arena, 0, 0);
 		UI_TabAttach attach =
 		{
 			.tab = tab,
@@ -223,10 +223,10 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 		.set_active = true,
 	};
 
-	app_state->next_focused_panel = panel;
-	if (data->panel->window != app_state->master_window)
+	profiler_ui_state->next_focused_panel = panel;
+	if (data->panel->window != profiler_ui_state->master_window)
 	{
-		app_state->next_top_most_window = data->panel->window;
+		profiler_ui_state->next_top_most_window = data->panel->window;
 	}
 
 	profiler_ui_command_tab_attach(&tab_attach_data);
@@ -243,15 +243,15 @@ PROFILER_UI_COMMAND(panel_close)
 		ProfilerUI_Panel *replacement = root->sibling;
 		if (root->parent->parent)
 		{
-			if (root == app_state->focused_panel)
+			if (root == profiler_ui_state->focused_panel)
 			{
 				if (root->sibling)
 				{
-					app_state->next_focused_panel = root->sibling;
+					profiler_ui_state->next_focused_panel = root->sibling;
 				}
 				else
 				{
-					app_state->next_focused_panel = root->parent;
+					profiler_ui_state->next_focused_panel = root->parent;
 				}
 			}
 			Side parent_side = profiler_ui_get_panel_side(root->parent);
@@ -265,9 +265,9 @@ PROFILER_UI_COMMAND(panel_close)
 		}
 		else if (root->parent)
 		{
-			if (root == app_state->focused_panel)
+			if (root == profiler_ui_state->focused_panel)
 			{
-				app_state->next_focused_panel = root->sibling;
+				profiler_ui_state->next_focused_panel = root->sibling;
 			}
 			// NOTE(hampus): We closed one of the root's children
 			root->window->root_panel = replacement;
@@ -278,9 +278,9 @@ PROFILER_UI_COMMAND(panel_close)
 	else
 	{
 		ProfilerUI_Window *window = root->window;
-		if (window != app_state->master_window)
+		if (window != profiler_ui_state->master_window)
 		{
-			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
+			dll_remove(profiler_ui_state->window_list.first, profiler_ui_state->window_list.last, window);
 		}
 	}
 	log_info("Executed command: panel_close");

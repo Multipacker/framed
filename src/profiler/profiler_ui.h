@@ -17,12 +17,10 @@ enum ProfilerUI_CommandKind
 	ProfilerUI_CommandKind_TabAttach,
 	ProfilerUI_CommandKind_TabClose,
 	ProfilerUI_CommandKind_TabReorder,
-	
 	ProfilerUI_CommandKind_PanelSplit,
 	ProfilerUI_CommandKind_PanelSplitAndAttach,
 	ProfilerUI_CommandKind_PanelSetActiveTab,
 	ProfilerUI_CommandKind_PanelClose,
-	
 	ProfilerUI_CommandKind_WindowRemoveFromList,
 	ProfilerUI_CommandKind_WindowPushToFront,
 };
@@ -35,7 +33,6 @@ enum ProfilerUI_TabReleaseKind
 	ProfilerUI_TabReleaseKind_Right,
 	ProfilerUI_TabReleaseKind_Top,
 	ProfilerUI_TabReleaseKind_Bottom,
-	
 	ProfilerUI_TabReleaseKind_COUNT
 };
 
@@ -47,6 +44,31 @@ enum ProfilerUI_DragStatus
 	ProfilerUI_DragStatus_WaitingForDragThreshold,
 	ProfilerUI_DragStatus_Dragging,
 	ProfilerUI_DragStatus_Released,
+};
+
+typedef enum ProfilerUI_Color ProfilerUI_Color;
+enum ProfilerUI_Color
+{
+	ProfilerUI_Color_Panel,
+	ProfilerUI_Color_InactivePanelBorder,
+	ProfilerUI_Color_ActivePanelBorder,
+	ProfilerUI_Color_InactivePanelOverlay,
+	
+	ProfilerUI_Color_TabBar,
+	ProfilerUI_Color_ActiveTab,
+	ProfilerUI_Color_InactiveTab,
+	ProfilerUI_Color_TabTitle,
+	ProfilerUI_Color_TabBorder,
+	
+	ProfilerUI_Color_TabBarButtons,
+	
+	ProfilerUI_Color_COUNT,
+};
+
+typedef struct ProfilerUI_Theme ProfilerUI_Theme;
+struct ProfilerUI_Theme
+{
+	Vec4F32 colors[ProfilerUI_Color_COUNT];
 };
 
 typedef struct ProfilerUI_SplitPanelResult ProfilerUI_SplitPanelResult;
@@ -161,8 +183,8 @@ struct ProfilerUI_CommandBuffer
 	ProfilerUI_Command *buffer;
 };
 
-typedef struct AppState AppState;
-struct AppState
+typedef struct ProfilerUI_State ProfilerUI_State;
+struct ProfilerUI_State
 {
 	Arena *perm_arena;
 	U64 num_panels;
@@ -184,6 +206,8 @@ struct AppState
 	
 	ProfilerUI_DragStatus drag_status;
 	ProfilerUI_DragData   drag_data;
+	
+	ProfilerUI_Theme theme;
 	
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
