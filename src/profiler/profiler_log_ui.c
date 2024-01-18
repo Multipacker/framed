@@ -248,7 +248,7 @@ ui_logger(Void)
 				[LogUI_PathDisplay_Full] = str8_lit("Full path"),
 				[LogUI_PathDisplay_File] = str8_lit("File only"),
 			};
-			ui_combo_box(str8_lit("Path display: "), &log_ui_path_display, path_displays, array_count(path_displays));
+			ui_combo_box(str8_lit("Path display: "), (U32 *)&log_ui_path_display, path_displays, array_count(path_displays));
 
 			ui_spacer(ui_em(0.4f, 1));
 

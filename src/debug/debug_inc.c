@@ -1,6 +1,7 @@
 typedef struct Debug Debug;
 struct Debug
 {
+	U32 placeholder;
 };
 
 internal Debug_Time
