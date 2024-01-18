@@ -162,7 +162,7 @@ ui_logger(Void)
 				case LogUI_PathDisplay_File:
 				{
 					U64 slash_index = 0;
-					if (str8_last_index_of(path_display, '/', &slash_index))
+					if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
 					{
 						++slash_index;
 					}
@@ -183,15 +183,15 @@ ui_logger(Void)
 			}
 
 			Str8 message = str8_pushf(
-				ui_frame_arena(),
-				"%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %s %"PRISTR8":%u: %s",
-				entry->time.year, entry->time.month + 1, entry->time.day + 1,
-				entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
-				cstr_level,
-				entry->thread_name,
-				str8_expand(path_display), entry->line,
-				entry->message
-			);
+									  ui_frame_arena(),
+									  "%d-%.2u-%.2u %.2u:%.2u:%.2u.%03u %s %s %"PRISTR8":%u: %s",
+									  entry->time.year, entry->time.month + 1, entry->time.day + 1,
+									  entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
+									  cstr_level,
+									  entry->thread_name,
+									  str8_expand(path_display), entry->line,
+									  entry->message
+									  );
 
 			ui_next_text_color(color);
 			UI_Box *log_entry = ui_box_make(UI_BoxFlag_DrawText |

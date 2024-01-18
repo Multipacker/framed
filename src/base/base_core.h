@@ -298,6 +298,14 @@ a = b; \
 b = temp##__LINE__; \
 }
 
+#if OS_LINUX
+#	define PATH_SEPARATOR '/'
+#elif OS_WINDOWS
+#	define PATH_SEPARATOR '\\'
+#elif OS_MAC
+#    define PATH_SEPARATOR '/'
+#endif
+
 #define axis_flip(axis) (!(axis))
 typedef enum Axis2 Axis2;
 enum Axis2
