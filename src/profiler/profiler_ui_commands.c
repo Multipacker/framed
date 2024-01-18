@@ -1,14 +1,14 @@
-UI_COMMAND(panel_close);
+PROFILER_UI_COMMAND(panel_close);
 
 ////////////////////////////////
 //~ hampus: Tab commands
 
-UI_COMMAND(tab_close)
+PROFILER_UI_COMMAND(tab_close)
 {
-	UI_TabDelete *data = (UI_TabDelete *)params;
+	ProfilerUI_TabDelete *data = (ProfilerUI_TabDelete *)params;
 
-	UI_Tab *tab = data->tab;
-	UI_Panel *panel = tab->panel;
+	ProfilerUI_Tab *tab = data->tab;
+	ProfilerUI_Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
 	{
 		if (tab->prev)
@@ -31,21 +31,21 @@ UI_COMMAND(tab_close)
 	panel->tab_group.view_offset_x += tab->box->fixed_size.x;
 	if (panel->tab_group.count == 0)
 	{
-		UI_PanelClose close =
+		ProfilerUI_PanelClose close =
 		{
 			.panel = panel,
 		};
-		ui_command_panel_close(&close);
+		profiler_ui_command_panel_close(&close);
 	}
 	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
 }
 
-UI_COMMAND(tab_attach)
+PROFILER_UI_COMMAND(tab_attach)
 {
-	UI_TabAttach *data = (UI_TabAttach *)params;
+	ProfilerUI_TabAttach *data = (ProfilerUI_TabAttach *)params;
 
-	UI_Panel *panel = data->panel;
-	UI_Tab *tab = data->tab;
+	ProfilerUI_Panel *panel = data->panel;
+	ProfilerUI_Tab *tab = data->tab;
 	dll_push_back(panel->tab_group.first, panel->tab_group.last, tab);
 	tab->panel = panel;
 	B32 set_active = panel->tab_group.count == 0 || data->set_active;
@@ -57,13 +57,13 @@ UI_COMMAND(tab_attach)
 	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
 }
 
-UI_COMMAND(tab_reorder)
+PROFILER_UI_COMMAND(tab_reorder)
 {
-	UI_TabReorder *data = (UI_TabReorder *)params;
-	UI_Panel *panel = data->tab->panel;
+	ProfilerUI_TabReorder *data = (ProfilerUI_TabReorder *)params;
+	ProfilerUI_Panel *panel = data->tab->panel;
 
-	UI_Tab *tab = data->tab;
-	UI_Tab *next = data->next;
+	ProfilerUI_Tab *tab = data->tab;
+	ProfilerUI_Tab *next = data->next;
 
 	if (next == panel->tab_group.first)
 	{
@@ -94,17 +94,17 @@ UI_COMMAND(tab_reorder)
 ////////////////////////////////
 //~ hampus: UI_Panel commands
 
-UI_COMMAND(panel_set_active_tab)
+PROFILER_UI_COMMAND(panel_set_active_tab)
 {
-	UI_PanelSetActiveTab *data = (UI_PanelSetActiveTab *)params;
-	UI_Panel *panel = data->panel;
-	UI_Tab *tab = data->tab;
+	ProfilerUI_PanelSetActiveTab *data = (ProfilerUI_PanelSetActiveTab *)params;
+	ProfilerUI_Panel *panel = data->panel;
+	ProfilerUI_Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
 	log_info("Executed command: panel_set_active_tab");
 }
 
 // NOTE(hampus): This _always_ put the new child to the right or bottom
-UI_COMMAND(panel_split)
+PROFILER_UI_COMMAND(panel_split)
 {
 	// NOTE(hampus): We will create a new parent that will
 	// have this panel and a new child as children:
@@ -114,16 +114,16 @@ UI_COMMAND(panel_split)
 	//             a   b
 	//
 	// where c is ´new_parent´, and b is ´child1´
-	UI_PanelSplit *data  = (UI_PanelSplit *)params;
+	ProfilerUI_PanelSplit *data  = (ProfilerUI_PanelSplit *)params;
 	Axis2 split_axis  = data->axis;
-	UI_Panel *child0     = data->panel;
-	UI_Panel *child1     = ui_panel_alloc(app_state->perm_arena);
+	ProfilerUI_Panel *child0     = data->panel;
+	ProfilerUI_Panel *child1     = profiler_ui_panel_alloc(app_state->perm_arena);
 	child1->window = child0->window;
-	UI_Panel *new_parent = ui_panel_alloc(app_state->perm_arena);
+	ProfilerUI_Panel *new_parent = profiler_ui_panel_alloc(app_state->perm_arena);
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
-	UI_Panel *children[Side_COUNT] = {child0, child1};
+	ProfilerUI_Panel *children[Side_COUNT] = {child0, child1};
 
 	// NOTE(hampus): Hook the new parent as a sibling
 	// to the panel's sibling
@@ -137,7 +137,7 @@ UI_COMMAND(panel_split)
 	// to the panels parent
 	if (child0->parent)
 	{
-		Side side = ui_get_panel_side(child0);
+		Side side = profiler_ui_get_panel_side(child0);
 		child0->parent->children[side] = new_parent;
 	}
 	new_parent->parent = child0->parent;
@@ -162,21 +162,21 @@ UI_COMMAND(panel_split)
 	log_info("Executed command: panel_split");
 }
 
-UI_COMMAND(panel_split_and_attach)
+PROFILER_UI_COMMAND(panel_split_and_attach)
 {
-	UI_PanelSplitAndAttach *data = (UI_PanelSplitAndAttach *)params;
+	ProfilerUI_PanelSplitAndAttach *data = (ProfilerUI_PanelSplitAndAttach *)params;
 
 	B32 releasing_on_same_panel =
 		data->panel == data->tab->panel &&
 		data->panel->tab_group.count == 0;
 
-	UI_PanelSplit split_data =
+	ProfilerUI_PanelSplit split_data =
 	{
 		.panel      = data->panel,
 		.axis       = data->axis,
 	};
 
-	ui_command_panel_split(&split_data);
+	profiler_ui_command_panel_split(&split_data);
 
 	// NOTE(hampus): panel_split always put the new panel
 	// to the left/top
@@ -185,14 +185,14 @@ UI_COMMAND(panel_split_and_attach)
 		if (data->panel_side == Side_Max)
 		{
 
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], UI_Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], ProfilerUI_Panel *);
 		}
 	}
 	else
 	{
 		if (data->panel_side == Side_Min)
 		{
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], UI_Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], ProfilerUI_Panel *);
 		}
 	}
 
@@ -214,9 +214,9 @@ UI_COMMAND(panel_split_and_attach)
 	}
 #endif
 
-	UI_Panel *panel = data->panel->parent->children[data->panel_side];
+	ProfilerUI_Panel *panel = data->panel->parent->children[data->panel_side];
 
-	UI_TabAttach tab_attach_data =
+	ProfilerUI_TabAttach tab_attach_data =
 	{
 		.tab        = data->tab,
 		.panel      = panel,
@@ -229,18 +229,18 @@ UI_COMMAND(panel_split_and_attach)
 		app_state->next_top_most_window = data->panel->window;
 	}
 
-	ui_command_tab_attach(&tab_attach_data);
+	profiler_ui_command_tab_attach(&tab_attach_data);
 	log_info("Executed command: panel_split_and_attach");
 }
 
-UI_COMMAND(panel_close)
+PROFILER_UI_COMMAND(panel_close)
 {
-	UI_PanelClose *data = (UI_PanelClose *)params;
-	UI_Panel *root = data->panel;
+	ProfilerUI_PanelClose *data = (ProfilerUI_PanelClose *)params;
+	ProfilerUI_Panel *root = data->panel;
 	if (root->parent)
 	{
 		B32 is_first       = root->parent->children[0] == root;
-		UI_Panel *replacement = root->sibling;
+		ProfilerUI_Panel *replacement = root->sibling;
 		if (root->parent->parent)
 		{
 			if (root == app_state->focused_panel)
@@ -254,7 +254,7 @@ UI_COMMAND(panel_close)
 					app_state->next_focused_panel = root->parent;
 				}
 			}
-			Side parent_side = ui_get_panel_side(root->parent);
+			Side parent_side = profiler_ui_get_panel_side(root->parent);
 			Side flipped_parent_side = side_flip(parent_side);
 
 			root->parent->parent->children[parent_side] = replacement;
@@ -277,7 +277,7 @@ UI_COMMAND(panel_close)
 	}
 	else
 	{
-		UI_Window *window = root->window;
+		ProfilerUI_Window *window = root->window;
 		if (window != app_state->master_window)
 		{
 			dll_remove(app_state->window_list.first, app_state->window_list.last, window);
@@ -286,18 +286,18 @@ UI_COMMAND(panel_close)
 	log_info("Executed command: panel_close");
 }
 
-UI_COMMAND(window_push_to_front)
+PROFILER_UI_COMMAND(window_push_to_front)
 {
-	UI_WindowPushToFront *data = params;
-	UI_Window *window = data->window;
-	ui_window_push_to_front(window);
+	ProfilerUI_WindowPushToFront *data = params;
+	ProfilerUI_Window *window = data->window;
+	profiler_ui_window_push_to_front(window);
 	log_info("Executed command: window_push_to_front");
 }
 
-UI_COMMAND(window_remove_from_list)
+PROFILER_UI_COMMAND(window_remove_from_list)
 {
-	UI_WindowRemoveFromList *data = params;
-	UI_Window *window = data->window;
-	ui_window_remove_from_list(window);
+	ProfilerUI_WindowRemoveFromList *data = params;
+	ProfilerUI_Window *window = data->window;
+	profiler_ui_window_remove_from_list(window);
 	log_info("Executed command: window_remove_from_list");
 }

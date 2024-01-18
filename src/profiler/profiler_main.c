@@ -16,20 +16,23 @@
 #include "image/image_inc.c"
 #include "ui/ui_inc.c"
 
+#include "profiler/profiler_ui.h"
+
+#include "profiler/profiler_ui.c"
 #include "profiler/profiler_log_ui.c"
 #include "profiler/profiler_texture_ui.c"
 
 ////////////////////////////////
 //~ hampus: Tab views
 
-UI_TAB_VIEW(ui_tab_view_logger)
+PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_logger)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
 	ui_logger();
 }
 
-UI_TAB_VIEW(ui_tab_view_texture_viewer)
+PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -63,42 +66,48 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
-	app_state->cmd_buffer.buffer = push_array(app_state->perm_arena, UI_Cmd, CMD_BUFFER_SIZE);
+	app_state->cmd_buffer.buffer = push_array(app_state->perm_arena, ProfilerUI_Command, CMD_BUFFER_SIZE);
 	app_state->cmd_buffer.size = CMD_BUFFER_SIZE;
 
 	//- hampus: Build startup UI
 
 	{
-		UI_Window *master_window = ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
+		ProfilerUI_Window *master_window = profiler_ui_window_make(app_state->perm_arena, v2f32(1.0f, 1.0f));
 
-		UI_Panel *first_panel = master_window->root_panel;
+		ProfilerUI_Panel *first_panel = master_window->root_panel;
 
-		UI_SplitPanelResult split_panel_result = ui_builder_split_panel(first_panel, Axis2_X);
+		ProfilerUI_SplitPanelResult split_panel_result = profiler_ui_builder_split_panel(first_panel, Axis2_X);
 		{
 			{
-				UI_TabAttach attach =
+				ProfilerUI_TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_logger, 0, str8_lit("Log")),
+					.tab = profiler_ui_tab_make(app_state->perm_arena,
+												profiler_ui_tab_view_logger,
+												0,
+												str8_lit("Log")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
-				ui_command_tab_attach(&attach);
+				profiler_ui_command_tab_attach(&attach);
 			}
 
 			{
-				UI_TabAttach attach =
+				ProfilerUI_TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
+					.tab = profiler_ui_tab_make(app_state->perm_arena,
+												profiler_ui_tab_view_texture_viewer,
+												&image_texture,
+												str8_lit("Texture Viewer")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
-				ui_command_tab_attach(&attach);
+				profiler_ui_command_tab_attach(&attach);
 			}
 			{
-				UI_TabAttach attach =
+				ProfilerUI_TabAttach attach =
 				{
-					.tab = ui_tab_make(app_state->perm_arena, 0, 0, str8_lit("")),
+					.tab = profiler_ui_tab_make(app_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
-				ui_command_tab_attach(&attach);
+				profiler_ui_command_tab_attach(&attach);
 			}
 		}
 
@@ -221,7 +230,7 @@ os_main(Str8List arguments)
 
 		ui_log_keep_alive(current_arena);
 
-		ui_panel_update(renderer, &events);
+		profiler_ui_update(renderer, &events);
 
 		render_end(renderer);
 
