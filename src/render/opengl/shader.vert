@@ -14,7 +14,7 @@ layout (location = 13) in vec2  instance_max_uv;
 
 out vec2  vert_pos;
 out vec2  vert_uv;
-out vec4  vert_color;
+out mat4  vert_colors;
 out float vert_softness;
 out float vert_border_thickness;
 out float vertex_id;
@@ -50,7 +50,7 @@ main()
 	gl_Position           = uniform_projection * vec4(position, 0.0, 1.0);
 	vert_pos              = position;
 	vert_uv               = uv;
-	vert_color            = instance_colors[gl_VertexID];
+	vert_colors           = instance_colors;
 	vert_softness         = instance_softness;
 	vert_border_thickness = instance_border_thickness;
 	vertex_id             = gl_VertexID;

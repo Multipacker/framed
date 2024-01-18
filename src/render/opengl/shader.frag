@@ -2,7 +2,7 @@
 
 in vec2  vert_pos;
 in vec2  vert_uv;
-in vec4  vert_color;
+in mat4  vert_colors;
 in float vert_softness;
 in float vert_border_thickness;
 in float vertex_id;
@@ -27,6 +27,12 @@ rounded_rect_sdf(vec2 sample_pos, vec2 rect_center, vec2 rect_half_size, float r
 {
 	vec2 d2 = abs(rect_center - sample_pos) - rect_half_size + radius;
 	return min(max(d2.x, d2.y), 0.0) + length(max(d2, 0.0)) - radius;
+}
+
+vec2
+rect_uv(vec2 sample_pos, vec2 rect_center, vec2 rect_half_size)
+{
+	return (rect_center - sample_pos + rect_half_size) / (2.0 * rect_half_size);
 }
 
 // Converts a color from linear light gamma to sRGB gamma
@@ -56,8 +62,14 @@ main()
 {
 	float radius = vert_radies[int(round(vertex_id))];
 	float softness_padding = max(0, vert_softness * 2 - 1);
+	vec2 color_uv = rect_uv(vert_pos, vert_center, vert_half_size - softness_padding);
 	float dist = rounded_rect_sdf(vert_pos, vert_center, vert_half_size - softness_padding, radius);
 	float sdf_factor = 1.0 - smoothstep(0, 2 * vert_softness, dist);
+
+	// NOTE(simon): OpenGL shenanigans with flipping the coordinate system.
+	vec4 color_top    = mix(vert_colors[3], vert_colors[2], color_uv.x);
+	vec4 color_bottom = mix(vert_colors[1], vert_colors[0], color_uv.x);
+	vec4 color        = mix(color_top,      color_bottom,   color_uv.y);
 
 	float border_factor = 1.f;
 	if (vert_border_thickness != 0)
@@ -87,15 +99,15 @@ main()
 
 	if (vert_is_subpixel_text < 1)
 	{
-		vec4 color = sample_color * vert_color;
-		color.a   *= sdf_factor * border_factor;
+		vec4 blended_color = sample_color * color;
+		blended_color.a   *= sdf_factor * border_factor;
 
-		frag_color         = color;
-		frag_blend_weights = vec4(color.a);
+		frag_color         = blended_color;
+		frag_blend_weights = vec4(blended_color.a);
 	}
 	else
 	{
-		frag_color         = vert_color;
-		frag_blend_weights = vec4(sample_color.rgb * vert_color.a, 0.0);
+		frag_color         = color;
+		frag_blend_weights = vec4(sample_color.rgb * color.a, 0.0);
 	}
 }
