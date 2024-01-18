@@ -13,6 +13,7 @@ global U32 log_ui_entry_count = 0;
 global U32 log_ui_has_new_entries = 0;
 global B32 log_ui_freeze = false;
 global B32 log_ui_compact_display = false;
+global B32 log_ui_level_fillters[Log_Level_COUNT] = { 0 };
 
 internal Void
 ui_log_keep_alive(Arena *frame_arena)
@@ -104,10 +105,16 @@ ui_logger(Void)
 
 		ui_push_font(mono);
 
-		B32 all_unselected = true;
+		B32 show_all_threads = true;
 		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
 		{
-			all_unselected &= !thread->show;
+			show_all_threads &= !thread->show;
+		}
+
+		B32 show_all_levels = true;
+		for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
+		{
+			show_all_levels &= !log_ui_level_fillters[level];
 		}
 
 		for (U32 i = 0; i < log_ui_entry_count; ++i)
@@ -115,7 +122,7 @@ ui_logger(Void)
 			Log_QueueEntry *entry = &log_ui_entries[i];
 
 			B32 show = true;
-			if (!all_unselected)
+			if (!show_all_threads)
 			{
 				Str8 thread_name = str8_cstr((CStr) entry->thread_name);
 				for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
@@ -126,6 +133,10 @@ ui_logger(Void)
 						break;
 					}
 				}
+			}
+			if (!show_all_levels)
+			{
+				show &= log_ui_level_fillters[entry->level];
 			}
 
 			if (!show)
@@ -237,6 +248,29 @@ ui_logger(Void)
 					ui_check(&thread->show, thread->name);
 					ui_spacer(ui_em(0.4f, 1));
 					ui_text(thread->name);
+				}
+			}
+
+			ui_spacer(ui_em(0.4f, 1));
+
+			ui_text(str8_lit("Level filter:"));
+
+			Str8 level_names[] = {
+				[Log_Level_Info]    = str8_lit("Infos"),
+				[Log_Level_Warning] = str8_lit("Warnings"),
+				[Log_Level_Error]   = str8_lit("Errors"),
+				[Log_Level_Trace]   = str8_lit("Traces"),
+			};
+			for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
+			{
+				ui_spacer(ui_em(0.4f, 1));
+				ui_row()
+				{
+					B32 test = false;
+					ui_spacer(ui_em(0.8f, 1));
+					ui_check(&log_ui_level_fillters[level], level_names[level]);
+					ui_spacer(ui_em(0.4f, 1));
+					ui_text(level_names[level]);
 				}
 			}
 		}
