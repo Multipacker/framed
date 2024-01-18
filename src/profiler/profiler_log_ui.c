@@ -158,17 +158,14 @@ ui_logger(Void)
 				message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
 			}
 
-			Vec4F32 color = { 0 };
-			switch (entry->level)
-			{
-				case Log_Level_Info:    color = v4f32_mul_f32(v4f32(229.0f, 229.0f, 229.0f, 255.0f), 1.0f / 255.0f); break;
-				case Log_Level_Warning: color = v4f32_mul_f32(v4f32(229.0f, 227.0f,  91.0f, 255.0f), 1.0f / 255.0f); break;
-				case Log_Level_Error:   color = v4f32_mul_f32(v4f32(229.0f, 100.0f,  91.0f, 255.0f), 1.0f / 255.0f); break;
-				case Log_Level_Trace:   color = v4f32_mul_f32(v4f32(121.4f, 229.0f,  91.4f, 255.0f), 1.0f / 255.0f); break;
-				invalid_case;
-			}
+			Vec4F32 level_colors[] = {
+				[Log_Level_Info]    = v4f32_mul_f32(v4f32(229.0f, 229.0f, 229.0f, 255.0f), 1.0f / 255.0f),
+				[Log_Level_Warning] = v4f32_mul_f32(v4f32(229.0f, 227.0f,  91.0f, 255.0f), 1.0f / 255.0f),
+				[Log_Level_Error]   = v4f32_mul_f32(v4f32(229.0f, 100.0f,  91.0f, 255.0f), 1.0f / 255.0f),
+				[Log_Level_Trace]   = v4f32_mul_f32(v4f32(121.4f, 229.0f,  91.4f, 255.0f), 1.0f / 255.0f),
+			};
 
-			ui_next_text_color(color);
+			ui_next_text_color(level_colors[entry->level]);
 			UI_Box *log_entry = ui_box_make(UI_BoxFlag_DrawText |
 											UI_BoxFlag_HotAnimation |
 											UI_BoxFlag_ActiveAnimation |
