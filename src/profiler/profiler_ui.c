@@ -53,17 +53,17 @@ profiler_ui_string_from_color(ProfilerUI_Color color)
 	Str8 result = str8_lit("Null");
 	switch (color)
 	{
-		case ProfilerUI_Color_Panel:                { result = str8_lit("Panel background"); } break;
-		case ProfilerUI_Color_InactivePanelBorder:  { result = str8_lit("Inactive panel border"); } break;
-		case ProfilerUI_Color_ActivePanelBorder:    { result = str8_lit("Active panel border"); } break;
+		case ProfilerUI_Color_Panel:                { result = str8_lit("Panel background");       } break;
+		case ProfilerUI_Color_InactivePanelBorder:  { result = str8_lit("Inactive panel border");  } break;
+		case ProfilerUI_Color_ActivePanelBorder:    { result = str8_lit("Active panel border");    } break;
 		case ProfilerUI_Color_InactivePanelOverlay: { result = str8_lit("Inactive panel overlay"); } break;
 
-		case ProfilerUI_Color_TabBar:                { result = str8_lit("Tab bar background"); } break;
-		case ProfilerUI_Color_ActiveTab:  { result = str8_lit("Active tab background"); } break;
-		case ProfilerUI_Color_InactiveTab:    { result = str8_lit("Inactive tab background"); } break;
-		case ProfilerUI_Color_TabTitle:    { result = str8_lit("Tab foreground"); } break;
-		case ProfilerUI_Color_TabBorder: { result = str8_lit("Tab border"); } break;
-		case ProfilerUI_Color_TabBarButtons: { result = str8_lit("Tab bar buttons"); } break;
+		case ProfilerUI_Color_TabBar:        { result = str8_lit("Tab bar background");      } break;
+		case ProfilerUI_Color_ActiveTab:     { result = str8_lit("Active tab background");   } break;
+		case ProfilerUI_Color_InactiveTab:   { result = str8_lit("Inactive tab background"); } break;
+		case ProfilerUI_Color_TabTitle:      { result = str8_lit("Tab foreground");          } break;
+		case ProfilerUI_Color_TabBorder:     { result = str8_lit("Tab border");              } break;
+		case ProfilerUI_Color_TabBarButtons: { result = str8_lit("Tab bar buttons");         } break;
 
 		invalid_case;
 	}
