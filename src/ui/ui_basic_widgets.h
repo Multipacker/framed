@@ -5,7 +5,7 @@ typedef struct UI_ScrollabelRegion UI_ScrollabelRegion;
 struct UI_ScrollabelRegion
 {
 	UI_Box *view_region;
-	UI_Box *container;
+	UI_Box *content;
 };
 
 internal Void    ui_text(Str8 string);
