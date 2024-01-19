@@ -1063,6 +1063,13 @@ f32_round_to_s32(F32 x)
 }
 
 internal F32
+f32_mod(F32 a, F32 b)
+{
+	F32 result = fmodf(a, b);
+	return(result);
+}
+
+internal F32
 f32_clamp(F32 min, F32 val, F32 max)
 {
 	F32 result = f32_max(f32_min(val, max), min);
@@ -1175,4 +1182,77 @@ f64_clamp(F64 min, F64 val, F64 max)
 {
 	F64 result = f64_max(f64_min(val, max), min);
 	return(result);
+}
+
+internal Vec3F32
+hsv_from_rgb(Vec3F32 rgb)
+{
+	F32 c_max = f32_max(rgb.x, f32_max(rgb.y, rgb.z));
+	F32 c_min = f32_min(rgb.x, f32_min(rgb.y, rgb.z));
+	F32 delta = c_max - c_min;
+	F32 h = ((delta == 0.f) ? 0.f :
+			 (c_max == rgb.x) ? f32_mod((rgb.y - rgb.z)/delta + 6.f, 6.f) :
+			 (c_max == rgb.y) ? (rgb.z - rgb.x)/delta + 2.f :
+			 (c_max == rgb.z) ? (rgb.x - rgb.y)/delta + 4.f :
+			 0.f);
+	F32 s = (c_max == 0.f) ? 0.f : (delta/c_max);
+	F32 v = c_max;
+	Vec3F32 hsv = {h/6.f, s, v};
+	return hsv;
+}
+
+internal Vec3F32
+rgb_from_hsv(Vec3F32 hsv)
+{
+	F32 h = f32_mod(hsv.x * 360.f, 360.f);
+	F32 s = hsv.y;
+	F32 v = hsv.z;
+
+	F32 c = v*s;
+	F32 x = c*(1.f - f32_abs(f32_mod(h/60.f, 2.f) - 1.f));
+	F32 m = v - c;
+
+	F32 r = 0;
+	F32 g = 0;
+	F32 b = 0;
+
+	if ((h >= 0.f && h < 60.f) || (h >= 360.f && h < 420.f))
+	{
+		r = c;
+		g = x;
+		b = 0;
+	}
+	else if (h >= 60.f && h < 120.f)
+	{
+		r = x;
+		g = c;
+		b = 0;
+	}
+	else if (h >= 120.f && h < 180.f)
+	{
+		r = 0;
+		g = c;
+		b = x;
+	}
+	else if (h >= 180.f && h < 240.f)
+	{
+		r = 0;
+		g = x;
+		b = c;
+	}
+	else if (h >= 240.f && h < 300.f)
+	{
+		r = x;
+		g = 0;
+		b = c;
+	}
+	else if ((h >= 300.f && h <= 360.f) || (h >= -60.f && h <= 0.f))
+	{
+		r = c;
+		g = 0;
+		b = x;
+	}
+
+	Vec3F32 rgb = {r + m, g + m, b + m};
+	return(rgb);
 }

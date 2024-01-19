@@ -42,6 +42,12 @@ union Vec4F32
 	{
 		F32 r, g, b, a;
 	};
+
+	struct
+	{
+		Vec3F32 rgb;
+	};
+
 	F32 v[4];
 };
 
@@ -400,6 +406,7 @@ internal F32 f32_floor(F32 x);
 internal F32 f32_ceil(F32 x);
 internal F32 f32_round(F32 x);
 internal U32 f32_round_to_u32(F32 x);
+internal F32 f32_mod(F32 a, F32 b);
 
 internal S32 f32_round_to_s32(F32 x);
 internal F32 f32_clamp(F32 min, F32 val, F32 max);
@@ -420,5 +427,8 @@ internal F64 f64_floor(F64 x);
 internal F64 f64_ceil(F64 x);
 internal F64 f64_round(F64 x);
 internal F64 f64_clamp(F64 min, F64 val, F64 max);
+
+internal Vec3F32 hsv_from_rgb(Vec3F32 rgb);
+internal Vec3F32 rgb_from_hsv(Vec3F32 hsv);
 
 #endif // BASE_MATH_H
