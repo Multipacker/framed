@@ -245,8 +245,8 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 	}
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path).data,
-							 GENERIC_READ,
-							 FILE_SHARE_READ,
+							 GENERIC_READ | GENERIC_WRITE,
+							 0,
 							 0,
 							 create_file_flags,
 							 FILE_ATTRIBUTE_NORMAL,
