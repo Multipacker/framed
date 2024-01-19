@@ -20,7 +20,7 @@ struct PS_INPUT
 	float2 dst_half_size   : DST_HALF_SIZE;
 	float2 dst_center      : DST_CENTER;
 	float2 uv              : UV;
-	float4 color           : COLOR;
+	float4 colors[4]       : COLOR;
 	nointerpolation float4 corner_radius    : CORNER_RADIUS;
 	float edge_softness    : SOFTNESS;
 	float border_thickness : BORDER_THICKNESS;
@@ -62,7 +62,7 @@ PS_INPUT vs(VS_INPUT input)
 	output.dst_half_size = dst_half_size;
 	output.dst_center = dst_center;
 	output.uv = uv_pos;
-	output.color = input.colors[input.vertex_id];
+	output.colors = input.colors;
 	output.corner_radius = input.corner_radius;
 	output.edge_softness = input.softness;
 	output.border_thickness = input.border_thickness;
@@ -84,6 +84,12 @@ float rounded_rect_sdf(float2 sample_pos,
                rect_half_size +
                float2(r, r));
 	return min(max(d2.x, d2.y), 0.0) + length(max(d2, 0.0)) - r;
+}
+
+float2
+rect_uv(float2 sample_pos, float2 rect_center, float2 rect_half_size)
+{
+	return (rect_center - sample_pos + rect_half_size) / (2.0 * rect_half_size);
 }
 
 struct ps_out
@@ -108,6 +114,10 @@ ps_out ps(PS_INPUT input)
 
 	float sdf_factor = 1.f - smoothstep(0, 2*input.edge_softness, dist);
 
+	float2 color_uv = rect_uv(dst_pos, input.dst_center, input.dst_half_size - softness_padding);
+	float4 color_top    = lerp(input.colors[3], input.colors[2], color_uv.x);
+	float4 color_bottom = lerp(input.colors[1], input.colors[0], color_uv.x);
+	float4 color        = lerp(color_top,      color_bottom,   color_uv.y);
 
 	float border_factor = 1.f;
 	if(input.border_thickness != 0)
@@ -149,15 +159,17 @@ ps_out ps(PS_INPUT input)
 
 	if (input.is_subpixel_text < 1)
 	{
-		float4 color = input.color * sample_color;
-		color.a *= sdf_factor * border_factor;
-		output.color0 = color;
-		output.color1 = float4(color.a, color.a, color.a, color.a);
+		float4 blended_color = color * sample_color;
+		blended_color.a *= sdf_factor * border_factor;
+		output.color0 = blended_color;
+		output.color1 = float4(blended_color.a, blended_color.a, blended_color.a, blended_color.a);
 	}
 	else
 	{
 		output.color0 = float4(input.color.rgb, input.color.a);
 		output.color1 = float4(sample_color.rgb * input.color.a, 0);
+		output.color0 = float4(color.rgb, color.a);
+		output.color1 = float4(sample_color.rgb * color.a, 0);
 	}
 
 	return output;
