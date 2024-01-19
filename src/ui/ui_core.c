@@ -920,12 +920,15 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 internal Void
 ui_layout(UI_Box *root)
 {
-	for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
+	debug_function()
 	{
-		ui_solve_independent_sizes(root, axis);
-		ui_solve_upward_dependent_sizes(root, axis);
-		ui_solve_downward_dependent_sizes(root, axis);
-		ui_calculate_final_rect(root, axis);
+		for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
+		{
+			ui_solve_independent_sizes(root, axis);
+			ui_solve_upward_dependent_sizes(root, axis);
+			ui_solve_downward_dependent_sizes(root, axis);
+			ui_calculate_final_rect(root, axis);
+		}
 	}
 }
 
@@ -1126,6 +1129,7 @@ ui_draw(UI_Box *root)
 internal Void
 ui_end(Void)
 {
+	Debug_Time debug_time = debug_function_begin();
 	// NOTE(hampus): Normal root
 	ui_pop_parent();
 
@@ -1181,6 +1185,7 @@ ui_end(Void)
 	g_ui_ctx->clip_rect_stack.first = 0;
 	g_ui_ctx->frame_index++;
 	g_ui_ctx = 0;
+	debug_function_end(debug_time);
 }
 
 internal UI_Comm

@@ -25,6 +25,19 @@
 ////////////////////////////////
 //~ hampus: Tab views
 
+PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
+{
+	Debug_TimeBuffer *buffer = debug_get_times();
+	ui_column()
+	{
+		for (U32 i = 0; i < buffer->count; ++i)
+		{
+			Debug_TimeEntry *entry = &buffer->buffer[i];
+			ui_textf("%s: %.2fms", entry->name, (F32) (entry->end_ns - entry->start_ns) / (F32) million(1));
+		}
+	}
+}
+
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_logger)
 {
 	ui_next_width(ui_fill());
@@ -46,6 +59,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 internal S32
 os_main(Str8List arguments)
 {
+	debug_init();
 	log_init(str8_lit("log.txt"));
 
 	Arena *perm_arena = arena_create();
@@ -89,6 +103,16 @@ os_main(Str8List arguments)
 
 		ProfilerUI_SplitPanelResult split_panel_result = profiler_ui_builder_split_panel(first_panel, Axis2_X);
 		{
+			{
+				ProfilerUI_TabAttach attach =
+				{
+					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
+												profiler_ui_tab_view_debug,
+												0, str8_lit("Debug")),
+					.panel = split_panel_result.panels[Side_Min],
+				};
+				profiler_ui_command_tab_attach(&attach);
+			}
 			{
 				ProfilerUI_TabAttach attach =
 				{
