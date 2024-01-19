@@ -16,8 +16,7 @@ ui_default_size(UI_Size width, UI_Size height)
 internal Void
 ui_text(Str8 string)
 {
-	ui_next_width(ui_text_content(1));
-	ui_next_height(ui_text_content(1));
+	ui_default_size(ui_text_content(1), ui_text_content(1));
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText,
 							  str8_lit(""));
 	ui_box_equip_display_string(box, string);
@@ -569,6 +568,42 @@ ui_hue_picker(F32 *out_hue, Str8 string)
 	ui_parent(hue_box)
 	{
 		ui_next_relative_pos(Axis2_Y, *out_hue * hue_box->fixed_size.y);
+		ui_next_corner_radius(0);
+		ui_next_width(ui_pct(1, 1));
+		ui_next_height(ui_pixels(3, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_FloatingPos,
+					str8_lit(""));
+	}
+}
+
+internal Void
+ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
+{
+	Vec4F32 top_color = {0};
+	top_color.rgb = rgb_from_hsv(hsv);
+	top_color.a = 1.0f;
+	Vec4F32 bottom_color = top_color;
+	bottom_color.a = 0;
+	ui_next_vert_gradient(top_color, bottom_color);
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
+	UI_Box *alpha_box = ui_box_make(UI_BoxFlag_DrawBorder |
+									UI_BoxFlag_DrawBackground |
+									UI_BoxFlag_Clickable,
+									string);
+
+	UI_Comm alpha_comm = ui_comm_from_box(alpha_box);
+	if (alpha_comm.dragging)
+	{
+		Vec2F32 rel_normalized = v2f32_hadamard_div_v2f32(alpha_comm.rel_mouse, alpha_box->fixed_size);
+		*out_alpha = 1.0f - rel_normalized.y;
+		*out_alpha = f32_clamp(0, *out_alpha, 1.0f);
+	}
+
+	// NOTE(hampus): Indicator
+	ui_parent(alpha_box)
+	{
+		ui_next_relative_pos(Axis2_Y, (1.0f - *out_alpha) * alpha_box->fixed_size.y);
 		ui_next_corner_radius(0);
 		ui_next_width(ui_pct(1, 1));
 		ui_next_height(ui_pixels(3, 1));
