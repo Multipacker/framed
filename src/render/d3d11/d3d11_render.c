@@ -417,7 +417,7 @@ render_backend_end(Render_Context *renderer)
 			// NOTE(hampus): Create RenderTarget view for new backbuffer texture
 			ID3D11Texture2D* backbuffer;
 			IDXGISwapChain1_GetBuffer(backend->swap_chain, 0, &IID_ID3D11Texture2D, (Void**) &backbuffer);
-			D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc = { .Format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D };
+			D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc = { .Format = DXGI_FORMAT_R8G8B8A8_UNORM, .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D };
 			ID3D11Device_CreateRenderTargetView(backend->device, (ID3D11Resource*) backbuffer, &render_target_view_desc, &backend->render_target_view);
 			ID3D11Texture2D_Release(backbuffer);
 
@@ -684,8 +684,8 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 wi
 	DXGI_FORMAT d3d11_format = { 0 };
 	switch (color_space)
 	{
-		case Render_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
-		case Render_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+		case Render_ColorSpace_sRGB:   d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+		case Render_ColorSpace_Linear: d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
 		invalid_case;
 	}
 

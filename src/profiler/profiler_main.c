@@ -71,10 +71,10 @@ os_main(Str8List arguments)
 
 	//- hampus: Build startup UI
 
-	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.2f, 0.2f, 0.2f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(0.9f, 0.5f, 0.0f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.5f));
+	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
 	profiler_ui_set_color(ProfilerUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));

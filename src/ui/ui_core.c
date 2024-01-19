@@ -509,7 +509,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 
 	g_ui_ctx->hot_key = ui_key_null();
 
-	Vec4F32 color = v4f32(0.05f, 0.05f, 0.05f, 1.0f);
+	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
 	// NOTE(hampus): Setup default styling
 
@@ -526,7 +526,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	rect_style->color[Corner_TopRight]    = color;
 	rect_style->color[Corner_BottomLeft]  = color;
 	rect_style->color[Corner_BottomRight] = color;
-	rect_style->border_color              = v4f32(0.4f, 0.4f, 0.4f, 1.0f);
+	rect_style->border_color              = v4f32(0.6f, 0.6f, 0.6f, 1.0f);
 	rect_style->border_thickness          = 1;
 	F32 radius                            = (F32)ui_top_font_size() * 0.2f;
 	rect_style->radies                    = v4f32(radius, radius, radius, radius);
@@ -1038,21 +1038,14 @@ ui_draw(UI_Box *root)
 
 		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
 
-		rect_style->color[0] = vec4f32_srgb_to_linear(rect_style->color[0]);
-		rect_style->color[1] = vec4f32_srgb_to_linear(rect_style->color[1]);
-		rect_style->color[2] = vec4f32_srgb_to_linear(rect_style->color[2]);
-		rect_style->color[3] = vec4f32_srgb_to_linear(rect_style->color[3]);
-
-		text_style->color = vec4f32_srgb_to_linear(text_style->color);
-
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 		{
 			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
 			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
-			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer,
-														min,
-														max,
-														.softness = 15, .color = v4f32(0, 0, 0, 1));
+			// TODO(hampus): Make softness em independent
+			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, min, max,
+														.softness = 15,
+														.color = v4f32(0, 0, 0, 1));
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
 
@@ -1064,34 +1057,40 @@ ui_draw(UI_Box *root)
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
 			{
-				d += f32_srgb_to_linear(0.3f) * root->active_t;
+				d += 0.3f * root->active_t;
 			}
 
 			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
-				d += f32_srgb_to_linear(0.3f) * root->hot_t;
+				d += 0.3f * root->hot_t;
 			}
 
 			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
 																v4f32(d, d, d, 0));
-			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
+			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight],
 																 v4f32(d, d, d, 0));
-			instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .softness = rect_style->softness, .slice = rect_style->slice, .use_nearest = rect_style->texture_filter);
+
+			instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+								   .softness = rect_style->softness,
+								   .slice = rect_style->slice,
+								   .use_nearest = rect_style->texture_filter);
 			memory_copy_array(instance->colors, rect_style->color);
-			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+			memory_copy_array(instance->radies, rect_style->radies.v);
 		}
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 		{
+			rect_style->border_color = vec4f32_srgb_to_linear(rect_style->border_color);
+
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
 				ui_box_is_active(root))
 			{
-				d += f32_srgb_to_linear(0.4f);
+				d += 0.4f * root->active_t;
 			}
 			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
 			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
-			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+			memory_copy(instance->radies, rect_style->radies.v, sizeof(Vec4F32));
 		}
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawText))

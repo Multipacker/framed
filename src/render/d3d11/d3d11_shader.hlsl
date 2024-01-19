@@ -166,8 +166,8 @@ ps_out ps(PS_INPUT input)
 	}
 	else
 	{
-		output.color0 = float4(input.color.rgb, input.color.a);
-		output.color1 = float4(sample_color.rgb * input.color.a, 0);
+		// TODO(hampus): Proper gamma correction function
+		sample_color.rgb = pow(sample_color.rgb, 1/2.2f);
 		output.color0 = float4(color.rgb, color.a);
 		output.color1 = float4(sample_color.rgb * color.a, 0);
 	}
