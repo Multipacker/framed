@@ -107,6 +107,7 @@ main()
 	}
 	else
 	{
+		sample_color       = fromLinear(sample_color);
 		frag_color         = color;
 		frag_blend_weights = vec4(sample_color.rgb * color.a, 0.0);
 	}

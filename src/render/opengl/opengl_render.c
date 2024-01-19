@@ -102,7 +102,6 @@ render_backend_init(Render_Context *renderer)
     renderer->backend = push_struct(renderer->permanent_arena, Render_BackendContext);
     Render_BackendContext *backend = renderer->backend;
 	backend->texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
-	glEnable(GL_FRAMEBUFFER_SRGB);
 
 	glCreateBuffers(1, &backend->vbo);
 	glNamedBufferData(backend->vbo, OPENGL_BATCH_SIZE * sizeof(Render_RectInstance), 0, GL_DYNAMIC_DRAW);
@@ -377,8 +376,8 @@ render_create_texture(Render_Context *renderer, Str8 path)
 			GLenum internalformat = 0;
 			switch (image.color_space)
 			{
-				case Render_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-				case Render_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
+				case Render_ColorSpace_sRGB:   internalformat = GL_RGBA8;        break;
+				case Render_ColorSpace_Linear: internalformat = GL_SRGB8_ALPHA8; break;
 				invalid_case;
 			}
 
@@ -425,8 +424,8 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
 	GLenum internalformat = 0;
 	switch (color_space)
 	{
-		case Render_ColorSpace_sRGB:   internalformat = GL_SRGB8_ALPHA8; break;
-		case Render_ColorSpace_Linear: internalformat = GL_RGBA8;        break;
+		case Render_ColorSpace_sRGB:   internalformat = GL_RGBA8;        break;
+		case Render_ColorSpace_Linear: internalformat = GL_SRGB8_ALPHA8; break;
 		invalid_case;
 	}
 	glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
