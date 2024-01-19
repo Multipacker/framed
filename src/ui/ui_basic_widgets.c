@@ -434,3 +434,146 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 
 	return(result);
 }
+
+internal Void
+ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
+{
+	Vec3F32 rgb = rgb_from_hsv(v3f32(hue, 1, 1));
+	ui_next_colors(v4f32(1, 1, 1, 1),
+				   v4f32(rgb.x, rgb.y, rgb.z, 1),
+				   v4f32(0, 0, 0, 1),
+				   v4f32(0, 0, 0, 1));
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
+	UI_Box *sat_val_box = ui_box_make(UI_BoxFlag_DrawBorder |
+									  UI_BoxFlag_DrawBackground |
+									  UI_BoxFlag_Clickable,
+									  string);
+	UI_Comm sat_val_comm = ui_comm_from_box(sat_val_box);
+
+	if (sat_val_comm.dragging)
+	{
+		Vec2F32 rel_normalized = v2f32_hadamard_div_v2f32(sat_val_comm.rel_mouse, sat_val_box->fixed_size);
+		*out_sat = rel_normalized.x;
+		*out_val = 1.0f - rel_normalized.y;
+
+		*out_sat = f32_clamp(0, *out_sat, 1);
+		*out_val = f32_clamp(0, *out_val, 1);
+	}
+
+	// NOTE(hampus): Indicator
+	ui_parent(sat_val_box)
+	{
+		Vec2F32 pos = {0};
+		F32 indicator_size_px = ui_em(0.5f, 1).value;
+		ui_next_width(ui_pixels(indicator_size_px, 1));
+		ui_next_height(ui_pixels(indicator_size_px, 1));
+		ui_next_relative_pos(Axis2_X, *out_sat * sat_val_box->fixed_size.x - indicator_size_px/2);
+		ui_next_relative_pos(Axis2_Y, (1.0f - *out_val) * sat_val_box->fixed_size.y - indicator_size_px/2);
+		ui_next_corner_radius(5);
+		ui_box_make(UI_BoxFlag_DrawBorder |
+					UI_BoxFlag_FloatingPos,
+					str8_lit(""));
+	}
+}
+
+UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
+{
+	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
+
+	UI_RectStyle *rect_style = &root->rect_style;
+	UI_TextStyle *text_style = &root->text_style;
+
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+
+	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
+	{
+		Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
+		Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
+		// TODO(hampus): Make softness em dependent
+		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, min, max,
+													.softness = 15,
+													.color = v4f32(0, 0, 0, 1));
+		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
+	}
+
+	if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
+	{
+		F32 rect_width = root->fixed_rect.max.x - root->fixed_rect.min.x;
+		F32 rect_height = root->fixed_rect.max.y - root->fixed_rect.min.y;
+		RectF32 rect = {0};
+		rect.min = root->fixed_rect.min;
+		rect.max = v2f32(root->fixed_rect.max.x, root->fixed_rect.min.y + rect_height / 6);
+		for (U32 i = 0; i < 6; ++i)
+		{
+			F32 hue0 = (F32)(i)/6;
+			F32 hue1 = (F32)(i+1)/6;
+			Vec3F32 rgb0 = rgb_from_hsv(v3f32(hue0, 1, 1));
+			Vec3F32 rgb1 = rgb_from_hsv(v3f32(hue1, 1, 1));
+			Vec4F32 rgba0 = v4f32(rgb0.x, rgb0.y, rgb0.z, 1);
+			Vec4F32 rgba1 = v4f32(rgb1.x, rgb1.y, rgb1.z, 1);
+			Vec2F32 min = root->fixed_rect.min;
+			Vec2F32 max = root->fixed_rect.min;
+			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, rect.min, rect.max,
+														.slice = rect_style->slice,
+														.use_nearest = rect_style->texture_filter);
+			instance->colors[Corner_TopLeft] = rgba0;
+			instance->colors[Corner_TopRight] = rgba0;
+			instance->colors[Corner_BottomLeft] = rgba1;
+			instance->colors[Corner_BottomRight] = rgba1;
+			rect.min.y += rect_height / 6;
+			rect.max.y += rect_height / 6;
+		}
+	}
+
+	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
+	{
+		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+													.border_thickness = rect_style->border_thickness,
+													.color = rect_style->border_color);
+	}
+
+
+	render_pop_clip(g_ui_ctx->renderer);
+	if (g_ui_ctx->show_debug_lines)
+	{
+		render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+	}
+
+	for (UI_Box *child = root->last;
+		 child != 0;
+		 child = child->prev)
+	{
+		ui_draw(child);
+	}
+}
+
+internal Void
+ui_hue_picker(F32 *out_hue, Str8 string)
+{
+	ui_next_hover_cursor(Gfx_Cursor_Hand);
+	UI_Box *hue_box = ui_box_make(UI_BoxFlag_DrawBorder |
+								  UI_BoxFlag_DrawBackground |
+								  UI_BoxFlag_Clickable,
+								  string);
+	ui_box_equip_custom_draw_proc(hue_box, hue_picker_custom_draw);
+
+	UI_Comm hue_comm = ui_comm_from_box(hue_box);
+	if (hue_comm.dragging)
+	{
+		Vec2F32 rel_normalized = v2f32_hadamard_div_v2f32(hue_comm.rel_mouse, hue_box->fixed_size);
+		*out_hue = rel_normalized.y;
+		*out_hue = f32_clamp(0, *out_hue, 1.0f);
+	}
+
+	// NOTE(hampus): Indicator
+	ui_parent(hue_box)
+	{
+		ui_next_relative_pos(Axis2_Y, *out_hue * hue_box->fixed_size.y);
+		ui_next_corner_radius(0);
+		ui_next_width(ui_pct(1, 1));
+		ui_next_height(ui_pixels(3, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_FloatingPos,
+					str8_lit(""));
+	}
+}
