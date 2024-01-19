@@ -983,6 +983,10 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 								}
 							}
 						}
+						else
+						{
+							root->tab_group.view_offset_x = 0;
+						}
 
 						ui_spacer(ui_pixels(root->tab_group.view_offset_x, 1));
 
@@ -1348,7 +1352,6 @@ profiler_ui_update_window(ProfilerUI_Window *window)
 			ui_next_child_layout_axis(Axis2_X);
 			ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
 			UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
-												   UI_BoxFlag_DrawBackground |
 												   UI_BoxFlag_DrawDropShadow,
 												   str8_lit(""));
 			window->box = window_container;
