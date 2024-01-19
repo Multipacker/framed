@@ -1543,8 +1543,35 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 			}
 			ui_spacer(ui_em(0.5f, 1));
 		}
+		arena_scratch(0, 0)
+		{
+			ui_next_width(ui_text_content(1));
+			if (ui_button(str8_lit("Dump theme to file")).clicked)
+			{
+				Str8List string_list = {0};
+				for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+					 color < ProfilerUI_Color_COUNT;
+					 ++color)
+				{
+					Str8 label = profiler_ui_string_from_color(color);
+					Vec4F32 color_value = profiler_ui_color_from_theme(color);
+					str8_list_push(scratch, &string_list, label);
+					str8_list_push(scratch, &string_list, str8_lit(": "));
+					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.r);
+					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.g);
+					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.b);
+					str8_list_pushf(scratch, &string_list, "%.2f\n", color_value.a);
+				}
+				Str8 dump_data = str8_join(scratch, &string_list);
+#if OS_LINUX
+				Str8 theme_dump_file_name = str8_lit("theme_dump");
+#else
+				Str8 theme_dump_file_name = str8_lit("theme_dump.txt");
+#endif
+				os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
+			}
+		}
 	}
-
 }
 
 ////////////////////////////////
