@@ -511,23 +511,26 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
 internal Void
 render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
 {
-	if (render_font_is_loaded(font))
+	debug_function()
 	{
-		for (U64 i = 0; i < text.size; ++i)
+		if (render_font_is_loaded(font))
 		{
-			U32 codepoint = text.data[i];
-			U32 index = render_glyph_index_from_codepoint(font, codepoint);
-
-			// TODO(hampus): Remove this if
-			if ((i+1) < text.size)
+			for (U64 i = 0; i < text.size; ++i)
 			{
-				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
-				min.x += kerning_pair.value;
-			}
+				U32 codepoint = text.data[i];
+				U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
-			render_glyph(renderer, min, index, font, color);
-			min.x += (font->glyphs[index].advance_width);
+				// TODO(hampus): Remove this if
+				if ((i+1) < text.size)
+				{
+					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+					min.x += kerning_pair.value;
+				}
+
+				render_glyph(renderer, min, index, font, color);
+				min.x += (font->glyphs[index].advance_width);
+			}
 		}
 	}
 }
@@ -611,24 +614,27 @@ internal Vec2F32
 render_measure_text(Render_Font *font, Str8 text)
 {
 	Vec2F32 result = { 0 };
-	if (render_font_is_loaded(font))
+	debug_function()
 	{
-		S32 length = (S32) text.size;
-		for (S32 i = 0; i < length; ++i)
+		if (render_font_is_loaded(font))
 		{
-			U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-			Render_Glyph *glyph = font->glyphs + index;
-			result.x += (glyph->advance_width);
-
-			if ((U64)(i+1) < text.size)
+			S32 length = (S32) text.size;
+			for (S32 i = 0; i < length; ++i)
 			{
-				U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-				Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
-				result.x += kerning_pair.value;
-			}
-		}
+				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
+				Render_Glyph *glyph = font->glyphs + index;
+				result.x += (glyph->advance_width);
 
-		result.y = font->line_height;
+				if ((U64)(i+1) < text.size)
+				{
+					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+					result.x += kerning_pair.value;
+				}
+			}
+
+			result.y = font->line_height;
+		}
 	}
 	return(result);
 }
