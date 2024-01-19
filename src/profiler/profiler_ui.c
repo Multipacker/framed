@@ -63,7 +63,7 @@ profiler_ui_string_from_color(ProfilerUI_Color color)
 		case ProfilerUI_Color_InactiveTab:   { result = str8_lit("Inactive tab background"); } break;
 		case ProfilerUI_Color_TabTitle:      { result = str8_lit("Tab foreground");          } break;
 		case ProfilerUI_Color_TabBorder:     { result = str8_lit("Tab border");              } break;
-		case ProfilerUI_Color_TabBarButtons: { result = str8_lit("Tab bar buttons");         } break;
+		case ProfilerUI_Color_TabBarButtons: { result = str8_lit("Tab bar buttons background");         } break;
 
 		invalid_case;
 	}
@@ -1460,17 +1460,54 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 {
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
+	local Vec4F32 *selected_color = 0;
+
 	ui_ctx_menu(theme_color_ctx_menu)
-		ui_width(ui_em(4, 1))
 	{
-		ui_next_width(ui_em(10, 1));
-		ui_next_height(ui_em(10, 1));
+		ui_next_width(ui_children_sum(1));
+		ui_next_height(ui_children_sum(1));
 		UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
 										UI_BoxFlag_DrawBorder,
 										str8_lit(""));
 		ui_parent(container)
 		{
-
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+			{
+				ui_spacer(ui_em(0.5f, 1));
+				// NOTE(hampus): Saturation and value
+				ui_next_width(ui_em(10, 1));
+				ui_next_height(ui_em(10, 1));
+				Vec3F32 hsv = hsv_from_rgb(selected_color->rgb);
+				ui_sat_val_picker(hsv.x, &hsv.y, &hsv.z, str8_lit("SatValPicker"));
+				ui_spacer(ui_em(0.5f, 1));
+				ui_column()
+				{
+					// NOTE(hampus): Hue
+					ui_next_height(ui_em(10, 1));
+					ui_next_width(ui_em(1, 1));
+					ui_hue_picker(&hsv.x, str8_lit("HuePicker"));
+				}
+				ui_spacer(ui_em(0.5f, 1));
+				ui_column()
+				{
+					// NOTE(hampus): Alpha
+					ui_next_height(ui_em(10, 1));
+					ui_next_width(ui_em(1, 1));
+					ui_box_make(UI_BoxFlag_DrawBorder |
+								UI_BoxFlag_DrawBackground,
+								str8_lit(""));
+				}
+				selected_color->rgb = rgb_from_hsv(hsv);
+				ui_spacer(ui_em(0.5f, 1));
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+			{
+				ui_spacer(ui_em(0.5f, 1));
+				ui_text(str8_lit("Very nice color yes"));
+			}
+			ui_spacer(ui_em(0.5f, 1));
 		}
 	}
 
@@ -1490,6 +1527,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 				ui_spacer(ui_fill());
 				ui_next_color(profiler_ui_color_from_theme(color));
 				ui_next_hover_cursor(Gfx_Cursor_Hand);
+				ui_next_corner_radius(5);
 				UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 										  UI_BoxFlag_DrawBorder |
 										  UI_BoxFlag_Clickable |
@@ -1500,6 +1538,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 				if (comm.clicked)
 				{
 					ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
+					selected_color = profiler_ui_state->theme.colors + color;
 				}
 			}
 			ui_spacer(ui_em(0.5f, 1));

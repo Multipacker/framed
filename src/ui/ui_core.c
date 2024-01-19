@@ -1045,7 +1045,7 @@ ui_draw(UI_Box *root)
 		{
 			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
 			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
-			// TODO(hampus): Make softness em independent
+			// TODO(hampus): Make softness em dependent
 			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, min, max,
 														.softness = 15,
 														.color = v4f32(0, 0, 0, 1));
@@ -1086,10 +1086,9 @@ ui_draw(UI_Box *root)
 			rect_style->border_color = vec4f32_srgb_to_linear(rect_style->border_color);
 
 			F32 d = 0;
-			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation) &&
-				ui_box_is_active(root))
+			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
-				d += 0.4f * root->active_t;
+				d += 0.4f * root->hot_t;
 			}
 			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
 			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
