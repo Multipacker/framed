@@ -25,15 +25,194 @@
 ////////////////////////////////
 //~ hampus: Tab views
 
-PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
+typedef struct Debug_Statistics Debug_Statistics;
+struct Debug_Statistics
+{
+	CStr file;
+	U32  line;
+	CStr name;
+	U64  total_time_ns;
+	U64  hit_count;
+};
+
+global Debug_Statistics *ui_debug_stats;
+global U32               ui_debug_stat_count;
+
+internal Void ui_debug_keep_alive(Arena *arena)
 {
 	Debug_TimeBuffer *buffer = debug_get_times();
-	ui_column()
+
+	ui_debug_stats      = push_array(arena, Debug_Statistics, buffer->count);
+	ui_debug_stat_count = 0;
+
+	for (U32 i = 0; i < buffer->count; ++i)
 	{
-		for (U32 i = 0; i < buffer->count; ++i)
+		Debug_TimeEntry *entry = &buffer->buffer[i];
+
+		U32 stat_index = 0;
+		for (; stat_index < ui_debug_stat_count; ++stat_index)
 		{
-			Debug_TimeEntry *entry = &buffer->buffer[i];
-			ui_textf("%s: %.2fms", entry->name, (F32) (entry->end_ns - entry->start_ns) / (F32) million(1));
+			if (ui_debug_stats[stat_index].file == entry->file && ui_debug_stats[stat_index].line == entry->line)
+			{
+				break;
+			}
+		}
+
+		if (stat_index == ui_debug_stat_count)
+		{
+			ui_debug_stats[stat_index].file          = entry->file;
+			ui_debug_stats[stat_index].line          = entry->line;
+			ui_debug_stats[stat_index].name          = entry->name;
+			ui_debug_stats[stat_index].total_time_ns = entry->end_ns - entry->start_ns;
+			ui_debug_stats[stat_index].hit_count     = 1;
+			++ui_debug_stat_count;
+		}
+		else
+		{
+			ui_debug_stats[stat_index].total_time_ns += entry->end_ns - entry->start_ns;
+			++ui_debug_stats[stat_index].hit_count;
+		}
+	}
+
+	// NOTE(simon): Bubble sort for the win!
+	for (U32 i = 0; i < ui_debug_stat_count; ++i)
+	{
+		for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
+		{
+			if (ui_debug_stats[j].total_time_ns < ui_debug_stats[j + 1].total_time_ns)
+			{
+				swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
+			}
+		}
+	}
+}
+
+typedef struct TimeInterval TimeInterval;
+struct TimeInterval
+{
+	F64 amount;
+	Str8 unit;
+};
+
+internal TimeInterval
+time_interval_from_ns(F64 ns)
+{
+	Str8 units[] = {
+		str8_lit("us"),
+		str8_lit("ms"),
+		str8_lit("s"),
+		str8_lit("min"),
+		str8_lit("h"),
+	};
+
+	// NOTE(simon): Divisors for going from one stage to the next.
+	F64 divisors[] = {
+		1000.0f,
+		1000.0f,
+		1000.0f,
+		60.0f,
+		60.0f,
+	};
+
+	F64 limits[] = {
+		10000.0f,
+		10000.0f,
+		10000.0f,
+		600.0f,
+		600.0f,
+	};
+
+	TimeInterval result;
+	result.amount = (F64) ns;
+	result.unit   = str8_lit("ns");
+	for (U32 i = 0; i < array_count(limits) && result.amount > limits[i]; ++i)
+	{
+		result.amount /= divisors[i];
+		result.unit    = units[i];
+	}
+
+	return(result);
+}
+
+PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
+{
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
+	ui_named_row(str8_lit("DebugTimes"))
+	{
+		local F32 splits[] = { 0.25f, 0.25f, 0.25f, 0.25f };
+		UI_Box *columns[4] = { 0 };
+
+		F32 drag_delta = 0.0f;
+		U32 drag_index = 0;
+		for (U32 i = 0; i < array_count(columns); ++i)
+		{
+			ui_next_child_layout_axis(Axis2_Y);
+			ui_next_width(ui_pct(splits[i], 0));
+			ui_next_height(ui_children_sum(1));
+			columns[i] = ui_box_make(UI_BoxFlag_Clip,
+			                         str8_pushf(ui_frame_arena(), "column%"PRIU32, i));
+
+			if (i + 1 < array_count(columns))
+			{
+				ui_next_width(ui_em(0.2f, 1));
+				ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
+				ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+				ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1));
+				UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
+				                                    UI_BoxFlag_DrawBackground,
+				                                    str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
+				                                    );
+
+				UI_Comm comm = ui_comm_from_box(draggable_box);
+				if (comm.dragging)
+				{
+					drag_delta = comm.drag_delta.x / ui_top_parent()->fixed_size.width;
+					drag_index = i;
+				}
+			}
+		}
+
+		splits[drag_index + 0] = f32_clamp(0.0f, splits[drag_index + 0] - drag_delta, 1.0f);
+		splits[drag_index + 1] = f32_clamp(0.0f, splits[drag_index + 1] + drag_delta, 1.0f);
+
+		ui_parent(columns[0])
+		{
+			ui_text(str8_lit("Name"));
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				Debug_Statistics *entry = &ui_debug_stats[i];
+				ui_text(str8_cstr(entry->name));
+			}
+		}
+		ui_parent(columns[1])
+		{
+			ui_text(str8_lit("Total time"));
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				Debug_Statistics *entry = &ui_debug_stats[i];
+				TimeInterval total_time   = time_interval_from_ns((F64) entry->total_time_ns);
+				ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
+			}
+		}
+		ui_parent(columns[2])
+		{
+			ui_text(str8_lit("Total time"));
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				Debug_Statistics *entry = &ui_debug_stats[i];
+				TimeInterval average_time = time_interval_from_ns((F64) entry->total_time_ns / (F64) entry->hit_count);
+				ui_textf("%.2f%"PRISTR8, average_time.amount, str8_expand(average_time.unit));
+			}
+		}
+		ui_parent(columns[3])
+		{
+			ui_text(str8_lit("Hit count"));
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				Debug_Statistics *entry = &ui_debug_stats[i];
+				ui_textf("%"PRIU32, entry->hit_count);
+			}
 		}
 	}
 }
@@ -277,6 +456,8 @@ os_main(Str8List arguments)
 		profiler_ui_update(renderer, &events);
 
 		render_end(renderer);
+
+		ui_debug_keep_alive(current_arena);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
