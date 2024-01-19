@@ -77,6 +77,7 @@ internal B32 str8_find_substr8(Str8 string, Str8 substring, U64 *result_index);
 
 internal Void str8_list_push_explicit(Str8List *list, Str8 string, Str8Node *node);
 internal Void str8_list_push(Arena *arena, Str8List *list, Str8 string);
+internal Void str8_list_pushf(Arena *arena, Str8List *list, CStr fmt, ...);
 internal Str8 str8_join(Arena *arena, Str8List *list);
 
 internal Str8List str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints);

@@ -155,7 +155,7 @@ str8_pushfv(Arena *arena, CStr cstr, va_list args)
 #define vsnprintf(data, size, cstring, args) vsnprintf(data, (size_t) (size), cstring, args);
 #else
 #define vsnprintf(data, size, cstring, args) stbsp_vsnprintf(data, (int) (size), cstring, args);
-	#endif
+#endif
 
 	U64 needed_size = (U64) vsnprintf(0, 0, cstr, args);
 
@@ -262,15 +262,15 @@ internal B32
 str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
 {
 	B32 result = true;
-	 S64 first = -1;
+	S64 first = -1;
 
 	for (U64 i = 0; i < string.size; ++i)
 	{
-			if (substring.size <= (string.size - i))
+		if (substring.size <= (string.size - i))
+		{
+			for (U64 j = 0; j < substring.size; ++j)
 			{
-				for (U64 j = 0; j < substring.size; ++j)
-				{
-					if (string.data[i+j] != substring.data[j])
+				if (string.data[i+j] != substring.data[j])
 				{
 					first = -1;
 					break;
@@ -287,12 +287,12 @@ str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
 			{
 				break;
 			}
-			}
-			else
-			{
-				result = false;
-				break;
-			}
+		}
+		else
+		{
+			result = false;
+			break;
+		}
 	}
 
 	if (first != -1)
@@ -316,6 +316,17 @@ internal Void
 str8_list_push(Arena *arena, Str8List *list, Str8 string)
 {
 	Str8Node *node = push_struct(arena, Str8Node);
+	str8_list_push_explicit(list, string, node);
+}
+
+internal Void
+str8_list_pushf(Arena *arena, Str8List *list, CStr fmt, ...)
+{
+	Str8Node *node = push_struct(arena, Str8Node);
+	va_list args;
+	va_start(args, fmt);
+	Str8 string = str8_pushfv(arena, fmt, args);
+	va_end(args);
 	str8_list_push_explicit(list, string, node);
 }
 
