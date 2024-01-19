@@ -277,6 +277,9 @@ internal Mat4F32 m4f32_ortho(F32 left, F32 right, F32 bottom, F32 top, F32 n, F3
 // Rect
 
 internal RectF32 rectf32(Vec2F32 min, Vec2F32 max);
+internal Vec2F32 rectf32_center(RectF32 rect);
+internal Vec2F32 rectf32_dim(RectF32 rect);
+
 internal RectF32 rectf32_from_rects32(RectS32 rect);
 internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
 internal RectU32 rectu32(Vec2U32 min, Vec2U32 max);
