@@ -158,7 +158,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				ui_next_width(ui_em(0.2f, 1));
 				ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
 				ui_next_hover_cursor(Gfx_Cursor_SizeWE);
-				ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1));
+				ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
 				UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
 				                                    UI_BoxFlag_DrawBackground,
 				                                    str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
@@ -179,6 +179,12 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_parent(columns[0])
 		{
 			ui_text(str8_lit("Name"));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_em(0.2f, 1));
+			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
 			{
 				Debug_Statistics *entry = &ui_debug_stats[i];
@@ -188,6 +194,12 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_parent(columns[1])
 		{
 			ui_text(str8_lit("Total time"));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_em(0.2f, 1));
+			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
 			{
 				Debug_Statistics *entry = &ui_debug_stats[i];
@@ -197,7 +209,13 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		}
 		ui_parent(columns[2])
 		{
-			ui_text(str8_lit("Total time"));
+			ui_text(str8_lit("Average"));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_em(0.2f, 1));
+			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
 			{
 				Debug_Statistics *entry = &ui_debug_stats[i];
@@ -208,6 +226,12 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_parent(columns[3])
 		{
 			ui_text(str8_lit("Hit count"));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_em(0.2f, 1));
+			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
 			{
 				Debug_Statistics *entry = &ui_debug_stats[i];
