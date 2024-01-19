@@ -370,34 +370,12 @@ render_create_texture(Render_Context *renderer, Str8 path)
 		Image image = { 0 };
 		if (image_load(scratch.arena, contents, &image))
 		{
-			GLuint texture = 0;
-			glCreateTextures(GL_TEXTURE_2D, 1, &texture);
-
-			GLenum internalformat = 0;
-			switch (image.color_space)
-			{
-				case Render_ColorSpace_sRGB:   internalformat = GL_RGBA8;        break;
-				case Render_ColorSpace_Linear: internalformat = GL_SRGB8_ALPHA8; break;
-				invalid_case;
-			}
-
-			glTextureStorage2D(texture, 1, internalformat, (GLsizei) image.width, (GLsizei) image.height);
-			glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-			glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-			glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-			glTextureSubImage2D(
-								texture,
-								0,
-								0, 0,
-								(GLsizei) image.width, (GLsizei) image.height,
-								GL_RGBA, GL_UNSIGNED_BYTE,
-								(const Void *) image.pixels
-								);
-
-			result.u64[0] = (U64) texture;
-			result.u64[1] = (U64) image.width;
-			result.u64[2] = (U64) image.height;
+			result = render_create_texture_from_bitmap(renderer,
+			                                           image.pixels,
+			                                           image.width,
+			                                           image.height,
+			                                           image.color_space
+			                                           );
 		}
 		else
 		{
@@ -433,8 +411,7 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
 	glTextureParameteri(texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTextureSubImage2D(
-						texture,
+	glTextureSubImage2D(texture,
 						0,
 						0, 0,
 						(GLsizei) width, (GLsizei) height,
@@ -443,8 +420,8 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
 						);
 
 	result.u64[0] = (U64) texture;
-	result.u64[1] = width;
-	result.u64[2] = height;
+	result.u64[1] = (U64) width;
+	result.u64[2] = (U64) height;
 
 	return(result);
 }
