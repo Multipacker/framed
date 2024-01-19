@@ -200,11 +200,15 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			ui_width(ui_fill())
+			  ui_text_align(UI_TextAlign_Right)
 			{
-				Debug_Statistics *entry = &ui_debug_stats[i];
-				TimeInterval total_time   = time_interval_from_ns((F64) entry->total_time_ns);
-				ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
+				for (U32 i = 0; i < ui_debug_stat_count; ++i)
+				{
+					Debug_Statistics *entry = &ui_debug_stats[i];
+					TimeInterval total_time   = time_interval_from_ns((F64) entry->total_time_ns);
+					ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
+				}
 			}
 		}
 		ui_parent(columns[2])
@@ -216,11 +220,15 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			ui_width(ui_fill())
+			  ui_text_align(UI_TextAlign_Right)
 			{
-				Debug_Statistics *entry = &ui_debug_stats[i];
-				TimeInterval average_time = time_interval_from_ns((F64) entry->total_time_ns / (F64) entry->hit_count);
-				ui_textf("%.2f%"PRISTR8, average_time.amount, str8_expand(average_time.unit));
+				for (U32 i = 0; i < ui_debug_stat_count; ++i)
+				{
+					Debug_Statistics *entry = &ui_debug_stats[i];
+					TimeInterval average_time = time_interval_from_ns((F64) entry->total_time_ns / (F64) entry->hit_count);
+					ui_textf("%.2f%"PRISTR8, average_time.amount, str8_expand(average_time.unit));
+				}
 			}
 		}
 		ui_parent(columns[3])
@@ -232,10 +240,14 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			ui_width(ui_fill())
+			  ui_text_align(UI_TextAlign_Right)
 			{
-				Debug_Statistics *entry = &ui_debug_stats[i];
-				ui_textf("%"PRIU32, entry->hit_count);
+				for (U32 i = 0; i < ui_debug_stat_count; ++i)
+				{
+					Debug_Statistics *entry = &ui_debug_stats[i];
+					ui_textf("%"PRIU32, entry->hit_count);
+				}
 			}
 		}
 	}
