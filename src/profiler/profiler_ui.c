@@ -1512,8 +1512,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 	}
 
 	ui_column()
-		ui_width(ui_em(1, 1))
-		ui_height(ui_em(1, 1))
 	{
 		for (ProfilerUI_Color color = (ProfilerUI_Color)0;
 			 color < ProfilerUI_Color_COUNT;
@@ -1528,6 +1526,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 				ui_next_color(profiler_ui_color_from_theme(color));
 				ui_next_hover_cursor(Gfx_Cursor_Hand);
 				ui_next_corner_radius(5);
+				ui_next_width(ui_em(1, 1));
+				ui_next_height(ui_em(1, 1));
 				UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 										  UI_BoxFlag_DrawBorder |
 										  UI_BoxFlag_Clickable |
