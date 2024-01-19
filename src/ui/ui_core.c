@@ -1060,12 +1060,12 @@ ui_draw(UI_Box *root)
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
 			{
-				d += 0.3f * root->active_t;
+				d += 0.2f * root->active_t;
 			}
 
 			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
-				d += 0.3f * root->hot_t;
+				d += 0.2f * root->hot_t;
 			}
 
 			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
@@ -1088,7 +1088,7 @@ ui_draw(UI_Box *root)
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
-				d += 0.4f * root->hot_t;
+				d += 0.3f * root->hot_t;
 			}
 			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
 			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
