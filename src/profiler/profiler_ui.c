@@ -1557,10 +1557,11 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 					Vec4F32 color_value = profiler_ui_color_from_theme(color);
 					str8_list_push(scratch, &string_list, label);
 					str8_list_push(scratch, &string_list, str8_lit(": "));
-					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.r);
-					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.g);
-					str8_list_pushf(scratch, &string_list, "%.2f, ", color_value.b);
-					str8_list_pushf(scratch, &string_list, "%.2f\n", color_value.a);
+					str8_list_pushf(scratch, &string_list, "%.2f, %.2f, %.2f, %.2f\n",
+									color_value.r,
+									color_value.g,
+									color_value.b,
+									color_value.a);
 				}
 				Str8 dump_data = str8_join(scratch, &string_list);
 #if OS_LINUX
