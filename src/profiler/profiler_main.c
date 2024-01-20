@@ -120,7 +120,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			Str8 headers[] = {
 				str8_lit("Name"),
 				str8_lit("Total time"),
-				str8_lit("Avg. time"),
+				str8_lit("Avg. time / hit"),
 				str8_lit("Hit count"),
 			};
 			local F32 splits[] = { 0.25f, 0.25f, 0.25f, 0.25f };
