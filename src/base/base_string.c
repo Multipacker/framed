@@ -207,6 +207,34 @@ str8_equal(Str8 a, Str8 b)
 	return true;
 }
 
+// TODO(simon): Proper unicode lexiographical ordering.
+internal B32
+str8_are_codepoints_earliear(Str8 a, Str8 b)
+{
+	U8 *a_ptr = a.data;
+	U8 *b_ptr = b.data;
+	U8 *a_opl = a.data + a.size;
+	U8 *b_opl = b.data + b.size;
+	while (a_ptr < a_opl && b_ptr < b_opl)
+	{
+		StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
+		StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
+		a_ptr += a_decode.size;
+		b_ptr += b_decode.size;
+
+		if (a_decode.codepoint != b_decode.codepoint)
+		{
+			B32 a_is_earlier = a_decode.codepoint < b_decode.codepoint;
+			return(a_is_earlier);
+		}
+	}
+
+	B32 a_has_more = (a_ptr < a_opl);
+	B32 b_has_more = (b_ptr < b_opl);
+	B32 a_is_earlier = !a_has_more && b_has_more;
+	return(a_is_earlier);
+}
+
 internal B32
 str8_first_index_of(Str8 string, U32 codepoint, U64 *result_index)
 {
