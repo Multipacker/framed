@@ -30,7 +30,7 @@ struct Debug_Statistics
 {
 	CStr file;
 	U32  line;
-	CStr name;
+	Str8 name;
 	U64  total_time_ns;
 	U64  hit_count;
 };
@@ -62,7 +62,7 @@ internal Void ui_debug_keep_alive(Arena *arena)
 		{
 			ui_debug_stats[stat_index].file          = entry->file;
 			ui_debug_stats[stat_index].line          = entry->line;
-			ui_debug_stats[stat_index].name          = entry->name;
+			ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
 			ui_debug_stats[stat_index].total_time_ns = entry->end_ns - entry->start_ns;
 			ui_debug_stats[stat_index].hit_count     = 1;
 			++ui_debug_stat_count;
@@ -71,18 +71,6 @@ internal Void ui_debug_keep_alive(Arena *arena)
 		{
 			ui_debug_stats[stat_index].total_time_ns += entry->end_ns - entry->start_ns;
 			++ui_debug_stats[stat_index].hit_count;
-		}
-	}
-
-	// NOTE(simon): Bubble sort for the win!
-	for (U32 i = 0; i < ui_debug_stat_count; ++i)
-	{
-		for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
-		{
-			if (ui_debug_stats[j].total_time_ns < ui_debug_stats[j + 1].total_time_ns)
-			{
-				swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
-			}
 		}
 	}
 }
@@ -140,36 +128,88 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 	ui_next_height(ui_fill());
 	ui_named_row(str8_lit("DebugTimes"))
 	{
+		Str8 headers[] = {
+			str8_lit("Name"),
+			str8_lit("Total time"),
+			str8_lit("Avg. time"),
+			str8_lit("Hit count"),
+		};
 		local F32 splits[] = { 0.25f, 0.25f, 0.25f, 0.25f };
 		UI_Box *columns[4] = { 0 };
+		local B32 reverse = true;
+		local U32 sort_column = 1;
 
 		F32 drag_delta = 0.0f;
 		U32 drag_index = 0;
-		for (U32 i = 0; i < array_count(columns); ++i)
+		ui_corner_radius(0)
+		  ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
 		{
-			ui_next_child_layout_axis(Axis2_Y);
-			ui_next_width(ui_pct(splits[i], 0));
-			ui_next_height(ui_children_sum(1));
-			columns[i] = ui_box_make(UI_BoxFlag_Clip,
-			                         str8_pushf(ui_frame_arena(), "column%"PRIU32, i));
-
-			if (i + 1 < array_count(columns))
+			for (U32 i = 0; i < array_count(columns); ++i)
 			{
-				ui_next_width(ui_em(0.2f, 1));
-				ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
-				ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+				ui_next_width(ui_pct(splits[i], 0));
+				ui_next_extra_box_flags(UI_BoxFlag_Clip);
+				columns[i] = ui_named_column_beginf("column%"PRIU32, i);
+				ui_push_seed(columns[i]->key);
+
+				ui_next_width(ui_pct(1, 1));
+				ui_next_height(ui_children_sum(1));
+				ui_next_child_layout_axis(Axis2_X);
+				UI_Box *header = ui_box_make(UI_BoxFlag_Clickable |
+											 UI_BoxFlag_HotAnimation |
+											 UI_BoxFlag_ActiveAnimation,
+											 str8_lit("Header"));
+				UI_Comm header_comm = ui_comm_from_box(header);
+				if (header_comm.clicked)
+				{
+					reverse = (i == sort_column ? !reverse : false);
+					sort_column = i;
+				}
+				if (header_comm.hovering)
+				{
+					header->flags |= UI_BoxFlag_DrawBackground;
+				}
+
+				ui_parent(header)
+				{
+					ui_text(headers[i]);
+
+					ui_spacer(ui_fill());
+
+					if (i == sort_column)
+					{
+						ui_next_width(ui_em(1, 1));
+						ui_next_height(ui_em(1, 1));
+						ui_next_icon(reverse ? RENDER_ICON_UP : RENDER_ICON_DOWN);
+						ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+						ui_spacer(ui_em(0.2f, 1));
+					}
+				}
+
+				ui_next_width(ui_pct(1, 1));
+				ui_next_height(ui_em(0.2f, 1));
 				ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
 				ui_next_corner_radius(0);
-				UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
-				                                    UI_BoxFlag_DrawBackground,
-				                                    str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
-				                                    );
+				ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-				UI_Comm comm = ui_comm_from_box(draggable_box);
-				if (comm.dragging)
+				ui_named_column_end();
+				ui_pop_seed();
+
+				if (i + 1 < array_count(columns))
 				{
-					drag_delta = comm.drag_delta.x / ui_top_parent()->fixed_size.width;
-					drag_index = i;
+					ui_next_width(ui_em(0.2f, 1));
+					ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
+					ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+					UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
+														UI_BoxFlag_DrawBackground,
+														str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
+														);
+
+					UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
+					if (draggin_comm.dragging)
+					{
+						drag_delta = draggin_comm.drag_delta.x / ui_top_parent()->fixed_size.width;
+						drag_index = i;
+					}
 				}
 			}
 		}
@@ -177,32 +217,82 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		splits[drag_index + 0] = f32_clamp(0.0f, splits[drag_index + 0] - drag_delta, 1.0f);
 		splits[drag_index + 1] = f32_clamp(0.0f, splits[drag_index + 1] + drag_delta, 1.0f);
 
+		// NOTE(simon): Bubble sort for the win!
+		if (sort_column == 0)
+		{
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
+				{
+					Str8 this_name = ui_debug_stats[j + 0].name;
+					Str8 next_name = ui_debug_stats[j + 1].name;
+					if (str8_are_codepoints_earliear(next_name, this_name))
+					{
+						swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
+					}
+				}
+			}
+		}
+		else if (sort_column == 1)
+		{
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
+				{
+					if (ui_debug_stats[j].total_time_ns > ui_debug_stats[j + 1].total_time_ns)
+					{
+						swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
+					}
+				}
+			}
+		}
+		else if (sort_column == 2)
+		{
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
+				{
+					F64 this_avg_time = (F64) ui_debug_stats[j + 0].total_time_ns / (F64) ui_debug_stats[j + 0].hit_count;
+					F64 next_avg_time = (F64) ui_debug_stats[j + 1].total_time_ns / (F64) ui_debug_stats[j + 1].hit_count;
+					if (this_avg_time > next_avg_time)
+					{
+						swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
+					}
+				}
+			}
+		}
+		else if (sort_column == 3)
+		{
+			for (U32 i = 0; i < ui_debug_stat_count; ++i)
+			{
+				for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
+				{
+					if (ui_debug_stats[j].hit_count > ui_debug_stats[j + 1].hit_count)
+					{
+						swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
+					}
+				}
+			}
+		}
+
+		if (reverse)
+		{
+			for (U32 i = 0, j = ui_debug_stat_count; i < j; ++i, --j)
+			{
+				swap(ui_debug_stats[i], ui_debug_stats[j - 1], Debug_Statistics);
+			}
+		}
+
 		ui_parent(columns[0])
 		{
-			ui_text(str8_lit("Name"));
-
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_em(0.2f, 1));
-			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-			ui_next_corner_radius(0);
-			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
 			{
 				Debug_Statistics *entry = &ui_debug_stats[i];
-				ui_text(str8_cstr(entry->name));
+				ui_text(entry->name);
 			}
 		}
 		ui_parent(columns[1])
 		{
-			ui_text(str8_lit("Total time"));
-
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_em(0.2f, 1));
-			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-			ui_next_corner_radius(0);
-			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
 			ui_width(ui_fill())
 				ui_text_align(UI_TextAlign_Right)
 			{
@@ -216,14 +306,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		}
 		ui_parent(columns[2])
 		{
-			ui_text(str8_lit("Average"));
-
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_em(0.2f, 1));
-			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-			ui_next_corner_radius(0);
-			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
 			ui_width(ui_fill())
 				ui_text_align(UI_TextAlign_Right)
 			{
@@ -237,14 +319,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		}
 		ui_parent(columns[3])
 		{
-			ui_text(str8_lit("Hit count"));
-
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_em(0.2f, 1));
-			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-			ui_next_corner_radius(0);
-			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
 			ui_width(ui_fill())
 				ui_text_align(UI_TextAlign_Right)
 			{
