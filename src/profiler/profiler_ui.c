@@ -1464,6 +1464,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 
 	ui_ctx_menu(theme_color_ctx_menu)
 	{
+		Vec3F32 hsv = hsv_from_rgb(selected_color->rgb);
 		ui_next_width(ui_children_sum(1));
 		ui_next_height(ui_children_sum(1));
 		UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
@@ -1478,7 +1479,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 				// NOTE(hampus): Saturation and value
 				ui_next_width(ui_em(10, 1));
 				ui_next_height(ui_em(10, 1));
-				Vec3F32 hsv = hsv_from_rgb(selected_color->rgb);
 				ui_sat_val_picker(hsv.x, &hsv.y, &hsv.z, str8_lit("SatValPicker"));
 				ui_spacer(ui_em(0.5f, 1));
 				ui_column()
@@ -1494,18 +1494,27 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 					// NOTE(hampus): Alpha
 					ui_next_height(ui_em(10, 1));
 					ui_next_width(ui_em(1, 1));
-					ui_box_make(UI_BoxFlag_DrawBorder |
-								UI_BoxFlag_DrawBackground,
-								str8_lit(""));
+					ui_alpha_picker(hsv, &selected_color->a, str8_lit("AlphaPicker"));
 				}
 				selected_color->rgb = rgb_from_hsv(hsv);
 				ui_spacer(ui_em(0.5f, 1));
 			}
 			ui_spacer(ui_em(0.5f, 1));
 			ui_row()
+				ui_width(ui_em(4, 1))
 			{
-				ui_spacer(ui_em(0.5f, 1));
-				ui_text(str8_lit("Very nice color yes"));
+				ui_textf("R: %.2f", selected_color->r);
+				ui_textf("G: %.2f", selected_color->g);
+				ui_textf("B: %.2f", selected_color->b);
+				ui_textf("A: %.2f", selected_color->a);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+				ui_width(ui_em(4, 1))
+			{
+				ui_textf("H: %.2f", hsv.x);
+				ui_textf("S: %.2f", hsv.y);
+				ui_textf("V: %.2f", hsv.z);
 			}
 			ui_spacer(ui_em(0.5f, 1));
 		}
@@ -1556,8 +1565,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_theme_tab)
 					Str8 label = profiler_ui_string_from_color(color);
 					Vec4F32 color_value = profiler_ui_color_from_theme(color);
 					str8_list_push(scratch, &string_list, label);
-					str8_list_push(scratch, &string_list, str8_lit(": "));
-					str8_list_pushf(scratch, &string_list, "%.2f, %.2f, %.2f, %.2f\n",
+					str8_list_pushf(scratch, &string_list, ": %.2f, %.2f, %.2f, %.2f\n",
 									color_value.r,
 									color_value.g,
 									color_value.b,
