@@ -16,6 +16,22 @@
 #include "image/image_inc.c"
 #include "ui/ui_inc.c"
 
+#if OS_LINUX
+#   define PROFILER_USER_SIMON 1
+#elif OS_WINDOWS
+#   define PROFILER_USER_HAMPUS 1
+#else
+#   define PROFILER_USER_SIMON 1
+#endif
+
+#if !defined(PROFILER_USER_SIMON)
+#   define PROFILER_USER_SIMON 0
+#endif
+
+#if !defined(PROFILER_USER_HAMPUS)
+#   define PROFILER_USER_HAMPUS 0
+#endif
+
 #include "profiler/profiler_ui.h"
 
 #include "profiler/profiler_ui.c"
@@ -440,9 +456,9 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 									color_value.a);
 				}
 				Str8 dump_data = str8_join(scratch, &string_list);
-#if OS_LINUX
+#if PROFILER_USER_SIMON
 				Str8 theme_dump_file_name = str8_lit("theme_dump");
-#else
+#else PROFILER_USER_HAMPUS
 				Str8 theme_dump_file_name = str8_lit("theme_dump.txt");
 #endif
 				os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
@@ -588,6 +604,15 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
+		S32 font_size = 15;
+#if PROFILER_USER_HAMPUS
+		font_size = 12;
+#elif PROFILER_USER_SIMON
+		font_size = 15;
+#else
+		font_size = 15;
+#endif
+		ui_push_font(render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), font_size));
 
 		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 
