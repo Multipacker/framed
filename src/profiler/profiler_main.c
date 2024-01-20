@@ -142,7 +142,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		F32 drag_delta = 0.0f;
 		U32 drag_index = 0;
 		ui_corner_radius(0)
-		  ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
+			ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
 		{
 			for (U32 i = 0; i < array_count(columns); ++i)
 			{

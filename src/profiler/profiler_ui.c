@@ -7,8 +7,6 @@
 //  [ ] @code @feature UI startup builder
 //  [ ] @bug If you begin to reorder a tab, and then drag it out, the offset will be wrong.
 //  [ ] @feature Drag & hold to reorder tabs
-//  [ ] @bug You can see the previous active tab's bottom border during the
-//           animation when switching tabs
 
 ////////////////////////////////
 //~ hampus: Medium term
@@ -303,7 +301,7 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 
 	B32 active = profiler_ui_tab_is_active(tab);
 
-	F32 height_em = active ? 1.2f : 1.1f;
+	F32 height_em = 1.1f;
 	F32 corner_radius = (F32) ui_top_font_size() * 0.5f;
 
 	Vec4F32 color = active ?
@@ -1008,7 +1006,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 								{
 									ui_spacer(ui_em(0.1f, 1));
 								}
-								ui_spacer(ui_em(0.1f, 1));
+								ui_spacer(ui_em(0.2f, 1));
 								UI_Box *tab_box = profiler_ui_tab_button(tab);
 							}
 							ui_spacer(ui_em(tab_spacing_em, 1));
