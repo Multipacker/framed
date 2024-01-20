@@ -458,7 +458,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 				Str8 dump_data = str8_join(scratch, &string_list);
 #if PROFILER_USER_SIMON
 				Str8 theme_dump_file_name = str8_lit("theme_dump");
-#else PROFILER_USER_HAMPUS
+#elif PROFILER_USER_HAMPUS
 				Str8 theme_dump_file_name = str8_lit("theme_dump.txt");
 #endif
 				os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
@@ -604,7 +604,7 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
-		S32 font_size = 15;
+		U32 font_size = 15;
 #if PROFILER_USER_HAMPUS
 		font_size = 12;
 #elif PROFILER_USER_SIMON
