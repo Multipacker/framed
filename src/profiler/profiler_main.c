@@ -159,6 +159,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
 				ui_next_hover_cursor(Gfx_Cursor_SizeWE);
 				ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+				ui_next_corner_radius(0);
 				UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
 				                                    UI_BoxFlag_DrawBackground,
 				                                    str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
@@ -183,6 +184,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_em(0.2f, 1));
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_next_corner_radius(0);
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			for (U32 i = 0; i < ui_debug_stat_count; ++i)
@@ -198,10 +200,11 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_em(0.2f, 1));
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_next_corner_radius(0);
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			ui_width(ui_fill())
-			  ui_text_align(UI_TextAlign_Right)
+				ui_text_align(UI_TextAlign_Right)
 			{
 				for (U32 i = 0; i < ui_debug_stat_count; ++i)
 				{
@@ -218,10 +221,11 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_em(0.2f, 1));
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_next_corner_radius(0);
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			ui_width(ui_fill())
-			  ui_text_align(UI_TextAlign_Right)
+				ui_text_align(UI_TextAlign_Right)
 			{
 				for (U32 i = 0; i < ui_debug_stat_count; ++i)
 				{
@@ -238,10 +242,11 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			ui_next_width(ui_pct(1, 1));
 			ui_next_height(ui_em(0.2f, 1));
 			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_next_corner_radius(0);
 			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			ui_width(ui_fill())
-			  ui_text_align(UI_TextAlign_Right)
+				ui_text_align(UI_TextAlign_Right)
 			{
 				for (U32 i = 0; i < ui_debug_stat_count; ++i)
 				{
@@ -266,6 +271,133 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 	ui_next_height(ui_fill());
 	Render_TextureSlice texture = *(Render_TextureSlice *) data;
 	ui_texture_view(texture);
+}
+
+PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
+{
+	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
+
+	local Vec4F32 *selected_color = 0;
+
+	ui_ctx_menu(theme_color_ctx_menu)
+	{
+		Vec3F32 hsv = hsv_from_rgb(selected_color->rgb);
+		ui_next_width(ui_children_sum(1));
+		ui_next_height(ui_children_sum(1));
+		UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
+										UI_BoxFlag_DrawBorder,
+										str8_lit(""));
+		ui_parent(container)
+		{
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+			{
+				ui_spacer(ui_em(0.5f, 1));
+				// NOTE(hampus): Saturation and value
+				ui_next_width(ui_em(10, 1));
+				ui_next_height(ui_em(10, 1));
+				ui_sat_val_picker(hsv.x, &hsv.y, &hsv.z, str8_lit("SatValPicker"));
+				ui_spacer(ui_em(0.5f, 1));
+				ui_column()
+				{
+					// NOTE(hampus): Hue
+					ui_next_height(ui_em(10, 1));
+					ui_next_width(ui_em(1, 1));
+					ui_hue_picker(&hsv.x, str8_lit("HuePicker"));
+				}
+				ui_spacer(ui_em(0.5f, 1));
+				ui_column()
+				{
+					// NOTE(hampus): Alpha
+					ui_next_height(ui_em(10, 1));
+					ui_next_width(ui_em(1, 1));
+					ui_alpha_picker(hsv, &selected_color->a, str8_lit("AlphaPicker"));
+				}
+				selected_color->rgb = rgb_from_hsv(hsv);
+				ui_spacer(ui_em(0.5f, 1));
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+				ui_width(ui_em(4, 1))
+			{
+				ui_textf("R: %.2f", selected_color->r);
+				ui_textf("G: %.2f", selected_color->g);
+				ui_textf("B: %.2f", selected_color->b);
+				ui_textf("A: %.2f", selected_color->a);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_row()
+				ui_width(ui_em(4, 1))
+			{
+				ui_textf("H: %.2f", hsv.x);
+				ui_textf("S: %.2f", hsv.y);
+				ui_textf("V: %.2f", hsv.z);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+		}
+	}
+
+	ui_column()
+	{
+		for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+			 color < ProfilerUI_Color_COUNT;
+			 ++color)
+		{
+			ui_next_width(ui_em(20, 1));
+			ui_row()
+			{
+				Str8 string = profiler_ui_string_from_color(color);
+				ui_text(string);
+				ui_spacer(ui_fill());
+				ui_next_color(profiler_ui_color_from_theme(color));
+				ui_next_hover_cursor(Gfx_Cursor_Hand);
+				ui_next_corner_radius(5);
+				ui_next_width(ui_em(1, 1));
+				ui_next_height(ui_em(1, 1));
+				UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+										  UI_BoxFlag_DrawBorder |
+										  UI_BoxFlag_Clickable |
+										  UI_BoxFlag_HotAnimation |
+										  UI_BoxFlag_ActiveAnimation,
+										  string);
+				UI_Comm comm = ui_comm_from_box(box);
+				if (comm.clicked)
+				{
+					ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
+					selected_color = profiler_ui_state->theme.colors + color;
+				}
+			}
+			ui_spacer(ui_em(0.5f, 1));
+		}
+		arena_scratch(0, 0)
+		{
+			ui_next_width(ui_text_content(1));
+			if (ui_button(str8_lit("Dump theme to file")).clicked)
+			{
+				Str8List string_list = {0};
+				for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+					 color < ProfilerUI_Color_COUNT;
+					 ++color)
+				{
+					Str8 label = profiler_ui_string_from_color(color);
+					Vec4F32 color_value = profiler_ui_color_from_theme(color);
+					str8_list_push(scratch, &string_list, label);
+					str8_list_pushf(scratch, &string_list, ": %.2f, %.2f, %.2f, %.2f\n",
+									color_value.r,
+									color_value.g,
+									color_value.b,
+									color_value.a);
+				}
+				Str8 dump_data = str8_join(scratch, &string_list);
+#if OS_LINUX
+				Str8 theme_dump_file_name = str8_lit("theme_dump");
+#else
+				Str8 theme_dump_file_name = str8_lit("theme_dump.txt");
+#endif
+				os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
+			}
+		}
+	}
 }
 
 ////////////////////////////////
@@ -300,16 +432,16 @@ os_main(Str8List arguments)
 
 	//- hampus: Build startup UI
 
-	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.2f, 0.2f, 0.2f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_Panel,                v4f32(0.2f, 0.2f, 0.2f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder,  v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder,    v4f32(1.0f, 0.8f, 0.0f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBar,               v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActiveTab,            v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactiveTab,          v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabTitle,             v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBorder,            v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons,        v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
 	{
 		ProfilerUI_Window *master_window = profiler_ui_window_make(profiler_ui_state->perm_arena, v2f32(1.0f, 1.0f));
@@ -343,7 +475,7 @@ os_main(Str8List arguments)
 				ProfilerUI_TabAttach attach =
 				{
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-												profiler_ui_theme_tab,
+												profiler_ui_tab_view_theme,
 												0, str8_lit("Theme")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
