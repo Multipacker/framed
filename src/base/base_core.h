@@ -473,7 +473,11 @@ internal Str8 string_from_build_mode(BuildMode mode);
 internal Str8 string_from_day_of_the_week(DayOfWeek day);
 internal Str8 string_from_month(Month month);
 
-internal DenseTime dense_time_from_date_time(DateTime *date_time);
-internal DateTime  date_time_from_dense_time(DenseTime dense_time);
+internal DenseTime    dense_time_from_date_time(DateTime *date_time);
+internal DateTime     date_time_from_dense_time(DenseTime dense_time);
+
+typedef struct TimeInterval TimeInterval;
+
+internal TimeInterval time_interval_from_ns(F64 ns);
 
 #endif //BASE_CORE_H

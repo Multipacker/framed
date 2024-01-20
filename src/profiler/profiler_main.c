@@ -75,53 +75,6 @@ internal Void ui_debug_keep_alive(Arena *arena)
 	}
 }
 
-typedef struct TimeInterval TimeInterval;
-struct TimeInterval
-{
-	F64 amount;
-	Str8 unit;
-};
-
-internal TimeInterval
-time_interval_from_ns(F64 ns)
-{
-	Str8 units[] = {
-		str8_lit("us"),
-		str8_lit("ms"),
-		str8_lit("s"),
-		str8_lit("min"),
-		str8_lit("h"),
-	};
-
-	// NOTE(simon): Divisors for going from one stage to the next.
-	F64 divisors[] = {
-		1000.0f,
-		1000.0f,
-		1000.0f,
-		60.0f,
-		60.0f,
-	};
-
-	F64 limits[] = {
-		10000.0f,
-		10000.0f,
-		10000.0f,
-		600.0f,
-		600.0f,
-	};
-
-	TimeInterval result;
-	result.amount = (F64) ns;
-	result.unit   = str8_lit("ns");
-	for (U32 i = 0; i < array_count(limits) && result.amount > limits[i]; ++i)
-	{
-		result.amount /= divisors[i];
-		result.unit    = units[i];
-	}
-
-	return(result);
-}
-
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 {
 	ui_next_width(ui_fill());
