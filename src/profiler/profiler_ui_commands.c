@@ -54,6 +54,7 @@ PROFILER_UI_COMMAND(tab_attach)
 		panel->tab_group.active_tab = tab;
 	}
 	panel->tab_group.count++;
+	profiler_ui_state->focused_panel = panel;
 	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
 }
 
