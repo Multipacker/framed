@@ -112,7 +112,7 @@ ui_box_alloc(Void)
 {
 	assert(g_ui_ctx->box_storage.num_free_boxes > 0);
 	UI_Box *result = (UI_Box *)g_ui_ctx->box_storage.first_free_box;
-	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_FreeBox));
+	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_Box));
 	g_ui_ctx->box_storage.first_free_box = g_ui_ctx->box_storage.first_free_box->next;
 
 	memory_zero_struct(result);
@@ -130,7 +130,7 @@ ui_box_free(UI_Box *box)
 	g_ui_ctx->box_storage.first_free_box = free_box;
 	g_ui_ctx->box_storage.num_free_boxes++;
 
-	ASAN_POISON_MEMORY_REGION(free_box, sizeof(UI_FreeBox));
+	ASAN_POISON_MEMORY_REGION(free_box, sizeof(UI_Box));
 }
 
 internal B32
