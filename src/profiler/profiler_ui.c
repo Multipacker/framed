@@ -6,14 +6,15 @@
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 //  [ ] @code @feature UI startup builder
 //  [ ] @bug If you begin to reorder a tab, and then drag it out, the offset will be wrong.
-//  [ ] @bug Reordering tabs at the end of the tab bar list when the tab bar is full is
-//           kinda yuck.
+//  [ ] @feature Drag & hold to reorder tabs
+//  [ ] @bug You can see the previous active tab's bottom border during the
+//           animation when switching tabs
 
 ////////////////////////////////
 //~ hampus: Medium term
 //
 // [ ] @feature Only change panel focus with mouse presses
-// [ ] @bug Weird flickering on the first appearance of the tab navigation buttons
+// [ ] @bug Flickering on the first appearance of the tab navigation buttons
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 
 ////////////////////////////////
@@ -1406,6 +1407,19 @@ profiler_ui_builder_split_panel_(ProfilerUI_PanelSplit *data)
 
 ////////////////////////////////
 //~ hampus: Tab views
+
+#define profiler_ui_get_or_push_view_data(data, type) profiler_ui_get_or_push_view_data_(data, sizeof(type))
+
+internal Void *
+profiler_ui_get_or_push_view_data_(Void *data, U64 size)
+{
+	Void *result = data;
+	if (result == 0)
+	{
+		result = push_array(profiler_ui_state->perm_arena, U8, size);
+	}
+	return(result);
+}
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_default)
 {

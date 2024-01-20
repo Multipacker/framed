@@ -275,13 +275,35 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 {
+	B32 initialized = data != 0;
+
+	typedef struct ThemeViewState ThemeViewState;
+	struct ThemeViewState
+	{
+		Vec4F32 hsva[ProfilerUI_Color_COUNT];
+	};
+
+	ThemeViewState *theme_view_state = profiler_ui_get_or_push_view_data(data, ThemeViewState);
+
+	if (!initialized)
+	{
+		for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+			 color < ProfilerUI_Color_COUNT;
+			 ++color)
+		{
+			Vec4F32 rgba = profiler_ui_color_from_theme(color);
+			theme_view_state->hsva[color].rgb = hsv_from_rgb(rgba.rgb);
+			theme_view_state->hsva[color].a = rgba.a;
+		}
+	}
+
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
-	local Vec4F32 *selected_color = 0;
+	local ProfilerUI_Color selected_color = 0;
 
 	ui_ctx_menu(theme_color_ctx_menu)
 	{
-		Vec3F32 hsv = hsv_from_rgb(selected_color->rgb);
+		Vec4F32 *hsva = theme_view_state->hsva + selected_color;
 		ui_next_width(ui_children_sum(1));
 		ui_next_height(ui_children_sum(1));
 		UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
@@ -296,14 +318,14 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 				// NOTE(hampus): Saturation and value
 				ui_next_width(ui_em(10, 1));
 				ui_next_height(ui_em(10, 1));
-				ui_sat_val_picker(hsv.x, &hsv.y, &hsv.z, str8_lit("SatValPicker"));
+				ui_sat_val_picker(hsva->x, &hsva->y, &hsva->z, str8_lit("SatValPicker"));
 				ui_spacer(ui_em(0.5f, 1));
 				ui_column()
 				{
 					// NOTE(hampus): Hue
 					ui_next_height(ui_em(10, 1));
 					ui_next_width(ui_em(1, 1));
-					ui_hue_picker(&hsv.x, str8_lit("HuePicker"));
+					ui_hue_picker(&hsva->x, str8_lit("HuePicker"));
 				}
 				ui_spacer(ui_em(0.5f, 1));
 				ui_column()
@@ -311,27 +333,29 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 					// NOTE(hampus): Alpha
 					ui_next_height(ui_em(10, 1));
 					ui_next_width(ui_em(1, 1));
-					ui_alpha_picker(hsv, &selected_color->a, str8_lit("AlphaPicker"));
+					ui_alpha_picker(hsva->rgb, &hsva->a, str8_lit("AlphaPicker"));
 				}
-				selected_color->rgb = rgb_from_hsv(hsv);
+				profiler_ui_state->theme.colors[selected_color].rgb = rgb_from_hsv(hsva->rgb);
+				profiler_ui_state->theme.colors[selected_color].a = hsva->a;
 				ui_spacer(ui_em(0.5f, 1));
 			}
+			Vec4F32 rgba = profiler_ui_state->theme.colors[selected_color];
 			ui_spacer(ui_em(0.5f, 1));
 			ui_row()
 				ui_width(ui_em(4, 1))
 			{
-				ui_textf("R: %.2f", selected_color->r);
-				ui_textf("G: %.2f", selected_color->g);
-				ui_textf("B: %.2f", selected_color->b);
-				ui_textf("A: %.2f", selected_color->a);
+				ui_textf("R: %.2f", rgba.r);
+				ui_textf("G: %.2f", rgba.g);
+				ui_textf("B: %.2f", rgba.b);
+				ui_textf("A: %.2f", rgba.a);
 			}
 			ui_spacer(ui_em(0.5f, 1));
 			ui_row()
 				ui_width(ui_em(4, 1))
 			{
-				ui_textf("H: %.2f", hsv.x);
-				ui_textf("S: %.2f", hsv.y);
-				ui_textf("V: %.2f", hsv.z);
+				ui_textf("H: %.2f", hsva->x);
+				ui_textf("S: %.2f", hsva->y);
+				ui_textf("V: %.2f", hsva->z);
 			}
 			ui_spacer(ui_em(0.5f, 1));
 		}
@@ -364,7 +388,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 				if (comm.clicked)
 				{
 					ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
-					selected_color = profiler_ui_state->theme.colors + color;
+					selected_color = color;
 				}
 			}
 			ui_spacer(ui_em(0.5f, 1));
