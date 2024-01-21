@@ -318,11 +318,15 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				}
 			}
 		}
-#if UI_GATHER_STATS
-		UI_Stats *ui_stats = ui_get_prev_stats();
+
 		ui_spacer(ui_em(0.5f, 1));
 		ui_text(str8_lit("UI Stats"));
 		ui_spacer(ui_em(0.5f, 1));
+		ui_textf("Permanent arena: %"PRIU64"kB", g_ui_ctx->permanent_arena->pos/1024);
+		ui_textf("Frame arena: %"PRIU64"kB", g_ui_ctx->frame_arena->pos/1024);
+
+#if UI_GATHER_STATS
+		UI_Stats *ui_stats = ui_get_prev_stats();
 		ui_textf("Num hashed boxes: %"PRIU64, ui_stats->num_hashed_boxes);
 		ui_textf("Num transient boxes: %"PRIU64, ui_stats->num_transient_boxes);
 		ui_textf("Rect style push count: %"PRIU64, ui_stats->rect_style_push_count);
@@ -535,7 +539,7 @@ os_main(Str8List arguments)
 
 	//- hampus: Build startup UI
 
-	profiler_ui_set_color(ProfilerUI_Color_Panel,                v4f32(0.2f, 0.2f, 0.2f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_Panel,                v4f32(0.15f, 0.15f, 0.15f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder,  v4f32(0.9f, 0.9f, 0.9f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder,    v4f32(1.0f, 0.8f, 0.0f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
