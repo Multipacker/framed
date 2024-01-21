@@ -5,9 +5,7 @@
 //  [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 //  [ ] @code @feature UI startup builder
-//  [ ] @bug If you begin to reorder a tab, and then drag it out, the offset will be wrong.
 //  [ ] @feature Drag & hold to reorder tabs
-//  [ ] @bug Reordering the last tab when the tab bar breaks offseting
 
 ////////////////////////////////
 //~ hampus: Medium term

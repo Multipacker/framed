@@ -71,6 +71,11 @@ PROFILER_UI_COMMAND(tab_reorder)
 		panel->tab_group.first = tab;
 	}
 
+	if (tab == panel->tab_group.last)
+	{
+		panel->tab_group.last = next;
+	}
+
 	if (data->side == Side_Min)
 	{
 		if (next->prev)
