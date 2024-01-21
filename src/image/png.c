@@ -780,9 +780,9 @@ png_unfilter(PNG_State *state)
 			{
 				// NOTE(simon): No filter and up filter at y == 0, nothing to do.
 			}
-			else if (filter_type == 1)
+			else if (filter_type == 1 || (filter_type == 4 && y == row_offsets[pass_index]))
 			{
-				// NOTE(simon): Sub filter
+				// NOTE(simon): Sub filter and Paeth filter at y == 0
 				for (U32 x = byte_stride; x < scanline_size; ++x)
 				{
 					U8 a = scanline[1 + x - byte_stride];
@@ -824,65 +824,29 @@ png_unfilter(PNG_State *state)
 					scanline[1 + x] += (U8) ((a + b) / 2);
 				}
 			}
-			else if (filter_type == 4 && y == row_offsets[pass_index])
-			{
-				// NOTE(simon): Paeth filter
-				for (U32 x = 0; x < scanline_size; ++x)
-				{
-					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
-					U8 b = 0;
-					U8 c = 0;
-
-					S32 p = (S32) a + (S32) b - (S32) c;
-					S32 pa = s32_abs(p - (S32) a);
-					S32 pb = s32_abs(p - (S32) b);
-					S32 pc = s32_abs(p - (S32) c);
-
-					U8 pr = 0;
-					if (pa <= pb && pa <= pc)
-					{
-						pr = a;
-					}
-					else if (pb <= pc)
-					{
-						pr = b;
-					}
-					else
-					{
-						pr = c;
-					}
-
-					scanline[1 + x] += pr;
-				}
-			}
 			else if (filter_type == 4 && y != row_offsets[pass_index])
 			{
 				// NOTE(simon): Paeth filter
 				U8 *previous_scanline = scanline - scanline_size - 1;
-				for (U32 x = 0; x < scanline_size; ++x)
+				for (U32 x = 0; x < byte_stride; ++x)
 				{
-					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
 					U8 b = previous_scanline[1 + x];
-					U8 c = (x < byte_stride ? 0 : previous_scanline[1 + x - byte_stride]);
 
-					S32 p = (S32) a + (S32) b - (S32) c;
-					S32 pa = s32_abs(p - (S32) a);
-					S32 pb = s32_abs(p - (S32) b);
-					S32 pc = s32_abs(p - (S32) c);
+					scanline[1 + x] += b;
+				}
 
-					U8 pr = 0;
-					if (pa <= pb && pa <= pc)
-					{
-						pr = a;
-					}
-					else if (pb <= pc)
-					{
-						pr = b;
-					}
-					else
-					{
-						pr = c;
-					}
+				for (U32 x = byte_stride; x < scanline_size; ++x)
+				{
+					U8 a = scanline[1 + x - byte_stride];
+					U8 b = previous_scanline[1 + x];
+					U8 c = previous_scanline[1 + x - byte_stride];
+
+					// NOTE(simon): This is taken from stb_image, and is significantly faster than the version in the spec.
+					S32 thresh = c * 3 - (a + b);
+					U8 low  = (a < b ? a : b);
+					U8 high = (a < b ? b : a);
+					U8 t    = ((high <= thresh) ? low : c);
+					U8 pr   = ((thresh <= low) ? high : t);
 
 					scanline[1 + x] += pr;
 				}
