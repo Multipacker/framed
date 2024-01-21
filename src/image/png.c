@@ -864,7 +864,7 @@ png_unfilter(PNG_State *state)
 }
 
 internal B32
-png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
+png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *output)
 {
 	U32 *row_offsets     = png_interlace_row_offsets[state->interlace_method];
 	U32 *row_advances    = png_interlace_row_advances[state->interlace_method];
@@ -872,15 +872,24 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
 	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
 
+	B32 is_greyscale = (state->color_type == PNG_ColorType_Greyscale || state->color_type == PNG_ColorType_GreyscaleAlpha);
+	B32 has_alpha    = (state->color_type == PNG_ColorType_GreyscaleAlpha || state->color_type == PNG_ColorType_TruecolorAlpha);
+
+	U32 red_offset    = 0;
+	U32 green_offset  = (is_greyscale ? 0 : 1);
+	U32 blue_offset   = (is_greyscale ? 0 : 2);
+	U32 alpha_offset  = blue_offset + (has_alpha ? 1 : 0);
+	U8  alpha_default = (has_alpha ? 0 : 0xFF);
+
 	U32 components = png_component_count_from_color_type(state->color_type);
-	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
+	if (state->color_type == PNG_ColorType_IndexedColor)
 	{
 		U8 *input = pixels;
 
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
-			U8 *write = output + state->width * row_offsets[pass_index];
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
 
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
@@ -893,23 +902,34 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 				++input;
-				U8 *row = write + column_offsets[pass_index];
+				U8 *row = write + 4 * column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					U64 byte_index   = bit_position / 8;
-					U64 bit_index    = bit_position % 8;
-					U8 byte          = input[byte_index];
-					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+					U64 byte_index = bit_position / 8;
+					U64 bit_index  = bit_position % 8;
+					U8 byte        = input[byte_index];
+					U8 index       = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					*row = value;
+					// TODO(simon): Try allowing you to always index in to the
+					// palette and check at the end of the loop. Profile!
+					if (index >= state->palette_size)
+					{
+						log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+						return(false);
+					}
+
+					row[0] = state->palette[index * 3 + 0];
+					row[1] = state->palette[index * 3 + 1];
+					row[2] = state->palette[index * 3 + 2];
+					row[3] = 0xFF;
 
 					bit_position += state->bit_depth;
-					row += column_advances[pass_index];
+					row += 4 * column_advances[pass_index];
 				}
 
 				input += scanline_size;
-				write += state->width * row_advances[pass_index];
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
@@ -917,7 +937,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	{
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
-			U8 *write = output + state->width * components * row_offsets[pass_index];
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
 
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
@@ -928,19 +948,26 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 
 				++pixels;
 				U16 *input = (U16 *) pixels;
-				U8 *row = write + components * column_offsets[pass_index];
+				U8 *row = write + 4 * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
+					U8 values[components];
 					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
-						row[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						values[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
 						pixels += 2;
 					}
-					row += components * column_advances[pass_index];
+
+					row[0] = values[red_offset];
+					row[1] = values[green_offset];
+					row[2] = values[blue_offset];
+					row[3] = values[alpha_offset] | alpha_default;
+
+					row += 4 * column_advances[pass_index];
 				}
 
-				write += state->width * components * row_advances[pass_index];
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
@@ -952,7 +979,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
-			U8 *write = output + state->width * row_offsets[pass_index];
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
 
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
@@ -966,7 +993,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				U64 bit_position    = 0;
 
 				++input;
-				U8 *row = write + column_offsets[pass_index];
+				U8 *row = write + 4 * column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -975,14 +1002,18 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					*row = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					U8 grey = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					row[0] = grey;
+					row[1] = grey;
+					row[2] = grey;
+					row[3] = 0xFF;
 
 					bit_position += state->bit_depth;
-					row          += column_advances[pass_index];
+					row          += 4 * column_advances[pass_index];
 				}
 
 				input += scanline_size;
-				write += state->width * row_advances[pass_index];
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
@@ -996,99 +1027,24 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				continue;
 			}
 
-			U8 *write = output + state->width * components * row_offsets[pass_index];
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				++input;
-				U8 *row = write + components * column_offsets[pass_index];
+				U8 *row = write + 4 * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					memory_copy(row, input, components);
+					row[0] = input[red_offset];
+					row[1] = input[green_offset];
+					row[2] = input[blue_offset];
+					row[3] = input[alpha_offset] | alpha_default;
+
 					input += components;
-					row   += components * column_advances[pass_index];
+					row   += 4 * column_advances[pass_index];
 				}
-				write += state->width * components * row_advances[pass_index];
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
-	}
-
-	return(true);
-}
-
-internal B32
-png_expand_to_rgba(PNG_State *state, U8 *pixels)
-{
-	U32 components = png_component_count_from_color_type(state->color_type);
-	U8 *read  = &pixels[(state->width * state->height - 1) * components];
-	U8 *write = &pixels[(state->width * state->height - 1) * 4];
-
-	switch (state->color_type)
-	{
-		case PNG_ColorType_Greyscale:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = 0xFF;
-				write[2] = read[0];
-				write[1] = read[0];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_Truecolor:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = 0xFF;
-				write[2] = read[2];
-				write[1] = read[1];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_IndexedColor:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				// TODO(simon): Try allowing you to always index in to the
-				// palette and check at the end of the loop. Profile!
-				U32 index = *read;
-				if (index >= state->palette_size)
-				{
-					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
-					return(false);
-				}
-
-				write[3] = 0xFF;
-				write[2] = state->palette[index * 3 + 2];
-				write[1] = state->palette[index * 3 + 1];
-				write[0] = state->palette[index * 3 + 0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_GreyscaleAlpha:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = read[1];
-				write[2] = read[0];
-				write[1] = read[0];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_TruecolorAlpha:
-		{
-			// NOTE(simon): Nothing to do, already in the right format.
-		} break;
 	}
 
 	return(true);
@@ -1168,14 +1124,7 @@ png_load(Arena *arena, Str8 contents, Image *result)
 
 	Arena_Temporary restore_point = arena_begin_temporary(arena);
 	U8 *output = push_array(arena, U8, state.width * state.height * 4);
-	if (!png_deinterlace_and_resample_to_8bit(&state, state.zlib_output, output))
-	{
-		arena_end_temporary(restore_point);
-		release_scratch(scratch);
-		return(false);
-	}
-
-	if (!png_expand_to_rgba(&state, output))
+	if (!png_deinterlace_and_resample_to_8bit_rgba(&state, state.zlib_output, output))
 	{
 		arena_end_temporary(restore_point);
 		release_scratch(scratch);
