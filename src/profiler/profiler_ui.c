@@ -13,6 +13,7 @@
 // [ ] @feature Only change panel focus with mouse presses
 // [ ] @bug Flickering on the first appearance of the tab navigation buttons
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
+// [ ] @polish Adding a tab with a tab offset active doesn't look perfect
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -910,75 +911,77 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
 					{
 						ProfilerUI_Tab *active_tab = root->tab_group.active_tab;
-						if (root->tab_group.count > 1 &&
-							root->tab_group.first->box &&
-							root->tab_group.last->box)
+						if (root->tab_group.count > 1)
 						{
-							// NOTE(hampus): Calculate required tab bar offset for
-							// viewing the active tab group
-
-							RectF32 active_tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
-							RectF32 first_tab_rect  = ui_box_get_fixed_rect(root->tab_group.first->box->parent);
-							RectF32 tab_bar_rect    = tabs_container->fixed_rect;
-
-							ProfilerUI_Tab *last_tab_with_size = root->tab_group.last;
-							while (ui_box_was_created_this_frame(last_tab_with_size->box->parent))
+							if (root->tab_group.first->box &&
+								root->tab_group.last->box)
 							{
-								if (last_tab_with_size == root->tab_group.first)
-								{
-									break;
-								}
-								last_tab_with_size = last_tab_with_size->prev;
-							}
+								// NOTE(hampus): Calculate required tab bar offset for
+								// viewing the active tab group
 
-							F32 start = first_tab_rect.x0;
-							F32 end   = first_tab_rect.x1;
+								RectF32 active_tab_rect = ui_box_get_fixed_rect(active_tab->box->parent);
+								RectF32 first_tab_rect  = ui_box_get_fixed_rect(root->tab_group.first->box->parent);
+								RectF32 tab_bar_rect    = tabs_container->fixed_rect;
 
-							F32 active_tab_width = active_tab_rect.x1 - active_tab_rect.x0;
-							F32 available_tab_bar_width = tab_bar_rect.x1 - tab_bar_rect.x0;
-							F32 required_tab_bar_width = end - start;
-							if (last_tab_with_size != root->tab_group.first)
-							{
-								RectF32 last_tab_rect = ui_box_get_fixed_rect(last_tab_with_size->box->parent);
-								end = last_tab_rect.x1;
-								required_tab_bar_width = end - start;
-								if (required_tab_bar_width > available_tab_bar_width)
+								ProfilerUI_Tab *last_tab_with_size = root->tab_group.last;
+								while (ui_box_was_created_this_frame(last_tab_with_size->box->parent))
 								{
-									tab_overflow = true;
-								}
-							}
-
-							B32 active_tab_is_visible =
-								active_tab_rect.x0 >= tab_bar_rect.x0 &&
-								active_tab_rect.x1 < tab_bar_rect.x1;
-							if (!active_tab_is_visible)
-							{
-								B32 overflow_left  = active_tab_rect.x0 < tab_bar_rect.x0;
-								B32 overflow_right = active_tab_rect.x1 >= tab_bar_rect.x1;
-								if (available_tab_bar_width > active_tab_width)
-								{
-									if (overflow_right)
+									if (last_tab_with_size == root->tab_group.first)
 									{
-										root->tab_group.view_offset_x -= active_tab_rect.x1 - tab_bar_rect.x1;
+										break;
 									}
-									else if (overflow_left)
+									last_tab_with_size = last_tab_with_size->prev;
+								}
+
+								F32 start = first_tab_rect.x0;
+								F32 end   = first_tab_rect.x1;
+
+								F32 active_tab_width = active_tab_rect.x1 - active_tab_rect.x0;
+								F32 available_tab_bar_width = tab_bar_rect.x1 - tab_bar_rect.x0;
+								F32 required_tab_bar_width = end - start;
+								if (last_tab_with_size != root->tab_group.first)
+								{
+									RectF32 last_tab_rect = ui_box_get_fixed_rect(last_tab_with_size->box->parent);
+									end = last_tab_rect.x1;
+									required_tab_bar_width = end - start;
+									if (required_tab_bar_width > available_tab_bar_width)
+									{
+										tab_overflow = true;
+									}
+								}
+
+								B32 active_tab_is_visible =
+									active_tab_rect.x0 >= tab_bar_rect.x0 &&
+									active_tab_rect.x1 < tab_bar_rect.x1;
+								if (!active_tab_is_visible)
+								{
+									B32 overflow_left  = active_tab_rect.x0 < tab_bar_rect.x0;
+									B32 overflow_right = active_tab_rect.x1 >= tab_bar_rect.x1;
+									if (available_tab_bar_width > active_tab_width)
+									{
+										if (overflow_right)
+										{
+											root->tab_group.view_offset_x -= active_tab_rect.x1 - tab_bar_rect.x1;
+										}
+										else if (overflow_left)
+										{
+											root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
+										}
+									}
+									else
 									{
 										root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
 									}
 								}
-								else
-								{
-									root->tab_group.view_offset_x -= active_tab_rect.x0 - tab_bar_rect.x0;
-								}
-							}
 
-							root->tab_group.view_offset_x = f32_min(0, root->tab_group.view_offset_x);
+								root->tab_group.view_offset_x = f32_min(0, root->tab_group.view_offset_x);
 
-							if (required_tab_bar_width > available_tab_bar_width)
-							{
-								if (root->tab_group.view_offset_x < (available_tab_bar_width - required_tab_bar_width))
+								if (required_tab_bar_width > available_tab_bar_width)
 								{
-									root->tab_group.view_offset_x = available_tab_bar_width - required_tab_bar_width;
+									if (root->tab_group.view_offset_x < (available_tab_bar_width - required_tab_bar_width))
+									{
+										root->tab_group.view_offset_x = available_tab_bar_width - required_tab_bar_width;
+									}
 								}
 							}
 						}
