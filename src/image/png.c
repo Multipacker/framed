@@ -770,6 +770,7 @@ png_unfilter(PNG_State *state)
 
 		U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
 		U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
+		U32 byte_stride     = u32_round_up_to_power_of_2(state->bit_depth, 8) * components / 8;
 
 		for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 		{
@@ -777,70 +778,60 @@ png_unfilter(PNG_State *state)
 
 			if (filter_type == 0 || (filter_type == 2 && y == row_offsets[pass_index]))
 			{
-				// NOTE(simon): Nothing to do.
+				// NOTE(simon): No filter and up filter at y == 0, nothing to do.
 			}
 			else if (filter_type == 1)
 			{
 				// NOTE(simon): Sub filter
-				U64 previous = 0;
-				for (U32 x = 0; x < scanline_size; ++x)
+				for (U32 x = byte_stride; x < scanline_size; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 xx = scanline[1 + x];
+					U8 a = scanline[1 + x - byte_stride];
 
-					U8 new_value = xx + a;
-					scanline[1 + x] = new_value;
-
-					previous = previous << 8 | new_value;
+					scanline[1 + x] += a;
 				}
 			}
 			else if (filter_type == 2)
 			{
 				// NOTE(simon): Up filter at y != 0
-				U8 *previous_scanline = scanline - scanline_size;
+				U8 *previous_scanline = scanline - scanline_size - 1;
 				for (U32 x = 0; x < scanline_size; ++x)
 				{
-					U8 b = *previous_scanline;
-					U8 xx = scanline[1 + x];
+					U8 b = previous_scanline[1 + x];
 
-					U8 new_value = xx + b;
-					scanline[1 + x] = new_value;
-
-					++previous_scanline;
+					scanline[1 + x] += b;
 				}
 			}
-			else if (filter_type == 3)
+			else if (filter_type == 3 && y == row_offsets[pass_index])
+			{
+				// NOTE(simon): Average filter at y == 0
+				for (U32 x = byte_stride; x < scanline_size; ++x)
+				{
+					U8 a = scanline[1 + x - byte_stride];
+					U8 b = 0;
+
+					scanline[1 + x] += (U8) ((a + b) / 2);
+				}
+			}
+			else if (filter_type == 3 && y != row_offsets[pass_index])
 			{
 				// NOTE(simon): Average filter
-				U8 zero = 0;
-				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : scanline - scanline_size);
-				U64 previous = 0;
+				U8 *previous_scanline = scanline - scanline_size - 1;
 				for (U32 x = 0; x < scanline_size; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 b = *previous_scanline;
-					U8 xx = scanline[1 + x];
+					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
+					U8 b = previous_scanline[1 + x];
 
-					U8 new_value = (U8) (xx + (a + b) / 2);
-					scanline[1 + x] = new_value;
-
-					previous_scanline += (y != row_offsets[pass_index]);
-					previous = previous << 8 | new_value;
+					scanline[1 + x] += (U8) ((a + b) / 2);
 				}
 			}
-			else if (filter_type == 4)
+			else if (filter_type == 4 && y == row_offsets[pass_index])
 			{
 				// NOTE(simon): Paeth filter
-				U8 zero = 0;
-				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : scanline - scanline_size);
-				U64 previous_scanline_previous = 0;
-				U64 previous = 0;
 				for (U32 x = 0; x < scanline_size; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 b = *previous_scanline;
-					U8 c = (U8) (previous_scanline_previous >> (bit_stride - 8));
-					U8 xx = scanline[1 + x];
+					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
+					U8 b = 0;
+					U8 c = 0;
 
 					S32 p = (S32) a + (S32) b - (S32) c;
 					S32 pa = s32_abs(p - (S32) a);
@@ -861,12 +852,39 @@ png_unfilter(PNG_State *state)
 						pr = c;
 					}
 
-					U8 new_value = xx + pr;
-					scanline[1 + x] = new_value;
+					scanline[1 + x] += pr;
+				}
+			}
+			else if (filter_type == 4 && y != row_offsets[pass_index])
+			{
+				// NOTE(simon): Paeth filter
+				U8 *previous_scanline = scanline - scanline_size - 1;
+				for (U32 x = 0; x < scanline_size; ++x)
+				{
+					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
+					U8 b = previous_scanline[1 + x];
+					U8 c = (x < byte_stride ? 0 : previous_scanline[1 + x - byte_stride]);
 
-					previous_scanline_previous = previous_scanline_previous << 8 | b;
-					previous_scanline += (y != row_offsets[pass_index]);
-					previous = previous << 8 | new_value;
+					S32 p = (S32) a + (S32) b - (S32) c;
+					S32 pa = s32_abs(p - (S32) a);
+					S32 pb = s32_abs(p - (S32) b);
+					S32 pc = s32_abs(p - (S32) c);
+
+					U8 pr = 0;
+					if (pa <= pb && pa <= pc)
+					{
+						pr = a;
+					}
+					else if (pb <= pc)
+					{
+						pr = b;
+					}
+					else
+					{
+						pr = c;
+					}
+
+					scanline[1 + x] += pr;
 				}
 			}
 			else
