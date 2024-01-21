@@ -270,6 +270,21 @@ struct UI_KeyStackNode
 	UI_Key key;
 };
 
+typedef struct UI_Stats UI_Stats;
+struct UI_Stats
+{
+	U64 rect_style_push_count;
+	U64 text_style_push_count;
+	U64 layout_style_push_count;
+	U64 parent_push_count;
+	U64 seed_push_count;
+	U64 clip_rect_push_count;
+	U64 box_chain_count;
+	U64 max_box_chain_count;
+	U64 num_hashed_boxes;
+	U64 num_transient_boxes;
+};
+
 typedef struct UI_Context UI_Context;
 struct UI_Context
 {
@@ -313,6 +328,8 @@ struct UI_Context
 	Render_Context     *renderer;
 
 	UI_Config config;
+
+	UI_Stats stats[2];
 
 	Vec2F32 mouse_pos;
 	Vec2F32 prev_mouse_pos;

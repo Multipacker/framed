@@ -13,6 +13,28 @@
 
 global UI_Context *g_ui_ctx;
 
+#define UI_GATHER_STATS 1
+
+#if UI_GATHER_STATS
+#  define ui_stats_inc_val(name) ui_get_current_stats()->##name++
+#else
+#  define ui_stats_inc_val(name)
+#endif
+
+internal UI_Stats *
+ui_get_current_stats(Void)
+{
+	UI_Stats *result = g_ui_ctx->stats + (g_ui_ctx->frame_index%2);
+	return(result);
+}
+
+internal UI_Stats *
+ui_get_prev_stats(Void)
+{
+	UI_Stats *result = g_ui_ctx->stats + ((g_ui_ctx->frame_index+1)%2);
+	return(result);
+}
+
 internal Vec2F32
 ui_mouse_pos(Void)
 {
@@ -146,6 +168,7 @@ ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent)
 	UI_ClipRectStackNode *node = push_struct(ui_frame_arena(), UI_ClipRectStackNode);
 	node->rect = rect;
 	node->clip_to_parent = clip_to_parent;
+	ui_stats_inc_val(clip_rect_push_count);
 	stack_push(g_ui_ctx->clip_rect_stack.first, node);
 }
 
@@ -173,6 +196,8 @@ ui_push_rect_style(Void)
 	}
 	rect_style->stack_next = first;
 	g_ui_ctx->rect_style_stack.first = rect_style;
+
+	ui_stats_inc_val(rect_style_push_count);
 
 	return(rect_style);
 }
@@ -214,6 +239,7 @@ ui_push_text_style(Void)
 	text_style->stack_next = first;
 	g_ui_ctx->text_style_stack.first = text_style;
 
+	ui_stats_inc_val(text_style_push_count);
 	return(text_style);
 }
 
@@ -252,6 +278,8 @@ ui_push_layout_style(Void)
 	}
 	layout->stack_next = g_ui_ctx->layout_style_stack.first;
 	g_ui_ctx->layout_style_stack.first = layout;
+
+	ui_stats_inc_val(layout_style_push_count);
 
 	return(layout);
 }
@@ -1183,6 +1211,7 @@ ui_end(Void)
 	g_ui_ctx->layout_style_stack.first = 0;
 	g_ui_ctx->clip_rect_stack.first = 0;
 	g_ui_ctx->frame_index++;
+	memory_zero_struct(ui_get_current_stats());
 	g_ui_ctx = 0;
 	debug_function_end(debug_time);
 }
@@ -1433,6 +1462,7 @@ ui_box_from_key(UI_Key key)
 
 	if (!ui_key_is_null(key))
 	{
+		U64 count = 0;
 		U64 slot_index = key.value % g_ui_ctx->box_hash_map_count;
 		for (result = g_ui_ctx->box_hash_map[slot_index];
 			 result != 0;
@@ -1442,6 +1472,15 @@ ui_box_from_key(UI_Key key)
 			{
 				break;
 			}
+#if UI_GATHER_STATS
+			++count;
+			if (ui_get_current_stats()->max_box_chain_count < count)
+			{
+				ui_get_current_stats()->max_box_chain_count = count;
+			}
+#endif
+
+			ui_stats_inc_val(box_chain_count);
 		}
 	}
 
@@ -1481,22 +1520,35 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	if (!result)
 	{
-		result = ui_box_alloc();
-		result->key = key;
-		result->first_frame_touched_index = g_ui_ctx->frame_index;
-
-		U64 slot_index = result->key.value % g_ui_ctx->box_hash_map_count;
-		UI_Box *box = g_ui_ctx->box_hash_map[slot_index];
-		if (box)
+		if (!ui_key_is_null(key))
 		{
-			box->hash_prev = result;
-			result->hash_next = box;
-		}
+			result = ui_box_alloc();
+			result->key = key;
+			result->first_frame_touched_index = g_ui_ctx->frame_index;
 
-		g_ui_ctx->box_hash_map[slot_index] = result;
+			U64 slot_index = result->key.value % g_ui_ctx->box_hash_map_count;
+			UI_Box *box = g_ui_ctx->box_hash_map[slot_index];
+			if (box)
+			{
+				box->hash_prev = result;
+				result->hash_next = box;
+			}
+
+			g_ui_ctx->box_hash_map[slot_index] = result;
+		}
+		else
+		{
+			result = push_struct_zero(ui_frame_arena(), UI_Box);
+			result->first_frame_touched_index = g_ui_ctx->frame_index;
+			result->key = key;
+
+			ui_stats_inc_val(num_transient_boxes);
+
+		}
 	}
 	else
 	{
+		ui_stats_inc_val(num_hashed_boxes);
 		assert(result->last_frame_touched_index != g_ui_ctx->frame_index &&
 			   "Hash collision!");
 	}
@@ -1625,6 +1677,7 @@ ui_push_parent(UI_Box *box)
 		// TODO(hampus): Add an option to clip to parent
 		ui_push_clip_rect(&box->fixed_rect, false);
 	}
+	ui_stats_inc_val(parent_push_count);
 	return(ui_top_parent());
 }
 
@@ -1654,6 +1707,7 @@ ui_push_seed(UI_Key key)
 	UI_KeyStackNode *node = push_struct(ui_frame_arena(), UI_KeyStackNode);
 	node->key = key;
 	stack_push(g_ui_ctx->seed_stack, node);
+	ui_stats_inc_val(seed_push_count);
 	return(ui_top_seed());
 }
 
