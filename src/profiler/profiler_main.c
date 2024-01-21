@@ -47,7 +47,7 @@ struct Debug_Statistics
 	CStr file;
 	U32  line;
 	Str8 name;
-	U32  total_time_ns;
+	U64  total_time_ns;
 	U32  hit_count;
 };
 
