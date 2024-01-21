@@ -882,9 +882,15 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		{
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
+				++input;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -904,17 +910,24 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	}
 	else if (state->bit_depth == 16)
 	{
-		U16 *input = (U16 *) pixels;
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
+				++pixels;
+				U16 *input = (U16 *) pixels;
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
 					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
 						output[(x + y * state->width) * components + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						++pixels;
 					}
 				}
 			}
@@ -930,9 +943,16 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		{
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
+
+				++input;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
