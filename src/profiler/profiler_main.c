@@ -53,7 +53,7 @@ struct Debug_Statistics
 
 global Debug_Statistics ui_debug_stats[100];
 global U32               ui_debug_stat_count;
-global U32               ui_debug_freeze;
+global B32               ui_debug_freeze;
 
 internal Void
 ui_debug_keep_alive(Void)

@@ -90,7 +90,7 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 {
 	PNG_Huffman result = { 0 };
 	result.codes   = push_array(arena, U32, count);
-	result.lengths = lengths;
+	result.lengths = push_array(arena, U32, count);
 	result.values  = push_array(arena, U32, count);
 	result.count   = count;
 
@@ -101,14 +101,16 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 		++bit_length_count[lengths[i]];
 	}
 
-	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
+	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1]   = { 0 };
+	U32 first_index_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
 	U32 first_code_for_length = 0;
 	bit_length_count[0] = 0;
 	for (U32 bits = 1; bits <= PNG_HUFFMAN_MAX_BITS; ++bits)
 	{
-		first_code_for_length = (first_code_for_length + bit_length_count[bits - 1]) << 1;
-		next_code_for_length[bits] = first_code_for_length;
+		first_code_for_length        = (first_code_for_length + bit_length_count[bits - 1]) << 1;
+		next_code_for_length[bits]   = first_code_for_length;
+		first_index_for_length[bits] = first_index_for_length[bits - 1] + bit_length_count[bits - 1];
 	}
 
 	for (U32 i = 0; i < count; ++i)
@@ -116,10 +118,12 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 		U32 length = lengths[i];
 		if (length != 0)
 		{
+			U32 index = first_index_for_length[length]++;
 			// NOTE(simon): The codes here have the reverse bit order of what we need.
-			U32 code = next_code_for_length[length]++;
-			result.codes[i]  = u32_reverse(code) >> (32 - length);
-			result.values[i] = i;
+			U32 code  = next_code_for_length[length]++;
+			result.codes[index]   = u32_reverse(code) >> (32 - length);
+			result.values[index]  = i;
+			result.lengths[index] = length;
 		}
 	}
 
