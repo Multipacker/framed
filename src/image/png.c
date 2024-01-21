@@ -554,17 +554,26 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 
 			if (length < distance)
 			{
+				// NOTE(simon): None-overlapping regions.
 				memory_copy(state->zlib_ptr, state->zlib_ptr - distance, length);
+				state->zlib_ptr += length;
+			}
+			else if (distance == 1)
+			{
+				// NOTE(simon): Common if filtering can generate a lot of repeated values.
+				memset(state->zlib_ptr, state->zlib_ptr[-1], length);
 				state->zlib_ptr += length;
 			}
 			else
 			{
 				// NOTE(simon): memory_copy will not work as the two regions overlap.
+				U8 *write = state->zlib_ptr;
+				U8 *read = state->zlib_ptr - distance;
 				for (U32 i = 0; i < length; ++i)
 				{
-					*state->zlib_ptr = *(state->zlib_ptr - distance);
-					++state->zlib_ptr;
+					*write++ = *read++;
 				}
+				state->zlib_ptr += length;
 			}
 		}
 		else if (literal > 285)
