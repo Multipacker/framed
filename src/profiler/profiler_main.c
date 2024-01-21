@@ -114,7 +114,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_spacer(ui_em(0.4f, 1));
 
 		ui_next_width(ui_fill());
-		ui_next_height(ui_fill());
 		ui_named_row(str8_lit("DebugTimes"))
 		{
 			Str8 headers[] = {
@@ -319,6 +318,22 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				}
 			}
 		}
+#if UI_GATHER_STATS
+		UI_Stats *ui_stats = ui_get_prev_stats();
+		ui_spacer(ui_em(0.5f, 1));
+		ui_text(str8_lit("UI Stats"));
+		ui_spacer(ui_em(0.5f, 1));
+		ui_textf("Num hashed boxes: %"PRIU64, ui_stats->num_hashed_boxes);
+		ui_textf("Num transient boxes: %"PRIU64, ui_stats->num_transient_boxes);
+		ui_textf("Rect style push count: %"PRIU64, ui_stats->rect_style_push_count);
+		ui_textf("Layout style push count: %"PRIU64, ui_stats->layout_style_push_count);
+		ui_textf("Text style push count: %"PRIU64, ui_stats->text_style_push_count);
+		ui_textf("Parent push count: %"PRIU64, ui_stats->parent_push_count);
+		ui_textf("Seed push count: %"PRIU64, ui_stats->seed_push_count);
+		ui_textf("Clip rect push count: %"PRIU64, ui_stats->clip_rect_push_count);
+		ui_textf("Total chain count: %"PRIU64, ui_stats->box_chain_count);
+		ui_textf("Max box chain count: %"PRIU64, ui_stats->max_box_chain_count);
+#endif
 	}
 }
 

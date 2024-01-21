@@ -2,15 +2,12 @@
 //~ hampus: Short term
 //
 // [ ] @feature Tabs
-//  [ ] @feature Scroll tabs horizontally if there are too many to fit
-//                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 //  [ ] @code @feature UI startup builder
 //  [ ] @feature Drag & hold to reorder tabs
 
 ////////////////////////////////
 //~ hampus: Medium term
 //
-// [ ] @feature Only change panel focus with mouse presses
 // [ ] @bug Flickering on the first appearance of the tab navigation buttons
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 // [ ] @polish Adding a tab with a tab offset active doesn't look perfect
@@ -24,7 +21,8 @@
 // [ ] @feature Be able to pin windows which disables closing
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @code @cleanup UI commands. Discriminated unions instead of data array?
-
+//  [ ] @feature Scroll tabs horizontally if there are too many to fit
+//                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 ////////////////////////////////
 //~ hampus: Globals
 
