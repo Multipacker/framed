@@ -880,6 +880,8 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				if (column_offsets[pass_index] >= state->width)
@@ -891,6 +893,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 				++input;
+				U8 *row = write + column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -899,12 +902,14 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * components] = value;
+					*row = value;
 
 					bit_position += state->bit_depth;
+					row += column_advances[pass_index];
 				}
 
 				input += scanline_size;
+				write += state->width * row_advances[pass_index];
 			}
 		}
 	}
@@ -912,6 +917,8 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	{
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * components * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				if (column_offsets[pass_index] >= state->width)
@@ -921,15 +928,19 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 
 				++pixels;
 				U16 *input = (U16 *) pixels;
+				U8 *row = write + components * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
 					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
-						output[(x + y * state->width) * components + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
-						++pixels;
+						row[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						pixels += 2;
 					}
+					row += components * column_advances[pass_index];
 				}
+
+				write += state->width * components * row_advances[pass_index];
 			}
 		}
 	}
@@ -941,6 +952,8 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				if (column_offsets[pass_index] >= state->width)
@@ -953,6 +966,7 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				U64 bit_position    = 0;
 
 				++input;
+				U8 *row = write + column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -961,12 +975,14 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * components] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					*row = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
 
 					bit_position += state->bit_depth;
+					row          += column_advances[pass_index];
 				}
 
 				input += scanline_size;
+				write += state->width * row_advances[pass_index];
 			}
 		}
 	}
@@ -980,14 +996,18 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 				continue;
 			}
 
+			U8 *write = output + state->width * components * row_offsets[pass_index];
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
 				++input;
+				U8 *row = write + components * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					memory_copy(&output[(x + y * state->width) * components], input, components);
+					memory_copy(row, input, components);
 					input += components;
+					row   += components * column_advances[pass_index];
 				}
+				write += state->width * components * row_advances[pass_index];
 			}
 		}
 	}
