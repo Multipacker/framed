@@ -1539,7 +1539,10 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				f32_abs(delta.y) > drag_threshold)
 			{
 				ProfilerUI_Tab *tab = drag_data->tab;
-				ProfilerUI_Panel *prev_panel = tab->panel;
+
+				Vec2F32 prev_panel_pos = tab->panel->box->fixed_rect.min;
+				Vec2F32 first_tab_offset = tab->panel->tab_group.first->box->fixed_rect.min;
+				Vec2F32 distance_between_panel_min_and_first_tab = v2f32_sub_v2f32(first_tab_offset, prev_panel_pos);
 
 				// NOTE(hampus): Calculate the new window size
 				Vec2F32 new_window_pct = v2f32(1, 1);
@@ -1589,10 +1592,12 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 					profiler_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
 
-				Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, prev_panel->box->fixed_rect.min);
+				Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->box->fixed_rect.min);
+				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, distance_between_panel_min_and_first_tab);
+				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(drag_data->tab->panel->window->pos,
+																	 offset);
 				profiler_ui_state->next_focused_panel = drag_data->tab->panel;
 				profiler_ui_state->drag_status = ProfilerUI_DragStatus_Dragging;
-				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, offset);
 				log_info("Drag: dragging");
 			}
 
