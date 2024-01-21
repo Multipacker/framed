@@ -302,7 +302,7 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 	B32 active = profiler_ui_tab_is_active(tab);
 
 	F32 height_em = 1.1f;
-	F32 corner_radius = (F32) ui_top_font_size() * 0.5f;
+	F32 corner_radius = (F32) ui_top_font_line_height() * 0.2f;
 
 	Vec4F32 color = active ?
 		profiler_ui_color_from_theme(ProfilerUI_Color_ActiveTab) :
@@ -875,7 +875,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					ui_next_height(ui_pct(1, 1));
 					ui_named_column(str8_lit("TabDropDownContainer"))
 					{
-						F32 corner_radius = (F32) ui_top_font_size() * 0.25f;
+						F32 corner_radius = (F32) ui_top_font_line_height() * 0.25f;
 						ui_spacer(ui_em(0.2f, 1));
 						ui_next_icon(RENDER_ICON_LIST);
 						ui_next_width(ui_em(title_bar_height_em+0.1f, 1));

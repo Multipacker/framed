@@ -652,7 +652,8 @@ os_main(Str8List arguments)
 #else
 		font_size = 15;
 #endif
-		ui_push_font(render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), font_size));
+		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
+		ui_push_font_size(font_size);
 
 		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 

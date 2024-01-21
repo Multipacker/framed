@@ -102,9 +102,9 @@ struct UI_RectStyle
 
 	Vec4F32 color[4];
 	Vec4F32 border_color;
-	F32     border_thickness;
+	F32 border_thickness;
 	Vec4F32 radies;
-	F32     softness;
+	F32 softness;
 	Render_TextureSlice slice;
 	Render_TextureFilter texture_filter;
 	B32 use_nearest;
@@ -116,11 +116,12 @@ struct UI_TextStyle
 {
 	UI_TextStyle *stack_next;
 
-	Vec4F32      color;
+	Vec4F32 color;
 	UI_TextAlign align;
-	Vec2F32      padding;
-	U32          icon;
-	Render_FontKey    font;
+	Vec2F32 padding;
+	U32 icon;
+	U32 font_size;
+	Str8 font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
@@ -475,14 +476,13 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_text_padding()          ui_pop_text_style()
 #define ui_text_padding(axis, x)       defer_loop(ui_push_text_padding(axis, x), ui_pop_text_padding())
 
-#define ui_next_font_size(x)  ui_get_auto_pop_text_style()->font.font_size = x
-#define ui_push_font_size(x)  ui_push_text_style()->font.font_size = x
+#define ui_next_font_size(x)  ui_get_auto_pop_text_style()->font_size = x
+#define ui_push_font_size(x)  ui_push_text_style()->font_size = x
 #define ui_pop_font_size()          ui_pop_text_style()
 #define ui_font_size(x)       defer_loop(ui_push_font_size(x), ui_pop_font_size())
 
-
-#define ui_next_icon(x)  ui_get_auto_pop_text_style()->icon = x; ui_next_font(render_key_from_font(str8_lit(UI_ICON_FONT_PATH), (U32) ui_top_font_size()))
-#define ui_push_icon(x)  ui_push_text_style()->icon = x; ui_push_font(render_key_from_font(str8_lit(UI_ICON_FONT_PATH), ui_top_font_size()))
+#define ui_next_icon(x)  ui_get_auto_pop_text_style()->icon = x; ui_next_font(str8_lit(UI_ICON_FONT_PATH))
+#define ui_push_icon(x)  ui_push_text_style()->icon = x; ui_push_font(str8_lit(UI_ICON_FONT_PATH))
 #define ui_pop_icon()    ui_pop_text_style(); ui_pop_font()
 #define ui_icon(x)       defer_loop(ui_push_icon(x), ui_pop_icon())
 

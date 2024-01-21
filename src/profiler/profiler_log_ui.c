@@ -83,8 +83,6 @@ ui_log_keep_alive(Arena *frame_arena)
 internal Void
 ui_logger(Void)
 {
-	Render_FontKey mono = render_key_from_font(str8_lit("data/fonts/liberation-mono.ttf"), 11);
-
 	ui_next_child_layout_axis(Axis2_Y);
 
 	UI_Box *log_window = ui_box_make(0, str8_lit("LogWindow"));
@@ -180,7 +178,8 @@ ui_logger(Void)
 			--log_ui_has_new_entries;
 		}
 
-		ui_push_font(mono);
+		ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
+		ui_push_font_size(11);
 
 		B32 show_all_threads = true;
 		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
@@ -285,6 +284,7 @@ ui_logger(Void)
 		}
 
 		ui_pop_font();
+		ui_pop_font_size();
 		ui_pop_scrollable_region();
 	}
 }

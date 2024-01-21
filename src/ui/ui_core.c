@@ -302,24 +302,25 @@ ui_get_auto_pop_layout_style(Void)
 	return(layout);
 }
 
+internal Render_FontKey
+ui_font_key_from_text_style(UI_TextStyle *text_style)
+{
+	Render_FontKey result = {0};
+	result.path = text_style->font;
+	result.font_size = text_style->font_size;
+	return(result);
+}
+
 internal F32
 ui_top_font_line_height(Void)
 {
 	UI_TextStyle *text_style = ui_top_text_style();
-	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
 	F32 result = 0;
 	if (render_font_is_loaded(font))
 	{
 		result = font->line_height;
 	}
-	return(result);
-}
-
-internal S32
-ui_top_font_size(Void)
-{
-	UI_TextStyle *text_style = ui_top_text_style();
-	S32 result = (S32) text_style->font.font_size;
 	return(result);
 }
 
@@ -543,9 +544,10 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+	text_style->font = str8_lit("data/fonts/Inter-Regular.ttf");
+	text_style->font_size = 15;
 
-	text_style->padding.v[Axis2_X] = (F32)ui_top_font_size();
+	text_style->padding.v[Axis2_X] = (F32)ui_top_font_line_height();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
@@ -557,7 +559,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color              = v4f32(0.6f, 0.6f, 0.6f, 1.0f);
 	rect_style->border_thickness          = 1;
-	F32 radius                            = (F32)ui_top_font_size() * 0.2f;
+	F32 radius                            = (F32)ui_top_font_line_height() * 0.1f;
 	rect_style->radies                    = v4f32(radius, radius, radius, radius);
 	rect_style->softness                  = 1;
 
@@ -676,7 +678,7 @@ internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
-	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, root->text_style.font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(&root->text_style));
 
 	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
 	{
@@ -1068,7 +1070,7 @@ ui_draw(UI_Box *root)
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
 
-		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(text_style));
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 		{
@@ -1420,7 +1422,6 @@ ui_key_match(UI_Key a, UI_Key b)
 	B32 result = a.value == b.value;
 	return(result);
 }
-
 
 // TODO(simon): Switch to hash_str8 and hash_combine.
 internal UI_Key

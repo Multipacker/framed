@@ -355,7 +355,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 	if (params->item_size.kind == UI_SizeKind_Null)
 	{
 		F32 largest_width = 0.0f;
-		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_top_text_style()->font);
+		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
 		for (U32 i = 0; i < item_count; ++i)
 		{
 			Vec2F32 size = render_measure_text(font, item_names[i]);
@@ -482,7 +482,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
 
-	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, text_style->font);
+	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(text_style));
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 	{
