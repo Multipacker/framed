@@ -341,11 +341,14 @@ render_font_stream_thread(Void *data)
 
 				render_unload_font(renderer, font);
 
+				U64 start_timer = os_now_nanoseconds();
 				B32 success = render_load_font(renderer, font, entry.params);
 
 				if (success)
 				{
-					log_info("Successfully loaded font `%"PRISTR8"`", str8_expand(entry.params.path));
+					U64 end_timer = os_now_nanoseconds();
+					U64 dt = end_timer - start_timer;
+					log_info("Successfully loaded font `%"PRISTR8"` in %.4fms", str8_expand(entry.params.path), (F32)dt/(F32)million(1));
 				}
 				else
 				{

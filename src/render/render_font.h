@@ -7,7 +7,7 @@ enum Render_FontRenderMode
 	Render_FontRenderMode_Normal, // Default render mode. 8-bit AA bitmaps
 	Render_FontRenderMode_LCD,    // Subpixel rendering for horizontally decimated LCD displays
 	Render_FontRenderMode_LCD_V,  // Subpixel rendering for vertically decimated LCD displays
-	
+
 	Render_FontRenderMode_COUNT,
 };
 
@@ -83,10 +83,10 @@ struct Render_KerningPair
 };
 
 typedef enum Render_FontState Render_FontState;
-enum Render_FontState 
+enum Render_FontState
 {
 	Render_FontState_Unloaded,
-	
+
 	Render_FontState_InQueue,
 	Render_FontState_Loading,
 	Render_FontState_Loaded,
@@ -123,13 +123,12 @@ struct Render_Font
 	F32 underline_position; // NOTE(hampus): Relative to the baseline
 	B32 has_kerning;
 	U32 num_glyphs;
-	U32 num_loaded_glyphs;
-	
+
 	Str8 family_name;
 	Str8 style_name;
 
 	U64 last_frame_index_used;
-	
+
 	Render_FontState state;
 	Render_FontLoadParams load_params;
 };
@@ -137,7 +136,6 @@ struct Render_Font
 typedef struct Render_FontCache Render_FontCache;
 struct Render_FontCache
 {
-	U32 entries_used;
 	Render_Font entries[RENDER_FONT_CACHE_SIZE];
 };
 
