@@ -3,13 +3,15 @@
 
 #define PROFILER_UI_COMMAND(name) Void profiler_ui_command_##name(Void *params)
 
-#define PROFILER_UI_TAB_VIEW(name) Void name(Void *data)
-typedef PROFILER_UI_TAB_VIEW(ProfilerUI_TabViewProc);
+#define PROFILER_UI_TAB_VIEW(name) Void name(struct ProfilerUI_TabViewInfo *view_info)
 
 typedef struct ProfilerUI_Panel ProfilerUI_Panel;
 typedef struct ProfilerUI_Tab ProfilerUI_Tab;
 typedef struct ProfilerUI_Command ProfilerUI_Commands;
 typedef struct ProfilerUI_Window ProfilerUI_Window;
+typedef struct ProfilerUI_TabViewInfo ProfilerUI_TabViewInfo;
+
+typedef PROFILER_UI_TAB_VIEW(ProfilerUI_TabViewProc);
 
 typedef enum ProfilerUI_CommandKind ProfilerUI_CommandKind;
 enum ProfilerUI_CommandKind
@@ -53,15 +55,15 @@ enum ProfilerUI_Color
 	ProfilerUI_Color_InactivePanelBorder,
 	ProfilerUI_Color_ActivePanelBorder,
 	ProfilerUI_Color_InactivePanelOverlay,
-	
+
 	ProfilerUI_Color_TabBar,
 	ProfilerUI_Color_ActiveTab,
 	ProfilerUI_Color_InactiveTab,
 	ProfilerUI_Color_TabTitle,
 	ProfilerUI_Color_TabBorder,
-	
+
 	ProfilerUI_Color_TabBarButtons,
-	
+
 	ProfilerUI_Color_COUNT,
 };
 
@@ -97,16 +99,16 @@ struct ProfilerUI_Tab
 {
 	ProfilerUI_Tab *next;
 	ProfilerUI_Tab *prev;
-	
+
 	Str8 string;
 	B32 pinned;
-	
+
 	ProfilerUI_Panel *panel;
-	
+
 	UI_Box *box;
-	
+
 	ProfilerUI_TabViewInfo view_info;
-	
+
 	// NOTE(hampus): For debugging
 	U64 frame_index;
 };
@@ -128,16 +130,16 @@ struct ProfilerUI_Panel
 	ProfilerUI_Panel *sibling;
 	ProfilerUI_Panel *parent;
 	ProfilerUI_Window *window;
-	
+
 	ProfilerUI_TabGroup tab_group;
-	
+
 	Axis2 split_axis;
 	F32 pct_of_parent;
-	
+
 	Str8 string;
-	
+
 	UI_Box *box;
-	
+
 	// NOTE(hampus): For debugging
 	UI_Box *dragger;
 	U64 frame_index;
@@ -148,14 +150,14 @@ struct ProfilerUI_Window
 {
 	ProfilerUI_Window *next;
 	ProfilerUI_Window *prev;
-	
+
 	Vec2F32 pos;
 	Vec2F32 size;
-	
+
 	ProfilerUI_Panel *root_panel;
-	
+
 	UI_Box *box;
-	
+
 	Str8 string;
 };
 
@@ -190,25 +192,23 @@ struct ProfilerUI_State
 	U64 num_panels;
 	U64 num_tabs;
 	U64 num_windows;
-	
+
 	UI_Box *window_container;
 	ProfilerUI_Window *master_window;
 	ProfilerUI_Window *next_top_most_window;
-	
+
 	ProfilerUI_Panel *focused_panel;
 	ProfilerUI_Panel *next_focused_panel;
-	
-	ProfilerUI_Panel *resizing_panel;
-	
+
 	ProfilerUI_CommandBuffer cmd_buffer;
-	
+
 	ProfilerUI_WindowList window_list;
-	
+
 	ProfilerUI_DragStatus drag_status;
 	ProfilerUI_DragData   drag_data;
-	
+
 	ProfilerUI_Theme theme;
-	
+
 	// NOTE(hampus): Debug purposes
 	U64 frame_index;
 };

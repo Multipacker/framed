@@ -312,13 +312,13 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
-	Render_TextureSlice texture = *(Render_TextureSlice *) data;
+	Render_TextureSlice texture = *(Render_TextureSlice *)view_info->data;
 	ui_texture_view(texture);
 }
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 {
-	B32 initialized = data != 0;
+	B32 initialized = view_info->data != 0;
 
 	typedef struct ThemeViewState ThemeViewState;
 	struct ThemeViewState
@@ -326,7 +326,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 		Vec4F32 hsva[ProfilerUI_Color_COUNT];
 	};
 
-	ThemeViewState *theme_view_state = profiler_ui_get_or_push_view_data(data, ThemeViewState);
+	ThemeViewState *theme_view_state = profiler_ui_get_view_data(view_info, ThemeViewState);
 
 	if (!initialized)
 	{

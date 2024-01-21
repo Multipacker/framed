@@ -37,7 +37,7 @@ ui_box_get_fixed_rect(UI_Box *box)
 }
 
 internal B32
-ui_box_created_this_frame(UI_Box *box)
+ui_box_was_created_this_frame(UI_Box *box)
 {
 	B32 result = box->first_frame_touched_index == box->last_frame_touched_index;
 	return(result);
@@ -516,6 +516,7 @@ ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer
 	UI_TextStyle *text_style = ui_push_text_style();
 	text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
 	text_style->font = render_key_from_font(str8_lit("data/fonts/Inter-Regular.ttf"), 15);
+
 	text_style->padding.v[Axis2_X] = (F32)ui_top_font_size();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();

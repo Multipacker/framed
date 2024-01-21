@@ -7,6 +7,7 @@
 //  [ ] @code @feature UI startup builder
 //  [ ] @bug If you begin to reorder a tab, and then drag it out, the offset will be wrong.
 //  [ ] @feature Drag & hold to reorder tabs
+//  [ ] @bug Reordering the last tab when the tab bar breaks offseting
 
 ////////////////////////////////
 //~ hampus: Medium term
@@ -166,11 +167,12 @@ profiler_ui_attempt_to_close_panel(ProfilerUI_Panel *panel)
 internal Void
 profiler_ui_drag_begin_reordering(ProfilerUI_Tab *tab, Vec2F32 mouse_offset)
 {
+	// assert(profiler_ui_state->drag_status == ProfilerUI_DragStatus_Inactive);
 	if (!tab->pinned)
 	{
 		ProfilerUI_DragData *drag_data = &profiler_ui_state->drag_data;
 		drag_data->tab = tab;
-		drag_data->drag_origin = ui_mouse_pos();
+		profiler_ui_state->drag_data.drag_origin = ui_mouse_pos();
 		profiler_ui_state->drag_status = ProfilerUI_DragStatus_Reordering;
 		log_info("Drag: reordering");
 	}
@@ -186,6 +188,7 @@ profiler_ui_wait_for_drag_threshold(Void)
 internal Void
 profiler_ui_drag_release(Void)
 {
+	//assert(profiler_ui_state->drag_status == ProfilerUI_DragStatus_Dragging);
 	profiler_ui_state->drag_status = ProfilerUI_DragStatus_Released;
 	log_info("Drag: released");
 }
@@ -574,7 +577,6 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 			{
 				dragging = true;
 				drag_delta = comm.drag_delta.v[root->split_axis];
-				profiler_ui_state->resizing_panel = root;
 			}
 		}
 
@@ -922,7 +924,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 							RectF32 tab_bar_rect    = tabs_container->fixed_rect;
 
 							ProfilerUI_Tab *last_tab_with_size = root->tab_group.last;
-							while (ui_box_created_this_frame(last_tab_with_size->box->parent))
+							while (ui_box_was_created_this_frame(last_tab_with_size->box->parent))
 							{
 								if (last_tab_with_size == root->tab_group.first)
 								{
@@ -1167,7 +1169,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					{
 						ui_spacer(padding);
 						ProfilerUI_Tab *tab = root->tab_group.active_tab;
-						tab->view_info.function(tab->view_info.data);
+						tab->view_info.function(&tab->view_info);
 						ui_spacer(padding);
 					}
 					ui_spacer(padding);
@@ -1406,22 +1408,22 @@ profiler_ui_builder_split_panel_(ProfilerUI_PanelSplit *data)
 ////////////////////////////////
 //~ hampus: Tab views
 
-#define profiler_ui_get_or_push_view_data(data, type) profiler_ui_get_or_push_view_data_(data, sizeof(type))
+#define profiler_ui_get_view_data(view_info, type) profiler_ui_get_or_push_view_data_(view_info, sizeof(type))
 
 internal Void *
-profiler_ui_get_or_push_view_data_(Void *data, U64 size)
+profiler_ui_get_or_push_view_data_(ProfilerUI_TabViewInfo *view_info, U64 size)
 {
-	Void *result = data;
-	if (result == 0)
+	if (view_info->data == 0)
 	{
-		result = push_array(profiler_ui_state->perm_arena, U8, size);
+		view_info->data = push_array(profiler_ui_state->perm_arena, U8, size);
 	}
+	Void *result = view_info->data;
 	return(result);
 }
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_default)
 {
-	ProfilerUI_Tab *tab = data;
+	ProfilerUI_Tab *tab = view_info->data;
 	ProfilerUI_Panel *panel = tab->panel;
 	ProfilerUI_Window *window = panel->window;
 	ui_next_width(ui_fill());
@@ -1537,6 +1539,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				f32_abs(delta.y) > drag_threshold)
 			{
 				ProfilerUI_Tab *tab = drag_data->tab;
+				ProfilerUI_Panel *prev_panel = tab->panel;
 
 				// NOTE(hampus): Calculate the new window size
 				Vec2F32 new_window_pct = v2f32(1, 1);
@@ -1586,7 +1589,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 					profiler_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
 
-				Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->box->fixed_rect.min);
+				Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, prev_panel->box->fixed_rect.min);
 				profiler_ui_state->next_focused_panel = drag_data->tab->panel;
 				profiler_ui_state->drag_status = ProfilerUI_DragStatus_Dragging;
 				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, offset);
@@ -1604,9 +1607,6 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 		case ProfilerUI_DragStatus_Released:
 		{
-			// NOTE(hampus): If it is the last tab of the window,
-			// we don't need to allocate a new panel. Just use
-			// the tab's panel
 			memory_zero_struct(&profiler_ui_state->drag_data);
 			profiler_ui_state->drag_status = ProfilerUI_DragStatus_Inactive;
 		} break;
@@ -1620,15 +1620,6 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	{
 		profiler_ui_drag_end();
 	}
-
-	if (profiler_ui_state->next_top_most_window)
-	{
-		ProfilerUI_Window *window = profiler_ui_state->next_top_most_window;
-		profiler_ui_window_remove_from_list(window);
-		profiler_ui_window_push_to_front(window);
-	}
-
-	profiler_ui_state->next_top_most_window = 0;
 
 	ui_end();
 
@@ -1651,12 +1642,20 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		}
 	}
 
+	if (profiler_ui_state->next_top_most_window)
+	{
+		ProfilerUI_Window *window = profiler_ui_state->next_top_most_window;
+		profiler_ui_window_remove_from_list(window);
+		profiler_ui_window_push_to_front(window);
+	}
+
 	if (!profiler_ui_state->next_focused_panel)
 	{
 		profiler_ui_state->next_focused_panel = profiler_ui_state->focused_panel;
 	}
 
-	profiler_ui_state->resizing_panel = 0;
+	profiler_ui_state->next_top_most_window = 0;
 
 	profiler_ui_state->cmd_buffer.pos = 0;
+
 }
