@@ -552,12 +552,19 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 				return(false);
 			}
 
-			// TODO(simon): Special case for when the regions don't overlap? Profile!
-			// NOTE(simon): memory_copy will not work as the two regions might overlap.
-			for (U32 i = 0; i < length; ++i)
+			if (length < distance)
 			{
-				*state->zlib_ptr = *(state->zlib_ptr - distance);
-				++state->zlib_ptr;
+				memory_copy(state->zlib_ptr, state->zlib_ptr - distance, length);
+				state->zlib_ptr += length;
+			}
+			else
+			{
+				// NOTE(simon): memory_copy will not work as the two regions overlap.
+				for (U32 i = 0; i < length; ++i)
+				{
+					*state->zlib_ptr = *(state->zlib_ptr - distance);
+					++state->zlib_ptr;
+				}
 			}
 		}
 		else if (literal > 285)
