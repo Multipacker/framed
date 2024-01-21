@@ -91,7 +91,7 @@ ui_debug_keep_alive(Void)
 		}
 		else
 		{
-			ui_debug_stats[stat_index].total_time_ns += entry->end_ns - entry->start_ns;
+			ui_debug_stats[stat_index].total_time_ns += (U32) (entry->end_ns - entry->start_ns);
 			++ui_debug_stats[stat_index].hit_count;
 		}
 	}

@@ -807,9 +807,8 @@ png_unfilter(PNG_State *state)
 				for (U32 x = byte_stride; x < scanline_size; ++x)
 				{
 					U8 a = scanline[1 + x - byte_stride];
-					U8 b = 0;
 
-					scanline[1 + x] += (U8) ((a + b) / 2);
+					scanline[1 + x] += a / 2;
 				}
 			}
 			else if (filter_type == 3 && y != row_offsets[pass_index])
