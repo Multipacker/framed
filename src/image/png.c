@@ -90,7 +90,7 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 {
 	PNG_Huffman result = { 0 };
 	result.codes   = push_array(arena, U32, count);
-	result.lengths = lengths;
+	result.lengths = push_array(arena, U32, count);
 	result.values  = push_array(arena, U32, count);
 	result.count   = count;
 
@@ -101,14 +101,16 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 		++bit_length_count[lengths[i]];
 	}
 
-	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
+	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1]   = { 0 };
+	U32 first_index_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
 	U32 first_code_for_length = 0;
 	bit_length_count[0] = 0;
 	for (U32 bits = 1; bits <= PNG_HUFFMAN_MAX_BITS; ++bits)
 	{
-		first_code_for_length = (first_code_for_length + bit_length_count[bits - 1]) << 1;
-		next_code_for_length[bits] = first_code_for_length;
+		first_code_for_length        = (first_code_for_length + bit_length_count[bits - 1]) << 1;
+		next_code_for_length[bits]   = first_code_for_length;
+		first_index_for_length[bits] = first_index_for_length[bits - 1] + bit_length_count[bits - 1];
 	}
 
 	for (U32 i = 0; i < count; ++i)
@@ -116,10 +118,12 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 		U32 length = lengths[i];
 		if (length != 0)
 		{
+			U32 index = first_index_for_length[length]++;
 			// NOTE(simon): The codes here have the reverse bit order of what we need.
-			U32 code = next_code_for_length[length]++;
-			result.codes[i]  = u32_reverse(code) >> (32 - length);
-			result.values[i] = i;
+			U32 code  = next_code_for_length[length]++;
+			result.codes[index]   = u32_reverse(code) >> (32 - length);
+			result.values[index]  = i;
+			result.lengths[index] = length;
 		}
 	}
 
@@ -548,12 +552,28 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 				return(false);
 			}
 
-			// TODO(simon): Special case for when the regions don't overlap? Profile!
-			// NOTE(simon): memory_copy will not work as the two regions might overlap.
-			for (U32 i = 0; i < length; ++i)
+			if (length < distance)
 			{
-				*state->zlib_ptr = *(state->zlib_ptr - distance);
-				++state->zlib_ptr;
+				// NOTE(simon): None-overlapping regions.
+				memory_copy(state->zlib_ptr, state->zlib_ptr - distance, length);
+				state->zlib_ptr += length;
+			}
+			else if (distance == 1)
+			{
+				// NOTE(simon): Common if filtering can generate a lot of repeated values.
+				memset(state->zlib_ptr, state->zlib_ptr[-1], length);
+				state->zlib_ptr += length;
+			}
+			else
+			{
+				// NOTE(simon): memory_copy will not work as the two regions overlap.
+				U8 *write = state->zlib_ptr;
+				U8 *read = state->zlib_ptr - distance;
+				for (U32 i = 0; i < length; ++i)
+				{
+					*write++ = *read++;
+				}
+				state->zlib_ptr += length;
 			}
 		}
 		else if (literal > 285)
@@ -727,33 +747,8 @@ png_zlib_inflate(PNG_State *state)
 	return(true);
 }
 
-internal U8
-png_paeth_predictor(S32 a, S32 b, S32 c)
-{
-	S32 p = a + b - c;
-	S32 pa = s32_abs(p - a);
-	S32 pb = s32_abs(p - b);
-	S32 pc = s32_abs(p - c);
-
-	U8 result = 0;
-	if (pa <= pb && pa <= pc)
-	{
-		result = (U8) a;
-	}
-	else if (pb <= pc)
-	{
-		result = (U8) b;
-	}
-	else
-	{
-		result = (U8) c;
-	}
-
-	return(result);
-}
-
 internal B32
-png_unfilter(PNG_State *state, U8 *result)
+png_unfilter(PNG_State *state)
 {
 	U32 *row_offsets     = png_interlace_row_offsets[state->interlace_method];
 	U32 *row_advances    = png_interlace_row_advances[state->interlace_method];
@@ -764,8 +759,7 @@ png_unfilter(PNG_State *state, U8 *result)
 	U32 components = png_component_count_from_color_type(state->color_type);
 	U32 bit_stride = u32_round_up_to_power_of_2(state->bit_depth, 8) * components;
 
-	U8 *input  = state->zlib_output;
-	U8 *output = result;
+	U8 *scanline = state->zlib_output;
 
 	for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 	{
@@ -774,88 +768,86 @@ png_unfilter(PNG_State *state, U8 *result)
 			continue;
 		}
 
+		U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
+		U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
+		U32 byte_stride     = u32_round_up_to_power_of_2(state->bit_depth, 8) * components / 8;
+
 		for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 		{
-			U8 filter_type      = *input++;
-			U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-			U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
+			U8 filter_type = scanline[0];
 
 			if (filter_type == 0 || (filter_type == 2 && y == row_offsets[pass_index]))
 			{
-				// NOTE(simon): No filtering and up filtering at y == 0
-				memory_copy(output, input, scanline_size);
-				input  += scanline_size;
-				output += scanline_size;
+				// NOTE(simon): No filter and up filter at y == 0, nothing to do.
 			}
-			else if (filter_type == 1)
+			else if (filter_type == 1 || (filter_type == 4 && y == row_offsets[pass_index]))
 			{
-				// NOTE(simon): Sub filter
-				U64 previous = 0;
-				for (U32 x = 0; x < scanline_size; ++x)
+				// NOTE(simon): Sub filter and Paeth filter at y == 0
+				for (U32 x = byte_stride; x < scanline_size; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 xx = *input++;
+					U8 a = scanline[1 + x - byte_stride];
 
-					U8 new_value = xx + a;
-					*output++ = new_value;
-
-					previous = previous << 8 | new_value;
+					scanline[1 + x] += a;
 				}
 			}
 			else if (filter_type == 2)
 			{
 				// NOTE(simon): Up filter at y != 0
-				U8 *previous_scanline = output - scanline_size;
+				U8 *previous_scanline = scanline - scanline_size - 1;
 				for (U32 x = 0; x < scanline_size; ++x)
 				{
-					U8 b = *previous_scanline;
-					U8 xx = *input++;
+					U8 b = previous_scanline[1 + x];
 
-					U8 new_value = xx + b;
-					*output++ = new_value;
-
-					++previous_scanline;
+					scanline[1 + x] += b;
 				}
 			}
-			else if (filter_type == 3)
+			else if (filter_type == 3 && y == row_offsets[pass_index])
+			{
+				// NOTE(simon): Average filter at y == 0
+				for (U32 x = byte_stride; x < scanline_size; ++x)
+				{
+					U8 a = scanline[1 + x - byte_stride];
+
+					scanline[1 + x] += a / 2;
+				}
+			}
+			else if (filter_type == 3 && y != row_offsets[pass_index])
 			{
 				// NOTE(simon): Average filter
-				U8 zero = 0;
-				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : output - scanline_size);
-				U64 previous = 0;
+				U8 *previous_scanline = scanline - scanline_size - 1;
 				for (U32 x = 0; x < scanline_size; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 b = *previous_scanline;
-					U8 xx = *input++;
+					U8 a = (x < byte_stride ? 0 : scanline[1 + x - byte_stride]);
+					U8 b = previous_scanline[1 + x];
 
-					U8 new_value = (U8) (xx + (a + b) / 2);
-					*output++ = new_value;
-
-					previous_scanline += (y != row_offsets[pass_index]);
-					previous = previous << 8 | new_value;
+					scanline[1 + x] += (U8) ((a + b) / 2);
 				}
 			}
-			else if (filter_type == 4)
+			else if (filter_type == 4 && y != row_offsets[pass_index])
 			{
 				// NOTE(simon): Paeth filter
-				U8 zero = 0;
-				U8 *previous_scanline = (y == row_offsets[pass_index] ? &zero : output - scanline_size);
-				U64 previous_scanline_previous = 0;
-				U64 previous = 0;
-				for (U32 x = 0; x < scanline_size; ++x)
+				U8 *previous_scanline = scanline - scanline_size - 1;
+				for (U32 x = 0; x < byte_stride; ++x)
 				{
-					U8 a = (U8) (previous >> (bit_stride - 8));
-					U8 b = *previous_scanline;
-					U8 c = (U8) (previous_scanline_previous >> (bit_stride - 8));
-					U8 xx = *input++;
+					U8 b = previous_scanline[1 + x];
 
-					U8 new_value = xx + png_paeth_predictor(a, b, c);
-					*output++ = new_value;
+					scanline[1 + x] += b;
+				}
 
-					previous_scanline_previous = previous_scanline_previous << 8 | b;
-					previous_scanline += (y != row_offsets[pass_index]);
-					previous = previous << 8 | new_value;
+				for (U32 x = byte_stride; x < scanline_size; ++x)
+				{
+					U8 a = scanline[1 + x - byte_stride];
+					U8 b = previous_scanline[1 + x];
+					U8 c = previous_scanline[1 + x - byte_stride];
+
+					// NOTE(simon): This is taken from stb_image, and is significantly faster than the version in the spec.
+					S32 thresh = c * 3 - (a + b);
+					U8 low  = (a < b ? a : b);
+					U8 high = (a < b ? b : a);
+					U8 t    = ((high <= thresh) ? low : c);
+					U8 pr   = ((thresh <= low) ? high : t);
+
+					scanline[1 + x] += pr;
 				}
 			}
 			else
@@ -863,6 +855,8 @@ png_unfilter(PNG_State *state, U8 *result)
 				log_error("Unknown filter (%"PRIU8"), corrupted PNG", filter_type);
 				return(false);
 			}
+
+			scanline += scanline_size + 1;
 		}
 	}
 
@@ -870,7 +864,7 @@ png_unfilter(PNG_State *state, U8 *result)
 }
 
 internal B32
-png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
+png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *output)
 {
 	U32 *row_offsets     = png_interlace_row_offsets[state->interlace_method];
 	U32 *row_advances    = png_interlace_row_advances[state->interlace_method];
@@ -878,51 +872,102 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 	U32 *column_advances = png_interlace_column_advances[state->interlace_method];
 	U32  pass_count      = png_interlace_pass_count[state->interlace_method];
 
+	B32 is_greyscale = (state->color_type == PNG_ColorType_Greyscale || state->color_type == PNG_ColorType_GreyscaleAlpha);
+	B32 has_alpha    = (state->color_type == PNG_ColorType_GreyscaleAlpha || state->color_type == PNG_ColorType_TruecolorAlpha);
+
+	U32 red_offset    = 0;
+	U32 green_offset  = (is_greyscale ? 0 : 1);
+	U32 blue_offset   = (is_greyscale ? 0 : 2);
+	U32 alpha_offset  = blue_offset + (has_alpha ? 1 : 0);
+	U8  alpha_default = (has_alpha ? 0 : 0xFF);
+
 	U32 components = png_component_count_from_color_type(state->color_type);
-	if (state->color_type == PNG_ColorType_IndexedColor && state->bit_depth != 8)
+	if (state->color_type == PNG_ColorType_IndexedColor)
 	{
 		U8 *input = pixels;
 
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
+				++input;
+				U8 *row = write + 4 * column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					U64 byte_index   = bit_position / 8;
-					U64 bit_index    = bit_position % 8;
-					U8 byte          = input[byte_index];
-					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
+					U64 byte_index = bit_position / 8;
+					U64 bit_index  = bit_position % 8;
+					U8 byte        = input[byte_index];
+					U8 index       = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * components] = value;
+					// TODO(simon): Try allowing you to always index in to the
+					// palette and check at the end of the loop. Profile!
+					if (index >= state->palette_size)
+					{
+						log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+						return(false);
+					}
+
+					row[0] = state->palette[index * 3 + 0];
+					row[1] = state->palette[index * 3 + 1];
+					row[2] = state->palette[index * 3 + 2];
+					row[3] = 0xFF;
 
 					bit_position += state->bit_depth;
+					row += 4 * column_advances[pass_index];
 				}
 
 				input += scanline_size;
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
 	else if (state->bit_depth == 16)
 	{
-		U16 *input = (U16 *) pixels;
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
+				++pixels;
+				U16 *input = (U16 *) pixels;
+				U8 *row = write + 4 * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
+					U8 values[components];
 					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
-						output[(x + y * state->width) * components + i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						values[i] = (U8) (((U32) value * (U32) U8_MAX + (U32) U16_MAX / 2) / (U32) U16_MAX);
+						pixels += 2;
 					}
+
+					row[0] = values[red_offset];
+					row[1] = values[green_offset];
+					row[2] = values[blue_offset];
+					row[3] = values[alpha_offset] | alpha_default;
+
+					row += 4 * column_advances[pass_index];
 				}
+
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
@@ -934,11 +979,21 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
+
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				if (column_offsets[pass_index] >= state->width)
+				{
+					continue;
+				}
+
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
 				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
+
+				++input;
+				U8 *row = write + 4 * column_offsets[pass_index];
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -947,12 +1002,18 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 					U8 byte          = input[byte_index];
 					U8 value         = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					output[(x + y * state->width) * components] = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					U8 grey = (U8) (((U32) value * (U32) U8_MAX + bit_max / 2) / bit_max);
+					row[0] = grey;
+					row[1] = grey;
+					row[2] = grey;
+					row[3] = 0xFF;
 
 					bit_position += state->bit_depth;
+					row          += 4 * column_advances[pass_index];
 				}
 
 				input += scanline_size;
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
 	}
@@ -961,94 +1022,29 @@ png_deinterlace_and_resample_to_8bit(PNG_State *state, U8 *pixels, U8 *output)
 		U8 *input = pixels;
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
+			if (column_offsets[pass_index] >= state->width)
+			{
+				continue;
+			}
+
+			U8 *write = output + state->width * 4 * row_offsets[pass_index];
 			for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 			{
+				++input;
+				U8 *row = write + 4 * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					memory_copy(&output[(x + y * state->width) * components], input, components);
+					row[0] = input[red_offset];
+					row[1] = input[green_offset];
+					row[2] = input[blue_offset];
+					row[3] = input[alpha_offset] | alpha_default;
+
 					input += components;
+					row   += 4 * column_advances[pass_index];
 				}
+				write += state->width * 4 * row_advances[pass_index];
 			}
 		}
-	}
-
-	return(true);
-}
-
-internal B32
-png_expand_to_rgba(PNG_State *state, U8 *pixels)
-{
-	U32 components = png_component_count_from_color_type(state->color_type);
-	U8 *read  = &pixels[(state->width * state->height - 1) * components];
-	U8 *write = &pixels[(state->width * state->height - 1) * 4];
-
-	switch (state->color_type)
-	{
-		case PNG_ColorType_Greyscale:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = 0xFF;
-				write[2] = read[0];
-				write[1] = read[0];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_Truecolor:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = 0xFF;
-				write[2] = read[2];
-				write[1] = read[1];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_IndexedColor:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				// TODO(simon): Try allowing you to always index in to the
-				// palette and check at the end of the loop. Profile!
-				U32 index = *read;
-				if (index >= state->palette_size)
-				{
-					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
-					return(false);
-				}
-
-				write[3] = 0xFF;
-				write[2] = state->palette[index * 3 + 2];
-				write[1] = state->palette[index * 3 + 1];
-				write[0] = state->palette[index * 3 + 0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_GreyscaleAlpha:
-		{
-			for (U64 i = 0; i < (U64) state->width * (U64) state->height; ++i)
-			{
-				write[3] = read[1];
-				write[2] = read[0];
-				write[1] = read[0];
-				write[0] = read[0];
-
-				read  -= components;
-				write -= 4;
-			}
-		} break;
-		case PNG_ColorType_TruecolorAlpha:
-		{
-			// NOTE(simon): Nothing to do, already in the right format.
-		} break;
 	}
 
 	return(true);
@@ -1120,10 +1116,7 @@ png_load(Arena *arena, Str8 contents, Image *result)
 		return(false);
 	}
 
-	// TODO(simon): Better approximation for the unfiltered data
-	U64 unfiltered_size = 8 * state.width * state.height;
-	U8 *unfiltered_data = push_array(scratch.arena, U8, unfiltered_size);
-	if (!png_unfilter(&state, unfiltered_data))
+	if (!png_unfilter(&state))
 	{
 		release_scratch(scratch);
 		return(false);
@@ -1131,14 +1124,7 @@ png_load(Arena *arena, Str8 contents, Image *result)
 
 	Arena_Temporary restore_point = arena_begin_temporary(arena);
 	U8 *output = push_array(arena, U8, state.width * state.height * 4);
-	if (!png_deinterlace_and_resample_to_8bit(&state, unfiltered_data, output))
-	{
-		arena_end_temporary(restore_point);
-		release_scratch(scratch);
-		return(false);
-	}
-
-	if (!png_expand_to_rgba(&state, output))
+	if (!png_deinterlace_and_resample_to_8bit_rgba(&state, state.zlib_output, output))
 	{
 		arena_end_temporary(restore_point);
 		release_scratch(scratch);

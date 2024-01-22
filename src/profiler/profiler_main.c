@@ -53,7 +53,7 @@ struct Debug_Statistics
 
 global Debug_Statistics ui_debug_stats[100];
 global U32               ui_debug_stat_count;
-global U32               ui_debug_freeze;
+global B32               ui_debug_freeze;
 
 internal Void
 ui_debug_keep_alive(Void)
@@ -80,18 +80,21 @@ ui_debug_keep_alive(Void)
 			}
 		}
 
-		if (stat_index == ui_debug_stat_count && stat_index < array_count(ui_debug_stats))
+		if (stat_index == ui_debug_stat_count)
 		{
-			ui_debug_stats[stat_index].file          = entry->file;
-			ui_debug_stats[stat_index].line          = entry->line;
-			ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
-			ui_debug_stats[stat_index].total_time_ns = (U32) (entry->end_ns - entry->start_ns);
-			ui_debug_stats[stat_index].hit_count     = 1;
-			++ui_debug_stat_count;
+			if (stat_index < array_count(ui_debug_stats))
+			{
+				ui_debug_stats[stat_index].file          = entry->file;
+				ui_debug_stats[stat_index].line          = entry->line;
+				ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
+				ui_debug_stats[stat_index].total_time_ns = (U32) (entry->end_ns - entry->start_ns);
+				ui_debug_stats[stat_index].hit_count     = 1;
+				++ui_debug_stat_count;
+			}
 		}
 		else
 		{
-			ui_debug_stats[stat_index].total_time_ns += entry->end_ns - entry->start_ns;
+			ui_debug_stats[stat_index].total_time_ns += (U32) (entry->end_ns - entry->start_ns);
 			++ui_debug_stats[stat_index].hit_count;
 		}
 	}
@@ -179,8 +182,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					ui_next_corner_radius(0);
 					ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-					ui_named_column_end();
 					ui_pop_seed();
+					ui_named_column_end();
 
 					if (i + 1 < array_count(columns))
 					{

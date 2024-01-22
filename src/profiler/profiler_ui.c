@@ -1120,7 +1120,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 		ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_InactivePanelOverlay));
 		UI_Box *content_dim = ui_box_make(UI_BoxFlag_FloatingPos,
 										  str8_lit("ContentDim"));
-		content_dim->flags |= UI_BoxFlag_DrawBackground * (root != profiler_ui_state->focused_panel);
+		content_dim->flags |= (UI_BoxFlags) (UI_BoxFlag_DrawBackground * (root != profiler_ui_state->focused_panel));
 
 		if (ui_mouse_is_inside_box(content_dim) &&
 			profiler_ui_is_tab_reordering() &&
