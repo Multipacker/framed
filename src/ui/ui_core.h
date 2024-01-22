@@ -426,6 +426,7 @@ internal Void ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis);
 internal Void ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis);
 internal Void ui_calculate_final_rect(UI_Box *root, Axis2 axis);
 internal Void ui_layout(UI_Box *root);
+internal Void ui_solve_size_violations(UI_Box *root, Axis2 axis);
 
 ////////////////////////////////
 //~ hampus: Draw pass

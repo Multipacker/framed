@@ -1151,11 +1151,12 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				// TODO(hampus): Should this actually be called panel color...
 				ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
 				UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-												  UI_BoxFlag_DrawBorder,
+												  UI_BoxFlag_DrawBorder |
+												  UI_BoxFlag_Clip,
 												  str8_lit("ContentBox"));
-				// NOTE(hampus): Add some padding for the content
 				ui_parent(content_box)
 				{
+					// NOTE(hampus): Add some padding for the content
 					UI_Size padding = ui_em(0.3f, 1);
 					ui_spacer(padding);
 					ui_next_width(ui_fill());
@@ -1163,8 +1164,14 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					ui_row()
 					{
 						ui_spacer(padding);
+
 						ProfilerUI_Tab *tab = root->tab_group.active_tab;
-						tab->view_info.function(&tab->view_info);
+						ui_next_width(ui_fill());
+						ui_next_height(ui_fill());
+						ui_column()
+						{
+							tab->view_info.function(&tab->view_info);
+						}
 						ui_spacer(padding);
 					}
 					ui_spacer(padding);

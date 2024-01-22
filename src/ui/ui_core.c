@@ -1071,6 +1071,7 @@ ui_layout(UI_Box *root)
 			ui_solve_independent_sizes(root, axis);
 			ui_solve_upward_dependent_sizes(root, axis);
 			ui_solve_downward_dependent_sizes(root, axis);
+			ui_solve_size_violations(root, axis);
 			ui_calculate_final_rect(root, axis);
 		}
 	}
@@ -1188,7 +1189,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 }
 
 internal Void
-ui_calculate_final_rect(UI_Box *root, Axis2 axis)
+ui_solve_size_violations(UI_Box *root, Axis2 axis)
 {
 	F32 available_space = root->fixed_size.v[axis];
 
@@ -1200,9 +1201,9 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			child != 0;
 			child = child->next)
 		{
-			if(!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+			if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
 			{
-				if(axis == root->layout_style.child_layout_axis)
+				if (axis == root->layout_style.child_layout_axis)
 				{
 					taken_space += child->fixed_size.v[axis];
 				}
@@ -1219,17 +1220,17 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
 	{
 		F32 violation = taken_space - available_space;
-		if(violation > 0 && total_fixup_budget > 0)
+		if (violation > 0 && total_fixup_budget > 0)
 		{
-			for(UI_Box *child = root->first;
-				child != 0;
-				child = child->next)
+			for (UI_Box *child = root->first;
+				 child != 0;
+				 child = child->next)
 			{
-				if(!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+				if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
 				{
 					F32 fixup_budget_this_child = child->fixed_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 					F32 fixup_size_this_child = 0;
-					if(axis == root->layout_style.child_layout_axis)
+					if (axis == root->layout_style.child_layout_axis)
 					{
 						fixup_size_this_child = fixup_budget_this_child * (violation / total_fixup_budget);
 					}
@@ -1240,10 +1241,32 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 					fixup_size_this_child = f32_clamp(0, fixup_size_this_child, fixup_budget_this_child);
 					child->fixed_size.v[axis] -= fixup_size_this_child;
 					child->fixed_size.v[axis] = f32_floor(child->fixed_size.v[axis]);
+					for (UI_Box *child_child = child->first;
+						 child_child != 0;
+						 child_child = child_child->next)
+					{
+						if (child_child->layout_style.size[axis].kind == UI_SizeKind_Pct)
+						{
+							child_child->fixed_size.v[axis] = child->fixed_size.v[axis] * child_child->layout_style.size[axis].value;
+							child_child->fixed_size.v[axis] = f32_floor(child_child->fixed_size.v[axis]);
+						}
+					}
 				}
 			}
 		}
 	}
+
+	for (UI_Box *child = root->first;
+		 child != 0;
+		 child = child->next)
+	{
+		ui_solve_size_violations(child, axis);
+	}
+}
+
+internal Void
+ui_calculate_final_rect(UI_Box *root, Axis2 axis)
+{
 
 	F32 offset = 0;
 

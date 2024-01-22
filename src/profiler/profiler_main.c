@@ -102,8 +102,8 @@ ui_debug_keep_alive(Void)
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 {
-	ui_next_width(ui_fill());
-	ui_next_height(ui_fill());
+	ui_next_width(ui_pct(1, 1));
+	ui_next_height(ui_pct(1, 1));
 	ui_column()
 	{
 		ui_row()
