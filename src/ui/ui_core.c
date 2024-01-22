@@ -1114,8 +1114,6 @@ ui_draw(UI_Box *root)
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 		{
-			rect_style->border_color = rect_style->border_color;
-
 			F32 d = 0;
 			if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
 			{
