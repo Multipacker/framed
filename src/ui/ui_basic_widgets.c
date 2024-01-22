@@ -228,7 +228,7 @@ ui_pop_scrollable_region(Void)
 	UI_Comm comm = ui_comm_from_box(vert_container);
 	for (Axis2 axis = 0; axis < Axis2_COUNT; ++axis)
 	{
-		content->scroll.v[axis] += (F32)(comm.scroll.v[axis] * g_ui_ctx->dt * 5000.0);
+		content->scroll.v[axis] += (F32)(comm.scroll.v[axis] * ui_dt() * 5000.0);
 		content->scroll.v[axis]  = f32_clamp(0, content->scroll.v[axis], content->fixed_size.v[axis] - view_region->fixed_size.v[axis]);
 	}
 }
@@ -355,7 +355,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 	if (params->item_size.kind == UI_SizeKind_Null)
 	{
 		F32 largest_width = 0.0f;
-		Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
+		Render_Font *font = render_font_from_key(ui_renderer(), ui_font_key_from_text_style(ui_top_text_style()));
 		for (U32 i = 0; i < item_count; ++i)
 		{
 			Vec2F32 size = render_measure_text(font, item_names[i]);
@@ -437,6 +437,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 internal Void
 ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 {
+	Render_Context *renderer = ui_renderer();
 	Vec3F32 rgb = rgb_from_hsv(v3f32(hue, 1, 1));
 	ui_next_colors(v4f32(1, 1, 1, 1),
 				   v4f32(rgb.x, rgb.y, rgb.z, 1),
@@ -477,19 +478,20 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 
 UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 {
-	render_push_clip(g_ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
+	Render_Context *renderer = ui_renderer();
+	render_push_clip(renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
 
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
 
-	Render_Font *font = render_font_from_key(g_ui_ctx->renderer, ui_font_key_from_text_style(text_style));
+	Render_Font *font = render_font_from_key(renderer, ui_font_key_from_text_style(text_style));
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 	{
 		Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
 		Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
 		// TODO(hampus): Make softness em dependent
-		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, min, max,
+		Render_RectInstance *instance = render_rect(renderer, min, max,
 													.softness = 15,
 													.color = v4f32(0, 0, 0, 1));
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
@@ -512,7 +514,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 			Vec4F32 rgba1 = v4f32(rgb1.x, rgb1.y, rgb1.z, 1);
 			Vec2F32 min = root->fixed_rect.min;
 			Vec2F32 max = root->fixed_rect.min;
-			Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, rect.min, rect.max,
+			Render_RectInstance *instance = render_rect(renderer, rect.min, rect.max,
 														.slice = rect_style->slice,
 														.use_nearest = rect_style->texture_filter);
 			instance->colors[Corner_TopLeft] = rgba0;
@@ -526,16 +528,16 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
-		Render_RectInstance *instance = render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+		Render_RectInstance *instance = render_rect(renderer, root->fixed_rect.min, root->fixed_rect.max,
 													.border_thickness = rect_style->border_thickness,
 													.color = rect_style->border_color);
 	}
 
 
-	render_pop_clip(g_ui_ctx->renderer);
-	if (g_ui_ctx->show_debug_lines)
+	render_pop_clip(renderer);
+	if (ui_ctx->show_debug_lines)
 	{
-		render_rect(g_ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 	}
 
 	for (UI_Box *child = root->last;

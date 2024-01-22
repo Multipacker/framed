@@ -1,14 +1,12 @@
 ////////////////////////////////
 //~ hampus: Short term
 //
-// [ ] @feature Tabs
-//  [ ] @code @feature UI startup builder
-//  [ ] @feature Drag & hold to reorder tabs
+// [ ] @code @feature UI startup builder
+// [ ] @feature Drag & hold to reorder tabs
 
 ////////////////////////////////
 //~ hampus: Medium term
 //
-// [ ] @bug Flickering on the first appearance of the tab navigation buttons
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 // [ ] @polish Adding a tab with a tab offset active doesn't look perfect
 
@@ -21,8 +19,9 @@
 // [ ] @feature Be able to pin windows which disables closing
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @code @cleanup UI commands. Discriminated unions instead of data array?
-//  [ ] @feature Scroll tabs horizontally if there are too many to fit
+// [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
+
 ////////////////////////////////
 //~ hampus: Globals
 
@@ -121,12 +120,18 @@ profiler_ui_panel_split_and_attach_tab(ProfilerUI_Panel *panel, ProfilerUI_Tab *
 	data->panel_side    = side;
 }
 
-internal Void
+internal B32
 profiler_ui_reorder_tab_in_front(ProfilerUI_Tab *tab, ProfilerUI_Tab *next)
 {
-	ProfilerUI_TabReorder *data = profiler_ui_command_push(&profiler_ui_state->cmd_buffer, ProfilerUI_CommandKind_TabReorder);
-	data->tab = tab;
-	data->next = next;
+	B32 result = false;
+	if (!next->pinned && tab->pinned)
+	{
+		ProfilerUI_TabReorder *data = profiler_ui_command_push(&profiler_ui_state->cmd_buffer, ProfilerUI_CommandKind_TabReorder);
+		data->tab = tab;
+		data->next = next;
+		result = true;
+	}
+	return(result);
 }
 
 internal Void
@@ -363,8 +368,7 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 			assert(profiler_ui_state->drag_data.tab);
 			if (tab != profiler_ui_state->drag_data.tab)
 			{
-				RectF32 rect = ui_box_get_fixed_rect(title_container->parent);
-				B32 hovered  = ui_mouse_is_inside_rect(rect);
+				B32 hovered  = ui_mouse_is_inside_box(title_container->parent);
 				if (hovered)
 				{
 					if (profiler_ui_state->drag_data.tab == tab->next)
@@ -600,7 +604,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 			UI_Box *input_detector = ui_box_make(UI_BoxFlag_FloatingPos,
 												 str8_lit("InputDetector"));
 			B32 make_window_topmost = false;
-			Gfx_EventList *event_list = g_ui_ctx->event_list;
+			Gfx_EventList *event_list = ui_events();
 			if (ui_mouse_is_inside_box(input_detector))
 			{
 				for (Gfx_Event *node = event_list->first;
@@ -1248,7 +1252,7 @@ profiler_ui_window_edge_resizer(ProfilerUI_Window *window, Str8 string, Axis2 ax
 	ui_next_hover_cursor(axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable,
 							  string);
-	Vec2U32 screen_size = gfx_get_window_client_area(g_ui_ctx->renderer->gfx);
+	Vec2U32 screen_size = gfx_get_window_client_area(ui_renderer()->gfx);
 	UI_Comm comm = {0};
 	if (!profiler_ui_is_dragging())
 	{
@@ -1281,7 +1285,7 @@ profiler_ui_window_corner_resizer(ProfilerUI_Window *window, Str8 string, Corner
 	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable,
 							  string);
 	UI_Comm comm = ui_comm_from_box(box);
-	Vec2F32 screen_size   = v2f32_from_v2u32(gfx_get_window_area(g_ui_ctx->renderer->gfx));
+	Vec2F32 screen_size   = v2f32_from_v2u32(gfx_get_window_area(ui_renderer()->gfx));
 	if (comm.dragging)
 	{
 		switch (corner)
@@ -1453,7 +1457,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_default)
 			ui_spacer(ui_em(0.5f, 1));
 			ui_row()
 			{
-				ui_check(&g_ui_ctx->show_debug_lines, str8_lit("ShowDebugLines"));
+				ui_check(&ui_ctx->show_debug_lines, str8_lit("ShowDebugLines"));
 				ui_spacer(ui_em(0.5f, 1));
 				ui_text(str8_lit("Show debug lines"));
 			}
@@ -1653,5 +1657,4 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	profiler_ui_state->next_top_most_window = 0;
 
 	profiler_ui_state->cmd_buffer.pos = 0;
-
 }

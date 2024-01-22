@@ -322,8 +322,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_spacer(ui_em(0.5f, 1));
 		ui_text(str8_lit("UI Stats"));
 		ui_spacer(ui_em(0.5f, 1));
-		ui_textf("Permanent arena: %"PRIU64"kB", g_ui_ctx->permanent_arena->pos/1024);
-		ui_textf("Frame arena: %"PRIU64"kB", g_ui_ctx->frame_arena->pos/1024);
+		ui_textf("Permanent arena: %"PRIU64"kB", ui_permanent_arena()->pos/1024);
+		ui_textf("Frame arena: %"PRIU64"kB", ui_frame_arena()->pos/1024);
 
 #if UI_GATHER_STATS
 		UI_Stats *ui_stats = ui_get_prev_stats();

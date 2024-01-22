@@ -326,7 +326,7 @@ struct UI_Context
 	UI_Key prev_active_key;
 
 	Gfx_EventList *event_list;
-	Render_Context     *renderer;
+	Render_Context *renderer;
 
 	UI_Config config;
 
@@ -341,13 +341,34 @@ struct UI_Context
 	U64 frame_index;
 };
 
-internal UI_Context *ui_init(Void);
+////////////////////////////////
+//~ hampus: Accessor functions
 
-internal Void ui_begin(UI_Context *ui_ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
-internal Void ui_end(Void);
+internal F64 ui_dt(Void);
+internal Render_Context *ui_renderer(Void);
+internal Gfx_EventList *ui_events(Void);
+internal UI_Stats *ui_get_current_stats(Void);
+internal UI_Stats *ui_get_prev_stats(Void);
+internal Vec2F32 ui_prev_mouse_pos(Void);
+internal Vec2F32 ui_mouse_pos(Void);
+internal Arena *ui_permanent_arena(Void);
+internal Arena *ui_frame_arena(Void);
+internal B32 ui_animations_enabled(Void);
+internal F32 ui_animation_speed(Void);
 
-internal Void ui_tooltip_begin(Void);
-internal Void ui_tooltip_end(Void);
+////////////////////////////////
+//~ hampus: Keying
+
+internal UI_Key ui_key_null(Void);
+internal B32 ui_key_is_null(UI_Key key);
+internal B32 ui_key_match(UI_Key a, UI_Key b);
+internal UI_Key ui_key_from_string(UI_Key seed, Str8 string);
+internal UI_Key ui_key_from_string_f(UI_Key seed, CStr fmt, ...);
+internal Str8 ui_get_hash_part_from_string(Str8 string);
+internal Str8 ui_get_display_part_from_string(Str8 string);
+
+////////////////////////////////
+//~ hampus: Sizing
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
 internal UI_Size ui_text_content(F32 strictness);
@@ -356,36 +377,105 @@ internal UI_Size ui_children_sum(F32 strictness);
 internal UI_Size ui_em(F32 value, F32 strictness);
 internal UI_Size ui_fill(Void);
 
+////////////////////////////////
+//~ hampus: Box
+
 internal UI_Comm ui_comm_from_box(UI_Box *box);
-
-internal UI_Key ui_key_null(Void);
-internal B32    ui_key_is_null(UI_Key key);
-internal B32    ui_key_match(UI_Key a, UI_Key b);
-internal UI_Key ui_key_from_string(UI_Key seed, Str8 string);
-internal UI_Key ui_key_from_string_f(UI_Key seed, CStr fmt, ...);
-
+internal B32 ui_box_is_active(UI_Box *box);
+internal B32 ui_box_is_hot(UI_Box *box);
+internal UI_Box *ui_box_alloc(Void);
+internal Void ui_box_free(UI_Box *box);
+internal B32 ui_box_has_flag(UI_Box *box, UI_BoxFlags flag);
+internal UI_Box *ui_box_from_key(UI_Key key);
 internal UI_Box *ui_box_make(UI_BoxFlags flags, Str8 string);
 internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
-
-internal UI_Box *ui_box_from_key(UI_Key key);
-
 internal Void ui_box_equip_display_string(UI_Box *box, Str8 string);
 internal Void ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc);
+internal RectF32 ui_box_get_fixed_rect(UI_Box *box);
+internal B32 ui_box_was_created_this_frame(UI_Box *box);
+internal B32 ui_mouse_is_inside_box(UI_Box *box);
+
+////////////////////////////////
+//~ hampus: Ctx menu
+
+internal B32 ui_ctx_menu_begin(UI_Key key);
+internal Void ui_ctx_menu_end(Void);
+internal Void ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu);
+internal Void ui_ctx_menu_close(Void);
+internal B32 ui_ctx_menu_is_open(Void);
+internal UI_Key ui_ctx_menu_key(Void);
+
+////////////////////////////////
+//~ hampus: Tooltip
+
+internal Void ui_tooltip_begin(Void);
+internal Void ui_tooltip_end(Void);
+
+////////////////////////////////
+//~ hampus: Init, begin end
+
+internal UI_Context *ui_init(Void);
+internal Void ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
+internal Void ui_end(Void);
+
+////////////////////////////////
+//~ hampus: Layout pass
+
+internal Void ui_solve_independent_sizes(UI_Box *root, Axis2 axis);
+internal Void ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis);
+internal Void ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis);
+internal Void ui_calculate_final_rect(UI_Box *root, Axis2 axis);
+internal Void ui_layout(UI_Box *root);
+
+////////////////////////////////
+//~ hampus: Draw pass
+
+internal Vec2F32 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding);
+internal Vec2F32 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align);
+internal Void ui_draw(UI_Box *root);
+
+////////////////////////////////
+//~ hampus: Stack helpers
+
+internal F32 ui_top_font_line_height(Void);
+internal Render_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
+
+////////////////////////////////
+//~ hampus: Stack managing
 
 internal UI_Box *ui_top_parent(Void);
 internal UI_Box *ui_push_parent(UI_Box *box);
 internal UI_Box *ui_pop_parent(Void);
-
 internal UI_Key ui_top_seed(Void);
 internal UI_Key ui_push_seed(UI_Key key);
 internal UI_Key ui_pop_seed(Void);
+internal Void ui_push_string(Str8 string);
+internal Void ui_pop_string(Void);
+internal Void ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent);
+internal Void ui_pop_clip_rect(Void);
+internal UI_RectStyle *ui_top_rect_style(Void);
+internal UI_RectStyle *ui_push_rect_style(Void);
+internal void ui_pop_rect_style(Void);
+internal UI_RectStyle *ui_get_auto_pop_rect_style(Void);
+internal UI_TextStyle *ui_top_text_style(Void);
+internal UI_TextStyle *ui_push_text_style(Void);
+internal UI_TextStyle *ui_pop_text_style(Void);
+internal UI_TextStyle *ui_get_auto_pop_text_style(Void);
+internal UI_LayoutStyle *ui_top_layout_style(Void);
+internal UI_LayoutStyle *ui_push_layout_style(Void);
+internal void ui_pop_layout_style(Void);
+internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
+
+////////////////////////////////
+//~ hampus: Defers
 
 #define ui_parent(box)   defer_loop(ui_push_parent(box), ui_pop_parent())
 #define ui_seed(string)  defer_loop(ui_push_string(string), ui_pop_string())
 #define ui_tooltip()     defer_loop(ui_tooltip_begin(), ui_tooltip_end())
 #define ui_ctx_menu(key) defer_loop_checked(ui_ctx_menu_begin(key), ui_ctx_menu_end())
 
-// NOTE(hampus): Rect styling
+////////////////////////////////
+//~ hampus: Rect styling
 
 #define ui_next_colors(c0, c1, c2, c3) memory_copy_array(ui_get_auto_pop_rect_style()->color, ((Vec4F32[4]){c0, c1, c2, c3}))
 
@@ -459,7 +549,8 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_hover_cursor()    ui_pop_rect_style()
 #define ui_hover_cursor(x)       defer_loop(ui_push_hover_cursor(x), ui_pop_hover_cursor())
 
-// NOTE(hampus): Text styling
+////////////////////////////////
+//~ hampus: Text styling
 
 #define ui_next_text_color(c)  ui_get_auto_pop_text_style()->color = c
 #define ui_push_text_color(c)  ui_push_text_style()->color = c
@@ -491,7 +582,8 @@ internal UI_Key ui_pop_seed(Void);
 #define ui_pop_font()    ui_pop_text_style()
 #define ui_font(x)       defer_loop(ui_push_font(x), ui_pop_font())
 
-// NOTE(hampus): Layout styling
+////////////////////////////////
+//~ hampus: Layout styling
 
 #define ui_next_size(axis, sz) ui_get_auto_pop_layout_style()->size[axis] = sz
 #define ui_push_size(axis, sz) ui_push_layout_style()->size[axis] = sz
