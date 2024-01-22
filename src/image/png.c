@@ -102,7 +102,6 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 	}
 
 	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1]   = { 0 };
-	U32 first_index_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
 	U32 first_code_for_length = 0;
 	bit_length_count[0] = 0;
@@ -110,20 +109,34 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 	{
 		first_code_for_length        = (first_code_for_length + bit_length_count[bits - 1]) << 1;
 		next_code_for_length[bits]   = first_code_for_length;
-		first_index_for_length[bits] = first_index_for_length[bits - 1] + bit_length_count[bits - 1];
 	}
 
+	U32 next_index = 0;
 	for (U32 i = 0; i < count; ++i)
 	{
 		U32 length = lengths[i];
 		if (length != 0)
 		{
-			U32 index = first_index_for_length[length]++;
-			// NOTE(simon): The codes here have the reverse bit order of what we need.
-			U32 code  = next_code_for_length[length]++;
-			result.codes[index]   = u32_reverse(code) >> (32 - length);
-			result.values[index]  = i;
-			result.lengths[index] = length;
+			U32 raw_code = next_code_for_length[length]++;
+			U32 code     = u32_reverse(raw_code) >> (32 - length);
+
+			if (length <= PNG_HUFFMAN_FAST_BITS)
+			{
+				U16 fast_value = (U16) (length << 9 | i);
+				U32 increment = 1 << length;
+				for (U32 j = code; j < PNG_HUFFMAN_FAST_COUNT; j += increment)
+				{
+					result.fast[j] = fast_value;
+				}
+			}
+			else
+			{
+				U32 index = next_index++;
+				// NOTE(simon): The codes here have the reverse bit order of what we need.
+				result.codes[index]   = code;
+				result.values[index]  = i;
+				result.lengths[index] = length;
+			}
 		}
 	}
 
@@ -133,6 +146,14 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 internal U32
 png_read_huffman(PNG_State *state, PNG_Huffman *huffman)
 {
+	U32 fast_bits = (U32) png_peek_bits(state, PNG_HUFFMAN_FAST_BITS);
+	if (huffman->fast[fast_bits])
+	{
+		png_consume_bits(state, huffman->fast[fast_bits] >> 9);
+		U32 result = huffman->fast[fast_bits] & 0x1FF;
+		return(result);
+	}
+
 	for (U32 i = 0; i < huffman->count; ++i)
 	{
 		U32 bits = (U32) png_peek_bits(state, huffman->lengths[i]);

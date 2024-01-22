@@ -24,6 +24,8 @@
 #define PNG_TYPE_INVALID 0
 
 #define PNG_HUFFMAN_MAX_BITS 15
+#define PNG_HUFFMAN_FAST_BITS 9
+#define PNG_HUFFMAN_FAST_COUNT (1 << PNG_HUFFMAN_FAST_BITS)
 
 global U8 png_magic[] = { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, };
 
@@ -108,6 +110,8 @@ enum PNG_InterlaceMethod
 typedef struct PNG_Huffman PNG_Huffman;
 struct PNG_Huffman
 {
+	U16 fast[PNG_HUFFMAN_FAST_COUNT];
+
 	U32 *codes;
 	U32 *lengths;
 	U32 *values;
