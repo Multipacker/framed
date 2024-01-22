@@ -951,7 +951,7 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 				U8 *row = write + 4 * column_offsets[pass_index];
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
-					U8 values[components];
+					U8 values[4];
 					for (U32 i = 0; i < components; ++i)
 					{
 						U16 value = u16_big_to_local_endian(*input++);
