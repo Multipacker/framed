@@ -386,7 +386,9 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 					return(false);
 				}
 
-				state->palette      = chunk.data.data;
+				// NOTE(simon): Always allocate 256 entries so that we can always index into it.
+				state->palette = push_array(arena, U8, 3 * 256);
+				memory_copy(state->palette, chunk.data.data, chunk.data.size);
 				state->palette_size = (U32) (chunk.data.size / 3);
 			} break;
 			case PNG_TYPE('I', 'D', 'A', 'T'):
@@ -903,6 +905,7 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 				U64 bit_position    = 0;
 				++input;
 				U8 *row = write + 4 * column_offsets[pass_index];
+				B32 palette_out_of_bounds = false;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -911,13 +914,7 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 					U8 byte        = input[byte_index];
 					U8 index       = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					// TODO(simon): Try allowing you to always index in to the
-					// palette and check at the end of the loop. Profile!
-					if (index >= state->palette_size)
-					{
-						log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
-						return(false);
-					}
+					palette_out_of_bounds |= index >= state->palette_size;
 
 					row[0] = state->palette[index * 3 + 0];
 					row[1] = state->palette[index * 3 + 1];
@@ -926,6 +923,12 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 
 					bit_position += state->bit_depth;
 					row += 4 * column_advances[pass_index];
+				}
+
+				if (palette_out_of_bounds)
+				{
+					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+					return(false);
 				}
 
 				input += scanline_size;
