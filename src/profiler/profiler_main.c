@@ -182,8 +182,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					ui_next_corner_radius(0);
 					ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-					ui_named_column_end();
 					ui_pop_seed();
+					ui_named_column_end();
 
 					if (i + 1 < array_count(columns))
 					{
