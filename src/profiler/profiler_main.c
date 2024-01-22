@@ -80,14 +80,17 @@ ui_debug_keep_alive(Void)
 			}
 		}
 
-		if (stat_index == ui_debug_stat_count && stat_index < array_count(ui_debug_stats))
+		if (stat_index == ui_debug_stat_count)
 		{
-			ui_debug_stats[stat_index].file          = entry->file;
-			ui_debug_stats[stat_index].line          = entry->line;
-			ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
-			ui_debug_stats[stat_index].total_time_ns = (U32) (entry->end_ns - entry->start_ns);
-			ui_debug_stats[stat_index].hit_count     = 1;
-			++ui_debug_stat_count;
+			if (stat_index < array_count(ui_debug_stats))
+			{
+				ui_debug_stats[stat_index].file          = entry->file;
+				ui_debug_stats[stat_index].line          = entry->line;
+				ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
+				ui_debug_stats[stat_index].total_time_ns = (U32) (entry->end_ns - entry->start_ns);
+				ui_debug_stats[stat_index].hit_count     = 1;
+				++ui_debug_stat_count;
+			}
 		}
 		else
 		{
