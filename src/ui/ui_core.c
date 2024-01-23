@@ -248,6 +248,83 @@ ui_fill(Void)
 }
 
 ////////////////////////////////
+//~ hampus: Text editing
+
+internal UI_TextAction
+ui_text_action_from_event(Gfx_Event *event)
+{
+	UI_TextAction result = {0};
+
+	if (event->kind == Gfx_EventKind_KeyPress)
+	{
+		switch (event->key)
+		{
+			case Gfx_Key_Left:
+			{
+				result.delta = -1;
+			} break;
+
+			case Gfx_Key_Right:
+			{
+				result.delta = 1;
+			} break;
+
+			default: break;
+		}
+	}
+	else if (event->kind == Gfx_EventKind_Char)
+	{
+		assert(event->character < 128 && "Unicode typing not yet supported!");
+		result.character = (U8)event->character;
+		result.delta = 1;
+	}
+
+	return(result);
+}
+
+internal UI_TextActionList
+ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
+{
+	UI_TextActionList result = {0};
+	for (Gfx_Event *event = event_list->first;
+		 event != 0;
+		 event = event->next)
+	{
+		UI_TextAction text_action = ui_text_action_from_event(event);
+		if (!type_is_zero(text_action))
+		{
+			UI_TextActionNode *node = push_struct(arena, UI_TextActionNode);
+			node->action = text_action;
+			dll_push_back(result.first, result.last, node);
+		}
+	}
+	return(result);
+}
+
+internal UI_TextOp
+ui_text_op_from_state_and_action(Arena *arena, UI_TextEditState *state, UI_TextAction *action)
+{
+	UI_TextOp result = {0};
+	result.new_cursor = state->cursor;
+	result.new_mark = state->mark;
+
+	if (action->character)
+	{
+		result.replace_string.data = push_array(arena, U8, 1);
+		*result.replace_string.data = action->character;
+		result.replace_string.size = 1;
+
+		result.range.x = result.new_mark;
+		result.range.y = result.new_cursor;
+	}
+
+	result.new_cursor += action->delta;
+	result.new_mark = result.new_cursor;
+
+	return(result);
+}
+
+////////////////////////////////
 //~ hampus: Box
 
 internal UI_Comm
@@ -588,8 +665,6 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 		// NOTE(hampus): This would not be the case for the root.
 		dll_push_back(parent->first, parent->last, result);
 	}
-
-	result->string = str8_copy(ui_frame_arena(), string);
 
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();

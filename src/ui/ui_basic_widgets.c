@@ -614,3 +614,84 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 					str8_lit(""));
 	}
 }
+
+internal UI_Comm
+ui_line_edit(UI_TextEditState *edit_state, CStr buffer, U64 buffer_size, Str8 string)
+{
+	Str8 buffer_str8 = str8((U8 *)buffer, buffer_size);
+	Str8 edit_str = str8_cstr(buffer);
+	ui_next_child_layout_axis(Axis2_X);
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+							  UI_BoxFlag_DrawText |
+							  UI_BoxFlag_HotAnimation |
+							  UI_BoxFlag_ActiveAnimation |
+							  UI_BoxFlag_FocusAnimation |
+							  UI_BoxFlag_Clickable |
+							  UI_BoxFlag_DrawBorder |
+							  UI_BoxFlag_Clip,
+							  string);
+
+	UI_Comm comm = ui_comm_from_box(box);
+
+	if (ui_box_is_focused(box))
+	{
+		UI_TextActionList text_actions = ui_text_action_list_from_events(ui_frame_arena(), ui_events());
+		for (UI_TextActionNode *node = text_actions.first;
+			 node != 0;
+			 node = node->next)
+		{
+			UI_TextAction action = node->action;
+			UI_TextOp op = ui_text_op_from_state_and_action(ui_frame_arena(), edit_state, &action);
+			edit_state->cursor = op.new_cursor;
+			edit_state->mark = op.new_mark;
+			arena_scratch(0, 0)
+			{
+				U64 min_range = op.range.x - 1;
+				U64 max_range = op.range.y - 1;
+				min_range = u64_min(min_range, edit_str.size);
+				max_range = u64_min(max_range, edit_str.size);
+				U64 replace_range_length = max_range - min_range;
+				Str8 new_buffer = {0};
+				U64 new_buffer_size = edit_str.size - (replace_range_length) + op.replace_string.size;
+				new_buffer.data = push_array(scratch, U8, new_buffer_size);
+				new_buffer.size = new_buffer_size;
+				Str8 before_range = str8_prefix(edit_str, op.range.x);
+				Str8 after_range = str8_skip(edit_str, op.range.y);
+				if(before_range.size != 0)
+				{
+					memory_copy(new_buffer.data, before_range.data, before_range.size);
+				}
+				if(op.replace_string.size != 0)
+				{
+					memory_copy(new_buffer.data + op.range.x, op.replace_string.data, op.replace_string.size);
+				}
+				if(after_range.size != 0)
+				{
+					memory_copy(new_buffer.data + op.range.x + op.replace_string.size, after_range.data, after_range.size);
+				}
+				if (new_buffer.size > buffer_size)
+				{
+					new_buffer.size = buffer_size;
+				}
+				memory_copy(buffer, new_buffer.data, new_buffer.size);
+			}
+		}
+		ui_parent(box)
+		{
+			ui_next_height(ui_pct(1, 1));
+			ui_next_width(ui_pixels(1, 1));
+			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+			UI_Box *cursor_box = ui_box_make(UI_BoxFlag_DrawBackground |
+											 UI_BoxFlag_FloatingPos,
+											 str8_lit(""));
+		}
+	}
+
+	ui_parent(box)
+	{
+		ui_next_text_padding(Axis2_X, 0);
+		ui_text(buffer_str8);
+	}
+
+	return(comm);
+}

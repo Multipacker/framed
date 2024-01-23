@@ -23,7 +23,6 @@ enum UI_BoxFlags
 	UI_BoxFlag_DrawDropShadow  = (1 << 4),
 	UI_BoxFlag_HotAnimation    = (1 << 5),
 	UI_BoxFlag_ActiveAnimation = (1 << 6),
-	// TODO(hampus): Implement this
 	UI_BoxFlag_FocusAnimation  = (1 << 7),
 
 	// NOTE(hampus): This decides if the box
@@ -286,6 +285,44 @@ struct UI_Stats
 	U64 num_transient_boxes;
 };
 
+typedef struct UI_TextAction UI_TextAction;
+struct UI_TextAction
+{
+	S64 delta;
+	U8 character;
+};
+
+typedef struct UI_TextActionNode UI_TextActionNode;
+struct UI_TextActionNode
+{
+	UI_TextActionNode *next;
+	UI_TextActionNode *prev;
+	UI_TextAction action;
+};
+
+typedef struct UI_TextActionList UI_TextActionList;
+struct UI_TextActionList
+{
+	UI_TextActionNode *first;
+	UI_TextActionNode *last;
+};
+
+typedef struct UI_TextOp UI_TextOp;
+struct UI_TextOp
+{
+	S64 new_cursor;
+	S64 new_mark;
+	Vec2S64 range;
+	Str8 replace_string;
+};
+
+typedef struct UI_TextEditState UI_TextEditState;
+struct UI_TextEditState
+{
+	S64 cursor;
+	S64 mark;
+};
+
 typedef struct UI_Context UI_Context;
 struct UI_Context
 {
@@ -377,6 +414,11 @@ internal UI_Size ui_pct(F32 value, F32 strictness);
 internal UI_Size ui_children_sum(F32 strictness);
 internal UI_Size ui_em(F32 value, F32 strictness);
 internal UI_Size ui_fill(Void);
+
+////////////////////////////////
+//~ hampus: Text editing
+
+internal UI_TextAction ui_text_action_from_event(Gfx_Event *event);
 
 ////////////////////////////////
 //~ hampus: Box
