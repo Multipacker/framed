@@ -909,7 +909,6 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 	{
 		U8 *input = pixels;
 
-		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
 			U8 *write = output + state->width * 4 * row_offsets[pass_index];
@@ -922,7 +921,7 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 				}
 
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 				++input;
 				U8 *row = write + 4 * column_offsets[pass_index];
