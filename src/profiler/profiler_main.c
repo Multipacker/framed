@@ -520,6 +520,7 @@ os_main(Str8List arguments)
 	log_init(str8_lit("log.txt"));
 
 	Arena *perm_arena = arena_create();
+
 	profiler_ui_state = push_struct(perm_arena, ProfilerUI_State);
 	profiler_ui_state->perm_arena = perm_arena;
 
@@ -530,7 +531,11 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create();
 	frame_arenas[1] = arena_create();
 
-	Render_TextureSlice image_texture = render_create_texture_slice(renderer, str8_lit("data/image.png"));
+	Render_TextureSlice image_texture = { 0 };
+	if (arguments.first->next)
+	{
+		image_texture = render_create_texture_slice(renderer, arguments.first->next->string);
+	}
 
 	UI_Context *ui = ui_init();
 
