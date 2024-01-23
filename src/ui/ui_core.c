@@ -386,6 +386,7 @@ ui_comm_from_box(UI_Box *box)
 									result.pressed = true;
 									ui_ctx->active_key = box->key;
 									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
 								}
 							} break;
 
@@ -394,6 +395,7 @@ ui_comm_from_box(UI_Box *box)
 								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
 								{
 									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
 								}
 							} break;
 
@@ -404,6 +406,7 @@ ui_comm_from_box(UI_Box *box)
 									result.double_clicked = true;
 									ui_ctx->active_key = box->key;
 									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
 								}
 							} break;
 
@@ -452,6 +455,17 @@ ui_box_is_hot(UI_Box *box)
 	if (!ui_key_is_null(box->key))
 	{
 		result = ui_key_match(ui_ctx->hot_key, box->key);
+	}
+	return(result);
+}
+
+internal B32
+ui_box_is_focused(UI_Box *box)
+{
+	B32 result = false;
+	if (!ui_key_is_null(box->key))
+	{
+		result = ui_key_match(ui_ctx->focus_key, box->key);
 	}
 	return(result);
 }
@@ -989,6 +1003,13 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 		if (escape_key_pressed)
 		{
 			ui_ctx_menu_close();
+		}
+	}
+	else
+	{
+		if (escape_key_pressed)
+		{
+			ui_ctx->focus_key = ui_key_null();
 		}
 	}
 
@@ -1532,7 +1553,16 @@ ui_draw(UI_Box *root)
 			{
 				d += 0.3f * root->hot_t;
 			}
+
 			rect_style->border_color = v4f32_add_v4f32(rect_style->border_color, v4f32(d, d, d, 0));
+			if (ui_box_has_flag(root, UI_BoxFlag_FocusAnimation))
+			{
+				if (ui_box_is_focused(root))
+				{
+					rect_style->border_color = v4f32(1.0f, 0.8f, 0.0f, 1.0f);
+				}
+			}
+
 			Render_RectInstance *instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
 			memory_copy(instance->radies, rect_style->radies.v, sizeof(Vec4F32));
 		}

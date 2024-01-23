@@ -320,6 +320,7 @@ struct UI_Context
 
 	UI_Key active_key;
 	UI_Key hot_key;
+	UI_Key focus_key;
 
 	// NOTE(hampus): We only have this to for the
 	// "clicked" member in UI_Comm
@@ -383,6 +384,7 @@ internal UI_Size ui_fill(Void);
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 internal B32 ui_box_is_active(UI_Box *box);
 internal B32 ui_box_is_hot(UI_Box *box);
+internal B32 ui_box_is_focused(UI_Box *box);
 internal UI_Box *ui_box_alloc(Void);
 internal Void ui_box_free(UI_Box *box);
 internal B32 ui_box_has_flag(UI_Box *box, UI_BoxFlags flag);
