@@ -23,13 +23,22 @@ enum Gfx_Cursor
 	Gfx_Cursor_Arrow,
 	Gfx_Cursor_Hand,
 	Gfx_Cursor_Beam,
-	Gfx_Cursor_SizeNWSE, 
+	Gfx_Cursor_SizeNWSE,
 	Gfx_Cursor_SizeNESW,
 	Gfx_Cursor_SizeWE,
 	Gfx_Cursor_SizeNS,
 	Gfx_Cursor_SizeAll,
-	
+
 	Gfx_Cursor_COUNT,
+};
+
+typedef enum Gfx_KeyModifier Gfx_KeyModifier;
+enum Gfx_KeyModifier
+{
+	Gfx_KeyModifier_Control = (1 << 0),
+	Gfx_KeyModifier_Shift = (1 << 1),
+
+	Gfx_KeyModifier_COUNT,
 };
 
 typedef enum Gfx_Key Gfx_Key;
@@ -121,6 +130,7 @@ struct Gfx_Event
 	Gfx_Event *prev;
 	Gfx_EventKind kind;
 	Gfx_Key key;
+	Gfx_KeyModifier key_modifiers;
 	Vec2F32 scroll;
 	U32 character;
 };
@@ -132,6 +142,9 @@ struct Gfx_EventList
 	Gfx_Event *last;
 	U64 count;
 };
+
+internal B32 gfx_key_pressed(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
+internal B32 gfx_key_released(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
 
 internal Gfx_Context   gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title);
 internal Void          gfx_show_window(Gfx_Context *gfx);

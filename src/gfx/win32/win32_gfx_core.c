@@ -284,13 +284,16 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				{
 					// NOTE(hampus): The event->key may already be set
 					// by the mouse.
-					if (event->key == Gfx_Key_Null)
+					if (!event->key)
 					{
 						if (win32_gfx_state.key_table[vk_code] != 0)
 						{
 							event->key = win32_gfx_state.key_table[vk_code];
 						}
 					}
+
+					event->key_modifiers |= ((GetAsyncKeyState(VK_SHIFT) & 0x8000) != 0) * Gfx_KeyModifier_Shift;
+					event->key_modifiers |= ((GetAsyncKeyState(VK_CONTROL) & 0x8000) != 0) * Gfx_KeyModifier_Control;
 
 					B32 up_message = (message.message == WM_SYSKEYUP || message.message == WM_KEYUP || message.message == WM_LBUTTONUP || message.message == WM_RBUTTONUP || message.message == WM_MBUTTONUP);
 					event->kind = up_message ? Gfx_EventKind_KeyRelease : Gfx_EventKind_KeyPress;
