@@ -102,7 +102,6 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 	}
 
 	U32 next_code_for_length[PNG_HUFFMAN_MAX_BITS + 1]   = { 0 };
-	U32 first_index_for_length[PNG_HUFFMAN_MAX_BITS + 1] = { 0 };
 
 	U32 first_code_for_length = 0;
 	bit_length_count[0] = 0;
@@ -110,20 +109,34 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 	{
 		first_code_for_length        = (first_code_for_length + bit_length_count[bits - 1]) << 1;
 		next_code_for_length[bits]   = first_code_for_length;
-		first_index_for_length[bits] = first_index_for_length[bits - 1] + bit_length_count[bits - 1];
 	}
 
+	U32 next_index = 0;
 	for (U32 i = 0; i < count; ++i)
 	{
 		U32 length = lengths[i];
 		if (length != 0)
 		{
-			U32 index = first_index_for_length[length]++;
-			// NOTE(simon): The codes here have the reverse bit order of what we need.
-			U32 code  = next_code_for_length[length]++;
-			result.codes[index]   = u32_reverse(code) >> (32 - length);
-			result.values[index]  = i;
-			result.lengths[index] = length;
+			U32 raw_code = next_code_for_length[length]++;
+			U32 code     = u32_reverse(raw_code) >> (32 - length);
+
+			if (length <= PNG_HUFFMAN_FAST_BITS)
+			{
+				U16 fast_value = (U16) (length << 9 | i);
+				U32 increment = 1 << length;
+				for (U32 j = code; j < PNG_HUFFMAN_FAST_COUNT; j += increment)
+				{
+					result.fast[j] = fast_value;
+				}
+			}
+			else
+			{
+				U32 index = next_index++;
+				// NOTE(simon): The codes here have the reverse bit order of what we need.
+				result.codes[index]   = code;
+				result.values[index]  = i;
+				result.lengths[index] = length;
+			}
 		}
 	}
 
@@ -133,6 +146,14 @@ png_make_huffman(Arena *arena, U32 count, U32 *lengths)
 internal U32
 png_read_huffman(PNG_State *state, PNG_Huffman *huffman)
 {
+	U32 fast_bits = (U32) png_peek_bits(state, PNG_HUFFMAN_FAST_BITS);
+	if (huffman->fast[fast_bits])
+	{
+		png_consume_bits(state, huffman->fast[fast_bits] >> 9);
+		U32 result = huffman->fast[fast_bits] & 0x1FF;
+		return(result);
+	}
+
 	for (U32 i = 0; i < huffman->count; ++i)
 	{
 		U32 bits = (U32) png_peek_bits(state, huffman->lengths[i]);
@@ -386,7 +407,9 @@ png_parse_chunks(Arena *arena, Str8 contents, PNG_State *state)
 					return(false);
 				}
 
-				state->palette      = chunk.data.data;
+				// NOTE(simon): Always allocate 256 entries so that we can always index into it.
+				state->palette = push_array(arena, U8, 3 * 256);
+				memory_copy(state->palette, chunk.data.data, chunk.data.size);
 				state->palette_size = (U32) (chunk.data.size / 3);
 			} break;
 			case PNG_TYPE('I', 'D', 'A', 'T'):
@@ -886,7 +909,6 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 	{
 		U8 *input = pixels;
 
-		// NOTE(simon): There can only ever be one component per pixel when the bit-depth is below 8.
 		for (U32 pass_index = 0; pass_index < pass_count; ++pass_index)
 		{
 			U8 *write = output + state->width * 4 * row_offsets[pass_index];
@@ -899,10 +921,11 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 				}
 
 				U32 scanline_length = (state->width - column_offsets[pass_index] + column_advances[pass_index] - 1) / column_advances[pass_index];
-				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * png_component_count_from_color_type(state->color_type) * scanline_length, 8) / 8;
+				U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
 				U64 bit_position    = 0;
 				++input;
 				U8 *row = write + 4 * column_offsets[pass_index];
+				B32 palette_out_of_bounds = false;
 
 				for (U32 x = column_offsets[pass_index]; x < state->width; x += column_advances[pass_index])
 				{
@@ -911,13 +934,7 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 					U8 byte        = input[byte_index];
 					U8 index       = (U8) ((U8) (byte << bit_index) >> (8 - state->bit_depth));
 
-					// TODO(simon): Try allowing you to always index in to the
-					// palette and check at the end of the loop. Profile!
-					if (index >= state->palette_size)
-					{
-						log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
-						return(false);
-					}
+					palette_out_of_bounds |= index >= state->palette_size;
 
 					row[0] = state->palette[index * 3 + 0];
 					row[1] = state->palette[index * 3 + 1];
@@ -926,6 +943,12 @@ png_deinterlace_and_resample_to_8bit_rgba(PNG_State *state, U8 *pixels, U8 *outp
 
 					bit_position += state->bit_depth;
 					row += 4 * column_advances[pass_index];
+				}
+
+				if (palette_out_of_bounds)
+				{
+					log_error("Attempt to refernce a palette entry that does not exist, corrupted PNG");
+					return(false);
 				}
 
 				input += scanline_size;
