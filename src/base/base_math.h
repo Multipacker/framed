@@ -66,6 +66,21 @@ union Vec2S32
 	S32 v[2];
 };
 
+typedef union Vec2S64 Vec2S64;
+union Vec2S64
+{
+	struct
+	{
+		S64 x, y;
+	};
+
+	struct
+	{
+		S64 width, height;
+	};
+	S64 v[2];
+};
+
 typedef union Vec3S32 Vec3S32;
 union Vec3S32
 {
@@ -249,6 +264,10 @@ internal Vec4S32 v4s32_add_v4s32(Vec4S32 a, Vec4S32 b);
 internal Vec4S32 v4s32_sub_v4s32(Vec4S32 a, Vec4S32 b);
 internal Vec4S32 v4s32_mul_s32(Vec4S32 a, S32 t);
 internal Vec4S32 v4s32_div_s32(Vec4S32 a, S32 t);
+
+// S64
+
+internal Vec2S32 v2s32(S32 x, S32 y);
 
 // U32
 

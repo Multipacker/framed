@@ -223,6 +223,15 @@ v4s32_div_s32(Vec4S32 a, S32 t)
 	return((Vec4S32) { a.x / t, a.y / t, a.z / t, a.w / t });
 }
 
+// S64
+
+internal Vec2S64
+v2s64(S64 x, S64 y)
+{
+	Vec2S64 result = {x, y};
+	return(result);
+}
+
 // U32
 
 internal Vec2U32
