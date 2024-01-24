@@ -1406,8 +1406,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			// that we want
 		}
 
-		root->rel_pos.v[axis] -= root->scroll.v[axis];
-		offset = root->parent->fixed_rect.min.v[axis];
+		offset = root->parent->fixed_rect.min.v[axis] - root->parent->scroll.v[axis];
 	}
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
