@@ -660,6 +660,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->prev = 0;
 	UI_Box *parent = ui_top_parent();
 
+	result->string = string;
+
 	if (parent)
 	{
 		// NOTE(hampus): This would not be the case for the root.
