@@ -849,7 +849,6 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					ui_ctx_menu(tab_dropown_menu_key)
 						ui_width(ui_em(4, 1))
 					{
-
 						ui_corner_radius(0)
 						{
 							for (ProfilerUI_Tab *tab = root->tab_group.first;
@@ -866,6 +865,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 															  UI_BoxFlag_Clickable |
 															  UI_BoxFlag_DrawBackground,
 															  tab->string);
+								ui_box_equip_display_string(tab_box, tab->string);
 								UI_Comm tab_comm = ui_comm_from_box(tab_box);
 								if (tab_comm.pressed)
 								{
