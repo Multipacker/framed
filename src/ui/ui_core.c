@@ -1368,7 +1368,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 
 	F32 offset = 0;
 
-	// TODO(hampus): Optimize. This if runs for every box *except* the root box.
+	// TODO(hampus): Remove this if. It runs for every box *except* the root box.
 	if (root->parent)
 	{
 		if (!ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
@@ -1406,7 +1406,18 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 			// that we want
 		}
 
-		offset = root->parent->fixed_rect.min.v[axis] - root->parent->scroll.v[axis];
+		F32 scroll = 0;
+		if (ui_box_has_flag(root->parent, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
+			ui_animations_enabled())
+		{
+			scroll = root->parent->scroll_animated.v[axis];
+		}
+		else
+		{
+			scroll = root->parent->scroll.v[axis];
+		}
+
+		offset = root->parent->fixed_rect.min.v[axis] - scroll;
 	}
 
 	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
@@ -1427,6 +1438,15 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	else
 	{
 		root->fixed_size_animated.v[axis] += (F32)(root->fixed_size.v[axis] - root->fixed_size_animated.v[axis]) * animation_delta;
+	}
+
+	if (f32_abs(root->scroll_animated.v[axis] - root->scroll.v[axis]) <= 0.5f)
+	{
+		root->scroll_animated.v[axis] = root->scroll.v[axis];
+	}
+	else
+	{
+		root->scroll_animated.v[axis] += (F32)(root->scroll.v[axis] - root->scroll_animated.v[axis]) * animation_delta;
 	}
 
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
@@ -1457,6 +1477,15 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	else
 	{
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size.v[axis];
+	}
+
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
+		ui_animations_enabled())
+	{
+		if (root->first_frame_touched_index == root->last_frame_touched_index)
+		{
+			root->scroll_animated.v[axis] = root->scroll.v[axis];
+		}
 	}
 
 	root->fixed_rect.min.v[axis] = f32_floor(root->fixed_rect.min.v[axis]);

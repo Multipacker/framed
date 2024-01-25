@@ -135,7 +135,7 @@ ui_push_scrollable_region(Str8 string)
 	ui_push_string(string);
 	B32 smooth_scroll = true;
 	ui_next_child_layout_axis(Axis2_X);
-	UI_Box *vert_container = ui_box_make(UI_BoxFlag_ViewScroll,
+	UI_Box *vert_container = ui_box_make(0,
 	                                     string);
 	ui_push_parent(vert_container);
 
@@ -153,7 +153,12 @@ ui_push_scrollable_region(Str8 string)
 
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
-	UI_Box *content = ui_box_make(smooth_scroll ? UI_BoxFlag_AnimatePos : 0,
+	UI_BoxFlags content_box_flags = UI_BoxFlag_ViewScroll;
+	if (smooth_scroll)
+	{
+		content_box_flags |= UI_BoxFlag_AnimateScroll;
+	}
+	UI_Box *content = ui_box_make(content_box_flags,
 	                              str8_lit("ScrollContent"));
 	ui_push_parent(content);
 
@@ -225,7 +230,7 @@ ui_pop_scrollable_region(Void)
 
 	ui_pop_string();
 
-	UI_Comm comm = ui_comm_from_box(vert_container);
+	UI_Comm comm = ui_comm_from_box(content);
 	for (Axis2 axis = 0; axis < Axis2_COUNT; ++axis)
 	{
 		content->scroll.v[axis] += (F32)(comm.scroll.v[axis] * ui_dt() * 5000.0);
@@ -622,7 +627,6 @@ ui_line_edit(UI_TextEditState *edit_state, CStr buffer, U64 buffer_size, Str8 st
 	Str8 edit_str = str8_cstr(buffer);
 	ui_next_child_layout_axis(Axis2_X);
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-							  UI_BoxFlag_DrawText |
 							  UI_BoxFlag_HotAnimation |
 							  UI_BoxFlag_ActiveAnimation |
 							  UI_BoxFlag_FocusAnimation |

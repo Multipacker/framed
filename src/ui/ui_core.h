@@ -55,6 +55,10 @@ enum UI_BoxFlags
 	UI_BoxFlag_AnimateWidth    = (1 << 16),
 	UI_BoxFlag_AnimateHeight   = (1 << 17),
 
+	UI_BoxFlag_AnimateScrollX    = (1 << 17),
+	UI_BoxFlag_AnimateScrollY   = (1 << 18),
+
+	UI_BoxFlag_AnimateScroll = UI_BoxFlag_AnimateScrollX | UI_BoxFlag_AnimateScrollY,
 	UI_BoxFlag_FloatingPos     = UI_BoxFlag_FloatingX | UI_BoxFlag_FloatingY,
 	UI_BoxFlag_AnimatePos      = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
 	UI_BoxFlag_AnimateDim      = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
@@ -197,6 +201,9 @@ struct UI_Box
 	Vec2F32 fixed_size_animated;
 	Vec2F32 fixed_size;
 
+	Vec2F32 scroll_animated;
+	Vec2F32 scroll;
+
 	RectF32 fixed_rect;
 
 	UI_BoxFlags flags;
@@ -205,8 +212,6 @@ struct UI_Box
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
 	UI_LayoutStyle layout_style;
-
-	Vec2F32 scroll;
 
 	UI_ClipRectStackNode *clip_rect;
 
