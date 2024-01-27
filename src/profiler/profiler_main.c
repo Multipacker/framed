@@ -343,10 +343,10 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 #endif
 
 		ui_spacer(ui_em(0.5f, 1));
-		local char text_buffer[256] = {0};
-		local UI_TextEditState edit_state = {0};
+		local U8 text_buffer[256] = { 0 };
+		local UI_TextEditState edit_state = { 0 };
 		ui_next_width(ui_em(5, 1));
-		ui_line_edit(&edit_state, text_buffer, 256, str8_lit("LineEditTest"));
+		ui_line_edit(&edit_state, text_buffer, array_count(text_buffer), str8_lit("LineEditTest"));
 	}
 }
 

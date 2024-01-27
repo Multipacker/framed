@@ -621,10 +621,12 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 }
 
 internal UI_Comm
-ui_line_edit(UI_TextEditState *edit_state, CStr buffer, U64 buffer_size, Str8 string)
+ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, Str8 string)
 {
-	Str8 buffer_str8 = str8((U8 *)buffer, buffer_size);
-	Str8 edit_str = str8_cstr(buffer);
+	Str8 buffer_str8 = str8(buffer, buffer_size);
+	// TODO(simon): We really shouldn't call str8_cstr, we can just pass the
+	// length instead.
+	Str8 edit_str = str8_cstr((CStr) buffer);
 	ui_next_child_layout_axis(Axis2_X);
 	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
 							  UI_BoxFlag_HotAnimation |
