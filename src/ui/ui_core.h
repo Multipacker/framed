@@ -110,7 +110,6 @@ struct UI_RectStyle
 	F32 softness;
 	Render_TextureSlice slice;
 	Render_TextureFilter texture_filter;
-	B32 use_nearest;
 	Gfx_Cursor hover_cursor;
 };
 
