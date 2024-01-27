@@ -936,13 +936,9 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 							}
 
 							F32 end = last_tab_box->rel_pos.x + last_tab_box->fixed_size.x;
-							F32 start = first_tab_box->rel_pos.x;
-
-							F32 required_tab_bar_width = end - start;
-							if (required_tab_bar_width > tabs_container->fixed_size.x)
-							{
-								tab_overflow = true;
-							}
+	
+							F32 required_tab_bar_width = end - first_tab_box->rel_pos.x;
+							tab_overflow = required_tab_bar_width > tabs_container->fixed_size.x;
 
 							F32 adjustment_for_empty_space = tabs_container->fixed_size.x - (end-tabs_container->scroll.x);
 							adjustment_for_empty_space = f32_clamp(0, adjustment_for_empty_space, tabs_container->scroll.x);
