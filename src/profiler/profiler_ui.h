@@ -100,10 +100,10 @@ struct ProfilerUI_Tab
 	ProfilerUI_Tab *next;
 	ProfilerUI_Tab *prev;
 
+	ProfilerUI_Panel *panel;
+
 	Str8 string;
 	B32 pinned;
-
-	ProfilerUI_Panel *panel;
 
 	UI_Box *tab_container;
 	UI_Box *tab_box;
@@ -117,10 +117,10 @@ struct ProfilerUI_Tab
 typedef struct ProfilerUI_TabGroup ProfilerUI_TabGroup;
 struct ProfilerUI_TabGroup
 {
-	U64 count;
 	ProfilerUI_Tab *active_tab;
 	ProfilerUI_Tab *first;
 	ProfilerUI_Tab *last;
+	U64 count;
 };
 
 typedef struct ProfilerUI_Panel ProfilerUI_Panel;
@@ -129,16 +129,17 @@ struct ProfilerUI_Panel
 	ProfilerUI_Panel *children[Side_COUNT];
 	ProfilerUI_Panel *sibling;
 	ProfilerUI_Panel *parent;
-	ProfilerUI_Window *window;
 
 	ProfilerUI_TabGroup tab_group;
+
+	ProfilerUI_Window *window;
+
+	UI_Box *box;
 
 	Axis2 split_axis;
 	F32 pct_of_parent;
 
 	Str8 string;
-
-	UI_Box *box;
 
 	// NOTE(hampus): For debugging
 	UI_Box *dragger;

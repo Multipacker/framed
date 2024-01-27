@@ -29,7 +29,7 @@ struct PS_INPUT
 	float2 min_uv          : MIN_UV;
 	float2 max_uv          : MAX_UV;
 	float use_nearest      : USE_NEAREST;
-    float vertex_id        : VERTEX_ID;
+	float vertex_id        : VERTEX_ID;
 };
 
 cbuffer cbuffer0 : register(b0)
@@ -76,13 +76,15 @@ PS_INPUT vs(VS_INPUT input)
 }
 
 float rounded_rect_sdf(float2 sample_pos,
-                     float2 rect_center,
-                     float2 rect_half_size,
-                     float r)
+											 float2 rect_center,
+											 float2 rect_half_size,
+											 float r)
 {
-	float2 d2 = (abs(rect_center - sample_pos) -
-               rect_half_size +
-               float2(r, r));
+	float2 d2 =
+		(abs(rect_center - sample_pos) -
+		 rect_half_size +
+		 float2(r, r)
+		 );
 	return min(max(d2.x, d2.y), 0.0) + length(max(d2, 0.0)) - r;
 }
 
@@ -107,35 +109,42 @@ ps_out ps(PS_INPUT input)
 	float2 softness_padding = float2(max(0, input.edge_softness * 2 - 1), max(0, input.edge_softness * 2 - 1));
 
 	float2 dst_pos = float2(input.dst_pos.xy);
-	float dist = rounded_rect_sdf(dst_pos,
-                                  input.dst_center,
-                                  input.dst_half_size-softness_padding,
-                                  corner_radius);
+	float dist = rounded_rect_sdf(
+		dst_pos,
+		input.dst_center,
+		input.dst_half_size-softness_padding,
+		corner_radius
+	);
 
 	float sdf_factor = 1.f - smoothstep(0, 2*input.edge_softness, dist);
 
 	float2 color_uv = rect_uv(dst_pos, input.dst_center, input.dst_half_size - softness_padding);
 	float4 color_top    = lerp(input.colors[3], input.colors[2], color_uv.x);
 	float4 color_bottom = lerp(input.colors[1], input.colors[0], color_uv.x);
-	float4 color        = lerp(color_top,      color_bottom,   color_uv.y);
+	float4 color        = lerp(color_top, color_bottom, color_uv.y);
 
 	float border_factor = 1.f;
-	if(input.border_thickness != 0)
+	if (input.border_thickness != 0)
 	{
 		float2 interior_half_size = input.dst_half_size - float2(input.border_thickness, input.border_thickness);
 
-		float interior_radius_reduce_f = min(interior_half_size.x/input.dst_half_size.x,
-                                         interior_half_size.y/input.dst_half_size.y);
-		float interior_corner_radius =
-             (corner_radius *
-              interior_radius_reduce_f *
-              interior_radius_reduce_f);
+		float interior_radius_reduce_f = min(
+			interior_half_size.x/input.dst_half_size.x,
+			interior_half_size.y/input.dst_half_size.y
+		);
 
-		float inside_d = rounded_rect_sdf(dst_pos,
-                                          input.dst_center,
-                                          interior_half_size-
-                                          softness_padding,
-                                          interior_corner_radius);
+		float interior_corner_radius =
+			(corner_radius *
+			 interior_radius_reduce_f *
+			 interior_radius_reduce_f);
+
+		float inside_d = rounded_rect_sdf(
+			dst_pos,
+			input.dst_center,
+			interior_half_size-
+			softness_padding,
+			interior_corner_radius
+		);
 
 		float inside_f = smoothstep(0, 2*input.edge_softness, inside_d);
 		border_factor = inside_f;

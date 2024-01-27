@@ -5,29 +5,28 @@ PROFILER_UI_COMMAND(panel_close);
 
 PROFILER_UI_COMMAND(tab_close)
 {
-	ProfilerUI_TabDelete *data = (ProfilerUI_TabDelete *)params;
+	ProfilerUI_TabDelete *data = (ProfilerUI_TabDelete *) params;
 
 	ProfilerUI_Tab *tab = data->tab;
 	ProfilerUI_Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
 	{
-		if (tab->prev)
+		if (!profiler_ui_tab_is_nil(tab->prev))
 		{
 			panel->tab_group.active_tab = tab->prev;
 		}
-		else if (tab->next)
+		else if (!profiler_ui_tab_is_nil(tab->next))
 		{
 			panel->tab_group.active_tab = tab->next;
 		}
 		else
 		{
-			panel->tab_group.active_tab = 0;
+			panel->tab_group.active_tab = &g_nil_tab;
 		}
 	}
-	dll_remove(panel->tab_group.first, panel->tab_group.last, tab);
+	dll_remove_npz(panel->tab_group.first, panel->tab_group.last, tab, next, prev, &g_nil_tab);
 	panel->tab_group.count--;
-	tab->next = 0;
-	tab->prev = 0;
+	tab->next = tab->prev = &g_nil_tab;
 	if (panel->tab_group.count == 0)
 	{
 		ProfilerUI_PanelClose close =
@@ -41,11 +40,11 @@ PROFILER_UI_COMMAND(tab_close)
 
 PROFILER_UI_COMMAND(tab_attach)
 {
-	ProfilerUI_TabAttach *data = (ProfilerUI_TabAttach *)params;
+	ProfilerUI_TabAttach *data = (ProfilerUI_TabAttach *) params;
 
 	ProfilerUI_Panel *panel = data->panel;
 	ProfilerUI_Tab *tab = data->tab;
-	dll_push_back(panel->tab_group.first, panel->tab_group.last, tab);
+	dll_push_back_npz(panel->tab_group.first, panel->tab_group.last, tab, next, prev, &g_nil_tab);
 	tab->panel = panel;
 	B32 set_active = panel->tab_group.count == 0 || data->set_active;
 	if (set_active)
@@ -59,7 +58,7 @@ PROFILER_UI_COMMAND(tab_attach)
 
 PROFILER_UI_COMMAND(tab_reorder)
 {
-	ProfilerUI_TabReorder *data = (ProfilerUI_TabReorder *)params;
+	ProfilerUI_TabReorder *data = (ProfilerUI_TabReorder *) params;
 	ProfilerUI_Panel *panel = data->tab->panel;
 
 	ProfilerUI_Tab *tab = data->tab;
@@ -77,14 +76,14 @@ PROFILER_UI_COMMAND(tab_reorder)
 
 	if (data->side == Side_Min)
 	{
-		if (next->prev)
+		if (!profiler_ui_tab_is_nil(next->prev))
 		{
 			next->prev->next = tab;
 		}
 		tab->prev = next->prev;
 
 		next->next = tab->next;
-		if (tab->next)
+		if (!profiler_ui_tab_is_nil(tab->next))
 		{
 			tab->next->prev = next;
 		}
@@ -101,7 +100,7 @@ PROFILER_UI_COMMAND(tab_reorder)
 
 PROFILER_UI_COMMAND(panel_set_active_tab)
 {
-	ProfilerUI_PanelSetActiveTab *data = (ProfilerUI_PanelSetActiveTab *)params;
+	ProfilerUI_PanelSetActiveTab *data = (ProfilerUI_PanelSetActiveTab *) params;
 	ProfilerUI_Panel *panel = data->panel;
 	ProfilerUI_Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
@@ -119,7 +118,7 @@ PROFILER_UI_COMMAND(panel_split)
 	//             a   b
 	//
 	// where c is ´new_parent´, and b is ´child1´
-	ProfilerUI_PanelSplit *data  = (ProfilerUI_PanelSplit *)params;
+	ProfilerUI_PanelSplit *data  = (ProfilerUI_PanelSplit *) params;
 	Axis2 split_axis  = data->axis;
 	ProfilerUI_Panel *child0     = data->panel;
 	ProfilerUI_Panel *child1     = profiler_ui_panel_alloc(profiler_ui_state->perm_arena);
@@ -128,11 +127,11 @@ PROFILER_UI_COMMAND(panel_split)
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
-	ProfilerUI_Panel *children[Side_COUNT] = {child0, child1};
+	ProfilerUI_Panel *children[Side_COUNT] = { child0, child1 };
 
 	// NOTE(hampus): Hook the new parent as a sibling
 	// to the panel's sibling
-	if (child0->sibling)
+	if (!profiler_ui_panel_is_nil(child0->sibling))
 	{
 		child0->sibling->sibling = new_parent;
 	}
@@ -140,7 +139,7 @@ PROFILER_UI_COMMAND(panel_split)
 
 	// NOTE(hampus): Hook the new parent as a child
 	// to the panels parent
-	if (child0->parent)
+	if (!profiler_ui_panel_is_nil(child0->parent))
 	{
 		Side side = profiler_ui_get_panel_side(child0);
 		child0->parent->children[side] = new_parent;
@@ -149,7 +148,7 @@ PROFILER_UI_COMMAND(panel_split)
 
 	// NOTE(hampus): Make the children siblings
 	// and hook them into the new parent
-	for (Side side = (Side)0;
+	for (Side side = (Side) 0;
 		 side < Side_COUNT;
 		 side++)
 	{
@@ -169,7 +168,7 @@ PROFILER_UI_COMMAND(panel_split)
 
 PROFILER_UI_COMMAND(panel_split_and_attach)
 {
-	ProfilerUI_PanelSplitAndAttach *data = (ProfilerUI_PanelSplitAndAttach *)params;
+	ProfilerUI_PanelSplitAndAttach *data = (ProfilerUI_PanelSplitAndAttach *) params;
 
 	B32 releasing_on_same_panel =
 		data->panel == data->tab->panel &&
@@ -189,7 +188,6 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 	{
 		if (data->panel_side == Side_Max)
 		{
-
 			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], ProfilerUI_Panel *);
 		}
 	}
@@ -240,17 +238,17 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 
 PROFILER_UI_COMMAND(panel_close)
 {
-	ProfilerUI_PanelClose *data = (ProfilerUI_PanelClose *)params;
+	ProfilerUI_PanelClose *data = (ProfilerUI_PanelClose *) params;
 	ProfilerUI_Panel *root = data->panel;
-	if (root->parent)
+	if (!profiler_ui_panel_is_nil(root->parent))
 	{
 		B32 is_first       = root->parent->children[0] == root;
 		ProfilerUI_Panel *replacement = root->sibling;
-		if (root->parent->parent)
+		if (!profiler_ui_panel_is_nil(root->parent->parent))
 		{
 			if (root == profiler_ui_state->focused_panel)
 			{
-				if (root->sibling)
+				if (!profiler_ui_panel_is_nil(root->sibling))
 				{
 					profiler_ui_state->next_focused_panel = root->sibling;
 				}
@@ -268,7 +266,7 @@ PROFILER_UI_COMMAND(panel_close)
 			replacement->pct_of_parent = 1.0f - replacement->sibling->pct_of_parent;
 			replacement->parent = root->parent->parent;
 		}
-		else if (root->parent)
+		else if (!profiler_ui_panel_is_nil(root->parent))
 		{
 			if (root == profiler_ui_state->focused_panel)
 			{
@@ -276,8 +274,8 @@ PROFILER_UI_COMMAND(panel_close)
 			}
 			// NOTE(hampus): We closed one of the root's children
 			root->window->root_panel = replacement;
-			root->window->root_panel->sibling = 0;
-			root->window->root_panel->parent = 0;
+			root->window->root_panel->sibling = &g_nil_panel;
+			root->window->root_panel->parent = &g_nil_panel;
 		}
 	}
 	else

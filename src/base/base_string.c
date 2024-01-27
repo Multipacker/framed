@@ -307,7 +307,7 @@ str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
 				{
 					if (first == -1)
 					{
-						first = (S64)i;
+						first = (S64) i;
 					}
 				}
 			}
@@ -325,7 +325,7 @@ str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
 
 	if (first != -1)
 	{
-		*result_index = (U64)first;
+		*result_index = (U64) first;
 	}
 
 	return(result);

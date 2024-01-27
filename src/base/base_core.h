@@ -141,6 +141,15 @@
 #	define _FILE_OFFSET_BITS 64
 #endif
 
+#if COMPILER_CL || (COMPILER_CLANG && OS_WINDOWS)
+# pragma section(".rdata$", read)
+# define read_only __declspec(allocate(".rdata$"))
+#elif (COMPILER_CLANG && OS_LINUX)
+# define read_only __attribute__((section(".rodata")))
+#else
+# define read_only
+#endif
+
 #include <stdint.h>
 #include <inttypes.h>
 #include <stdlib.h>
@@ -148,60 +157,51 @@
 #include <string.h>
 #include <math.h>
 
-#define check_null(x) ((x) == 0)
-#define set_null(x) ((x) = 0)
+#define dll_insert_npz(f, l, p, n, next, prev, nil) \
+(f == nil ? (((f) = (l) = (n)), (n)->next = nil, (n)->prev = nil) :\
+p == nil ? ((n)->prev = nil, (n)->next = (f), (f == nil ? (nil) : ((f)->prev = (n))), (f) = (n)) :\
+(((p)->next == nil ? (nil) : (((p)->next->prev) = (n))), (n)->next = (p)->next, (n)->prev = (p), (p)->next = (n),\
+((p) == (l) ? (l) = (n) : (nil))))
 
-#define dll_push_back_np(f,l,n,next,prev) ((f)==0?\
-((f)=(l)=(n),(n)->next=(n)->prev=0):\
-((n)->prev=(l),(l)->next=(n),(l)=(n),(n)->next=0))
+#define dll_push_back_npz(f, l, n, next, prev, nil) dll_insert_npz(f, l, l, n, next, prev, nil)
+#define dll_push_front_npz(f, l, n, next, prev, nil) dll_push_back_npz(l, f, n, next, prev, nil)
 
-#define dll_insert_npz(f,l,p,n,next,prev,zchk,zset) \
-(zchk(f) ? (((f) = (l) = (n)), zset((n)->next), zset((n)->prev)) :\
-zchk(p) ? (zset((n)->prev), (n)->next = (f), (zchk(f) ? (0) : ((f)->prev = (n))), (f) = (n)) :\
-((zchk((p)->next) ? (0) : (((p)->next->prev) = (n))), (n)->next = (p)->next, (n)->prev = (p), (p)->next = (n),\
-((p) == (l) ? (l) = (n) : (0))))
-
-#define dll_push_back_npz(f,l,n,next,prev,zchk,zset) dll_insert_npz(f,l,l,n,next,prev,zchk,zset)
-#define dll_push_front_np(f,l,n,next,prev) dll_push_back_np(l,f,n,next,prev)
-
-#define dll_remove_npz(f,l,n,next,prev,zchk,zset) (((f)==(n))?\
-((f)=(f)->next, (zchk(f) ? (zset(l)) : zset((f)->prev))):\
+#define dll_remove_npz(f, l, n, next, prev, nil) (((f)==(n))?\
+((f)=(f)->next, ((f == nil) ? (l = nil) : ((f)->prev = nil))):\
 ((l)==(n))?\
-((l)=(l)->prev, (zchk(l) ? (zset(f)) : zset((l)->next))):\
-((zchk((n)->next) ? (0) : ((n)->next->prev=(n)->prev)),\
-(zchk((n)->prev) ? (0) : ((n)->prev->next=(n)->next))))
+((l)=(l)->prev, ((l == nil) ? (f = nil) : ((l)->next = nil))):\
+((((n)->next == nil) ? (nil) : ((n)->next->prev=(n)->prev)),\
+(((n)->prev == nil) ? (nil) : ((n)->prev->next=(n)->next))))
 
 #define sll_push_front_np(f, n, next) ((n)->next = (f),\
 (f) = (n));
 
 #define sll_push_front(f, n) sll_push_front_np(f, n, next)
 
-#define stack_push_n(f,n,next) ((n)->next=(f),(f)=(n))
+#define stack_push_n(f, n, next) ((n)->next=(f),(f)=(n))
 
-#define stack_pop_nz(f,next,zchk) ((zchk(f))?0:\
+#define stack_pop_nz(f, next, nil) ((f == nil)?(nil):\
 ((f)=(f)->next))
 
-
-#define queue_push_nz(f,l,n,next,zchk,zset) (zchk(f)?\
+#define queue_push_nz(f, l, n, next, nil) (f == nil?\
 (f)=(l)=(n):\
 ((l)->next=(n),(l)=(n)),\
-zset((n)->next))
+(n)->next = nil)
 
-
-#define queue_pop_nz(f,l,next,zset) ((f)==(l)?\
-(f)=zset(l):\
+#define queue_pop_nz(f, l, nil) ((f)==(l)?\
+(f)=l=nil:\
 ((f)=(f)->next))
 
-#define dll_push_back(f,l,n)  dll_push_back_np(f,l,n,next,prev)
-#define dll_push_front(f,l,n) dll_push_front_np(f,l,n,prev,next)
-#define dll_insert(f,l,p,n)   dll_insert_npz(f,l,p,n,next,prev,check_null,set_null)
-#define dll_remove(f,l,n)     dll_remove_npz(f,l,n,next,prev,check_null,set_null)
+#define dll_push_back(f, l, n)  dll_push_back_npz(f, l, n, next, prev, 0)
+#define dll_push_front(f, l, n) dll_push_front_npz(f, l, n, prev, next, 0)
+#define dll_insert(f, l, p, n)  dll_insert_npz(f, l, p, n, next, prev, 0)
+#define dll_remove(f, l, n)     dll_remove_npz(f, l, n, next, prev, 0)
 
-#define stack_push(f,n) stack_push_n(f,n,next)
-#define stack_pop(f)    stack_pop_nz(f, next,check_null)
+#define stack_push(f, n) stack_push_n(f, n, next)
+#define stack_pop(f)     stack_pop_nz(f, next, 0)
 
-#define queue_push(f,l,n) queue_push_nz(f,l,n,next,check_null,set_null)
-#define queue_pop(f,l)    queue_pop_nz(f,l,next,set_null)
+#define queue_push(f, l, n) queue_push_nz(f, l, n, next, 0)
+#define queue_pop(f, l)     queue_pop_nz(f, l, next, 0)
 
 #define PRIU8   PRIu8
 #define PRIU16  PRIu16

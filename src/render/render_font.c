@@ -126,7 +126,7 @@ render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegion
 internal Void
 render_remove_free_region_from_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node)
 {
-	dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, check_null, set_null);
+	dll_remove_npz(atlas->first_free_region, atlas->last_free_region, node, next_free, prev_free, 0);
 	node->next_free = 0;
 	node->prev_free = 0;
 	atlas->num_free_regions--;
