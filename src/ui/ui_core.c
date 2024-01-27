@@ -957,22 +957,19 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 		}
 	}
 
+	if (left_mouse_released)
+	{
+		ui_ctx->active_key = ui_key_null();
+	}
+
 	for (U64  i = 0; i < ui_ctx->box_hash_map_count; ++i)
 	{
 		UI_Box *box = ui_ctx->box_hash_map[i];
 		while (box)
 		{
 			UI_Box *next = box->hash_next;
-			if (ui_box_is_active(box))
-			{
-				if (left_mouse_released)
-				{
-					ui_ctx->active_key = ui_key_null();
-				}
-			}
 
-			B32 evict = box->last_frame_touched_index < (ui_ctx->frame_index - 1) ||
-				ui_key_is_null(box->key);
+			B32 evict = box->last_frame_touched_index < (ui_ctx->frame_index - 1) || ui_key_is_null(box->key);
 			if (evict)
 			{
 				if (box == ui_ctx->box_hash_map[i])
