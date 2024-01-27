@@ -1167,7 +1167,7 @@ ui_layout(UI_Box *root)
 			ui_solve_upward_dependent_sizes(root, axis);
 			ui_solve_downward_dependent_sizes(root, axis);
 			ui_solve_size_violations(root, axis);
-			ui_calculate_final_rect(root, axis);
+			ui_calculate_final_rect(root, axis, 0);
 		}
 	}
 }
@@ -1360,64 +1360,8 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 }
 
 internal Void
-ui_calculate_final_rect(UI_Box *root, Axis2 axis)
+ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 {
-	F32 offset = 0;
-
-	// TODO(hampus): Remove this if. It runs for every box *except* the root box.
-	if (root->parent)
-	{
-		if (!ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
-		{
-			if (axis == root->parent->layout_style.child_layout_axis)
-			{
-				UI_Box *prev = 0;
-				for (prev = root->prev;
-					 prev != 0;
-					 prev = prev->prev)
-				{
-					if (!ui_box_has_flag(prev, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
-					{
-						break;
-					}
-				}
-
-				if (prev)
-				{
-					root->rel_pos.v[axis] = prev->rel_pos.v[axis] + prev->fixed_size.v[axis];
-				}
-				else
-				{
-					root->rel_pos.v[axis] = 0;
-				}
-			}
-			else
-			{
-				root->rel_pos.v[axis] = 0;
-			}
-		}
-		else
-		{
-			// NOTE(hampus): We have already set the box's position
-			// that we want
-		}
-
-		F32 scroll = 0;
-		if (ui_box_has_flag(root->parent, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
-			ui_animations_enabled())
-		{
-			scroll = root->parent->scroll_animated.v[axis];
-		}
-		else
-		{
-			scroll = root->parent->scroll.v[axis];
-		}
-
-		offset = root->parent->fixed_rect.min.v[axis] - scroll;
-	}
-
-	F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
-
 	if (root->first_frame_touched_index == root->last_frame_touched_index)
 	{
 		root->rel_pos_animated.v[axis]    = root->rel_pos.v[axis];
@@ -1426,6 +1370,8 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	}
 	else
 	{
+		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
+
 		if (f32_abs(root->rel_pos_animated.v[axis] - root->rel_pos.v[axis]) <= 0.5f)
 		{
 			root->rel_pos_animated.v[axis] = root->rel_pos.v[axis];
@@ -1477,11 +1423,32 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 	root->fixed_rect.min.v[axis] = f32_floor(root->fixed_rect.min.v[axis]);
 	root->fixed_rect.max.v[axis] = f32_floor(root->fixed_rect.max.v[axis]);
 
+	F32 child_offset = root->fixed_rect.min.v[axis];
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
+		ui_animations_enabled())
+	{
+		child_offset -= root->scroll_animated.v[axis];
+	}
+	else
+	{
+		child_offset -= root->scroll.v[axis];
+	}
+
+	F32 next_rel_child_pos = 0.0f;
 	for (UI_Box *child = root->first;
 		 child != 0;
 		 child = child->next)
 	{
-		ui_calculate_final_rect(child, axis);
+		if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
+		{
+			child->rel_pos.v[axis] = next_rel_child_pos;
+			if (axis == root->layout_style.child_layout_axis)
+			{
+				next_rel_child_pos += child->fixed_size.v[axis];
+			}
+		}
+
+		ui_calculate_final_rect(child, axis, child_offset);
 	}
 }
 
