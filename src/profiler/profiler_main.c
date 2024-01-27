@@ -155,6 +155,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 						reverse = (i == sort_column ? !reverse : false);
 						sort_column = i;
 					}
+
 					if (header_comm.hovering)
 					{
 						header->flags |= UI_BoxFlag_DrawBackground;
@@ -193,7 +194,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 						UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
 															UI_BoxFlag_DrawBackground,
 															str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
-															);
+						);
 
 						UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
 						if (draggin_comm.dragging)
@@ -361,7 +362,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
-	Render_TextureSlice texture = *(Render_TextureSlice *)view_info->data;
+	Render_TextureSlice texture = *(Render_TextureSlice *) view_info->data;
 	ui_texture_view(texture);
 }
 
@@ -379,7 +380,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 
 	if (!initialized)
 	{
-		for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+		for (ProfilerUI_Color color = (ProfilerUI_Color) 0;
 			 color < ProfilerUI_Color_COUNT;
 			 ++color)
 		{
@@ -455,7 +456,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 
 	ui_column()
 	{
-		for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+		for (ProfilerUI_Color color = (ProfilerUI_Color) 0;
 			 color < ProfilerUI_Color_COUNT;
 			 ++color)
 		{
@@ -471,11 +472,11 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 				ui_next_width(ui_em(1, 1));
 				ui_next_height(ui_em(1, 1));
 				UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-										  UI_BoxFlag_DrawBorder |
-										  UI_BoxFlag_Clickable |
-										  UI_BoxFlag_HotAnimation |
-										  UI_BoxFlag_ActiveAnimation,
-										  string);
+											UI_BoxFlag_DrawBorder |
+											UI_BoxFlag_Clickable |
+											UI_BoxFlag_HotAnimation |
+											UI_BoxFlag_ActiveAnimation,
+											string);
 				UI_Comm comm = ui_comm_from_box(box);
 				if (comm.clicked)
 				{
@@ -490,8 +491,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 			ui_next_width(ui_text_content(1));
 			if (ui_button(str8_lit("Dump theme to file")).clicked)
 			{
-				Str8List string_list = {0};
-				for (ProfilerUI_Color color = (ProfilerUI_Color)0;
+				Str8List string_list = { 0 };
+				for (ProfilerUI_Color color = (ProfilerUI_Color) 0;
 					 color < ProfilerUI_Color_COUNT;
 					 ++color)
 				{
@@ -553,16 +554,16 @@ os_main(Str8List arguments)
 
 	//- hampus: Build startup UI
 
-	profiler_ui_set_color(ProfilerUI_Color_Panel,                v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder,  v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder,    v4f32(1.0f, 0.8f, 0.0f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBar,               v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActiveTab,            v4f32(0.3f, 0.3f, 0.3f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactiveTab,          v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabTitle,             v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBorder,            v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons,        v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
 	{
 		ProfilerUI_Window *master_window = profiler_ui_window_make(profiler_ui_state->perm_arena, v2f32(1.0f, 1.0f));
@@ -575,8 +576,8 @@ os_main(Str8List arguments)
 				ProfilerUI_TabAttach attach =
 				{
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-												profiler_ui_tab_view_debug,
-												0, str8_lit("Debug")),
+					profiler_ui_tab_view_debug,
+					0, str8_lit("Debug")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				profiler_ui_command_tab_attach(&attach);
@@ -585,9 +586,9 @@ os_main(Str8List arguments)
 				ProfilerUI_TabAttach attach =
 				{
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-												profiler_ui_tab_view_logger,
-												0,
-												str8_lit("Log")),
+					profiler_ui_tab_view_logger,
+					0,
+					str8_lit("Log")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				profiler_ui_command_tab_attach(&attach);
@@ -596,8 +597,8 @@ os_main(Str8List arguments)
 				ProfilerUI_TabAttach attach =
 				{
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-												profiler_ui_tab_view_theme,
-												0, str8_lit("Theme")),
+					profiler_ui_tab_view_theme,
+					0, str8_lit("Theme")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				profiler_ui_command_tab_attach(&attach);
@@ -606,9 +607,9 @@ os_main(Str8List arguments)
 				ProfilerUI_TabAttach attach =
 				{
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-												profiler_ui_tab_view_texture_viewer,
-												&image_texture,
-												str8_lit("Texture Viewer")),
+					profiler_ui_tab_view_texture_viewer,
+					&image_texture,
+					str8_lit("Texture Viewer")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				profiler_ui_command_tab_attach(&attach);
@@ -626,7 +627,6 @@ os_main(Str8List arguments)
 		profiler_ui_state->master_window = master_window;
 		profiler_ui_state->next_focused_panel = first_panel;
 	}
-
 	profiler_ui_state->frame_index = 1;
 
 	gfx_show_window(&gfx);

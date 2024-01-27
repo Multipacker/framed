@@ -158,8 +158,6 @@ struct UI_LayoutStyleStack
 	B32 auto_pop;
 };
 
-typedef struct UI_Box UI_Box;
-
 typedef struct UI_ClipRectStackNode UI_ClipRectStackNode;
 struct UI_ClipRectStackNode
 {
@@ -174,6 +172,8 @@ struct UI_ClipBoxStack
 	UI_ClipRectStackNode *first;
 	UI_ClipRectStackNode *last;
 };
+
+typedef struct UI_Box UI_Box;
 
 #define UI_CUSTOM_DRAW_PROC(name) Void name(UI_Box *root)
 typedef UI_CUSTOM_DRAW_PROC(UI_CustomDrawProc);

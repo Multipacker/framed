@@ -77,7 +77,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 						{
 							atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
-																		   v2u32(bitmap_width+2, bitmap_height+2));
+																			 v2u32(bitmap_width+2, bitmap_height+2));
 						}
 
 						rect_region = atlas_region->region;
@@ -193,7 +193,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 	{
 		.min = rect_region.min,
 		.max = v2u32(rect_region.min.x + bitmap_width,
-					 rect_region.min.y + bitmap_height),
+		rect_region.min.y + bitmap_height),
 	};
 
 	RectF32 adjusted_rect_region_f32 = rectf32_from_rectu32(adjusted_rect_region);

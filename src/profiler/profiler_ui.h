@@ -105,7 +105,8 @@ struct ProfilerUI_Tab
 
 	ProfilerUI_Panel *panel;
 
-	UI_Box *box;
+	UI_Box *tab_container;
+	UI_Box *tab_box;
 
 	ProfilerUI_TabViewInfo view_info;
 
@@ -120,7 +121,6 @@ struct ProfilerUI_TabGroup
 	ProfilerUI_Tab *active_tab;
 	ProfilerUI_Tab *first;
 	ProfilerUI_Tab *last;
-	F32 view_offset_x;
 };
 
 typedef struct ProfilerUI_Panel ProfilerUI_Panel;
@@ -289,7 +289,7 @@ internal Void profiler_ui_panel_split(ProfilerUI_Panel *first, Axis2 split_axis)
 internal Void profiler_ui_panel_split_and_attach_tab(ProfilerUI_Panel *panel, ProfilerUI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////
-//~ hampus: UI_Panels
+//~ hampus: Panels
 
 internal Void profiler_ui_panel_split_and_attach_tab(ProfilerUI_Panel *panel, ProfilerUI_Tab *tab, Axis2 axis, Side side);
 

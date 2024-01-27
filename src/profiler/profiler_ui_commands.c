@@ -28,7 +28,6 @@ PROFILER_UI_COMMAND(tab_close)
 	panel->tab_group.count--;
 	tab->next = 0;
 	tab->prev = 0;
-	panel->tab_group.view_offset_x += tab->box->fixed_size.x;
 	if (panel->tab_group.count == 0)
 	{
 		ProfilerUI_PanelClose close =

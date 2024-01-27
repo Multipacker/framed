@@ -114,7 +114,7 @@ ui_animation_speed(Void)
 internal UI_Key
 ui_key_null(Void)
 {
-	UI_Key result = {0};
+	UI_Key result = { 0 };
 	return(result);
 }
 
@@ -136,7 +136,7 @@ ui_key_match(UI_Key a, UI_Key b)
 internal UI_Key
 ui_key_from_string(UI_Key seed, Str8 string)
 {
-	UI_Key result = {0};
+	UI_Key result = { 0 };
 
 	if (string.size != 0)
 	{
@@ -153,7 +153,7 @@ ui_key_from_string(UI_Key seed, Str8 string)
 internal UI_Key
 ui_key_from_string_f(UI_Key seed, CStr fmt, ...)
 {
-	UI_Key result = {0};
+	UI_Key result = { 0 };
 	arena_scratch(0, 0)
 	{
 		va_list args;
@@ -195,7 +195,7 @@ ui_get_display_part_from_string(Str8 string)
 internal UI_Size
 ui_pixels(F32 value, F32 strictness)
 {
-	UI_Size result = {0};
+	UI_Size result = { 0 };
 	result.kind = UI_SizeKind_Pixels;
 	result.value = value;
 	result.strictness = strictness;
@@ -205,7 +205,7 @@ ui_pixels(F32 value, F32 strictness)
 internal UI_Size
 ui_text_content(F32 strictness)
 {
-	UI_Size result = {0};
+	UI_Size result = { 0 };
 	result.kind = UI_SizeKind_TextContent;
 	result.strictness = strictness;
 	return(result);
@@ -214,7 +214,7 @@ ui_text_content(F32 strictness)
 internal UI_Size
 ui_pct(F32 value, F32 strictness)
 {
-	UI_Size result = {0};
+	UI_Size result = { 0 };
 	result.kind = UI_SizeKind_Pct;
 	result.value = value;
 	result.strictness = strictness;
@@ -224,7 +224,7 @@ ui_pct(F32 value, F32 strictness)
 internal UI_Size
 ui_children_sum(F32 strictness)
 {
-	UI_Size result = {0};
+	UI_Size result = { 0 };
 	result.kind = UI_SizeKind_ChildrenSum;
 	result.strictness = strictness;
 	return(result);
@@ -233,7 +233,7 @@ ui_children_sum(F32 strictness)
 internal UI_Size
 ui_em(F32 value, F32 strictness)
 {
-	UI_Size result = {0};
+	UI_Size result = { 0 };
 	result.kind = UI_SizeKind_Pixels;
 	result.value = ui_top_font_line_height() * value;
 	result.strictness = strictness;
@@ -253,7 +253,7 @@ ui_fill(Void)
 internal UI_TextAction
 ui_text_action_from_event(Gfx_Event *event)
 {
-	UI_TextAction result = {0};
+	UI_TextAction result = { 0 };
 
 	if (event->kind == Gfx_EventKind_KeyPress)
 	{
@@ -275,7 +275,7 @@ ui_text_action_from_event(Gfx_Event *event)
 	else if (event->kind == Gfx_EventKind_Char)
 	{
 		assert(event->character < 128 && "Unicode typing not yet supported!");
-		result.character = (U8)event->character;
+		result.character = (U8) event->character;
 		result.delta = 1;
 	}
 
@@ -285,7 +285,7 @@ ui_text_action_from_event(Gfx_Event *event)
 internal UI_TextActionList
 ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
 {
-	UI_TextActionList result = {0};
+	UI_TextActionList result = { 0 };
 	for (Gfx_Event *event = event_list->first;
 		 event != 0;
 		 event = event->next)
@@ -304,7 +304,7 @@ ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
 internal UI_TextOp
 ui_text_op_from_state_and_action(Arena *arena, UI_TextEditState *state, UI_TextAction *action)
 {
-	UI_TextOp result = {0};
+	UI_TextOp result = { 0 };
 	result.new_cursor = state->cursor;
 	result.new_mark = state->mark;
 
@@ -331,9 +331,9 @@ internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
 	assert(!ui_key_is_null(box->key) &&
-		   "Tried to gather input from a keyless box!");
+			 "Tried to gather input from a keyless box!");
 
-	UI_Comm result = {0};
+	UI_Comm result = { 0 };
 	result.box = box;
 	Vec2F32 mouse_pos = gfx_get_mouse_pos(ui_ctx->renderer->gfx);
 
@@ -352,7 +352,7 @@ ui_comm_from_box(UI_Box *box)
 			// because you can't push the rect of
 			// a keyless box
 			assert(!ui_key_is_null(parent->key) &&
-				   "Clipping to an unstable rectangle");
+					 "Clipping to an unstable rectangle");
 			hover_region = rectf32_intersect_rectf32(hover_region, parent->fixed_rect);
 		}
 	}
@@ -551,7 +551,7 @@ internal UI_Box *
 ui_box_alloc(Void)
 {
 	assert(ui_ctx->box_storage.num_free_boxes > 0);
-	UI_Box *result = (UI_Box *)ui_ctx->box_storage.first_free_box;
+	UI_Box *result = (UI_Box *) ui_ctx->box_storage.first_free_box;
 	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_Box));
 	ui_ctx->box_storage.first_free_box = ui_ctx->box_storage.first_free_box->next;
 
@@ -565,7 +565,7 @@ ui_box_alloc(Void)
 internal Void
 ui_box_free(UI_Box *box)
 {
-	UI_FreeBox *free_box = (UI_FreeBox *)box;
+	UI_FreeBox *free_box = (UI_FreeBox *) box;
 	free_box->next = ui_ctx->box_storage.first_free_box;
 	ui_ctx->box_storage.first_free_box = free_box;
 	ui_ctx->box_storage.num_free_boxes++;
@@ -644,14 +644,13 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 			result->key = key;
 
 			ui_stats_inc_val(num_transient_boxes);
-
 		}
 	}
 	else
 	{
 		ui_stats_inc_val(num_hashed_boxes);
 		assert(result->last_frame_touched_index != ui_ctx->frame_index &&
-			   "Hash collision!");
+				 "Hash collision!");
 	}
 
 	result->first = 0;
@@ -678,20 +677,20 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->flags = flags | result->layout_style.box_flags;
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
-			 ui_key_is_null(result->key) &&
-			 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
-			 ui_key_is_null(result->key) &&
-			 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
-			 ui_key_is_null(result->key) &&
-			 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
-			 ui_key_is_null(result->key) &&
-			 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	result->last_frame_touched_index = ui_ctx->frame_index;
 
@@ -729,7 +728,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 internal UI_Box *
 ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 {
-	UI_Box *result = {0};
+	UI_Box *result = { 0 };
 	// TODO(hampus): This won't work with debug_string
 	// since it needs to be persistent across the frame
 	arena_scratch(0, 0)
@@ -760,7 +759,7 @@ ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc)
 internal RectF32
 ui_box_get_fixed_rect(UI_Box *box)
 {
-	RectF32 result = {0};
+	RectF32 result = { 0 };
 	result.x0 = box->fixed_rect.x0 + box->rel_pos.x - box->rel_pos_animated.x;
 	result.x1 = box->fixed_rect.x1 + box->rel_pos.x - box->rel_pos_animated.x;
 	result.y0 = box->fixed_rect.y0 + box->rel_pos.y - box->rel_pos_animated.y;
@@ -880,10 +879,10 @@ ui_init(Void)
 	result->permanent_arena = permanent_arena;
 	result->frame_arena = frame_arena;
 
-	result->box_storage.storage_count = 4096;
+	result->box_storage.storage_count = 512;
 	result->box_storage.boxes = push_array(permanent_arena, UI_Box, result->box_storage.storage_count);
 
-	for (U64 i = 0; i < 4096; ++i)
+	for (U64 i = 0; i < 512; ++i)
 	{
 		ui_box_free(result->box_storage.boxes + i);
 	}
@@ -962,7 +961,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 		ui_ctx->active_key = ui_key_null();
 	}
 
-	for (U64  i = 0; i < ui_ctx->box_hash_map_count; ++i)
+	for (U64 i = 0; i < ui_ctx->box_hash_map_count; ++i)
 	{
 		UI_Box *box = ui_ctx->box_hash_map[i];
 		while (box)
@@ -1011,7 +1010,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	text_style->font = str8_lit("data/fonts/Inter-Regular.ttf");
 	text_style->font_size = 15;
 
-	text_style->padding.v[Axis2_X] = (F32)ui_top_font_line_height();
+	text_style->padding.v[Axis2_X] = (F32) ui_top_font_line_height();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
@@ -1023,7 +1022,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color              = v4f32(0.6f, 0.6f, 0.6f, 1.0f);
 	rect_style->border_thickness          = 1;
-	F32 radius                            = (F32)ui_top_font_line_height() * 0.1f;
+	F32 radius                            = (F32) ui_top_font_line_height() * 0.1f;
 	rect_style->radies                    = v4f32(radius, radius, radius, radius);
 	rect_style->softness                  = 1;
 
@@ -1041,15 +1040,15 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
 	ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX |
-							   UI_BoxFlag_OverflowY,
-							   str8_lit("Root"));
+								 UI_BoxFlag_OverflowY,
+								 str8_lit("Root"));
 
 	ui_push_parent(ui_ctx->root);
 
 	ui_next_relative_pos(Axis2_X, ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, ui_ctx->mouse_pos.y);
 	ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
-									   str8_lit("TooltipRoot"));
+										 str8_lit("TooltipRoot"));
 
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
@@ -1059,7 +1058,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
 	ui_ctx->normal_root = ui_box_make(0,
-									  str8_lit("NormalRoot"));
+										str8_lit("NormalRoot"));
 
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
@@ -1105,7 +1104,7 @@ ui_end(Void)
 
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
-		Vec2F32 anchor_pos = {0};
+		Vec2F32 anchor_pos = { 0 };
 		if (!ui_key_is_null(ui_ctx->ctx_menu_anchor_key))
 		{
 			UI_Box *anchor = ui_box_from_key(ui_ctx->ctx_menu_anchor_key);
@@ -1194,7 +1193,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_TextContent:
 		{
-			Vec2F32 text_dim = {0};
+			Vec2F32 text_dim = { 0 };
 			if (root->text_style.icon)
 			{
 				text_dim = render_measure_character(font, root->text_style.icon);
@@ -1225,10 +1224,10 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 	if (size.kind == UI_SizeKind_Pct)
 	{
 		assert(root->parent &&
-			   "Percent of parent without a parent");
+				 "Percent of parent without a parent");
 
 		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
-			   "Cyclic sizing behaviour");
+				 "Cyclic sizing behaviour");
 
 		F32 parent_size = root->parent->fixed_size.v[axis];
 		root->fixed_size.v[axis] = f32_floor(parent_size * size.value);
@@ -1287,13 +1286,13 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 
 	F32 taken_space = 0;
 	F32 total_fixup_budget = 0;
-	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
 	{
-		for(UI_Box *child = root->first;
+		for (UI_Box *child = root->first;
 			child != 0;
 			child = child->next)
 		{
-			if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+			if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 			{
 				if (axis == root->layout_style.child_layout_axis)
 				{
@@ -1309,7 +1308,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		}
 	}
 
-	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
 	{
 		F32 violation = taken_space - available_space;
 		if (violation > 0 && total_fixup_budget > 0)
@@ -1318,7 +1317,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 				 child != 0;
 				 child = child->next)
 			{
-				if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+				if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 				{
 					F32 fixup_budget_this_child = child->fixed_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 					F32 fixup_size_this_child = 0;
@@ -1366,7 +1365,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 	else
 	{
-		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
 
 		if (f32_abs(root->rel_pos_animated.v[axis] - root->rel_pos.v[axis]) <= 0.5f)
 		{
@@ -1374,7 +1373,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		}
 		else
 		{
-			root->rel_pos_animated.v[axis] += (root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
+			root->rel_pos_animated.v[axis] += (F32) (root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
 		}
 
 		if (f32_abs(root->fixed_size_animated.v[axis] - root->fixed_size.v[axis]) <= 0.5f)
@@ -1397,7 +1396,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
-		ui_animations_enabled())
+			ui_animations_enabled())
 	{
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos_animated.v[axis];
 	}
@@ -1451,7 +1450,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 internal Vec2F32
 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
 {
-	Vec2F32 result = {0};
+	Vec2F32 result = { 0 };
 
 	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
 	Vec2F32 text_dim = render_measure_text(font, string);
@@ -1486,7 +1485,7 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 internal Vec2F32
 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
 {
-	Vec2F32 result = {0};
+	Vec2F32 result = { 0 };
 
 	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
 	Vec2F32 text_dim = render_measure_character(font, codepoint);
@@ -1531,7 +1530,7 @@ ui_draw(UI_Box *root)
 	}
 	else
 	{
-		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
 		if (ui_box_is_active(root))
 		{
 			root->active_t += (1.0f - root->active_t) * animation_delta;
@@ -1551,7 +1550,7 @@ ui_draw(UI_Box *root)
 		}
 
 		root->active_t = f32_clamp(0, root->active_t, 1.0f);
-		root->hot_t    = f32_clamp(0, root->hot_t,    1.0f);
+		root->hot_t    = f32_clamp(0, root->hot_t, 1.0f);
 
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
@@ -1585,13 +1584,13 @@ ui_draw(UI_Box *root)
 				d += 0.2f * root->hot_t;
 			}
 
-			rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],  v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
 			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
 			instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-								   .softness = rect_style->softness,
-								   .slice = rect_style->slice,
-								   .use_nearest = rect_style->texture_filter);
+									 .softness = rect_style->softness,
+									 .slice = rect_style->slice,
+									 .use_nearest = rect_style->texture_filter);
 			memory_copy_array(instance->colors, rect_style->color);
 			memory_copy_array(instance->radies, rect_style->radies.v);
 		}
@@ -1665,7 +1664,7 @@ ui_top_font_line_height(Void)
 internal Render_FontKey
 ui_font_key_from_text_style(UI_TextStyle *text_style)
 {
-	Render_FontKey result = {0};
+	Render_FontKey result = { 0 };
 	result.path = text_style->font;
 	result.font_size = text_style->font_size;
 	return(result);
