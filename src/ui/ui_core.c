@@ -1189,8 +1189,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 	{
 		case UI_SizeKind_Pixels:
 		{
-			root->fixed_size.v[axis] = size.value;
-			root->fixed_size.v[axis] = f32_floor(root->fixed_size.v[axis]);
+			root->fixed_size.v[axis] = f32_floor(size.value);
 		} break;
 
 		case UI_SizeKind_TextContent:
@@ -1204,7 +1203,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 			{
 				text_dim = render_measure_text(font, root->string);
 			}
-			root->fixed_size.v[axis] = text_dim.v[axis] + root->text_style.padding.v[axis];
+			root->fixed_size.v[axis] = f32_floor(text_dim.v[axis] + root->text_style.padding.v[axis]);
 		} break;
 
 		default: break;
@@ -1232,8 +1231,7 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 			   "Cyclic sizing behaviour");
 
 		F32 parent_size = root->parent->fixed_size.v[axis];
-		root->fixed_size.v[axis] = parent_size * size.value;
-		root->fixed_size.v[axis] = f32_floor(root->fixed_size.v[axis]);
+		root->fixed_size.v[axis] = f32_floor(parent_size * size.value);
 	}
 
 	for (UI_Box *child = root->first;
@@ -1278,8 +1276,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 			}
 		}
 
-		root->fixed_size.v[axis] = children_total_size;
-		root->fixed_size.v[axis] = f32_floor(root->fixed_size.v[axis]);
+		root->fixed_size.v[axis] = f32_floor(children_total_size);
 	}
 }
 
@@ -1342,8 +1339,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 					{
 						if (child_child->layout_style.size[axis].kind == UI_SizeKind_Pct)
 						{
-							child_child->fixed_size.v[axis] = child->fixed_size.v[axis] * child_child->layout_style.size[axis].value;
-							child_child->fixed_size.v[axis] = f32_floor(child_child->fixed_size.v[axis]);
+							child_child->fixed_size.v[axis] = f32_floor(child->fixed_size.v[axis] * child_child->layout_style.size[axis].value);
 						}
 					}
 				}
