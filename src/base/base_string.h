@@ -42,6 +42,7 @@ struct Str8List
 };
 
 typedef char *CStr;
+typedef U16  *CStr16;
 
 #define str8_lit(literal) ((Str8) { .data = (U8 *) literal, .size = sizeof(literal) - 1})
 #define str8_expand(string) (int) string.size, string.data
@@ -92,8 +93,8 @@ internal Str8  str8_from_str32(Arena *arena, Str32 string);
 internal Str16 str16_from_str8(Arena *arena, Str8  string);
 internal Str8  str8_from_str16(Arena *arena, Str16 string);
 
-internal CStr cstr_from_str8(Arena *arena, Str8 string);
-internal Str16 cstr16_from_str8(Arena *arena, Str8 string);
+internal CStr   cstr_from_str8(Arena *arena, Str8 string);
+internal CStr16 cstr16_from_str8(Arena *arena, Str8 string);
 
 internal U64 u64_from_str8(Str8 string, U64 *destination);
 internal U64 u32_from_str8(Str8 string, U32 *destination);

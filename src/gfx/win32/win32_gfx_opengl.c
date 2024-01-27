@@ -68,12 +68,12 @@ win32_get_wgl_functions(Void)
 	Arena_Temporary scratch = get_scratch(0, 0);
 
 	HWND dummy = CreateWindowEx(0,
-																(LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")).data,
-																(LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")).data,
-																WS_OVERLAPPED,
-																CW_USEDEFAULT, CW_USEDEFAULT,
-																CW_USEDEFAULT, CW_USEDEFAULT,
-																NULL, NULL, NULL, NULL);
+	                            (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")),
+	                            (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")),
+	                            WS_OVERLAPPED,
+	                            CW_USEDEFAULT, CW_USEDEFAULT,
+	                            CW_USEDEFAULT, CW_USEDEFAULT,
+	                            NULL, NULL, NULL, NULL);
 
 	assert(dummy && "Failed to create dummy window");
 

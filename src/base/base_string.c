@@ -706,7 +706,7 @@ cstr_from_str8(Arena *arena, Str8 string)
 	return (CStr) memory;
 }
 
-internal Str16
+internal CStr16
 cstr16_from_str8(Arena *arena, Str8 string)
 {
 	U64 allocated_size = string.size + 1;
@@ -730,10 +730,7 @@ cstr16_from_str8(Arena *arena, Str8 string)
 	U64 unused_size = allocated_size - string_size - 1;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str16 result;
-	result.data = memory;
-	result.size = string_size;
-	return result;
+	return memory;
 }
 
 internal U64

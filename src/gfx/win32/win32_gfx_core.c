@@ -72,14 +72,14 @@ win32_gfx_startup_thread(Void *data)
 
 	HINSTANCE instance = GetModuleHandle(0);
 
-	Str16 class_name = cstr16_from_str8(scratch.arena, str8_lit("ApplicationWindowClassName"));
+	CStr16 class_name = cstr16_from_str8(scratch.arena, str8_lit("ApplicationWindowClassName"));
 
 	WNDCLASS window_class = { 0 };
 
 	window_class.style = 0;
 	window_class.lpfnWndProc = win32_window_proc;
 	window_class.hInstance = instance;
-	window_class.lpszClassName = class_name.data;
+	window_class.lpszClassName = class_name;
 	window_class.hCursor = LoadCursor(0, (LPCWSTR) IDC_ARROW);
 
 	ATOM register_class_result = RegisterClass(&window_class);
@@ -87,8 +87,8 @@ win32_gfx_startup_thread(Void *data)
 	{
 		DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
 
-		Str16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
-		result.hwnd = CreateWindow(window_class.lpszClassName, (LPCWSTR) title_s16.data,
+		CStr16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
+		result.hwnd = CreateWindow(window_class.lpszClassName, (LPCWSTR) title_s16,
 								   create_window_flags,
 								   window_creation_data->x, window_creation_data->y,
 								   window_creation_data->width, window_creation_data->height,
