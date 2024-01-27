@@ -29,9 +29,26 @@
 //~ hampus: Globals
 
 global UI_Context *ui_ctx;
+read_only UI_Box g_nil_box =
+{
+	&g_nil_box,
+	&g_nil_box,
+	&g_nil_box,
+	&g_nil_box,
+	&g_nil_box,
+	&g_nil_box,
+	&g_nil_box,
+};
 
 ////////////////////////////////
-//~ hampus: Accessor functions
+//~ hampus: Basic helpers
+
+internal B32
+ui_box_is_nil(UI_Box *box)
+{
+	B32 result = (!box || box == &g_nil_box);
+	return(result);
+}
 
 internal F64
 ui_dt(Void)
@@ -286,9 +303,7 @@ internal UI_TextActionList
 ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
 {
 	UI_TextActionList result = { 0 };
-	for (Gfx_Event *event = event_list->first;
-		 event != 0;
-		 event = event->next)
+	for (Gfx_Event *event = event_list->first; event != 0; event = event->next)
 	{
 		UI_TextAction text_action = ui_text_action_from_event(event);
 		if (!type_is_zero(text_action))
@@ -331,7 +346,7 @@ internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
 	assert(!ui_key_is_null(box->key) &&
-			 "Tried to gather input from a keyless box!");
+				 "Tried to gather input from a keyless box!");
 
 	UI_Comm result = { 0 };
 	result.box = box;
@@ -342,9 +357,7 @@ ui_comm_from_box(UI_Box *box)
 	B32 gather_input = true;
 
 	RectF32 hover_region = box->fixed_rect;
-	for (UI_Box *parent = box->parent;
-		 parent != 0;
-		 parent = parent->parent)
+	for (UI_Box *parent = box->parent; !ui_box_is_nil(parent); parent = parent->parent)
 	{
 		if (ui_box_has_flag(parent, UI_BoxFlag_Clip))
 		{
@@ -352,7 +365,7 @@ ui_comm_from_box(UI_Box *box)
 			// because you can't push the rect of
 			// a keyless box
 			assert(!ui_key_is_null(parent->key) &&
-					 "Clipping to an unstable rectangle");
+						 "Clipping to an unstable rectangle");
 			hover_region = rectf32_intersect_rectf32(hover_region, parent->fixed_rect);
 		}
 	}
@@ -363,9 +376,7 @@ ui_comm_from_box(UI_Box *box)
 		// part of the context menu
 		B32 part_of_ctx_menu = false;
 		UI_Box *ctx_menu_root = ui_ctx->ctx_menu_root;
-		for (UI_Box *parent = box->parent;
-			 parent != 0;
-			 parent = parent->parent)
+		for (UI_Box *parent = box->parent; !ui_box_is_nil(parent); parent = parent->parent)
 		{
 			if (parent == ctx_menu_root)
 			{
@@ -415,9 +426,7 @@ ui_comm_from_box(UI_Box *box)
 			}
 
 			Gfx_EventList *event_list = ui_ctx->event_list;
-			for (Gfx_Event *node = event_list->first;
-				 node != 0;
-				 node = node->next)
+			for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 			{
 				switch (node->kind)
 				{
@@ -556,7 +565,6 @@ ui_box_alloc(Void)
 	ui_ctx->box_storage.first_free_box = ui_ctx->box_storage.first_free_box->next;
 
 	memory_zero_struct(result);
-
 	ui_ctx->box_storage.num_free_boxes--;
 
 	return(result);
@@ -583,15 +591,13 @@ ui_box_has_flag(UI_Box *box, UI_BoxFlags flag)
 internal UI_Box *
 ui_box_from_key(UI_Key key)
 {
-	UI_Box *result = 0;
+	UI_Box *result = &g_nil_box;
 
 	if (!ui_key_is_null(key))
 	{
 		U64 count = 0;
 		U64 slot_index = key.value % ui_ctx->box_hash_map_count;
-		for (result = ui_ctx->box_hash_map[slot_index];
-			 result != 0;
-			 result = result->hash_next)
+		for (result = ui_ctx->box_hash_map[slot_index]; !ui_box_is_nil(result); result = result->hash_next)
 		{
 			if (ui_key_match(key, result->key))
 			{
@@ -619,7 +625,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 	UI_Box *result = ui_box_from_key(key);
 
-	if (!result)
+	if (ui_box_is_nil(result))
 	{
 		if (!ui_key_is_null(key))
 		{
@@ -629,7 +635,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
 			U64 slot_index = result->key.value % ui_ctx->box_hash_map_count;
 			UI_Box *box = ui_ctx->box_hash_map[slot_index];
-			if (box)
+			if (!ui_box_is_nil(box))
 			{
 				box->hash_prev = result;
 				result->hash_next = box;
@@ -650,47 +656,39 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	{
 		ui_stats_inc_val(num_hashed_boxes);
 		assert(result->last_frame_touched_index != ui_ctx->frame_index &&
-				 "Hash collision!");
+					 "Hash collision!");
 	}
-
-	result->first = 0;
-	result->last  = 0;
-	result->next  = 0;
-	result->prev  = 0;
 	UI_Box *parent = ui_top_parent();
 
+	result->first = result->last = result->next = result->prev = result->parent = &g_nil_box;
 	result->string = string;
-
-	if (parent)
-	{
-		// NOTE(hampus): This would not be the case for the root.
-		dll_push_back(parent->first, parent->last, result);
-	}
-
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
-
 	result->clip_rect = ui_ctx->clip_rect_stack.first;
-
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
 
+	if (!ui_box_is_nil(parent))
+	{
+		dll_push_back_npz(parent->first, parent->last, result, next, prev, &g_nil_box);
+	}
+
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
-					 ui_key_is_null(result->key) &&
-					 "Why would you animate a keyless box"));
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
-					 ui_key_is_null(result->key) &&
-					 "Why would you animate a keyless box"));
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
-					 ui_key_is_null(result->key) &&
-					 "Why would you animate a keyless box"));
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
-					 ui_key_is_null(result->key) &&
-					 "Why would you animate a keyless box"));
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
 
 	result->last_frame_touched_index = ui_ctx->frame_index;
 
@@ -728,7 +726,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 internal UI_Box *
 ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...)
 {
-	UI_Box *result = { 0 };
+	UI_Box *result = &g_nil_box;
 	// TODO(hampus): This won't work with debug_string
 	// since it needs to be persistent across the frame
 	arena_scratch(0, 0)
@@ -795,10 +793,10 @@ ui_ctx_menu_begin(UI_Key key)
 	if (is_open)
 	{
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground |
-								UI_BoxFlag_DrawBorder |
-								UI_BoxFlag_AnimateHeight |
-								UI_BoxFlag_DrawDropShadow |
-								UI_BoxFlag_Clip);
+														UI_BoxFlag_DrawBorder |
+														UI_BoxFlag_AnimateHeight |
+														UI_BoxFlag_DrawDropShadow |
+														UI_BoxFlag_Clip);
 	}
 
 	ui_push_seed(key);
@@ -882,7 +880,7 @@ ui_init(Void)
 	result->box_storage.storage_count = 512;
 	result->box_storage.boxes = push_array(permanent_arena, UI_Box, result->box_storage.storage_count);
 
-	for (U64 i = 0; i < 512; ++i)
+	for (U64 i = 0; i < result->box_storage.storage_count; ++i)
 	{
 		ui_box_free(result->box_storage.boxes + i);
 	}
@@ -915,9 +913,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	B32 left_mouse_released = false;
 	B32 left_mouse_pressed  = false;
 	B32 escape_key_pressed  = false;
-	for (Gfx_Event *node = event_list->first;
-		 node != 0;
-		 node = node->next)
+	for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 	{
 		switch (node->kind)
 		{
@@ -964,7 +960,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	for (U64 i = 0; i < ui_ctx->box_hash_map_count; ++i)
 	{
 		UI_Box *box = ui_ctx->box_hash_map[i];
-		while (box)
+		while (!ui_box_is_nil(box))
 		{
 			UI_Box *next = box->hash_next;
 
@@ -976,18 +972,16 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 					ui_ctx->box_hash_map[i] = box->hash_next;
 				}
 
-				if (box->hash_next)
+				if (!ui_box_is_nil(box->hash_next))
 				{
 					box->hash_next->hash_prev = box->hash_prev;
 				}
 
-				if (box->hash_prev)
+				if (!ui_box_is_nil(box->hash_prev))
 				{
 					box->hash_prev->hash_next = box->hash_next;
 				}
 
-				box->hash_next = 0;
-				box->hash_prev = 0;
 				ui_box_free(box);
 			}
 
@@ -1040,25 +1034,25 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
 	ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX |
-								 UI_BoxFlag_OverflowY,
-								 str8_lit("Root"));
+														 UI_BoxFlag_OverflowY,
+														 str8_lit("Root"));
 
 	ui_push_parent(ui_ctx->root);
 
 	ui_next_relative_pos(Axis2_X, ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, ui_ctx->mouse_pos.y);
 	ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
-										 str8_lit("TooltipRoot"));
+																		 str8_lit("TooltipRoot"));
 
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
 	ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
-										str8_lit("CtxMenuRoot"));
+																			str8_lit("CtxMenuRoot"));
 
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
 	ui_ctx->normal_root = ui_box_make(0,
-										str8_lit("NormalRoot"));
+																		str8_lit("NormalRoot"));
 
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
@@ -1108,7 +1102,7 @@ ui_end(Void)
 		if (!ui_key_is_null(ui_ctx->ctx_menu_anchor_key))
 		{
 			UI_Box *anchor = ui_box_from_key(ui_ctx->ctx_menu_anchor_key);
-			if (anchor)
+			if (!ui_box_is_nil(anchor))
 			{
 				anchor_pos = v2f32(anchor->fixed_rect.min.x, anchor->fixed_rect.max.y);
 			}
@@ -1208,9 +1202,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 		default: break;
 	}
 
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
+	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		ui_solve_independent_sizes(child, axis);
 	}
@@ -1224,18 +1216,16 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 	if (size.kind == UI_SizeKind_Pct)
 	{
 		assert(root->parent &&
-				 "Percent of parent without a parent");
+					 "Percent of parent without a parent");
 
 		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
-				 "Cyclic sizing behaviour");
+					 "Cyclic sizing behaviour");
 
 		F32 parent_size = root->parent->fixed_size.v[axis];
 		root->fixed_size.v[axis] = f32_floor(parent_size * size.value);
 	}
 
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
+	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		ui_solve_upward_dependent_sizes(child, axis);
 	}
@@ -1245,9 +1235,7 @@ internal Void
 ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_ChildrenSum
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
+	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		ui_solve_downward_dependent_sizes(child, axis);
 	}
@@ -1257,9 +1245,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 	{
 		F32 children_total_size = 0;
 		Axis2 child_layout_axis = root->layout_style.child_layout_axis;
-		for (UI_Box *child = root->first;
-			 child != 0;
-			 child = child->next)
+		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
 			if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 			{
@@ -1288,9 +1274,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 	F32 total_fixup_budget = 0;
 	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
 	{
-		for (UI_Box *child = root->first;
-			child != 0;
-			child = child->next)
+		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
 			if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 			{
@@ -1313,9 +1297,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		F32 violation = taken_space - available_space;
 		if (violation > 0 && total_fixup_budget > 0)
 		{
-			for (UI_Box *child = root->first;
-				 child != 0;
-				 child = child->next)
+			for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 			{
 				if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 				{
@@ -1332,9 +1314,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 					fixup_size_this_child = f32_clamp(0, fixup_size_this_child, fixup_budget_this_child);
 					child->fixed_size.v[axis] -= fixup_size_this_child;
 					child->fixed_size.v[axis] = f32_floor(child->fixed_size.v[axis]);
-					for (UI_Box *child_child = child->first;
-						 child_child != 0;
-						 child_child = child_child->next)
+					for (UI_Box *child_child = child->first; !ui_box_is_nil(child_child); child_child = child_child->next)
 					{
 						if (child_child->layout_style.size[axis].kind == UI_SizeKind_Pct)
 						{
@@ -1346,9 +1326,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		}
 	}
 
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
+	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		ui_solve_size_violations(child, axis);
 	}
@@ -1406,7 +1384,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
-		ui_animations_enabled())
+			ui_animations_enabled())
 	{
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size_animated.v[axis];
 	}
@@ -1420,7 +1398,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 
 	F32 child_offset = root->fixed_rect.min.v[axis];
 	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
-		ui_animations_enabled())
+			ui_animations_enabled())
 	{
 		child_offset -= root->scroll_animated.v[axis];
 	}
@@ -1430,9 +1408,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 
 	F32 next_rel_child_pos = 0.0f;
-	for (UI_Box *child = root->first;
-		 child != 0;
-		 child = child->next)
+	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 		{
@@ -1563,8 +1539,8 @@ ui_draw(UI_Box *root)
 			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
 			// TODO(hampus): Make softness em dependent
 			Render_RectInstance *instance = render_rect(ui_ctx->renderer, min, max,
-														.softness = 15,
-														.color = v4f32(0, 0, 0, 1));
+																									.softness = 15,
+																									.color = v4f32(0, 0, 0, 1));
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
 
@@ -1588,9 +1564,9 @@ ui_draw(UI_Box *root)
 			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
 			instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-									 .softness = rect_style->softness,
-									 .slice = rect_style->slice,
-									 .use_nearest = rect_style->texture_filter);
+														 .softness = rect_style->softness,
+														 .slice = rect_style->slice,
+														 .use_nearest = rect_style->texture_filter);
 			memory_copy_array(instance->colors, rect_style->color);
 			memory_copy_array(instance->radies, rect_style->radies.v);
 		}
@@ -1636,9 +1612,7 @@ ui_draw(UI_Box *root)
 			render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 		}
 
-		for (UI_Box *child = root->last;
-			 child != 0;
-			 child = child->prev)
+		for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
 		{
 			ui_draw(child);
 		}
@@ -1676,7 +1650,7 @@ ui_font_key_from_text_style(UI_TextStyle *text_style)
 internal UI_Box *
 ui_top_parent(Void)
 {
-	UI_Box *result = 0;
+	UI_Box *result = &g_nil_box;
 	if (ui_ctx->parent_stack)
 	{
 		result = ui_ctx->parent_stack->box;
