@@ -91,7 +91,7 @@ struct ProfilerUI_DragData
 {
 	ProfilerUI_Tab    *tab;
 	ProfilerUI_Panel  *hovered_panel;
-	Vec2F32   drag_origin;
+	Vec2F32  drag_origin;
 };
 
 typedef struct ProfilerUI_Tab ProfilerUI_Tab;
@@ -102,11 +102,11 @@ struct ProfilerUI_Tab
 
 	ProfilerUI_Panel *panel;
 
-	Str8 string;
-	B32 pinned;
-
 	UI_Box *tab_container;
 	UI_Box *tab_box;
+
+	Str8 string;
+	B32 pinned;
 
 	ProfilerUI_TabViewInfo view_info;
 
@@ -132,9 +132,9 @@ struct ProfilerUI_Panel
 
 	ProfilerUI_TabGroup tab_group;
 
-	ProfilerUI_Window *window;
-
 	UI_Box *box;
+
+	ProfilerUI_Window *window;
 
 	Axis2 split_axis;
 	F32 pct_of_parent;

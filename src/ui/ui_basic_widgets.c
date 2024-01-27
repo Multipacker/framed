@@ -546,7 +546,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 	}
 
 	for (UI_Box *child = root->last;
-		 child != 0;
+		 !ui_box_is_nil(child);
 		 child = child->prev)
 	{
 		ui_draw(child);

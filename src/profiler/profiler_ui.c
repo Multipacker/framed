@@ -37,6 +37,7 @@ read_only ProfilerUI_Panel g_nil_panel =
 	&g_nil_panel,
 	&g_nil_panel,
 	{ &g_nil_tab, &g_nil_tab, &g_nil_tab },
+	&g_nil_box,
 };
 
 read_only ProfilerUI_Tab g_nil_tab =
@@ -44,6 +45,8 @@ read_only ProfilerUI_Tab g_nil_tab =
 	&g_nil_tab,
 	&g_nil_tab,
 	&g_nil_panel,
+	&g_nil_box,
+	&g_nil_box,
 };
 
 ////////////////////////////////
@@ -428,10 +431,7 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 			UI_Comm title_comm = ui_comm_from_box(title_container);
 			if (title_comm.pressed)
 			{
-				if (!tab->pinned)
-				{
-					profiler_ui_drag_begin_reordering(tab, title_comm.rel_mouse);
-				}
+				profiler_ui_drag_begin_reordering(tab, title_comm.rel_mouse);
 
 				profiler_ui_set_tab_to_active(tab);
 			}
@@ -858,8 +858,8 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 		F32 tab_spacing_em = 0.2f;
 		F32 tab_button_height_em = title_bar_height_em - 0.2f;;
 
-		UI_Box *title_bar = 0;
-		UI_Box *tabs_container = 0;
+		UI_Box *title_bar = &g_nil_box;
+		UI_Box *tabs_container = &g_nil_box;
 		ui_next_width(ui_fill());
 		ui_row()
 		{
@@ -963,10 +963,8 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 							UI_Box *first_tab_box = root->tab_group.first->tab_container;
 							UI_Box *active_tab_box = root->tab_group.active_tab->tab_container;
 
-							UI_Box *last_tab_box = 0;
-							for (ProfilerUI_Tab *tab = root->tab_group.last;
-									 last_tab_box == 0;
-									 tab = tab->prev)
+							UI_Box *last_tab_box = &g_nil_box;
+							for (ProfilerUI_Tab *tab = root->tab_group.last; ui_box_is_nil(last_tab_box); tab = tab->prev)
 							{
 								if (!tab)
 								{
