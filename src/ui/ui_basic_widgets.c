@@ -650,8 +650,8 @@ ui_line_edit(UI_TextEditState *edit_state, CStr buffer, U64 buffer_size, Str8 st
 			edit_state->mark = op.new_mark;
 			arena_scratch(0, 0)
 			{
-				U64 min_range = op.range.x - 1;
-				U64 max_range = op.range.y - 1;
+				U64 min_range = (U64) (op.range.x - 1);
+				U64 max_range = (U64) (op.range.y - 1);
 				min_range = u64_min(min_range, edit_str.size);
 				max_range = u64_min(max_range, edit_str.size);
 				U64 replace_range_length = max_range - min_range;
@@ -659,8 +659,8 @@ ui_line_edit(UI_TextEditState *edit_state, CStr buffer, U64 buffer_size, Str8 st
 				U64 new_buffer_size = edit_str.size - (replace_range_length) + op.replace_string.size;
 				new_buffer.data = push_array(scratch, U8, new_buffer_size);
 				new_buffer.size = new_buffer_size;
-				Str8 before_range = str8_prefix(edit_str, op.range.x);
-				Str8 after_range = str8_skip(edit_str, op.range.y);
+				Str8 before_range = str8_prefix(edit_str, (U64) op.range.x);
+				Str8 after_range  = str8_skip(edit_str,   (U64) op.range.y);
 				if(before_range.size != 0)
 				{
 					memory_copy(new_buffer.data, before_range.data, before_range.size);
