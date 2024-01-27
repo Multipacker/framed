@@ -103,14 +103,14 @@ struct UI_RectStyle
 {
 	UI_RectStyle *stack_next;
 
-	Vec4F32 color[4];
-	Vec4F32 border_color;
-	F32 border_thickness;
-	Vec4F32 radies;
-	F32 softness;
-	Render_TextureSlice slice;
-	Render_TextureFilter texture_filter;
+	Vec4F32    color[4];
+	Vec4F32    border_color;
+	F32        border_thickness;
+	Vec4F32    radies;
+	F32        softness;
 	Gfx_Cursor hover_cursor;
+	Render_TextureSlice  slice;
+	Render_TextureFilter texture_filter;
 };
 
 typedef struct UI_TextStyle UI_TextStyle;
@@ -118,12 +118,12 @@ struct UI_TextStyle
 {
 	UI_TextStyle *stack_next;
 
-	Vec4F32 color;
+	Vec4F32      color;
 	UI_TextAlign align;
-	Vec2F32 padding;
-	U32 icon;
-	U32 font_size;
-	Str8 font;
+	Vec2F32      padding;
+	U32          icon;
+	U32          font_size;
+	Str8         font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
@@ -386,28 +386,28 @@ struct UI_Context
 ////////////////////////////////
 //~ hampus: Accessor functions
 
-internal F64 ui_dt(Void);
+internal F64             ui_dt(Void);
 internal Render_Context *ui_renderer(Void);
-internal Gfx_EventList *ui_events(Void);
-internal UI_Stats *ui_get_current_stats(Void);
-internal UI_Stats *ui_get_prev_stats(Void);
-internal Vec2F32 ui_prev_mouse_pos(Void);
-internal Vec2F32 ui_mouse_pos(Void);
-internal Arena *ui_permanent_arena(Void);
-internal Arena *ui_frame_arena(Void);
-internal B32 ui_animations_enabled(Void);
-internal F32 ui_animation_speed(Void);
+internal Gfx_EventList  *ui_events(Void);
+internal UI_Stats       *ui_get_current_stats(Void);
+internal UI_Stats       *ui_get_prev_stats(Void);
+internal Vec2F32         ui_prev_mouse_pos(Void);
+internal Vec2F32         ui_mouse_pos(Void);
+internal Arena          *ui_permanent_arena(Void);
+internal Arena          *ui_frame_arena(Void);
+internal B32             ui_animations_enabled(Void);
+internal F32             ui_animation_speed(Void);
 
 ////////////////////////////////
 //~ hampus: Keying
 
 internal UI_Key ui_key_null(Void);
-internal B32 ui_key_is_null(UI_Key key);
-internal B32 ui_key_match(UI_Key a, UI_Key b);
+internal B32    ui_key_is_null(UI_Key key);
+internal B32    ui_key_match(UI_Key a, UI_Key b);
 internal UI_Key ui_key_from_string(UI_Key seed, Str8 string);
 internal UI_Key ui_key_from_string_f(UI_Key seed, CStr fmt, ...);
-internal Str8 ui_get_hash_part_from_string(Str8 string);
-internal Str8 ui_get_display_part_from_string(Str8 string);
+internal Str8   ui_get_hash_part_from_string(Str8 string);
+internal Str8   ui_get_display_part_from_string(Str8 string);
 
 ////////////////////////////////
 //~ hampus: Sizing
@@ -428,29 +428,29 @@ internal UI_TextAction ui_text_action_from_event(Gfx_Event *event);
 //~ hampus: Box
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
-internal B32 ui_box_is_active(UI_Box *box);
-internal B32 ui_box_is_hot(UI_Box *box);
-internal B32 ui_box_is_focused(UI_Box *box);
+internal B32     ui_box_is_active(UI_Box *box);
+internal B32     ui_box_is_hot(UI_Box *box);
+internal B32     ui_box_is_focused(UI_Box *box);
 internal UI_Box *ui_box_alloc(Void);
-internal Void ui_box_free(UI_Box *box);
-internal B32 ui_box_has_flag(UI_Box *box, UI_BoxFlags flag);
+internal Void    ui_box_free(UI_Box *box);
+internal B32     ui_box_has_flag(UI_Box *box, UI_BoxFlags flag);
 internal UI_Box *ui_box_from_key(UI_Key key);
 internal UI_Box *ui_box_make(UI_BoxFlags flags, Str8 string);
 internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
-internal Void ui_box_equip_display_string(UI_Box *box, Str8 string);
-internal Void ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc);
+internal Void    ui_box_equip_display_string(UI_Box *box, Str8 string);
+internal Void    ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc);
 internal RectF32 ui_box_get_fixed_rect(UI_Box *box);
-internal B32 ui_box_was_created_this_frame(UI_Box *box);
-internal B32 ui_mouse_is_inside_box(UI_Box *box);
+internal B32     ui_box_was_created_this_frame(UI_Box *box);
+internal B32     ui_mouse_is_inside_box(UI_Box *box);
 
 ////////////////////////////////
 //~ hampus: Ctx menu
 
-internal B32 ui_ctx_menu_begin(UI_Key key);
-internal Void ui_ctx_menu_end(Void);
-internal Void ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu);
-internal Void ui_ctx_menu_close(Void);
-internal B32 ui_ctx_menu_is_open(Void);
+internal B32    ui_ctx_menu_begin(UI_Key key);
+internal Void   ui_ctx_menu_end(Void);
+internal Void   ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu);
+internal Void   ui_ctx_menu_close(Void);
+internal B32    ui_ctx_menu_is_open(Void);
 internal UI_Key ui_ctx_menu_key(Void);
 
 ////////////////////////////////
@@ -463,8 +463,8 @@ internal Void ui_tooltip_end(Void);
 //~ hampus: Init, begin end
 
 internal UI_Context *ui_init(Void);
-internal Void ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
-internal Void ui_end(Void);
+internal Void        ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
+internal Void        ui_end(Void);
 
 ////////////////////////////////
 //~ hampus: Layout pass
@@ -481,38 +481,38 @@ internal Void ui_solve_size_violations(UI_Box *root, Axis2 axis);
 
 internal Vec2F32 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding);
 internal Vec2F32 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align);
-internal Void ui_draw(UI_Box *root);
+internal Void    ui_draw(UI_Box *root);
 
 ////////////////////////////////
 //~ hampus: Stack helpers
 
-internal F32 ui_top_font_line_height(Void);
+internal F32            ui_top_font_line_height(Void);
 internal Render_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
 
 ////////////////////////////////
 //~ hampus: Stack managing
 
-internal UI_Box *ui_top_parent(Void);
-internal UI_Box *ui_push_parent(UI_Box *box);
-internal UI_Box *ui_pop_parent(Void);
-internal UI_Key ui_top_seed(Void);
-internal UI_Key ui_push_seed(UI_Key key);
-internal UI_Key ui_pop_seed(Void);
-internal Void ui_push_string(Str8 string);
-internal Void ui_pop_string(Void);
-internal Void ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent);
-internal Void ui_pop_clip_rect(Void);
-internal UI_RectStyle *ui_top_rect_style(Void);
-internal UI_RectStyle *ui_push_rect_style(Void);
-internal void ui_pop_rect_style(Void);
-internal UI_RectStyle *ui_get_auto_pop_rect_style(Void);
-internal UI_TextStyle *ui_top_text_style(Void);
-internal UI_TextStyle *ui_push_text_style(Void);
-internal UI_TextStyle *ui_pop_text_style(Void);
-internal UI_TextStyle *ui_get_auto_pop_text_style(Void);
+internal UI_Box         *ui_top_parent(Void);
+internal UI_Box         *ui_push_parent(UI_Box *box);
+internal UI_Box         *ui_pop_parent(Void);
+internal UI_Key          ui_top_seed(Void);
+internal UI_Key          ui_push_seed(UI_Key key);
+internal UI_Key          ui_pop_seed(Void);
+internal Void            ui_push_string(Str8 string);
+internal Void            ui_pop_string(Void);
+internal Void            ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent);
+internal Void            ui_pop_clip_rect(Void);
+internal UI_RectStyle   *ui_top_rect_style(Void);
+internal UI_RectStyle   *ui_push_rect_style(Void);
+internal Void            ui_pop_rect_style(Void);
+internal UI_RectStyle   *ui_get_auto_pop_rect_style(Void);
+internal UI_TextStyle   *ui_top_text_style(Void);
+internal UI_TextStyle   *ui_push_text_style(Void);
+internal UI_TextStyle   *ui_pop_text_style(Void);
+internal UI_TextStyle   *ui_get_auto_pop_text_style(Void);
 internal UI_LayoutStyle *ui_top_layout_style(Void);
 internal UI_LayoutStyle *ui_push_layout_style(Void);
-internal void ui_pop_layout_style(Void);
+internal Void            ui_pop_layout_style(Void);
 internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 
 ////////////////////////////////
@@ -530,7 +530,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 
 #define ui_push_colors(c0, c1, c2, c3) memory_copy_array(ui_push_rect_style()->color, ((Vec4F32[4]){c0, c1, c2, c3}))
 
-#define ui_pop_colors() ui_pop_rect_style()
+#define ui_pop_colors()           ui_pop_rect_style()
 #define ui_colors(c0, c1, c2, c3) defer_loop(ui_push_colors(c0, c1, c2, c3), ui_pop_colors())
 
 #define ui_next_color(c) ui_next_colors(c, c, c, c)
@@ -540,7 +540,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 
 #define ui_next_vert_gradient(top, bottom) ui_next_colors(top, top, bottom, bottom)
 #define ui_push_vert_gradient(top, bottom) ui_push_colors(top, top, bottom, bottom)
-#define ui_pop_vert_gradient()  ui_pop_colors()
+#define ui_pop_vert_gradient()             ui_pop_colors()
 #define ui_vert_gradient(top, bottom)      defer_loop(ui_push_vert_gradient(top, bottom), ui_pop_vert_gradient())
 
 #define ui_next_hori_gradient(left, right) ui_next_colors(left, right, left, right)
@@ -560,8 +560,8 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 
 #define ui_next_corner_radies(r0, r1, r2, r3) memory_copy_array(ui_get_auto_pop_rect_style()->radies.v, ((F32[4]){r0, r1, r2, r3}))
 #define ui_push_corner_radies(r0, r1, r2, r3) memory_copy_array(ui_push_rect_style()->radies.v, ((F32[4]){r0, r1, r2, r3}))
-#define ui_pop_corner_radies() ui_pop_rect_style()
-#define ui_corner_radies(r0, r1, r2, r3) defer_loop(ui_push_corner_radies(r0, r1, r2, r3), ui_pop_corner_radies())
+#define ui_pop_corner_radies()                ui_pop_rect_style()
+#define ui_corner_radies(r0, r1, r2, r3)      defer_loop(ui_push_corner_radies(r0, r1, r2, r3), ui_pop_corner_radies())
 
 #define ui_next_corner_radius(c) ui_next_corner_radies(c, c, c, c)
 #define ui_push_corner_radius(c) ui_push_corner_radies(c, c, c, c)
@@ -578,58 +578,58 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_pop_hori_corner_radius(left, right)  ui_pop_corner_radies()
 #define ui_hori_corner_radius(left, right)      defer_loop(ui_push_hori_corner_radius(left, right), ui_pop_hori_corner_radius());
 
-#define ui_next_softness(s)  ui_get_auto_pop_rect_style()->softness = s
-#define ui_push_softness(s)  ui_push_rect_style()->softness = s
-#define ui_pop_softness()    ui_pop_rect_style()
-#define ui_softness(s)       defer_loop(ui_push_softness(s), ui_pop_softness())
+#define ui_next_softness(s) ui_get_auto_pop_rect_style()->softness = s
+#define ui_push_softness(s) ui_push_rect_style()->softness = s
+#define ui_pop_softness()   ui_pop_rect_style()
+#define ui_softness(s)      defer_loop(ui_push_softness(s), ui_pop_softness())
 
-#define ui_next_slice(x)  ui_get_auto_pop_rect_style()->slice = x
-#define ui_push_slice(x)  ui_push_rect_style()->slice = x
-#define ui_pop_slice()    ui_pop_rect_style()
-#define ui_slice(x)       defer_loop(ui_push_slice(x), ui_pop_slice())
+#define ui_next_slice(x) ui_get_auto_pop_rect_style()->slice = x
+#define ui_push_slice(x) ui_push_rect_style()->slice = x
+#define ui_pop_slice()   ui_pop_rect_style()
+#define ui_slice(x)      defer_loop(ui_push_slice(x), ui_pop_slice())
 
-#define ui_next_texture_filter(x)  ui_get_auto_pop_rect_style()->texture_filter = x
-#define ui_push_texture_filter(x)  ui_push_rect_style()->texture_filter = x
-#define ui_pop_texture_filter()    ui_pop_rect_style()
-#define ui_texture_filter(x)       defer_loop(ui_push_texture_filter(x), ui_pop_texture_filter())
+#define ui_next_texture_filter(x) ui_get_auto_pop_rect_style()->texture_filter = x
+#define ui_push_texture_filter(x) ui_push_rect_style()->texture_filter = x
+#define ui_pop_texture_filter()   ui_pop_rect_style()
+#define ui_texture_filter(x)      defer_loop(ui_push_texture_filter(x), ui_pop_texture_filter())
 
-#define ui_next_hover_cursor(x)  ui_get_auto_pop_rect_style()->hover_cursor = x
-#define ui_push_hover_cursor(x)  ui_push_rect_style()->hover_cursor = x
-#define ui_pop_hover_cursor()    ui_pop_rect_style()
-#define ui_hover_cursor(x)       defer_loop(ui_push_hover_cursor(x), ui_pop_hover_cursor())
+#define ui_next_hover_cursor(x) ui_get_auto_pop_rect_style()->hover_cursor = x
+#define ui_push_hover_cursor(x) ui_push_rect_style()->hover_cursor = x
+#define ui_pop_hover_cursor()   ui_pop_rect_style()
+#define ui_hover_cursor(x)      defer_loop(ui_push_hover_cursor(x), ui_pop_hover_cursor())
 
 ////////////////////////////////
 //~ hampus: Text styling
 
-#define ui_next_text_color(c)  ui_get_auto_pop_text_style()->color = c
-#define ui_push_text_color(c)  ui_push_text_style()->color = c
-#define ui_pop_text_color()    ui_pop_text_style()
-#define ui_text_color(c)       defer_loop(ui_push_text_color(c), ui_pop_text_color())
+#define ui_next_text_color(c) ui_get_auto_pop_text_style()->color = c
+#define ui_push_text_color(c) ui_push_text_style()->color = c
+#define ui_pop_text_color()   ui_pop_text_style()
+#define ui_text_color(c)      defer_loop(ui_push_text_color(c), ui_pop_text_color())
 
-#define ui_next_text_align(x)  ui_get_auto_pop_text_style()->align = x
-#define ui_push_text_align(x)  ui_push_text_style()->align = x
-#define ui_pop_text_align()    ui_pop_text_style()
-#define ui_text_align(x)       defer_loop(ui_push_text_align(x), ui_pop_text_align())
+#define ui_next_text_align(x) ui_get_auto_pop_text_style()->align = x
+#define ui_push_text_align(x) ui_push_text_style()->align = x
+#define ui_pop_text_align()   ui_pop_text_style()
+#define ui_text_align(x)      defer_loop(ui_push_text_align(x), ui_pop_text_align())
 
-#define ui_next_text_padding(axis, x)  ui_get_auto_pop_text_style()->padding.v[axis] = x
-#define ui_push_text_padding(axis, x)  ui_push_text_style()->padding.v[axis] = x
-#define ui_pop_text_padding()          ui_pop_text_style()
-#define ui_text_padding(axis, x)       defer_loop(ui_push_text_padding(axis, x), ui_pop_text_padding())
+#define ui_next_text_padding(axis, x) ui_get_auto_pop_text_style()->padding.v[axis] = x
+#define ui_push_text_padding(axis, x) ui_push_text_style()->padding.v[axis] = x
+#define ui_pop_text_padding()         ui_pop_text_style()
+#define ui_text_padding(axis, x)      defer_loop(ui_push_text_padding(axis, x), ui_pop_text_padding())
 
-#define ui_next_font_size(x)  ui_get_auto_pop_text_style()->font_size = x
-#define ui_push_font_size(x)  ui_push_text_style()->font_size = x
-#define ui_pop_font_size()          ui_pop_text_style()
-#define ui_font_size(x)       defer_loop(ui_push_font_size(x), ui_pop_font_size())
+#define ui_next_font_size(x) ui_get_auto_pop_text_style()->font_size = x
+#define ui_push_font_size(x) ui_push_text_style()->font_size = x
+#define ui_pop_font_size()   ui_pop_text_style()
+#define ui_font_size(x)      defer_loop(ui_push_font_size(x), ui_pop_font_size())
 
-#define ui_next_icon(x)  ui_get_auto_pop_text_style()->icon = x; ui_next_font(str8_lit(UI_ICON_FONT_PATH))
-#define ui_push_icon(x)  ui_push_text_style()->icon = x; ui_push_font(str8_lit(UI_ICON_FONT_PATH))
-#define ui_pop_icon()    ui_pop_text_style(); ui_pop_font()
-#define ui_icon(x)       defer_loop(ui_push_icon(x), ui_pop_icon())
+#define ui_next_icon(x) ui_get_auto_pop_text_style()->icon = x; ui_next_font(str8_lit(UI_ICON_FONT_PATH))
+#define ui_push_icon(x) ui_push_text_style()->icon = x; ui_push_font(str8_lit(UI_ICON_FONT_PATH))
+#define ui_pop_icon()   ui_pop_text_style(); ui_pop_font()
+#define ui_icon(x)      defer_loop(ui_push_icon(x), ui_pop_icon())
 
-#define ui_next_font(x)  ui_get_auto_pop_text_style()->font = x
-#define ui_push_font(x)  ui_push_text_style()->font = x
-#define ui_pop_font()    ui_pop_text_style()
-#define ui_font(x)       defer_loop(ui_push_font(x), ui_pop_font())
+#define ui_next_font(x) ui_get_auto_pop_text_style()->font = x
+#define ui_push_font(x) ui_push_text_style()->font = x
+#define ui_pop_font()   ui_pop_text_style()
+#define ui_font(x)      defer_loop(ui_push_font(x), ui_pop_font())
 
 ////////////////////////////////
 //~ hampus: Layout styling

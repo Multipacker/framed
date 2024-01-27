@@ -655,9 +655,9 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	}
 
 	result->first = 0;
-	result->last = 0;
-	result->next = 0;
-	result->prev = 0;
+	result->last  = 0;
+	result->next  = 0;
+	result->prev  = 0;
 	UI_Box *parent = ui_top_parent();
 
 	result->string = string;
@@ -914,8 +914,8 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_ctx->anchor_offset       = ui_ctx->next_anchor_offset;
 
 	B32 left_mouse_released = false;
-	B32 left_mouse_pressed = false;
-	B32 escape_key_pressed = false;
+	B32 left_mouse_pressed  = false;
+	B32 escape_key_pressed  = false;
 	for (Gfx_Event *node = event_list->first;
 		 node != 0;
 		 node = node->next)
@@ -1000,7 +1000,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	}
 
 	// NOTE(hampus): Setup default config
-	ui_ctx->config.animations = true;
+	ui_ctx->config.animations      = true;
 	ui_ctx->config.animation_speed = 20;
 
 	ui_ctx->hot_key = ui_key_null();
@@ -1144,12 +1144,12 @@ ui_end(Void)
 
 	ui_ctx->prev_mouse_pos = ui_ctx->mouse_pos;
 	ui_ctx->parent_stack = 0;
-	ui_ctx->seed_stack = 0;
+	ui_ctx->seed_stack   = 0;
 	arena_pop_to(ui_frame_arena(), 0);
-	ui_ctx->rect_style_stack.first = 0;
-	ui_ctx->text_style_stack.first = 0;
+	ui_ctx->rect_style_stack.first   = 0;
+	ui_ctx->text_style_stack.first   = 0;
 	ui_ctx->layout_style_stack.first = 0;
-	ui_ctx->clip_rect_stack.first = 0;
+	ui_ctx->clip_rect_stack.first    = 0;
 	ui_ctx->frame_index++;
 	memory_zero_struct(ui_get_current_stats());
 	ui_ctx = 0;
@@ -1365,7 +1365,6 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 internal Void
 ui_calculate_final_rect(UI_Box *root, Axis2 axis)
 {
-
 	F32 offset = 0;
 
 	// TODO(hampus): Remove this if. It runs for every box *except* the root box.
@@ -1505,7 +1504,6 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 	Vec2F32 result = {0};
 
 	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-
 	Vec2F32 text_dim = render_measure_text(font, string);
 
 	switch (align)
@@ -1541,7 +1539,6 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 	Vec2F32 result = {0};
 
 	Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-
 	Vec2F32 text_dim = render_measure_character(font, codepoint);
 
 	switch (align)
@@ -1604,7 +1601,7 @@ ui_draw(UI_Box *root)
 		}
 
 		root->active_t = f32_clamp(0, root->active_t, 1.0f);
-		root->hot_t = f32_clamp(0, root->hot_t, 1.0f);
+		root->hot_t    = f32_clamp(0, root->hot_t,    1.0f);
 
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
@@ -1638,10 +1635,8 @@ ui_draw(UI_Box *root)
 				d += 0.2f * root->hot_t;
 			}
 
-			rect_style->color[Corner_TopLeft] = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],
-																v4f32(d, d, d, 0));
-			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight],
-																 v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft],  v4f32(d, d, d, 0));
+			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
 			instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
 								   .softness = rect_style->softness,
@@ -1844,7 +1839,7 @@ ui_push_rect_style(Void)
 	return(rect_style);
 }
 
-internal void
+internal Void
 ui_pop_rect_style(Void)
 {
 	ui_ctx->rect_style_stack.first = ui_ctx->rect_style_stack.first->stack_next;
@@ -1926,7 +1921,7 @@ ui_push_layout_style(Void)
 	return(layout);
 }
 
-internal void
+internal Void
 ui_pop_layout_style(Void)
 {
 	ui_ctx->layout_style_stack.first = ui_ctx->layout_style_stack.first->stack_next;
