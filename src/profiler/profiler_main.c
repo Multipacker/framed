@@ -113,6 +113,10 @@ ui_debug_keep_alive(Void)
 		}
 	}
 
+	for (U32 i = 0; i < debug_arena_count; ++i)
+	{
+		debug_arenas[i].change_count = 0;
+	}
 	for (U32 i = 0; ui_debug_memory && i < ui_debug_memory->count; ++i)
 	{
 		Debug_MemoryEntry *entry = &ui_debug_memory->buffer[i];
