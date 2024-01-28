@@ -51,14 +51,28 @@ struct Debug_Statistics
 	U32  hit_count;
 };
 
+typedef struct DebugMemoryStatistics DebugMemoryStatistics;
+struct DebugMemoryStatistics {
+	Arena *arena;
+	U64    max;
+	U64    current;
+	U64    change_count;
+};
+
+global DebugMemoryStatistics debug_arenas[100];
+global U32                   debug_arena_count;
+
 global Debug_Statistics ui_debug_stats[100];
 global U32               ui_debug_stat_count;
 global B32               ui_debug_freeze;
+
+global Debug_MemoryBuffer *ui_debug_memory;
 
 internal Void
 ui_debug_keep_alive(Void)
 {
 	Debug_TimeBuffer *buffer = debug_get_times();
+	ui_debug_memory = debug_get_memory();
 
 	if (ui_debug_freeze)
 	{
@@ -96,6 +110,41 @@ ui_debug_keep_alive(Void)
 		{
 			ui_debug_stats[stat_index].total_time_ns += (U32) (entry->end_ns - entry->start_ns);
 			++ui_debug_stats[stat_index].hit_count;
+		}
+	}
+
+	for (U32 i = 0; ui_debug_memory && i < ui_debug_memory->count; ++i)
+	{
+		Debug_MemoryEntry *entry = &ui_debug_memory->buffer[i];
+		U32 stat_index = 0;
+		for (; stat_index < debug_arena_count; ++stat_index)
+		{
+			if (debug_arenas[stat_index].arena == entry->arena)
+			{
+				break;
+			}
+		}
+
+		if (stat_index == debug_arena_count)
+		{
+			if (stat_index < array_count(debug_arenas) && entry->position != DEBUG_MEMORY_DELETED)
+			{
+				debug_arenas[stat_index].arena        = entry->arena;
+				debug_arenas[stat_index].current      = entry->position;
+				debug_arenas[stat_index].max          = entry->position;
+				debug_arenas[stat_index].change_count = 1;
+				++debug_arena_count;
+			}
+		}
+		else if (entry->position == DEBUG_MEMORY_DELETED)
+		{
+			debug_arenas[stat_index] = debug_arenas[--debug_arena_count];
+		}
+		else
+		{
+			debug_arenas[stat_index].current = entry->position;
+			debug_arenas[stat_index].max     = u64_max(debug_arenas[stat_index].max, entry->position);
+			++debug_arenas[stat_index].change_count;
 		}
 	}
 }
