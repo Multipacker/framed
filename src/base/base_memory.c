@@ -41,13 +41,14 @@ arena_create(Void)
 }
 
 internal Void
-arena_destroy(Arena *arena)
+arena_destroy_internal(Arena *arena, CStr file, U32 line)
 {
+	debug_arena_deleted_internal(file, line, arena);
 	os_memory_release(arena->memory, arena->cap);
 }
 
 internal Void *
-arena_push(Arena *arena, U64 size)
+arena_push_internal(Arena *arena, U64 size, CStr file, U32 line)
 {
 	Void *result = 0;
 
@@ -69,11 +70,13 @@ arena_push(Arena *arena, U64 size)
 		ASAN_UNPOISON_MEMORY_REGION(result, size);
 	}
 
+	debug_arena_changed_internal(file, line, arena);
+
 	return result;
 }
 
 internal Void
-arena_pop_to(Arena *arena, U64 pos)
+arena_pop_to_internal(Arena *arena, U64 pos, CStr file, U32 line)
 {
 	// NOTE(simon): Don't pop the arena state from the arena.
 	pos = u64_max(pos, sizeof(Arena));
@@ -94,41 +97,43 @@ arena_pop_to(Arena *arena, U64 pos)
 			arena->commit_pos = next_commit_pos;
 		}
 	}
+
+	debug_arena_changed_internal(file, line, arena);
 }
 
 internal Void
-arena_pop_amount(Arena *arena, U64 amount)
+arena_pop_amount_internal(Arena *arena, U64 amount, CStr file, U32 line)
 {
 	arena_pop_to(arena, arena->pos - amount);
 }
 
 internal Void *
-arena_push_zero(Arena *arena, U64 size)
+arena_push_zero_internal(Arena *arena, U64 size, CStr file, U32 line)
 {
-	Void *result = arena_push(arena, size);
+	Void *result = arena_push_internal(arena, size, file, line);
 	memory_zero(result, size);
 	return result;
 }
 
 internal Void
-arena_align(Arena *arena, U64 power)
+arena_align_internal(Arena *arena, U64 power, CStr file, U32 line)
 {
 	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
 	U64 align = pos_aligned - arena->pos;
 	if (align)
 	{
-		arena_push(arena, align);
+		arena_push_internal(arena, align, file, line);
 	}
 }
 
 internal Void
-arena_align_zero(Arena *arena, U64 power)
+arena_align_zero_internal(Arena *arena, U64 power, CStr file, U32 line)
 {
 	U64 pos_aligned = u64_round_up_to_power_of_2(arena->pos, power);
 	U64 align = pos_aligned - arena->pos;
 	if (align)
 	{
-		arena_push_zero(arena, align);
+		arena_push_zero_internal(arena, align, file, line);
 	}
 }
 
@@ -143,7 +148,7 @@ arena_begin_temporary(Arena *arena)
 }
 
 internal Void
-arena_end_temporary(Arena_Temporary temporary)
+arena_end_temporary_internal(Arena_Temporary temporary, CStr file, U32 line)
 {
-	arena_pop_to(temporary.arena, temporary.pos);
+	arena_pop_to_internal(temporary.arena, temporary.pos, file, line);
 }

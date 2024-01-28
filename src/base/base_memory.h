@@ -1,6 +1,8 @@
 #ifndef BASE_MEMORY_H
 #define BASE_MEMORY_H
 
+typedef char *CStr;
+
 typedef struct Arena Arena;
 struct Arena
 {
@@ -24,19 +26,31 @@ struct Arena_Temporary
 internal Arena *arena_create_reserve(U64 reserve_size);
 internal Arena *arena_create(Void);
 
-internal Void arena_destroy(Arena *arena);
+internal Void arena_destroy_internal(Arena *arena, CStr file, U32 line);
 
-internal Void *arena_push(Arena *arena, U64 size);
-internal Void  arena_pop_to(Arena *arena, U64 pos);
-internal Void  arena_pop_amount(Arena *arena, U64 amount);
+internal Void *arena_push_internal(Arena *arena, U64 size, CStr file, U32 line);
+internal Void  arena_pop_to_internal(Arena *arena, U64 pos, CStr file, U32 line);
+internal Void  arena_pop_amount_internal(Arena *arena, U64 amount, CStr file, U32 line);
 
-internal Void *arena_push_zero(Arena *arena, U64 size);
+internal Void *arena_push_zero_internal(Arena *arena, U64 size, CStr file, U32 line);
 
-internal Void arena_align(Arena *arena, U64 power);
-internal Void arena_align_zero(Arena *arena, U64 power);
+internal Void arena_align_internal(Arena *arena, U64 power, CStr file, U32 line);
+internal Void arena_align_zero_internal(Arena *arena, U64 power, CStr file, U32 line);
 
 internal Arena_Temporary arena_begin_temporary(Arena *arena);
-internal Void            arena_end_temporary(Arena_Temporary temporary);
+internal Void            arena_end_temporary_internal(Arena_Temporary temporary, CStr file, U32 line);
+
+#define arena_destroy(arena) arena_destroy_internal(arena, __FILE__, __LINE__)
+
+#define arena_push(arena, size)         arena_push_internal(arena, size, __FILE__, __LINE__)
+#define arena_pop_to(arena, pos)        arena_pop_to_internal(arena, pos, __FILE__, __LINE__)
+#define arena_pop_amount(arena, amount) arena_pop_amount_internal(arena, amount, __FILE__, __LINE__)
+
+#define arena_push_zero(arena, size) arena_push_zero_internal(arena, size, __FILE__, __LINE__)
+
+#define arena_align(arena, power)      arena_align_internal(arena, power, __FILE__, __LINE__)
+#define arena_align_zero(arena, power) arena_align_zero_internal(arena, power, __FILE__, __LINE__)
+#define arena_end_temporary(temporary) arena_end_temporary_internal(temporary, __FILE__, __LINE__)
 
 #define push_struct(arena, type)            ((type *) arena_push(arena, sizeof(type)))
 #define push_struct_zero(arena, type)       ((type *) arena_push_zero(arena, sizeof(type)))
