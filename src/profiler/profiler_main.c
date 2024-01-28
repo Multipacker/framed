@@ -537,7 +537,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				for (U32 i = 0; i < debug_arena_count; ++i)
 				{
 					DebugMemoryStatistics *entry = &debug_arenas[i];
-					ui_textf("%p", entry->arena);
+					ui_text(entry->arena->name);
 				}
 			}
 
@@ -785,7 +785,7 @@ os_main(Str8List arguments)
 	debug_init();
 	log_init(str8_lit("log.txt"));
 
-	Arena *perm_arena = arena_create();
+	Arena *perm_arena = arena_create("ProfilerPerm");
 
 	profiler_ui_state = push_struct(perm_arena, ProfilerUI_State);
 	profiler_ui_state->perm_arena = perm_arena;
@@ -794,8 +794,8 @@ os_main(Str8List arguments)
 
 	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
-	frame_arenas[0] = arena_create();
-	frame_arenas[1] = arena_create();
+	frame_arenas[0] = arena_create("ProfilerFrame0");
+	frame_arenas[1] = arena_create("ProfilerFrame1");
 
 	Render_TextureSlice image_texture = { 0 };
 	if (arguments.first->next)

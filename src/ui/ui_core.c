@@ -868,8 +868,8 @@ ui_init(Void)
 {
 	UI_Context *result = 0;
 
-	Arena *permanent_arena = arena_create();
-	Arena *frame_arena = arena_create();
+	Arena *permanent_arena = arena_create("UIPerm");
+	Arena *frame_arena = arena_create("UIFrame");
 
 	result = push_struct(permanent_arena, UI_Context);
 	ui_ctx = result;

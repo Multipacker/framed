@@ -10,12 +10,12 @@ thread_ctx_init(Str8 name)
 internal ThreadContext *
 thread_ctx_alloc(Void)
 {
-	Arena *arena = arena_create();
+	Arena *arena = arena_create("Thread");
 	ThreadContext *result = push_struct(arena, ThreadContext);
 	result->permanent_arena = arena;
 	for (U32 i = 0; i < array_count(result->scratch_arenas); ++i)
 	{
-		result->scratch_arenas[i] = arena_create();
+		result->scratch_arenas[i] = arena_create("Scratch%"PRIU32, i);
 	}
 	return(result);
 }

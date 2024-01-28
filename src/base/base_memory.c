@@ -14,7 +14,7 @@ internal Void  os_memory_decommit(Void *ptr, U64 size);
 internal Void  os_memory_release(Void *ptr, U64 size);
 
 internal Arena *
-arena_create_reserve(U64 reserve_size)
+arena_create_reserve_internal(U64 reserve_size, CStr format, va_list args)
 {
 	// We need to commit one block in order to have space for the arena itself.
 	U8 *memory = os_memory_reserve(reserve_size);
@@ -30,13 +30,31 @@ arena_create_reserve(U64 reserve_size)
 
 	ASAN_POISON_MEMORY_REGION(result->memory + result->pos, result->commit_pos - result->pos);
 
+	result->name = str8_pushfv(result, format, args);
+	// NOTE(simon): Align the arena so that thing allocations that need alignment will work.
+	arena_align(result, 16);
+	result->min_pos = result->pos;
+
 	return(result);
 }
 
 internal Arena *
-arena_create(Void)
+arena_create_reserve(U64 reserve_size, CStr format, ...)
 {
-	Arena *result = arena_create_reserve(ARENA_DEFAULT_RESERVE_SIZE);
+	va_list args;
+	va_start(args, format);
+	Arena *result = arena_create_reserve_internal(reserve_size, format, args);
+	va_end(args);
+	return(result);
+}
+
+internal Arena *
+arena_create(CStr format, ...)
+{
+	va_list args;
+	va_start(args, format);
+	Arena *result = arena_create_reserve_internal(ARENA_DEFAULT_RESERVE_SIZE, format, args);
+	va_end(args);
 	return(result);
 }
 
@@ -78,8 +96,9 @@ arena_push_internal(Arena *arena, U64 size, CStr file, U32 line)
 internal Void
 arena_pop_to_internal(Arena *arena, U64 pos, CStr file, U32 line)
 {
-	// NOTE(simon): Don't pop the arena state from the arena.
-	pos = u64_max(pos, sizeof(Arena));
+	// NOTE(simon): Don't pop the arena state from the arena. This includes the
+	// name.
+	pos = u64_max(pos, arena->min_pos);
 
 	if (pos < arena->pos)
 	{

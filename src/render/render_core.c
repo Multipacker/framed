@@ -98,18 +98,18 @@ struct Render_FontLoaderThreadData
 internal Render_Context *
 render_init(Gfx_Context *gfx)
 {
-	Arena *arena = arena_create();
+	Arena *arena = arena_create("RenderPerm");
 	Render_Context *renderer = push_struct(arena, Render_Context);
 	renderer->gfx             = gfx;
 	renderer->permanent_arena = arena;
-	renderer->frame_arena     = arena_create();
+	renderer->frame_arena     = arena_create("RenderFrame");
 	renderer->backend         = render_backend_init(renderer);
 
 	renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
 	renderer->font_cache = push_struct(arena, Render_FontCache);
 	for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
 	{
-		renderer->font_cache->entries[i].arena = arena_create();
+		renderer->font_cache->entries[i].arena = arena_create("FontCache%"PRIU64, i);
 	}
 
 	// NOTE(simon): This is needed for atomic reads.

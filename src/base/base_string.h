@@ -1,6 +1,8 @@
 #ifndef BASE_STRING_H
 #define BASE_STRING_H
 
+typedef struct Arena Arena;
+
 // NOTE(simon): These types do not gurantee that the data is null terminated.
 
 typedef struct Str8 Str8;

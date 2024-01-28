@@ -974,7 +974,7 @@ os_run(Str8 program, Str8List arguments)
 int
 main(int argument_count, char *arguments[])
 {
-	linux_permanent_arena = arena_create();
+	linux_permanent_arena = arena_create("LinuxPerm");
 
 	// TODO(simon): Check the return value.
 	pthread_key_create(&linux_tls_key, 0);

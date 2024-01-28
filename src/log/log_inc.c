@@ -106,7 +106,7 @@ log_init(Str8 log_file)
 {
 	Logger *logger = &global_logger;
 
-	logger->arena = arena_create();
+	logger->arena = arena_create("LoggerPerm");
 	os_semaphore_create(&logger->semaphore, 0);
 	logger->buffers[0].buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);
 	logger->buffers[1].buffer = push_array_zero(logger->arena, Log_QueueEntry, LOG_BUFFER_SIZE);

@@ -10,6 +10,8 @@ struct Arena
 	U64 cap;
 	U64 pos;
 	U64 commit_pos;
+	Str8 name;
+	U64 min_pos;
 };
 
 typedef struct Arena_Temporary Arena_Temporary;
@@ -23,8 +25,8 @@ struct Arena_Temporary
 // TODO(hampus): Test performance with higher/lower commit block size
 #define ARENA_COMMIT_BLOCK_SIZE    megabytes(1)
 
-internal Arena *arena_create_reserve(U64 reserve_size);
-internal Arena *arena_create(Void);
+internal Arena *arena_create_reserve(U64 reserve_size, CStr format, ...);
+internal Arena *arena_create(CStr format, ...);
 
 internal Void arena_destroy_internal(Arena *arena, CStr file, U32 line);
 
