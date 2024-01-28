@@ -182,9 +182,7 @@ internal Void
 profiler_ui_attempt_to_close_panel(ProfilerUI_Panel *panel)
 {
 	B32 any_tab_pinned = false;
-	for (ProfilerUI_Tab *tab = panel->tab_group.first;
-			 !profiler_ui_tab_is_nil(tab);
-			 tab = tab->next)
+	for (ProfilerUI_Tab *tab = panel->tab_group.first; !profiler_ui_tab_is_nil(tab); tab = tab->next)
 	{
 		if (tab->pinned)
 		{
@@ -205,7 +203,6 @@ profiler_ui_attempt_to_close_panel(ProfilerUI_Panel *panel)
 internal Void
 profiler_ui_drag_begin_reordering(ProfilerUI_Tab *tab, Vec2F32 mouse_offset)
 {
-	// assert(profiler_ui_state->drag_status == ProfilerUI_DragStatus_Inactive);
 	if (!tab->pinned)
 	{
 		ProfilerUI_DragData *drag_data = &profiler_ui_state->drag_data;
@@ -289,6 +286,7 @@ profiler_ui_tab_make(Arena *arena, ProfilerUI_TabViewProc *function, Void *data,
 	ProfilerUI_Tab *result = profiler_ui_tab_alloc(arena);
 	result->next = result->prev = &g_nil_tab;
 	result->panel = &g_nil_panel;
+	result->tab_container = result->tab_box = &g_nil_box;
 	if (!name.size)
 	{
 		// NOTE(hampus): We probably won't do this in the future because
@@ -485,10 +483,9 @@ internal ProfilerUI_Panel *
 profiler_ui_panel_alloc(Arena *arena)
 {
 	ProfilerUI_Panel *result = push_struct(arena, ProfilerUI_Panel);
-	result->children[Side_Min] = &g_nil_panel;
-	result->children[Side_Max] = &g_nil_panel;
-	result->sibling = result->parent = &g_nil_panel;
+	result->children[Side_Min] = result->children[Side_Max] = result->sibling = result->parent = &g_nil_panel;
 	result->tab_group.first = result->tab_group.active_tab = result->tab_group.last = &g_nil_tab;
+	result->box = &g_nil_box;
 	result->string = str8_pushf(profiler_ui_state->perm_arena, "UI_Panel%"PRIS32, profiler_ui_state->num_panels);
 	profiler_ui_state->num_panels++;
 	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
@@ -602,7 +599,6 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 
 		B32 dragging = false;
 		F32 drag_delta = 0;
-
 		ui_seed(root->string)
 		{
 			ui_next_size(root->split_axis, ui_em(0.2f, 1));
@@ -615,7 +611,6 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				UI_BoxFlag_DrawBackground,
 				str8_lit("DraggableBox")
 			);
-			root->dragger = draggable_box;
 			UI_Comm comm = ui_comm_from_box(draggable_box);
 			if (comm.dragging)
 			{
@@ -642,16 +637,10 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 		box->layout_style.child_layout_axis = Axis2_Y;
 
 		{
-			ui_next_width(ui_pct(1, 1));
-			ui_next_height(ui_pct(1, 1));
-			UI_Box *input_detector = ui_box_make(UI_BoxFlag_FloatingPos, str8_lit("InputDetector"));
-			B32 make_window_topmost = false;
 			Gfx_EventList *event_list = ui_events();
-			if (ui_mouse_is_inside_box(input_detector))
+			if (ui_mouse_is_inside_box(box))
 			{
-				for (Gfx_Event *node = event_list->first;
-						 node != 0;
-						 node = node->next)
+				for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 				{
 					if (node->kind == Gfx_EventKind_KeyPress &&
 							(node->key == Gfx_Key_MouseLeft ||
@@ -662,9 +651,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						{
 							profiler_ui_state->next_focused_panel = root;
 						}
-						if (root->window != profiler_ui_state->master_window &&
-								root->window != profiler_ui_state->window_list.first &&
-								!profiler_ui_is_dragging())
+						if (root->window != profiler_ui_state->master_window)
 						{
 							profiler_ui_window_reorder_to_front(root->window);
 						}
@@ -749,9 +736,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				}
 			}
 
-			for (ProfilerUI_TabReleaseKind i = (ProfilerUI_TabReleaseKind) 0;
-					 i < ProfilerUI_TabReleaseKind_COUNT;
-					 ++i)
+			for (ProfilerUI_TabReleaseKind i = (ProfilerUI_TabReleaseKind) 0; i < ProfilerUI_TabReleaseKind_COUNT; ++i)
 			{
 				UI_Comm *comm = tab_release_comms + i;
 				if (comm->hovering)
@@ -847,8 +832,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				}
 
 				ui_next_vert_gradient(top_color, top_color);
-				ui_box_make(UI_BoxFlag_DrawBackground,
-										str8_lit("OverlayBox"));
+				ui_box_make(UI_BoxFlag_DrawBackground, str8_lit("OverlayBox"));
 			}
 		}
 
@@ -875,12 +859,9 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 			}
 
 			ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_TabBar));
-			title_bar = ui_box_make(
-				UI_BoxFlag_DrawBackground,
-				str8_lit("TitleBar"));
+			title_bar = ui_box_make(UI_BoxFlag_DrawBackground, str8_lit("TitleBar"));
 			ui_parent(title_bar)
 			{
-
 				//- hampus: Tab dropdown menu
 
 				ui_next_width(ui_fill());
@@ -894,9 +875,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					{
 						ui_corner_radius(0)
 						{
-							for (ProfilerUI_Tab *tab = root->tab_group.first;
-									 !profiler_ui_tab_is_nil(tab);
-									 tab = tab->next)
+							for (ProfilerUI_Tab *tab = root->tab_group.first; !profiler_ui_tab_is_nil(tab); tab = tab->next)
 							{
 								ui_next_hover_cursor(Gfx_Cursor_Hand);
 								ui_next_height(ui_em(1, 0.0f));
@@ -958,15 +937,15 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					{
 						ProfilerUI_Tab *active_tab = root->tab_group.active_tab;
 
-						if (root->tab_group.first->tab_container)
+						if (!ui_box_is_nil(root->tab_group.first->tab_container))
 						{
 							UI_Box *first_tab_box = root->tab_group.first->tab_container;
 							UI_Box *active_tab_box = root->tab_group.active_tab->tab_container;
 
-							UI_Box *last_tab_box = &g_nil_box;
+							UI_Box *last_tab_box = root->tab_group.last->tab_container;
 							for (ProfilerUI_Tab *tab = root->tab_group.last; ui_box_is_nil(last_tab_box); tab = tab->prev)
 							{
-								if (!tab)
+								if (profiler_ui_tab_is_nil(tab))
 								{
 									// NOTE(hampus): Atleast the first tab should have a box
 									assert(false);
@@ -1006,15 +985,12 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 
 						// NOTE(hampus): Build tabs
 
-						for (ProfilerUI_Tab *tab = root->tab_group.first;
-								 !profiler_ui_tab_is_nil(tab);
-								 tab = tab->next)
+						for (ProfilerUI_Tab *tab = root->tab_group.first; !profiler_ui_tab_is_nil(tab); tab = tab->next)
 						{
 							ui_next_height(ui_pct(1, 1));
 							ui_next_width(ui_children_sum(1));
 							ui_next_child_layout_axis(Axis2_Y);
-							UI_Box *tab_column = ui_box_make_f(UI_BoxFlag_AnimateX,
-																								 "TabColumn%p", tab);
+							UI_Box *tab_column = ui_box_make_f(UI_BoxFlag_AnimateX, "TabColumn%p", tab);
 							ui_parent(tab_column)
 							{
 								tab->tab_container = tab_column;
@@ -1039,12 +1015,14 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						ui_next_icon(RENDER_ICON_LEFT_OPEN);
 						ui_next_hover_cursor(Gfx_Cursor_Hand);
 						ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_TabBarButtons));
-						UI_Box *prev_tab_button = ui_box_make(UI_BoxFlag_Clickable |
-																									UI_BoxFlag_DrawText |
-																									UI_BoxFlag_HotAnimation |
-																									UI_BoxFlag_ActiveAnimation |
-																									UI_BoxFlag_DrawBackground,
-																									str8_lit("PrevTabButton"));
+						UI_Box *prev_tab_button = ui_box_make(
+							UI_BoxFlag_Clickable |
+							UI_BoxFlag_DrawText |
+							UI_BoxFlag_HotAnimation |
+							UI_BoxFlag_ActiveAnimation |
+							UI_BoxFlag_DrawBackground,
+							str8_lit("PrevTabButton")
+						);
 
 						UI_Comm prev_tab_comm = ui_comm_from_box(prev_tab_button);
 						if (prev_tab_comm.pressed)
@@ -1064,12 +1042,14 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						ui_next_icon(RENDER_ICON_RIGHT_OPEN);
 						ui_next_hover_cursor(Gfx_Cursor_Hand);
 						ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_TabBarButtons));
-						UI_Box *next_tab_button = ui_box_make(UI_BoxFlag_Clickable |
-																									UI_BoxFlag_DrawText |
-																									UI_BoxFlag_HotAnimation |
-																									UI_BoxFlag_ActiveAnimation |
-																									UI_BoxFlag_DrawBackground,
-																									str8_lit("NextTabButton"));
+						UI_Box *next_tab_button = ui_box_make(
+							UI_BoxFlag_Clickable |
+							UI_BoxFlag_DrawText |
+							UI_BoxFlag_HotAnimation |
+							UI_BoxFlag_ActiveAnimation |
+							UI_BoxFlag_DrawBackground,
+							str8_lit("NextTabButton")
+						);
 
 						UI_Comm next_tab_comm = ui_comm_from_box(next_tab_button);
 						if (next_tab_comm.pressed)
@@ -1092,22 +1072,26 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 					ui_next_icon(RENDER_ICON_CROSS);
 					ui_next_hover_cursor(Gfx_Cursor_Hand);
 					ui_next_color(v4f32(0.6f, 0.1f, 0.1f, 1.0f));
-					UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable |
-																					UI_BoxFlag_DrawText |
-																					UI_BoxFlag_HotAnimation |
-																					UI_BoxFlag_ActiveAnimation |
-																					UI_BoxFlag_DrawBackground,
-																					str8_lit("CloseButton"));
+					UI_Box *close_box = ui_box_make(
+						UI_BoxFlag_Clickable |
+						UI_BoxFlag_DrawText |
+						UI_BoxFlag_HotAnimation |
+						UI_BoxFlag_ActiveAnimation |
+						UI_BoxFlag_DrawBackground,
+						str8_lit("CloseButton")
+					);
 					UI_Comm close_comm = ui_comm_from_box(close_box);
 					if (close_comm.hovering)
 					{
 						ui_tooltip()
 						{
-							UI_Box *tooltip = ui_box_make(UI_BoxFlag_DrawBackground |
-																						UI_BoxFlag_DrawBorder |
-																						UI_BoxFlag_DrawDropShadow |
-																						UI_BoxFlag_DrawText,
-																						str8_lit(""));
+							UI_Box *tooltip = ui_box_make(
+								UI_BoxFlag_DrawBackground |
+								UI_BoxFlag_DrawBorder |
+								UI_BoxFlag_DrawDropShadow |
+								UI_BoxFlag_DrawText,
+								str8_lit("")
+							);
 							ui_box_equip_display_string(tooltip, str8_lit("Close panel"));
 						}
 					}
@@ -1119,8 +1103,9 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				}
 			}
 
-			if (root->tab_group.count == 1 &&
-					!profiler_ui_is_dragging())
+			if (
+				root->tab_group.count == 1 &&
+				!profiler_ui_is_dragging())
 			{
 				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
 				if (title_bar_comm.pressed)
@@ -1133,17 +1118,16 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 
 		//- hampus: Tab content
 
-
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_InactivePanelOverlay));
-		UI_Box *content_dim = ui_box_make(UI_BoxFlag_FloatingPos,
-																			str8_lit("ContentDim"));
+		UI_Box *content_dim = ui_box_make(UI_BoxFlag_FloatingPos, str8_lit("ContentDim"));
 		content_dim->flags |= (UI_BoxFlags) (UI_BoxFlag_DrawBackground * (root != profiler_ui_state->focused_panel));
 
-		if (ui_mouse_is_inside_box(content_dim) &&
-				profiler_ui_is_tab_reordering() &&
-				!ui_mouse_is_inside_box(title_bar))
+		if (
+			ui_mouse_is_inside_box(content_dim) &&
+			profiler_ui_is_tab_reordering() &&
+			!ui_mouse_is_inside_box(title_bar))
 		{
 			profiler_ui_wait_for_drag_threshold();
 		}
@@ -1152,8 +1136,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 		{
 			ui_next_width(ui_fill());
 			ui_next_height(ui_fill());
-			UI_Box *content_box_container = ui_box_make(0,
-																									str8_lit("ContentBoxContainer"));
+			UI_Box *content_box_container = ui_box_make(0, str8_lit("ContentBoxContainer"));
 			ui_parent(content_box_container)
 			{
 				if (root == profiler_ui_state->focused_panel)
@@ -1169,10 +1152,13 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				ui_next_child_layout_axis(Axis2_Y);
 				// TODO(hampus): Should this actually be called panel color...
 				ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
-				UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-																					UI_BoxFlag_DrawBorder |
-																					UI_BoxFlag_Clip,
-																					str8_lit("ContentBox"));
+				UI_Box *content_box = ui_box_make(
+					UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_DrawBorder |
+					UI_BoxFlag_Clip,
+					str8_lit("ContentBox")
+				);
+
 				ui_parent(content_box)
 				{
 					// NOTE(hampus): Add some padding for the content
@@ -1262,6 +1248,7 @@ profiler_ui_window_make(Arena *arena, Vec2F32 size)
 {
 	ProfilerUI_Window *result = profiler_ui_window_alloc(arena);
 	result->root_panel = &g_nil_panel;
+	result->box = &g_nil_box;
 	ProfilerUI_Panel *panel = profiler_ui_panel_alloc(arena);
 	panel->window = result;
 	result->size = size;
@@ -1502,9 +1489,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	Vec2F32 mouse_pos = ui_mouse_pos();
 
 	B32 left_mouse_released = false;
-	for (Gfx_Event *event = event_list->first;
-			 event != 0;
-			 event = event->next)
+	for (Gfx_Event *event = event_list->first; event != 0; event = event->next)
 	{
 		switch (event->kind)
 		{
@@ -1531,9 +1516,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	profiler_ui_state->window_container = window_root_parent;
 	ui_parent(window_root_parent)
 	{
-		for (ProfilerUI_Window *window = profiler_ui_state->window_list.first;
-				 window != 0;
-				 window = window->next)
+		for (ProfilerUI_Window *window = profiler_ui_state->window_list.first; window != 0; window = window->next)
 		{
 			profiler_ui_update_window(window);
 		}
@@ -1570,9 +1553,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				// NOTE(hampus): Calculate the new window size
 				Vec2F32 new_window_pct = v2f32(1, 1);
 				ProfilerUI_Panel *panel_child = tab->panel;
-				for (ProfilerUI_Panel *panel_parent = panel_child->parent;
-						 !profiler_ui_panel_is_nil(panel_parent);
-						 panel_parent = panel_parent->parent)
+				for (ProfilerUI_Panel *panel_parent = panel_child->parent; !profiler_ui_panel_is_nil(panel_parent); panel_parent = panel_parent->parent)
 				{
 					Axis2 axis = panel_parent->split_axis;
 					new_window_pct.v[axis] *= panel_child->pct_of_parent;
@@ -1642,9 +1623,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		invalid_case;
 	}
 
-	if (left_mouse_released &&
-			(profiler_ui_is_waiting_for_drag_threshold() ||
-			profiler_ui_is_tab_reordering()))
+	if (left_mouse_released && profiler_ui_state->drag_status != ProfilerUI_DragStatus_Inactive)
 	{
 		profiler_ui_drag_end();
 	}

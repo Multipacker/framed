@@ -142,7 +142,6 @@ struct ProfilerUI_Panel
 	Str8 string;
 
 	// NOTE(hampus): For debugging
-	UI_Box *dragger;
 	U64 frame_index;
 };
 
@@ -152,12 +151,12 @@ struct ProfilerUI_Window
 	ProfilerUI_Window *next;
 	ProfilerUI_Window *prev;
 
-	Vec2F32 pos;
-	Vec2F32 size;
-
 	ProfilerUI_Panel *root_panel;
 
 	UI_Box *box;
+
+	Vec2F32 pos;
+	Vec2F32 size;
 
 	Str8 string;
 };
