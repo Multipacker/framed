@@ -395,3 +395,31 @@ time_interval_from_ns(F64 ns)
 
 	return(result);
 }
+
+typedef struct MemorySize MemorySize;
+struct MemorySize {
+	F64 amount;
+	Str8 unit;
+};
+
+internal MemorySize
+memory_size_from_bytes(U64 bytes)
+{
+	Str8 units[] = {
+		str8_lit("KB"),
+		str8_lit("MB"),
+		str8_lit("GB"),
+		str8_lit("TB"),
+	};
+
+	MemorySize result;
+	result.amount = (F64) bytes;
+	result.unit   = str8_lit("B");
+	for (U32 i = 0; i < array_count(units) && result.amount > 2048.0f; ++i)
+	{
+		result.amount /= 1024.0f;
+		result.unit    = units[i];
+	}
+
+	return(result);
+}

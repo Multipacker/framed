@@ -480,4 +480,8 @@ typedef struct TimeInterval TimeInterval;
 
 internal TimeInterval time_interval_from_ns(F64 ns);
 
+typedef struct MemorySize MemorySize;
+
+internal MemorySize memory_size_from_bytes(U64 bytes);
+
 #endif //BASE_CORE_H

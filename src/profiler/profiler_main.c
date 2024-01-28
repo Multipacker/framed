@@ -340,7 +340,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					for (U32 i = 0; i < ui_debug_stat_count; ++i)
 					{
 						Debug_Statistics *entry = &ui_debug_stats[i];
-						TimeInterval total_time   = time_interval_from_ns((F64) entry->total_time_ns);
+						TimeInterval total_time = time_interval_from_ns((F64) entry->total_time_ns);
 						ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
 					}
 				}
@@ -381,7 +381,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		{
 			total_allocated += debug_arenas[i].current;
 		}
-		ui_textf("Total allocated: %"PRIU64, total_allocated);
+		MemorySize total_size = memory_size_from_bytes(total_allocated);
+		ui_textf("Total allocated: %.2f%"PRISTR8, total_size.amount, str8_expand(total_size.unit));
 
 		ui_spacer(ui_em(0.5f, 1));
 
@@ -560,7 +561,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					for (U32 i = 0; i < debug_arena_count; ++i)
 					{
 						DebugMemoryStatistics *entry = &debug_arenas[i];
-						ui_textf("%"PRIU64, debug_arenas[i].max);
+						MemorySize max = memory_size_from_bytes(debug_arenas[i].max);
+						ui_textf("%.2f%"PRISTR8, max.amount, str8_expand(max.unit));
 					}
 				}
 			}
@@ -573,7 +575,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					for (U32 i = 0; i < debug_arena_count; ++i)
 					{
 						DebugMemoryStatistics *entry = &debug_arenas[i];
-						ui_textf("%"PRIU64, entry->current);
+						MemorySize current = memory_size_from_bytes(debug_arenas[i].current);
+						ui_textf("%.2f%"PRISTR8, current.amount, str8_expand(current.unit));
 					}
 				}
 			}
