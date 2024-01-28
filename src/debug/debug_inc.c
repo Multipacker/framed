@@ -1,30 +1,13 @@
-#define DEBUG_TIME_BUFFER_SIZE (1 << 15)
-
-typedef struct Debug_TimeEntry Debug_TimeEntry;
-struct Debug_TimeEntry
-{
-	CStr file;
-	U32  line;
-	CStr name;
-	U64  start_ns;
-	U64  end_ns;
-};
-
-typedef struct Debug_TimeBuffer Debug_TimeBuffer;
-struct Debug_TimeBuffer
-{
-	Debug_TimeEntry buffer[DEBUG_TIME_BUFFER_SIZE];
-	U32 volatile started_writes;
-	U32 volatile finished_writes;
-	U32 count;
-};
-
 typedef struct Debug Debug;
 struct Debug
 {
 	Debug_TimeBuffer buffers[2];
 	Debug_TimeBuffer *write_buffer;
 	Debug_TimeBuffer *read_buffer;
+
+	Debug_MemoryBuffer memory_buffers[2];
+	Debug_MemoryBuffer *memory_write_buffer;
+	Debug_MemoryBuffer *memory_read_buffer;
 };
 
 global Debug global_debug;
@@ -35,6 +18,8 @@ debug_init(Void)
 	Debug *debug = &global_debug;
 	debug->write_buffer = &debug->buffers[0];
 	debug->read_buffer  = &debug->buffers[1];
+	debug->memory_write_buffer = &debug->memory_buffers[0];
+	debug->memory_read_buffer  = &debug->memory_buffers[1];
 }
 
 internal Debug_Time
@@ -72,6 +57,50 @@ debug_end(Debug_Time time)
 	u32_atomic_add(&buffer->finished_writes, 1);
 }
 
+internal Void
+debug_arena_deleted_internal(CStr file, U32 line, Arena *arena)
+{
+	Debug *debug = &global_debug;
+
+	Debug_MemoryBuffer *buffer = debug->memory_write_buffer;
+	if (buffer)
+	{
+		U32 index = u32_atomic_add(&buffer->started_writes, 1);
+		if (index < DEBUG_MEMORY_BUFFER_SIZE)
+		{
+			Debug_MemoryEntry *entry = &buffer->buffer[index];
+			entry->file     = file;
+			entry->line     = line;
+			entry->arena    = arena;
+			entry->position = DEBUG_MEMORY_DELETED;
+			memory_fence();
+		}
+		u32_atomic_add(&buffer->finished_writes, 1);
+	}
+}
+
+internal Void
+debug_arena_changed_internal(CStr file, U32 line, Arena *arena)
+{
+	Debug *debug = &global_debug;
+
+	Debug_MemoryBuffer *buffer = debug->memory_write_buffer;
+	if (buffer)
+	{
+		U32 index = u32_atomic_add(&buffer->started_writes, 1);
+		if (index < DEBUG_MEMORY_BUFFER_SIZE)
+		{
+			Debug_MemoryEntry *entry = &buffer->buffer[index];
+			entry->file     = file;
+			entry->line     = line;
+			entry->arena    = arena;
+			entry->position = arena->pos;
+			memory_fence();
+		}
+		u32_atomic_add(&buffer->finished_writes, 1);
+	}
+}
+
 internal Debug_TimeBuffer *
 debug_get_times(Void)
 {
@@ -92,6 +121,30 @@ debug_get_times(Void)
 	}
 
 	result->count = u32_min(result->finished_writes, DEBUG_TIME_BUFFER_SIZE);
+
+	return(result);
+}
+
+internal Debug_MemoryBuffer *
+debug_get_memory(Void)
+{
+	Debug *debug = &global_debug;
+
+	debug->memory_read_buffer->started_writes  = 0;
+	debug->memory_read_buffer->finished_writes = 0;
+	debug->memory_read_buffer->count           = 0;
+
+	swap(debug->memory_read_buffer, debug->memory_write_buffer, Debug_MemoryBuffer *);
+
+	Debug_MemoryBuffer *result = debug->memory_read_buffer;
+
+	while (result->finished_writes != result->started_writes)
+	{
+		// NOTE(simon): Busy wait for all entries to be written. This should
+		// not take long.
+	}
+
+	result->count = u32_min(result->finished_writes, DEBUG_MEMORY_BUFFER_SIZE);
 
 	return(result);
 }
