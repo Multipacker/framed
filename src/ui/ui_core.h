@@ -359,9 +359,9 @@ struct UI_Context
 	UI_Key  next_ctx_menu_anchor_key;
 	Vec2F32 next_anchor_offset;
 
-	UI_Key active_key;
-	UI_Key hot_key;
-	UI_Key focus_key;
+	UI_Key  active_key;
+	UI_Box *hot_box;
+	UI_Key  focus_key;
 
 	// NOTE(hampus): We only have this to for the
 	// "clicked" member in UI_Comm

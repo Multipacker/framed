@@ -410,12 +410,12 @@ ui_comm_from_box(UI_Box *box)
 		{
 			result.dragging = true;
 			result.drag_delta = v2f32_sub_v2f32(ui_ctx->prev_mouse_pos, ui_ctx->mouse_pos);
-			ui_ctx->hot_key = box->key;
+			ui_ctx->hot_box = box;
 		}
 
-		if (ui_key_is_null(ui_ctx->hot_key) && mouse_over)
+		if (!ui_ctx->hot_box && mouse_over)
 		{
-			ui_ctx->hot_key = box->key;
+			ui_ctx->hot_box = box;
 		}
 
 		if (mouse_over)
@@ -537,11 +537,7 @@ ui_box_is_active(UI_Box *box)
 internal B32
 ui_box_is_hot(UI_Box *box)
 {
-	B32 result = false;
-	if (!ui_key_is_null(box->key))
-	{
-		result = ui_key_match(ui_ctx->hot_key, box->key);
-	}
+	B32 result = (ui_ctx->hot_box == box);
 	return(result);
 }
 
@@ -993,7 +989,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_ctx->config.animations      = true;
 	ui_ctx->config.animation_speed = 20;
 
-	ui_ctx->hot_key = ui_key_null();
+	ui_ctx->hot_box = 0;
 
 	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -1119,10 +1115,9 @@ ui_end(Void)
 		ui_ctx->ctx_menu_root->rel_pos = anchor_pos;
 	}
 
-	if (!ui_key_is_null(ui_ctx->hot_key))
+	if (ui_ctx->hot_box)
 	{
-		UI_Box *hot_box = ui_box_from_key(ui_ctx->hot_key);
-		gfx_set_cursor(ui_ctx->renderer->gfx, hot_box->rect_style.hover_cursor);
+		gfx_set_cursor(ui_ctx->renderer->gfx, ui_ctx->hot_box->rect_style.hover_cursor);
 	}
 	else
 	{
