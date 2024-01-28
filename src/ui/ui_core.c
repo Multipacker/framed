@@ -354,8 +354,6 @@ ui_comm_from_box(UI_Box *box)
 
 	result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->fixed_rect.min);
 
-	B32 gather_input = true;
-
 	RectF32 hover_region = box->fixed_rect;
 	for (UI_Box *parent = box->parent; !ui_box_is_nil(parent); parent = parent->parent)
 	{
@@ -370,11 +368,10 @@ ui_comm_from_box(UI_Box *box)
 		}
 	}
 
+	B32 part_of_ctx_menu = false;
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
-		// NOTE(hampus): Check to see if this box is a
-		// part of the context menu
-		B32 part_of_ctx_menu = false;
+		// NOTE(hampus): Check to see if this box is a part of the context menu
 		UI_Box *ctx_menu_root = ui_ctx->ctx_menu_root;
 		for (UI_Box *parent = box->parent; !ui_box_is_nil(parent); parent = parent->parent)
 		{
@@ -384,26 +381,11 @@ ui_comm_from_box(UI_Box *box)
 				break;
 			}
 		}
-
-		if (!part_of_ctx_menu)
-		{
-			// NOTE(hampus): If the mouse is inside
-			// the contex menu and it is not a part of
-			// it, don't gather input.
-			if (rectf32_contains_v2f32(ctx_menu_root->fixed_rect, mouse_pos))
-			{
-				gather_input = false;
-			}
-		}
 	}
 
-	B32 mouse_over = false;
-
-	if (rectf32_contains_v2f32(hover_region, mouse_pos))
-	{
-		mouse_over = true;
-	}
-
+	// NOTE(simon): Gather input if this is part of the context menu or if we
+	// are not intersecting it.
+	B32 gather_input = (part_of_ctx_menu || !rectf32_contains_v2f32(ui_ctx->ctx_menu_root->fixed_rect, mouse_pos));
 	if (gather_input)
 	{
 		if (ui_box_is_active(box))
@@ -413,13 +395,14 @@ ui_comm_from_box(UI_Box *box)
 			ui_ctx->hot_box = box;
 		}
 
-		if (!ui_ctx->hot_box && mouse_over)
-		{
-			ui_ctx->hot_box = box;
-		}
-
+		B32 mouse_over = rectf32_contains_v2f32(hover_region, mouse_pos);
 		if (mouse_over)
 		{
+			if (!ui_ctx->hot_box)
+			{
+				ui_ctx->hot_box = box;
+			}
+
 			if (ui_box_is_hot(box))
 			{
 				result.hovering = true;
