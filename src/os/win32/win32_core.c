@@ -773,7 +773,7 @@ win32_common_main(Void)
 {
 	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);
-	win32_state.permanent_arena = arena_create();
+	win32_state.permanent_arena = arena_create("Win32Perm");
 
 	win32_state.tls_index = TlsAlloc();
 	ThreadContext *context = thread_ctx_alloc();
