@@ -153,6 +153,89 @@ ui_debug_keep_alive(Void)
 	}
 }
 
+internal Void
+profiler_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box **columns, U32 column_count, U32 *sort_column, B32 *reverse)
+{
+	F32 drag_delta = 0.0f;
+	U32 drag_index = 0;
+	ui_corner_radius(0)
+		ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
+	{
+		for (U32 i = 0; i < column_count; ++i)
+		{
+			ui_next_width(ui_pct(splits[i], 0));
+			ui_next_extra_box_flags(UI_BoxFlag_Clip);
+			columns[i] = ui_named_column_beginf("column%"PRIU32, i);
+			ui_push_seed(columns[i]->key);
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_children_sum(1));
+			ui_next_child_layout_axis(Axis2_X);
+			UI_Box *header = ui_box_make(UI_BoxFlag_Clickable |
+										 UI_BoxFlag_HotAnimation |
+										 UI_BoxFlag_ActiveAnimation,
+										 str8_lit("Header"));
+			UI_Comm header_comm = ui_comm_from_box(header);
+			if (header_comm.clicked)
+			{
+				*reverse = (i == *sort_column ? !*reverse : false);
+				*sort_column = i;
+			}
+
+			if (header_comm.hovering)
+			{
+				header->flags |= UI_BoxFlag_DrawBackground;
+			}
+
+			ui_parent(header)
+			{
+				ui_text(column_names[i]);
+
+				ui_spacer(ui_fill());
+
+				if (i == *sort_column)
+				{
+					ui_next_width(ui_em(1, 1));
+					ui_next_height(ui_em(1, 1));
+					ui_next_icon(*reverse ? RENDER_ICON_UP : RENDER_ICON_DOWN);
+					ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+					ui_spacer(ui_em(0.2f, 1));
+				}
+			}
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_em(0.2f, 1));
+			ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
+			ui_next_corner_radius(0);
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+			ui_pop_seed();
+			ui_named_column_end();
+
+			if (i + 1 < column_count)
+			{
+				ui_next_width(ui_em(0.2f, 1));
+				ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
+				ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+				UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
+													UI_BoxFlag_DrawBackground,
+													str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
+				);
+
+				UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
+				if (draggin_comm.dragging)
+				{
+					drag_delta = draggin_comm.drag_delta.x / ui_top_parent()->fixed_size.width;
+					drag_index = i;
+				}
+			}
+		}
+	}
+
+	splits[drag_index + 0] = f32_clamp(0.0f, splits[drag_index + 0] - drag_delta, 1.0f);
+	splits[drag_index + 1] = f32_clamp(0.0f, splits[drag_index + 1] + drag_delta, 1.0f);
+}
+
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 {
 	ui_next_width(ui_pct(1, 1));
@@ -182,85 +265,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			UI_Box *columns[4] = { 0 };
 			local B32 reverse = true;
 			local U32 sort_column = 1;
-
-			F32 drag_delta = 0.0f;
-			U32 drag_index = 0;
-			ui_corner_radius(0)
-				ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
-			{
-				for (U32 i = 0; i < array_count(columns); ++i)
-				{
-					ui_next_width(ui_pct(splits[i], 0));
-					ui_next_extra_box_flags(UI_BoxFlag_Clip);
-					columns[i] = ui_named_column_beginf("column%"PRIU32, i);
-					ui_push_seed(columns[i]->key);
-
-					ui_next_width(ui_pct(1, 1));
-					ui_next_height(ui_children_sum(1));
-					ui_next_child_layout_axis(Axis2_X);
-					UI_Box *header = ui_box_make(UI_BoxFlag_Clickable |
-												 UI_BoxFlag_HotAnimation |
-												 UI_BoxFlag_ActiveAnimation,
-												 str8_lit("Header"));
-					UI_Comm header_comm = ui_comm_from_box(header);
-					if (header_comm.clicked)
-					{
-						reverse = (i == sort_column ? !reverse : false);
-						sort_column = i;
-					}
-
-					if (header_comm.hovering)
-					{
-						header->flags |= UI_BoxFlag_DrawBackground;
-					}
-
-					ui_parent(header)
-					{
-						ui_text(headers[i]);
-
-						ui_spacer(ui_fill());
-
-						if (i == sort_column)
-						{
-							ui_next_width(ui_em(1, 1));
-							ui_next_height(ui_em(1, 1));
-							ui_next_icon(reverse ? RENDER_ICON_UP : RENDER_ICON_DOWN);
-							ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
-							ui_spacer(ui_em(0.2f, 1));
-						}
-					}
-
-					ui_next_width(ui_pct(1, 1));
-					ui_next_height(ui_em(0.2f, 1));
-					ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-					ui_next_corner_radius(0);
-					ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-					ui_pop_seed();
-					ui_named_column_end();
-
-					if (i + 1 < array_count(columns))
-					{
-						ui_next_width(ui_em(0.2f, 1));
-						ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
-						ui_next_hover_cursor(Gfx_Cursor_SizeWE);
-						UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
-															UI_BoxFlag_DrawBackground,
-															str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
-						);
-
-						UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
-						if (draggin_comm.dragging)
-						{
-							drag_delta = draggin_comm.drag_delta.x / ui_top_parent()->fixed_size.width;
-							drag_index = i;
-						}
-					}
-				}
-			}
-
-			splits[drag_index + 0] = f32_clamp(0.0f, splits[drag_index + 0] - drag_delta, 1.0f);
-			splits[drag_index + 1] = f32_clamp(0.0f, splits[drag_index + 1] + drag_delta, 1.0f);
+			profiler_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
 			// NOTE(simon): Bubble sort for the win!
 			if (sort_column == 0)
@@ -405,84 +410,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			UI_Box *columns[4] = { 0 };
 			local B32 reverse = true;
 			local U32 sort_column = 1;
-
-			F32 drag_delta = 0.0f;
-			U32 drag_index = 0;
-			ui_corner_radius(0)
-				ui_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f))
-			{
-				for (U32 i = 0; i < array_count(columns); ++i)
-				{
-					ui_next_width(ui_pct(splits[i], 0));
-					ui_next_extra_box_flags(UI_BoxFlag_Clip);
-					columns[i] = ui_named_column_beginf("column%"PRIU32, i);
-					ui_push_seed(columns[i]->key);
-
-					ui_next_width(ui_pct(1, 1));
-					ui_next_height(ui_children_sum(1));
-					ui_next_child_layout_axis(Axis2_X);
-					UI_Box *header = ui_box_make(UI_BoxFlag_Clickable |
-												 UI_BoxFlag_HotAnimation |
-												 UI_BoxFlag_ActiveAnimation,
-												 str8_lit("Header"));
-					UI_Comm header_comm = ui_comm_from_box(header);
-					if (header_comm.clicked)
-					{
-						reverse = (i == sort_column ? !reverse : false);
-						sort_column = i;
-					}
-					if (header_comm.hovering)
-					{
-						header->flags |= UI_BoxFlag_DrawBackground;
-					}
-
-					ui_parent(header)
-					{
-						ui_text(headers[i]);
-
-						ui_spacer(ui_fill());
-
-						if (i == sort_column)
-						{
-							ui_next_width(ui_em(1, 1));
-							ui_next_height(ui_em(1, 1));
-							ui_next_icon(reverse ? RENDER_ICON_UP : RENDER_ICON_DOWN);
-							ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
-							ui_spacer(ui_em(0.2f, 1));
-						}
-					}
-
-					ui_next_width(ui_pct(1, 1));
-					ui_next_height(ui_em(0.2f, 1));
-					ui_next_color(v4f32(0.4f, 0.4f, 0.4f, 1.0f));
-					ui_next_corner_radius(0);
-					ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-					ui_pop_seed();
-					ui_named_column_end();
-
-					if (i + 1 < array_count(columns))
-					{
-						ui_next_width(ui_em(0.2f, 1));
-						ui_next_height(ui_pixels(columns[i]->fixed_size.height, 1));
-						ui_next_hover_cursor(Gfx_Cursor_SizeWE);
-						UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
-															UI_BoxFlag_DrawBackground,
-															str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
-															);
-
-						UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
-						if (draggin_comm.dragging)
-						{
-							drag_delta = draggin_comm.drag_delta.x / ui_top_parent()->fixed_size.width;
-							drag_index = i;
-						}
-					}
-				}
-			}
-
-			splits[drag_index + 0] = f32_clamp(0.0f, splits[drag_index + 0] - drag_delta, 1.0f);
-			splits[drag_index + 1] = f32_clamp(0.0f, splits[drag_index + 1] + drag_delta, 1.0f);
+			profiler_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
 			// NOTE(simon): Bubble sort for the win!
 			if (sort_column == 0)
