@@ -482,7 +482,18 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			// NOTE(simon): Bubble sort for the win!
 			if (sort_column == 0)
 			{
-				// TODO(simon): Sort by arena name
+				for (U32 i = 0; i < debug_arena_count; ++i)
+				{
+					for (U32 j = 0; j < debug_arena_count - i - 1; ++j)
+					{
+						Str8 this_name = debug_arenas[j + 0].arena->name;
+						Str8 next_name = debug_arenas[j + 1].arena->name;
+						if (str8_are_codepoints_earliear(next_name, this_name))
+						{
+							swap(debug_arenas[j], debug_arenas[j + 1], DebugMemoryStatistics);
+						}
+					}
+				}
 			}
 			else if (sort_column == 1)
 			{
