@@ -360,7 +360,7 @@ struct UI_Context
 	Vec2F32 next_anchor_offset;
 
 	UI_Key  active_key;
-	UI_Box *hot_box;
+	UI_Key  hot_key;
 	UI_Key  focus_key;
 
 	// NOTE(hampus): We only have this to for the

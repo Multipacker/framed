@@ -392,15 +392,15 @@ ui_comm_from_box(UI_Box *box)
 		{
 			result.dragging = true;
 			result.drag_delta = v2f32_sub_v2f32(ui_ctx->prev_mouse_pos, ui_ctx->mouse_pos);
-			ui_ctx->hot_box = box;
+			ui_ctx->hot_key = box->key;
 		}
 
 		B32 mouse_over = rectf32_contains_v2f32(hover_region, mouse_pos);
 		if (mouse_over)
 		{
-			if (!ui_ctx->hot_box)
+			if (ui_key_is_null(ui_ctx->hot_key))
 			{
-				ui_ctx->hot_box = box;
+				ui_ctx->hot_key = box->key;
 			}
 
 			if (ui_box_is_hot(box))
@@ -409,97 +409,97 @@ ui_comm_from_box(UI_Box *box)
 			}
 
 			Gfx_EventList *event_list = ui_ctx->event_list;
-			for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
-			{
-				switch (node->kind)
+				for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 				{
-					case Gfx_EventKind_KeyRelease:
+					switch (node->kind)
 					{
-						switch (node->key)
+						case Gfx_EventKind_KeyRelease:
 						{
-							case Gfx_Key_MouseLeft:
+							switch (node->key)
 							{
-								result.released = true;
-								dll_remove(event_list->first, event_list->last, node);
-								if (ui_key_match(box->key, ui_ctx->prev_active_key))
+								case Gfx_Key_MouseLeft:
 								{
-									result.clicked = true;
-								}
-							} break;
-
-							case Gfx_Key_MouseLeftDouble:
-							{
-								dll_remove(event_list->first, event_list->last, node);
-							} break;
-
-							case Gfx_Key_MouseRight:
-							{
-								result.right_released = true;
-								dll_remove(event_list->first, event_list->last, node);
-							} break;
-
-							default:
-							{
-							} break;
-						}
-					} break;
-
-					case Gfx_EventKind_KeyPress:
-					{
-						switch (node->key)
-						{
-							case Gfx_Key_MouseLeft:
-							{
-								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-								{
-									result.pressed = true;
-									ui_ctx->active_key = box->key;
+									result.released = true;
 									dll_remove(event_list->first, event_list->last, node);
-									ui_ctx->focus_key = box->key;
-								}
-							} break;
+									if (ui_key_match(box->key, ui_ctx->prev_active_key))
+									{
+										result.clicked = true;
+									}
+								} break;
 
-							case Gfx_Key_MouseRight:
-							{
-								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								case Gfx_Key_MouseLeftDouble:
 								{
 									dll_remove(event_list->first, event_list->last, node);
-									ui_ctx->focus_key = box->key;
-								}
-							} break;
+								} break;
 
-							case Gfx_Key_MouseLeftDouble:
-							{
-								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								case Gfx_Key_MouseRight:
 								{
-									result.double_clicked = true;
-									ui_ctx->active_key = box->key;
+									result.right_released = true;
 									dll_remove(event_list->first, event_list->last, node);
-									ui_ctx->focus_key = box->key;
-								}
-							} break;
+								} break;
 
-							default:
-							{
-							} break;
-						}
-					} break;
+								default:
+								{
+								} break;
+							}
+						} break;
 
-					case Gfx_EventKind_Scroll:
-					{
-						if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
+						case Gfx_EventKind_KeyPress:
 						{
-							result.scroll.x = -node->scroll.x;
-							result.scroll.y = -node->scroll.y;
-							dll_remove(event_list->first, event_list->last, node);
-						}
-					} break;
+							switch (node->key)
+							{
+								case Gfx_Key_MouseLeft:
+								{
+									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+									{
+										result.pressed = true;
+										ui_ctx->active_key = box->key;
+										dll_remove(event_list->first, event_list->last, node);
+										ui_ctx->focus_key = box->key;
+									}
+								} break;
 
-					default:
-					{
-					} break;
+								case Gfx_Key_MouseRight:
+								{
+									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+									{
+										dll_remove(event_list->first, event_list->last, node);
+										ui_ctx->focus_key = box->key;
+									}
+								} break;
+
+								case Gfx_Key_MouseLeftDouble:
+								{
+									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+									{
+										result.double_clicked = true;
+										ui_ctx->active_key = box->key;
+										dll_remove(event_list->first, event_list->last, node);
+										ui_ctx->focus_key = box->key;
+									}
+								} break;
+
+								default:
+								{
+								} break;
+							}
+						} break;
+
+						case Gfx_EventKind_Scroll:
+						{
+							if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
+							{
+								result.scroll.x = -node->scroll.x;
+								result.scroll.y = -node->scroll.y;
+								dll_remove(event_list->first, event_list->last, node);
+							}
+						} break;
+
+						default:
+						{
+						} break;
+					}
 				}
-			}
 		}
 	}
 
@@ -520,7 +520,7 @@ ui_box_is_active(UI_Box *box)
 internal B32
 ui_box_is_hot(UI_Box *box)
 {
-	B32 result = (ui_ctx->hot_box == box);
+	B32 result = ui_key_match(ui_ctx->hot_key, box->key);
 	return(result);
 }
 
@@ -972,7 +972,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	ui_ctx->config.animations      = true;
 	ui_ctx->config.animation_speed = 20;
 
-	ui_ctx->hot_box = 0;
+	ui_ctx->hot_key = ui_key_null();
 
 	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
@@ -1098,9 +1098,10 @@ ui_end(Void)
 		ui_ctx->ctx_menu_root->rel_pos = anchor_pos;
 	}
 
-	if (ui_ctx->hot_box)
+	if (!ui_key_is_null(ui_ctx->hot_key))
 	{
-		gfx_set_cursor(ui_ctx->renderer->gfx, ui_ctx->hot_box->rect_style.hover_cursor);
+		UI_Box *hot_box = ui_box_from_key(ui_ctx->hot_key);
+		gfx_set_cursor(ui_ctx->renderer->gfx, hot_box->rect_style.hover_cursor);
 	}
 	else
 	{
