@@ -715,8 +715,8 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					*string_length = new_str.size;
 					edit_str = new_str;
 				}
-				edit_state->cursor = s64_clamp(0, edit_state->cursor, edit_str.size);
-				edit_state->mark = s64_clamp(0, edit_state->mark, edit_str.size);
+				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64) edit_str.size);
+				edit_state->mark = s64_clamp(0, edit_state->mark, (S64) edit_str.size);
 			}
 
 			ui_parent(box)
