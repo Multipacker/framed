@@ -109,7 +109,7 @@ render_init(Gfx_Context *gfx)
 	renderer->font_cache = push_struct(arena, Render_FontCache);
 	for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
 	{
-		renderer->font_cache->entries[i].arena = arena_create("FontCache%"PRIU64, i);
+		renderer->font_cache->entries[i].arena = arena_create("FontCacheEntry%"PRIU64, i);
 	}
 
 	// NOTE(simon): This is needed for atomic reads.
