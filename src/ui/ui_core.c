@@ -315,7 +315,7 @@ ui_text_action_from_event(Gfx_Event *event)
 	{
 		if (event->character >= ' ' && event->character <= '~')
 		{
-			result.character = (U8) event->character;
+			result.character = (U8)event->character;
 			result.delta = 1;
 		}
 	}
@@ -376,8 +376,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
-	assert(!ui_key_is_null(box->key) &&
-				 "Tried to gather input from a keyless box!");
+	assert(!ui_key_is_null(box->key) && "Tried to gather input from a keyless box!");
 
 	UI_Comm result = { 0 };
 	result.box = box;
@@ -393,8 +392,7 @@ ui_comm_from_box(UI_Box *box)
 			// NOTE(hampus): This should never fire
 			// because you can't push the rect of
 			// a keyless box
-			assert(!ui_key_is_null(parent->key) &&
-						 "Clipping to an unstable rectangle");
+			assert(!ui_key_is_null(parent->key) && "Clipping to an unstable rectangle");
 			hover_region = rectf32_intersect_rectf32(hover_region, parent->fixed_rect);
 		}
 	}
@@ -440,97 +438,97 @@ ui_comm_from_box(UI_Box *box)
 			}
 
 			Gfx_EventList *event_list = ui_ctx->event_list;
-				for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
+			for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
+			{
+				switch (node->kind)
 				{
-					switch (node->kind)
+					case Gfx_EventKind_KeyRelease:
 					{
-						case Gfx_EventKind_KeyRelease:
+						switch (node->key)
 						{
-							switch (node->key)
+							case Gfx_Key_MouseLeft:
 							{
-								case Gfx_Key_MouseLeft:
-								{
-									result.released = true;
-									dll_remove(event_list->first, event_list->last, node);
-									if (ui_key_match(box->key, ui_ctx->prev_active_key))
-									{
-										result.clicked = true;
-									}
-								} break;
-
-								case Gfx_Key_MouseLeftDouble:
-								{
-									dll_remove(event_list->first, event_list->last, node);
-								} break;
-
-								case Gfx_Key_MouseRight:
-								{
-									result.right_released = true;
-									dll_remove(event_list->first, event_list->last, node);
-								} break;
-
-								default:
-								{
-								} break;
-							}
-						} break;
-
-						case Gfx_EventKind_KeyPress:
-						{
-							switch (node->key)
-							{
-								case Gfx_Key_MouseLeft:
-								{
-									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-									{
-										result.pressed = true;
-										ui_ctx->active_key = box->key;
-										dll_remove(event_list->first, event_list->last, node);
-										ui_ctx->focus_key = box->key;
-									}
-								} break;
-
-								case Gfx_Key_MouseRight:
-								{
-									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-									{
-										dll_remove(event_list->first, event_list->last, node);
-										ui_ctx->focus_key = box->key;
-									}
-								} break;
-
-								case Gfx_Key_MouseLeftDouble:
-								{
-									if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
-									{
-										result.double_clicked = true;
-										ui_ctx->active_key = box->key;
-										dll_remove(event_list->first, event_list->last, node);
-										ui_ctx->focus_key = box->key;
-									}
-								} break;
-
-								default:
-								{
-								} break;
-							}
-						} break;
-
-						case Gfx_EventKind_Scroll:
-						{
-							if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
-							{
-								result.scroll.x = -node->scroll.x;
-								result.scroll.y = -node->scroll.y;
+								result.released = true;
 								dll_remove(event_list->first, event_list->last, node);
-							}
-						} break;
+								if (ui_key_match(box->key, ui_ctx->prev_active_key))
+								{
+									result.clicked = true;
+								}
+							} break;
 
-						default:
+							case Gfx_Key_MouseLeftDouble:
+							{
+								dll_remove(event_list->first, event_list->last, node);
+							} break;
+
+							case Gfx_Key_MouseRight:
+							{
+								result.right_released = true;
+								dll_remove(event_list->first, event_list->last, node);
+							} break;
+
+							default:
+							{
+							} break;
+						}
+					} break;
+
+					case Gfx_EventKind_KeyPress:
+					{
+						switch (node->key)
 						{
-						} break;
-					}
+							case Gfx_Key_MouseLeft:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.pressed = true;
+									ui_ctx->active_key = box->key;
+									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
+								}
+							} break;
+
+							case Gfx_Key_MouseRight:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
+								}
+							} break;
+
+							case Gfx_Key_MouseLeftDouble:
+							{
+								if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
+								{
+									result.double_clicked = true;
+									ui_ctx->active_key = box->key;
+									dll_remove(event_list->first, event_list->last, node);
+									ui_ctx->focus_key = box->key;
+								}
+							} break;
+
+							default:
+							{
+							} break;
+						}
+					} break;
+
+					case Gfx_EventKind_Scroll:
+					{
+						if (ui_box_has_flag(box, UI_BoxFlag_ViewScroll))
+						{
+							result.scroll.x = -node->scroll.x;
+							result.scroll.y = -node->scroll.y;
+							dll_remove(event_list->first, event_list->last, node);
+						}
+					} break;
+
+					default:
+					{
+					} break;
 				}
+			}
 		}
 	}
 
@@ -570,7 +568,7 @@ internal UI_Box *
 ui_box_alloc(Void)
 {
 	assert(ui_ctx->box_storage.num_free_boxes > 0);
-	UI_Box *result = (UI_Box *) ui_ctx->box_storage.first_free_box;
+	UI_Box *result = (UI_Box *)ui_ctx->box_storage.first_free_box;
 	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_Box));
 	ui_ctx->box_storage.first_free_box = ui_ctx->box_storage.first_free_box->next;
 
@@ -583,7 +581,7 @@ ui_box_alloc(Void)
 internal Void
 ui_box_free(UI_Box *box)
 {
-	UI_FreeBox *free_box = (UI_FreeBox *) box;
+	UI_FreeBox *free_box = (UI_FreeBox *)box;
 	free_box->next = ui_ctx->box_storage.first_free_box;
 	ui_ctx->box_storage.first_free_box = free_box;
 	ui_ctx->box_storage.num_free_boxes++;
@@ -665,9 +663,9 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	else
 	{
 		ui_stats_inc_val(num_hashed_boxes);
-		assert(result->last_frame_touched_index != ui_ctx->frame_index &&
-					 "Hash collision!");
+		assert(result->last_frame_touched_index != ui_ctx->frame_index && "Hash collision!");
 	}
+
 	UI_Box *parent = ui_top_parent();
 
 	result->first = result->last = result->next = result->prev = result->parent = &g_nil_box;
@@ -697,6 +695,14 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 				 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollX) &&
+				 ui_key_is_null(result->key) &&
+				 "Why would you animate a keyless box"));
+
+	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollY) &&
 				 ui_key_is_null(result->key) &&
 				 "Why would you animate a keyless box"));
 
@@ -1014,7 +1020,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	text_style->font = str8_lit("data/fonts/Inter-Regular.ttf");
 	text_style->font_size = 15;
 
-	text_style->padding.v[Axis2_X] = (F32) ui_top_font_line_height();
+	text_style->padding.v[Axis2_X] = (F32)ui_top_font_line_height();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
@@ -1026,14 +1032,14 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color              = v4f32(0.6f, 0.6f, 0.6f, 1.0f);
 	rect_style->border_thickness          = 1;
-	F32 radius                            = (F32) ui_top_font_line_height() * 0.1f;
+	F32 radius                            = (F32)ui_top_font_line_height() * 0.1f;
 	rect_style->radies                    = v4f32(radius, radius, radius, radius);
 	rect_style->softness                  = 1;
 
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	Vec2F32 max_clip;
-	max_clip.x = (F32) client_area.x;
-	max_clip.y = (F32) client_area.y;
+	max_clip.x = (F32)client_area.x;
+	max_clip.y = (F32)client_area.y;
 
 	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
 	clip_rect->max = max_clip;
@@ -1257,7 +1263,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 		Axis2 child_layout_axis = root->layout_style.child_layout_axis;
 		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
-			if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
+			if (!ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis)))
 			{
 				F32 child_size = child->fixed_size.v[axis];
 				if (axis == child_layout_axis)
@@ -1282,11 +1288,11 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 
 	F32 taken_space = 0;
 	F32 total_fixup_budget = 0;
-	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
 	{
 		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
-			if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
+			if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
 			{
 				if (axis == root->layout_style.child_layout_axis)
 				{
@@ -1302,14 +1308,14 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		}
 	}
 
-	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
 	{
 		F32 violation = taken_space - available_space;
 		if (violation > 0 && total_fixup_budget > 0)
 		{
 			for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 			{
-				if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
+				if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
 				{
 					F32 fixup_budget_this_child = child->fixed_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 					F32 fixup_size_this_child = 0;
@@ -1353,7 +1359,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 	else
 	{
-		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
 
 		if (f32_abs(root->rel_pos_animated.v[axis] - root->rel_pos.v[axis]) <= 0.5f)
 		{
@@ -1361,7 +1367,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		}
 		else
 		{
-			root->rel_pos_animated.v[axis] += (F32) (root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
+			root->rel_pos_animated.v[axis] += (F32)(root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
 		}
 
 		if (f32_abs(root->fixed_size_animated.v[axis] - root->fixed_size.v[axis]) <= 0.5f)
@@ -1383,7 +1389,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		}
 	}
 
-	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateX << axis)) &&
 			ui_animations_enabled())
 	{
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos_animated.v[axis];
@@ -1393,7 +1399,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos.v[axis];
 	}
 
-	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateWidth << axis)) &&
 			ui_animations_enabled())
 	{
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size_animated.v[axis];
@@ -1407,7 +1413,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	root->fixed_rect.max.v[axis] = f32_floor(root->fixed_rect.max.v[axis]);
 
 	F32 child_offset = root->fixed_rect.min.v[axis];
-	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateScroll << axis)) &&
 			ui_animations_enabled())
 	{
 		child_offset -= root->scroll_animated.v[axis];
@@ -1420,7 +1426,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	F32 next_rel_child_pos = 0.0f;
 	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
-		if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
+		if (!ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis)))
 		{
 			child->rel_pos.v[axis] = next_rel_child_pos;
 			if (axis == root->layout_style.child_layout_axis)
@@ -1516,7 +1522,7 @@ ui_draw(UI_Box *root)
 	}
 	else
 	{
-		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
 		if (ui_box_is_active(root))
 		{
 			root->active_t += (1.0f - root->active_t) * animation_delta;

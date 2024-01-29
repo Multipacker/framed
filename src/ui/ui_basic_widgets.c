@@ -17,15 +17,14 @@ internal Void
 ui_text(Str8 string)
 {
 	ui_default_size(ui_text_content(1), ui_text_content(1));
-	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText,
-							  str8_lit(""));
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 	ui_box_equip_display_string(box, string);
 }
 
 internal Void
 ui_textf(CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -37,8 +36,7 @@ internal UI_Comm
 ui_image(Render_TextureSlice slice, Str8 string)
 {
 	ui_next_slice(slice);
-	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground,
-							  string);
+	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground, string);
 	UI_Comm comm = ui_comm_from_box(box);
 	return(comm);
 }
@@ -46,7 +44,7 @@ ui_image(Render_TextureSlice slice, Str8 string)
 internal UI_Comm
 ui_imagef(Render_TextureSlice slice, CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -59,13 +57,15 @@ internal UI_Comm
 ui_button(Str8 string)
 {
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
-	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-							  UI_BoxFlag_DrawBorder |
-							  UI_BoxFlag_HotAnimation |
-							  UI_BoxFlag_ActiveAnimation |
-							  UI_BoxFlag_Clickable |
-							  UI_BoxFlag_DrawText,
-							  string);
+	UI_Box *box = ui_box_make(
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_DrawBorder |
+		UI_BoxFlag_HotAnimation |
+		UI_BoxFlag_ActiveAnimation |
+		UI_BoxFlag_Clickable |
+		UI_BoxFlag_DrawText,
+		string
+	);
 	ui_box_equip_display_string(box, string);
 	UI_Comm comm = ui_comm_from_box(box);
 	return(comm);
@@ -74,7 +74,7 @@ ui_button(Str8 string)
 internal UI_Comm
 ui_buttonf(CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -86,17 +86,19 @@ ui_buttonf(CStr fmt, ...)
 internal UI_Comm
 ui_check(B32 *value, Str8 string)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 
 	ui_next_width(ui_em(1.0f, 1));
 	ui_next_height(ui_em(1.0f, 1));
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
-	UI_Box *container = ui_box_make(UI_BoxFlag_DrawBackground |
-									UI_BoxFlag_Clickable |
-									UI_BoxFlag_HotAnimation |
-									UI_BoxFlag_ActiveAnimation |
-									UI_BoxFlag_DrawBorder,
-									string);
+	UI_Box *container = ui_box_make(
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_Clickable |
+		UI_BoxFlag_HotAnimation |
+		UI_BoxFlag_ActiveAnimation |
+		UI_BoxFlag_DrawBorder,
+		string
+	);
 	comm = ui_comm_from_box(container);
 	if (comm.pressed)
 	{
@@ -110,8 +112,7 @@ ui_check(B32 *value, Str8 string)
 		}
 		ui_next_width(ui_pct(1.0f, 1));
 		ui_next_height(ui_pct(1.0f, 1));
-		UI_Box *check = ui_box_make(UI_BoxFlag_DrawText,
-									str8_lit(""));
+		UI_Box *check = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 	}
 
 	return(comm);
@@ -120,7 +121,7 @@ ui_check(B32 *value, Str8 string)
 internal UI_Comm
 ui_checkf(B32 *value, CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -136,7 +137,7 @@ ui_push_scrollable_region(Str8 string)
 	B32 smooth_scroll = true;
 	ui_next_child_layout_axis(Axis2_X);
 	UI_Box *vert_container = ui_box_make(0,
-	                                     string);
+																			 string);
 	ui_push_parent(vert_container);
 
 	ui_next_width(ui_fill());
@@ -158,8 +159,7 @@ ui_push_scrollable_region(Str8 string)
 	{
 		content_box_flags |= UI_BoxFlag_AnimateScroll;
 	}
-	UI_Box *content = ui_box_make(content_box_flags,
-	                              str8_lit("ScrollContent"));
+	UI_Box *content = ui_box_make(content_box_flags, str8_lit("ScrollContent"));
 	ui_push_parent(content);
 
 	UI_ScrollabelRegion result;
@@ -204,14 +204,15 @@ ui_pop_scrollable_region(Void)
 			ui_next_color(v4f32(0.5f, 0.5f, 0.5f, 1));
 			ui_next_size(axis_flip(axis), ui_em(0.4f, 1));
 			ui_next_size(axis, ui_pixels(size, 1));
-			UI_Box *scrollbar = ui_box_make(UI_BoxFlag_DrawBackground |
-			                                (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis) |
-			                                UI_BoxFlag_HotAnimation |
-			                                UI_BoxFlag_Clickable |
-			                                (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis) |
-			                                UI_BoxFlag_ActiveAnimation,
-			                                str8_lit("Scrollbar")
-			                                );
+			UI_Box *scrollbar = ui_box_make(
+				UI_BoxFlag_DrawBackground |
+				(UI_BoxFlags)(UI_BoxFlag_FloatingX << axis) |
+				UI_BoxFlag_HotAnimation |
+				UI_BoxFlag_Clickable |
+				(UI_BoxFlags)(UI_BoxFlag_AnimateWidth << axis) |
+				UI_BoxFlag_ActiveAnimation,
+				str8_lit("Scrollbar")
+			);
 
 			UI_Comm scrollbar_comm = ui_comm_from_box(scrollbar);
 			if (scrollbar_comm.dragging)
@@ -220,7 +221,7 @@ ui_pop_scrollable_region(Void)
 			}
 			else
 			{
-				scrollbar->flags |= (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis);
+				scrollbar->flags |= (UI_BoxFlags)(UI_BoxFlag_AnimateX << axis);
 			}
 		}
 
@@ -265,7 +266,7 @@ ui_named_row_end(Void)
 internal UI_Box *
 ui_named_row_beginfv(CStr fmt, va_list args)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_row_begin(string);
 	return(box);
@@ -274,7 +275,7 @@ ui_named_row_beginfv(CStr fmt, va_list args)
 internal UI_Box *
 ui_named_row_beginf(CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	UI_Box *box = ui_named_row_beginfv(fmt, args);
@@ -314,7 +315,7 @@ ui_named_column_end(Void)
 internal UI_Box *
 ui_named_column_beginfv(CStr fmt, va_list args)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_column_begin(string);
 	return(box);
@@ -323,7 +324,7 @@ ui_named_column_beginfv(CStr fmt, va_list args)
 internal UI_Box *
 ui_named_column_beginf(CStr fmt, ...)
 {
-	UI_Comm comm = {0};
+	UI_Comm comm = { 0 };
 	va_list args;
 	va_start(args, fmt);
 	UI_Box *box = ui_named_column_beginfv(fmt, args);
@@ -376,12 +377,14 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 		ui_next_width(ui_children_sum(1));
 		ui_next_height(ui_children_sum(1));
 		ui_next_child_layout_axis(Axis2_X);
-		UI_Box *combo_box = ui_box_make(UI_BoxFlag_DrawBackground |
-		                                UI_BoxFlag_DrawBorder |
-		                                UI_BoxFlag_HotAnimation |
-		                                UI_BoxFlag_ActiveAnimation |
-		                                UI_BoxFlag_Clickable,
-		                                name);
+		UI_Box *combo_box = ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_DrawBorder |
+			UI_BoxFlag_HotAnimation |
+			UI_BoxFlag_ActiveAnimation |
+			UI_BoxFlag_Clickable,
+			name
+		);
 		UI_Comm comm = ui_comm_from_box(combo_box);
 
 		ui_parent(combo_box)
@@ -402,7 +405,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 			ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
 
 			if (comm.clicked ||
-				(combo_box_ctx_is_open && comm.hovering))
+					(combo_box_ctx_is_open && comm.hovering))
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), combo_box_key);
 			}
@@ -413,11 +416,13 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 			{
 				for (U32 i = 0; i < item_count; ++i)
 				{
-					UI_Box *item = ui_box_make(UI_BoxFlag_DrawText |
-					                           UI_BoxFlag_Clickable |
-					                           UI_BoxFlag_HotAnimation |
-					                           UI_BoxFlag_ActiveAnimation,
-					                           item_names[i]);
+					UI_Box *item = ui_box_make(
+						UI_BoxFlag_DrawText |
+						UI_BoxFlag_Clickable |
+						UI_BoxFlag_HotAnimation |
+						UI_BoxFlag_ActiveAnimation,
+						item_names[i]
+					);
 					ui_box_equip_display_string(item, item_names[i]);
 
 					UI_Comm item_comm = ui_comm_from_box(item);
@@ -444,15 +449,19 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 {
 	Render_Context *renderer = ui_renderer();
 	Vec3F32 rgb = rgb_from_hsv(v3f32(hue, 1, 1));
-	ui_next_colors(v4f32(1, 1, 1, 1),
-				   v4f32(rgb.x, rgb.y, rgb.z, 1),
-				   v4f32(0, 0, 0, 1),
-				   v4f32(0, 0, 0, 1));
+	ui_next_colors(
+		v4f32(1, 1, 1, 1),
+		v4f32(rgb.x, rgb.y, rgb.z, 1),
+		v4f32(0, 0, 0, 1),
+		v4f32(0, 0, 0, 1)
+	);
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
-	UI_Box *sat_val_box = ui_box_make(UI_BoxFlag_DrawBorder |
-									  UI_BoxFlag_DrawBackground |
-									  UI_BoxFlag_Clickable,
-									  string);
+	UI_Box *sat_val_box = ui_box_make(
+		UI_BoxFlag_DrawBorder |
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_Clickable,
+		string
+	);
 	UI_Comm sat_val_comm = ui_comm_from_box(sat_val_box);
 
 	if (sat_val_comm.dragging)
@@ -468,16 +477,18 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 	// NOTE(hampus): Indicator
 	ui_parent(sat_val_box)
 	{
-		Vec2F32 pos = {0};
+		Vec2F32 pos = { 0 };
 		F32 indicator_size_px = ui_em(0.5f, 1).value;
 		ui_next_width(ui_pixels(indicator_size_px, 1));
 		ui_next_height(ui_pixels(indicator_size_px, 1));
 		ui_next_relative_pos(Axis2_X, *out_sat * sat_val_box->fixed_size.x - indicator_size_px/2);
 		ui_next_relative_pos(Axis2_Y, (1.0f - *out_val) * sat_val_box->fixed_size.y - indicator_size_px/2);
 		ui_next_corner_radius(5);
-		ui_box_make(UI_BoxFlag_DrawBorder |
-					UI_BoxFlag_FloatingPos,
-					str8_lit(""));
+		ui_box_make(
+			UI_BoxFlag_DrawBorder |
+			UI_BoxFlag_FloatingPos,
+			str8_lit("")
+		);
 	}
 }
 
@@ -496,9 +507,11 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 		Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
 		Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
 		// TODO(hampus): Make softness em dependent
-		Render_RectInstance *instance = render_rect(renderer, min, max,
-													.softness = 15,
-													.color = v4f32(0, 0, 0, 1));
+		Render_RectInstance *instance = render_rect(
+			renderer, min, max,
+			.softness = 15,
+			.color = v4f32(0, 0, 0, 1)
+		);
 		memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 	}
 
@@ -506,7 +519,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 	{
 		F32 rect_width = root->fixed_rect.max.x - root->fixed_rect.min.x;
 		F32 rect_height = root->fixed_rect.max.y - root->fixed_rect.min.y;
-		RectF32 rect = {0};
+		RectF32 rect = { 0 };
 		rect.min = root->fixed_rect.min;
 		rect.max = v2f32(root->fixed_rect.max.x, root->fixed_rect.min.y + rect_height / 6);
 		for (U32 i = 0; i < 6; ++i)
@@ -519,9 +532,11 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 			Vec4F32 rgba1 = v4f32(rgb1.x, rgb1.y, rgb1.z, 1);
 			Vec2F32 min = root->fixed_rect.min;
 			Vec2F32 max = root->fixed_rect.min;
-			Render_RectInstance *instance = render_rect(renderer, rect.min, rect.max,
-														.slice = rect_style->slice,
-														.use_nearest = rect_style->texture_filter);
+			Render_RectInstance *instance = render_rect(
+				renderer, rect.min, rect.max,
+				.slice = rect_style->slice,
+				.use_nearest = rect_style->texture_filter
+			);
 			instance->colors[Corner_TopLeft] = rgba0;
 			instance->colors[Corner_TopRight] = rgba0;
 			instance->colors[Corner_BottomLeft] = rgba1;
@@ -533,9 +548,11 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 
 	if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
 	{
-		Render_RectInstance *instance = render_rect(renderer, root->fixed_rect.min, root->fixed_rect.max,
-													.border_thickness = rect_style->border_thickness,
-													.color = rect_style->border_color);
+		Render_RectInstance *instance = render_rect(
+			renderer, root->fixed_rect.min, root->fixed_rect.max,
+			.border_thickness = rect_style->border_thickness,
+			.color = rect_style->border_color
+		);
 	}
 
 
@@ -545,9 +562,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 	}
 
-	for (UI_Box *child = root->last;
-		 !ui_box_is_nil(child);
-		 child = child->prev)
+	for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
 	{
 		ui_draw(child);
 	}
@@ -557,10 +572,12 @@ internal Void
 ui_hue_picker(F32 *out_hue, Str8 string)
 {
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
-	UI_Box *hue_box = ui_box_make(UI_BoxFlag_DrawBorder |
-								  UI_BoxFlag_DrawBackground |
-								  UI_BoxFlag_Clickable,
-								  string);
+	UI_Box *hue_box = ui_box_make(
+		UI_BoxFlag_DrawBorder |
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_Clickable,
+		string
+	);
 	ui_box_equip_custom_draw_proc(hue_box, hue_picker_custom_draw);
 
 	UI_Comm hue_comm = ui_comm_from_box(hue_box);
@@ -578,26 +595,30 @@ ui_hue_picker(F32 *out_hue, Str8 string)
 		ui_next_corner_radius(0);
 		ui_next_width(ui_pct(1, 1));
 		ui_next_height(ui_pixels(3, 1));
-		ui_box_make(UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_FloatingPos,
-					str8_lit(""));
+		ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_FloatingPos,
+			str8_lit("")
+		);
 	}
 }
 
 internal Void
 ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 {
-	Vec4F32 top_color = {0};
+	Vec4F32 top_color = { 0 };
 	top_color.rgb = rgb_from_hsv(hsv);
 	top_color.a = 1.0f;
 	Vec4F32 bottom_color = top_color;
 	bottom_color.a = 0;
 	ui_next_vert_gradient(top_color, bottom_color);
 	ui_next_hover_cursor(Gfx_Cursor_Hand);
-	UI_Box *alpha_box = ui_box_make(UI_BoxFlag_DrawBorder |
-									UI_BoxFlag_DrawBackground |
-									UI_BoxFlag_Clickable,
-									string);
+	UI_Box *alpha_box = ui_box_make(
+		UI_BoxFlag_DrawBorder |
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_Clickable,
+		string
+	);
 
 	UI_Comm alpha_comm = ui_comm_from_box(alpha_box);
 	if (alpha_comm.dragging)
@@ -614,26 +635,28 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 		ui_next_corner_radius(0);
 		ui_next_width(ui_pct(1, 1));
 		ui_next_height(ui_pixels(3, 1));
-		ui_box_make(UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_FloatingPos,
-					str8_lit(""));
+		ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_FloatingPos,
+			str8_lit("")
+		);
 	}
 }
 
 internal Str8
 ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U64 buffer_size, Str8 replace_str)
 {
-	U64 min_range = (U64) (range.x);
-	U64 max_range = (U64) (range.y);
+	U64 min_range = (U64)(range.x);
+	U64 max_range = (U64)(range.y);
 	min_range = u64_min(min_range, edit_str.size);
 	max_range = u64_min(max_range, edit_str.size);
 	U64 replace_range_length = max_range - min_range;
 	Str8 new_buffer = { 0 };
-	U64 new_buffer_size = edit_str.size - (replace_range_length) + replace_str.size;
+	U64 new_buffer_size = edit_str.size - (replace_range_length)+ replace_str.size;
 	new_buffer.data = push_array(arena, U8, new_buffer_size);
 	new_buffer.size = new_buffer_size;
-	Str8 before_range = str8_prefix(edit_str, (U64) range.x);
-	Str8 after_range  = str8_skip(edit_str, (U64) range.y);
+	Str8 before_range = str8_prefix(edit_str, (U64)range.x);
+	Str8 after_range  = str8_skip(edit_str, (U64)range.y);
 	if (before_range.size != 0)
 	{
 		memory_copy(new_buffer.data, before_range.data, before_range.size);
@@ -698,7 +721,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
 			ui_parent(box)
 			{
-				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
+				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64)edit_state->mark);
 				F32 cursor_extra_offset = ui_em(0.1f, 1).value;
 				ui_next_relative_pos(Axis2_X, offset.x+cursor_extra_offset);
 				ui_next_height(ui_pct(1, 1));
