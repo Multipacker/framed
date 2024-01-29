@@ -812,11 +812,13 @@ ui_ctx_menu_begin(UI_Key key)
 
 	if (is_open)
 	{
-		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground |
-														UI_BoxFlag_DrawBorder |
-														UI_BoxFlag_AnimateHeight |
-														UI_BoxFlag_DrawDropShadow |
-														UI_BoxFlag_Clip);
+		ui_next_extra_box_flags(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_DrawBorder |
+			UI_BoxFlag_AnimateHeight |
+			UI_BoxFlag_DrawDropShadow |
+			UI_BoxFlag_Clip
+		);
 	}
 
 	ui_push_seed(key);
@@ -1053,26 +1055,21 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 
 	ui_next_width(ui_pixels(max_clip.x, 1));
 	ui_next_height(ui_pixels(max_clip.y, 1));
-	ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX |
-														 UI_BoxFlag_OverflowY,
-														 str8_lit("Root"));
+	ui_ctx->root = ui_box_make(UI_BoxFlag_OverflowX | UI_BoxFlag_OverflowY, str8_lit("Root"));
 
 	ui_push_parent(ui_ctx->root);
 
 	ui_next_relative_pos(Axis2_X, ui_ctx->mouse_pos.x+10);
 	ui_next_relative_pos(Axis2_Y, ui_ctx->mouse_pos.y);
-	ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos,
-																		 str8_lit("TooltipRoot"));
+	ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FloatingPos, str8_lit("TooltipRoot"));
 
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
-	ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos,
-																			str8_lit("CtxMenuRoot"));
+	ui_ctx->ctx_menu_root = ui_box_make(UI_BoxFlag_FloatingPos, str8_lit("CtxMenuRoot"));
 
 	ui_next_width(ui_pct(1, 1));
 	ui_next_height(ui_pct(1, 1));
-	ui_ctx->normal_root = ui_box_make(0,
-																		str8_lit("NormalRoot"));
+	ui_ctx->normal_root = ui_box_make(0, str8_lit("NormalRoot"));
 
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
@@ -1235,11 +1232,9 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 	UI_Size size = root->layout_style.size[axis];
 	if (size.kind == UI_SizeKind_Pct)
 	{
-		assert(root->parent &&
-					 "Percent of parent without a parent");
+		assert(root->parent && "Percent of parent without a parent");
 
-		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum &&
-					 "Cyclic sizing behaviour");
+		assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum && "Cyclic sizing behaviour");
 
 		F32 parent_size = root->parent->fixed_size.v[axis];
 		root->fixed_size.v[axis] = f32_floor(parent_size * size.value);
@@ -1558,9 +1553,11 @@ ui_draw(UI_Box *root)
 			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
 			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
 			// TODO(hampus): Make softness em dependent
-			Render_RectInstance *instance = render_rect(ui_ctx->renderer, min, max,
-																									.softness = 15,
-																									.color = v4f32(0, 0, 0, 1));
+			Render_RectInstance *instance = render_rect(
+				ui_ctx->renderer, min, max,
+				.softness = 15,
+				.color = v4f32(0, 0, 0, 1)
+			);
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
 		}
 
@@ -1583,10 +1580,12 @@ ui_draw(UI_Box *root)
 			rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
 			rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
-			instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-														 .softness = rect_style->softness,
-														 .slice = rect_style->slice,
-														 .use_nearest = rect_style->texture_filter);
+			instance = render_rect(
+				ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+				.softness = rect_style->softness,
+				.slice = rect_style->slice,
+				.use_nearest = rect_style->texture_filter
+			);
 			memory_copy_array(instance->colors, rect_style->color);
 			memory_copy_array(instance->radies, rect_style->radies.v);
 		}
@@ -1608,7 +1607,12 @@ ui_draw(UI_Box *root)
 				}
 			}
 
-			Render_RectInstance *instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = rect_style->border_thickness, .color = rect_style->border_color, .softness = rect_style->softness);
+			Render_RectInstance *instance = render_rect(
+				ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+				.border_thickness = rect_style->border_thickness,
+				.color = rect_style->border_color,
+				.softness = rect_style->softness
+			);
 			memory_copy(instance->radies, rect_style->radies.v, sizeof(Vec4F32));
 		}
 
