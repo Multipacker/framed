@@ -289,9 +289,22 @@ struct UI_Stats
 	U64 num_transient_boxes;
 };
 
+typedef enum TextActionFlag TextActionFlag;
+enum TextActionFlag
+{
+	TextActionFlag_WordScan                = (1 << 0),
+	TextActionFlag_KeepMark                = (1 << 1),
+	TextActionFlag_Delete                  = (1 << 2),
+	TextActionFlag_Copy                    = (1 << 3),
+	TextActionFlag_Paste                   = (1 << 4),
+	TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
+	TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
+};
+
 typedef struct UI_TextAction UI_TextAction;
 struct UI_TextAction
 {
+	TextActionFlag flags;
 	S64 delta;
 	U8 character;
 };
@@ -488,6 +501,7 @@ internal Void    ui_draw(UI_Box *root);
 
 internal F32            ui_top_font_line_height(Void);
 internal Render_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
+internal Render_FontKey ui_top_font_key(Void);
 
 ////////////////////////////////
 //~ hampus: Stack managing

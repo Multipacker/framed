@@ -620,83 +620,133 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 	}
 }
 
-internal UI_Comm
-ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, Str8 string)
+internal Str8
+ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U64 buffer_size, Str8 replace_str)
 {
-	Str8 buffer_str8 = str8(buffer, buffer_size);
-	// TODO(simon): We really shouldn't call str8_cstr, we can just pass the
-	// length instead.
-	Str8 edit_str = str8_cstr((CStr) buffer);
-	ui_next_child_layout_axis(Axis2_X);
-	UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-							  UI_BoxFlag_HotAnimation |
-							  UI_BoxFlag_ActiveAnimation |
-							  UI_BoxFlag_FocusAnimation |
-							  UI_BoxFlag_Clickable |
-							  UI_BoxFlag_DrawBorder |
-							  UI_BoxFlag_Clip,
-							  string);
-
-	UI_Comm comm = ui_comm_from_box(box);
-
-	if (ui_box_is_focused(box))
+	U64 min_range = (U64) (range.x);
+	U64 max_range = (U64) (range.y);
+	min_range = u64_min(min_range, edit_str.size);
+	max_range = u64_min(max_range, edit_str.size);
+	U64 replace_range_length = max_range - min_range;
+	Str8 new_buffer = { 0 };
+	U64 new_buffer_size = edit_str.size - (replace_range_length) + replace_str.size;
+	new_buffer.data = push_array(arena, U8, new_buffer_size);
+	new_buffer.size = new_buffer_size;
+	Str8 before_range = str8_prefix(edit_str, (U64) range.x);
+	Str8 after_range  = str8_skip(edit_str, (U64) range.y);
+	if (before_range.size != 0)
 	{
-		UI_TextActionList text_actions = ui_text_action_list_from_events(ui_frame_arena(), ui_events());
-		for (UI_TextActionNode *node = text_actions.first;
-			 node != 0;
-			 node = node->next)
+		memory_copy(new_buffer.data, before_range.data, before_range.size);
+	}
+	if (replace_str.size != 0)
+	{
+		memory_copy(new_buffer.data + range.x, replace_str.data, replace_str.size);
+	}
+	if (after_range.size != 0)
+	{
+		memory_copy(new_buffer.data + range.x + replace_str.size, after_range.data, after_range.size);
+	}
+	if (new_buffer.size > buffer_size)
+	{
+		new_buffer.size = buffer_size;
+	}
+	return(new_buffer);
+}
+
+internal UI_Comm
+ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, Str8 string)
+{
+	UI_Comm comm = { 0 };
+	ui_seed(string)
+	{
+		Str8 buffer_str8 = str8(buffer, buffer_size);
+		ui_next_child_layout_axis(Axis2_X);
+		UI_Box *box = ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_HotAnimation |
+			UI_BoxFlag_ActiveAnimation |
+			UI_BoxFlag_FocusAnimation |
+			UI_BoxFlag_Clickable |
+			UI_BoxFlag_DrawBorder |
+			UI_BoxFlag_Clip |
+			UI_BoxFlag_AnimateScroll,
+			string
+		);
+
+		comm = ui_comm_from_box(box);
+
+		Str8 edit_str = (Str8) { buffer, *string_length };
+		if (ui_box_is_focused(box))
 		{
-			UI_TextAction action = node->action;
-			UI_TextOp op = ui_text_op_from_state_and_action(ui_frame_arena(), edit_state, &action);
-			edit_state->cursor = op.new_cursor;
-			edit_state->mark = op.new_mark;
-			arena_scratch(0, 0)
+			UI_TextActionList text_actions = ui_text_action_list_from_events(ui_frame_arena(), ui_events());
+			for (UI_TextActionNode *node = text_actions.first; node != 0; node = node->next)
 			{
-				U64 min_range = (U64) (op.range.x - 1);
-				U64 max_range = (U64) (op.range.y - 1);
-				min_range = u64_min(min_range, edit_str.size);
-				max_range = u64_min(max_range, edit_str.size);
-				U64 replace_range_length = max_range - min_range;
-				Str8 new_buffer = {0};
-				U64 new_buffer_size = edit_str.size - (replace_range_length) + op.replace_string.size;
-				new_buffer.data = push_array(scratch, U8, new_buffer_size);
-				new_buffer.size = new_buffer_size;
-				Str8 before_range = str8_prefix(edit_str, (U64) op.range.x);
-				Str8 after_range  = str8_skip(edit_str,   (U64) op.range.y);
-				if(before_range.size != 0)
+				UI_TextAction action = node->action;
+				UI_TextOp op = ui_text_op_from_state_and_action(ui_frame_arena(), edit_str, edit_state, &action);
+				edit_state->cursor = op.new_cursor;
+				edit_state->mark = op.new_mark;
+				arena_scratch(0, 0)
 				{
-					memory_copy(new_buffer.data, before_range.data, before_range.size);
+					Str8 new_str = ui_push_replace_string(scratch, edit_str, op.range, buffer, buffer_size, op.replace_string);
+					memory_copy(buffer, new_str.data, new_str.size);
+					*string_length = new_str.size;
+					edit_str = new_str;
 				}
-				if(op.replace_string.size != 0)
-				{
-					memory_copy(new_buffer.data + op.range.x, op.replace_string.data, op.replace_string.size);
-				}
-				if(after_range.size != 0)
-				{
-					memory_copy(new_buffer.data + op.range.x + op.replace_string.size, after_range.data, after_range.size);
-				}
-				if (new_buffer.size > buffer_size)
-				{
-					new_buffer.size = buffer_size;
-				}
-				memory_copy(buffer, new_buffer.data, new_buffer.size);
+				edit_state->cursor = s64_clamp(0, edit_state->cursor, edit_str.size);
+				edit_state->mark = s64_clamp(0, edit_state->mark, edit_str.size);
+			}
+
+			ui_parent(box)
+			{
+				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
+				F32 cursor_extra_offset = ui_em(0.1f, 1).value;
+				ui_next_relative_pos(Axis2_X, offset.x+cursor_extra_offset);
+				ui_next_height(ui_pct(1, 1));
+				ui_next_width(ui_pixels(3, 1));
+				ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+				UI_Box *cursor_box = ui_box_make(
+					UI_BoxFlag_DrawBackground |
+					UI_BoxFlag_FloatingPos,
+					str8_lit("CursorBox")
+				);
+
+				// NOTE(hampus): Make sure the cursor is in view
+
+				Vec2F32 text_size = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str);
+				F32 padding = ui_em(0.5f, 1).value;
+
+				// NOTE(hampus): Scroll to the left if there is empty 
+				// space to the right and there are still characters
+				// outside on the left iside
+				F32 content_size = text_size.x + cursor_box->fixed_size.x + padding + cursor_extra_offset;
+				F32 adjustment = box->fixed_size.x - (content_size-box->scroll.x);
+				adjustment = f32_clamp(0, adjustment, box->scroll.x);
+				box->scroll.x -= adjustment;
+
+				Vec2F32 cursor_visiblity_range = v2f32(
+					cursor_box->rel_pos.x,
+					cursor_box->rel_pos.x + cursor_box->fixed_size.x
+				);
+
+				cursor_visiblity_range.x = f32_max(0, cursor_visiblity_range.x);
+				cursor_visiblity_range.y = f32_max(0, cursor_visiblity_range.y);
+
+				Vec2F32 box_visibility_range = v2f32(box->scroll.x, box->scroll.x + box->fixed_size.x-padding);
+				F32 delta_left = cursor_visiblity_range.x - box_visibility_range.x ;
+				F32 delta_right = cursor_visiblity_range.y - box_visibility_range.y;
+				delta_left = f32_min(delta_left, 0);
+				delta_right = f32_max(delta_right, 0);
+
+				box->scroll.x += delta_left + delta_right;
+				box->scroll.x = f32_max(0, box->scroll.x);
 			}
 		}
+
 		ui_parent(box)
 		{
-			ui_next_height(ui_pct(1, 1));
-			ui_next_width(ui_pixels(1, 1));
-			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-			UI_Box *cursor_box = ui_box_make(UI_BoxFlag_DrawBackground |
-											 UI_BoxFlag_FloatingPos,
-											 str8_lit(""));
+			ui_next_text_padding(Axis2_X, 0);
+			ui_text(edit_str);
 		}
-	}
-
-	ui_parent(box)
-	{
-		ui_next_text_padding(Axis2_X, 0);
-		ui_text(buffer_str8);
 	}
 
 	return(comm);

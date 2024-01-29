@@ -286,14 +286,38 @@ ui_text_action_from_event(Gfx_Event *event)
 				result.delta = 1;
 			} break;
 
+			case Gfx_Key_Home:
+			{
+				result.delta = S64_MIN;
+			} break;
+
+			case Gfx_Key_End:
+			{
+				result.delta = S64_MAX;
+			} break;
+
+			case Gfx_Key_Backspace:
+			{
+				result.delta = -1;
+				result.flags |= TextActionFlag_Delete;
+			} break;
+
+			case Gfx_Key_Delete:
+			{
+				result.delta = +1;
+				result.flags |= TextActionFlag_Delete;
+			} break;
+
 			default: break;
 		}
 	}
 	else if (event->kind == Gfx_EventKind_Char)
 	{
-		assert(event->character < 128 && "Unicode typing not yet supported!");
-		result.character = (U8) event->character;
-		result.delta = 1;
+		if (event->character >= ' ' && event->character <= '~')
+		{
+			result.character = (U8) event->character;
+			result.delta = 1;
+		}
 	}
 
 	return(result);
@@ -317,7 +341,7 @@ ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
 }
 
 internal UI_TextOp
-ui_text_op_from_state_and_action(Arena *arena, UI_TextEditState *state, UI_TextAction *action)
+ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *state, UI_TextAction *action)
 {
 	UI_TextOp result = { 0 };
 	result.new_cursor = state->cursor;
@@ -333,7 +357,14 @@ ui_text_op_from_state_and_action(Arena *arena, UI_TextEditState *state, UI_TextA
 		result.range.y = result.new_cursor;
 	}
 
+	action->delta = s64_clamp(-state->cursor, action->delta, edit_str.size - state->cursor+1);
 	result.new_cursor += action->delta;
+
+	if (action->flags & TextActionFlag_Delete)
+	{
+		result.range = v2s64(result.new_cursor, result.new_mark);
+	}
+
 	result.new_mark = result.new_cursor;
 
 	return(result);
@@ -1620,6 +1651,13 @@ ui_font_key_from_text_style(UI_TextStyle *text_style)
 	Render_FontKey result = { 0 };
 	result.path = text_style->font;
 	result.font_size = text_style->font_size;
+	return(result);
+}
+
+internal Render_FontKey
+ui_top_font_key(Void)
+{
+	Render_FontKey result = ui_font_key_from_text_style(ui_top_text_style());
 	return(result);
 }
 
