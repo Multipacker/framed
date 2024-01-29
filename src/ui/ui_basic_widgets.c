@@ -652,7 +652,7 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	max_range = u64_min(max_range, edit_str.size);
 	U64 replace_range_length = max_range - min_range;
 	Str8 new_buffer = { 0 };
-	U64 new_buffer_size = edit_str.size - (replace_range_length)+ replace_str.size;
+	U64 new_buffer_size = edit_str.size - replace_range_length + replace_str.size;
 	new_buffer.data = push_array(arena, U8, new_buffer_size);
 	new_buffer.size = new_buffer_size;
 	Str8 before_range = str8_prefix(edit_str, (U64)range.x);
@@ -713,7 +713,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					Str8 new_str = ui_push_replace_string(scratch, edit_str, op.range, buffer, buffer_size, op.replace_string);
 					memory_copy(buffer, new_str.data, new_str.size);
 					*string_length = new_str.size;
-					edit_str = new_str;
+					edit_str.size = new_str.size;
 				}
 				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64) edit_str.size);
 				edit_state->mark = s64_clamp(0, edit_state->mark, (S64) edit_str.size);
