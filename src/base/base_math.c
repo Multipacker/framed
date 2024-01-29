@@ -910,6 +910,13 @@ s64_big_to_local_endian(S64 x)
 	return *(S64 *) &swapped;
 }
 
+internal S64
+s64_clamp(S64 min, S64 val, S64 max)
+{
+	S64 result = s64_max(s64_min(val, max), min);
+	return(result);
+}
+
 internal F32
 f32_infinity(Void)
 {

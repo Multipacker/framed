@@ -400,6 +400,7 @@ internal S64 s64_min(S64 a, S64 b);
 internal S64 s64_max(S64 a, S64 b);
 internal S64 s64_abs(S64 x);
 internal S64 s64_big_to_local_endian(S64 x);
+internal S64 s64_clamp(S64 min, S64 val, S64 max);
 
 internal F32 f32_infinity(Void);
 internal F32 f32_negative_infinity(Void);
