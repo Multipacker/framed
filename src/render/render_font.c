@@ -57,7 +57,7 @@ render_key_from_font(Str8 path, U32 font_size)
 internal Render_KerningPair
 render_kern_pair_from_glyph_indicies(Render_Font *font, U32 index0, U32 index1)
 {
-	U64 pair = (U64) index0 << 32 | (U64) index1;
+	U64 pair = (U64)index0 << 32 | (U64)index1;
 	U64 mask = font->kern_map_size - 1;
 	// NOTE(simon): Pseudo fibonacci hashing.
 	U64 index = (pair * 11400714819323198485LLU) & mask;
@@ -109,17 +109,17 @@ render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegion
 	U32 width = rect_region.x1 - rect_region.x0;
 	U32 height = rect_region.y1 - rect_region.y0;
 
-	U8 *data = (U8 *) atlas->memory + (rect_region.min.x + rect_region.min.y * atlas->dim.x)*4;
+	U8 *data = (U8 *)atlas->memory + (rect_region.min.x + rect_region.min.y * atlas->dim.x)*4;
 	U8 *dst = data;
 	for (U32 y = 0; y < height; ++y)
 	{
-		U32 *dst_row = (U32 *) dst;
+		U32 *dst_row = (U32 *)dst;
 		for (U32 x = 0; x < width; ++x)
 		{
 			*dst_row++ = 0;
 		}
 
-		dst += (S32) (atlas->dim.x * 4);
+		dst += (S32)(atlas->dim.x * 4);
 	}
 }
 
@@ -303,7 +303,7 @@ render_unload_font(Render_Context *renderer, Render_Font *font)
 		}
 	}
 	arena_pop_to(font->arena, 0);
-	memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
+	memory_zero((U8 *)font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
 
 internal Void
@@ -359,13 +359,13 @@ render_font_stream_thread(Void *data)
 				memory_fence();
 
 				render_update_texture(
-									  renderer,
-									  renderer->font_atlas->texture,
-									  renderer->font_atlas->memory,
-									  renderer->font_atlas->dim.width,
-									  renderer->font_atlas->dim.height,
-									  0
-									  );
+					renderer,
+					renderer->font_atlas->texture,
+					renderer->font_atlas->memory,
+					renderer->font_atlas->dim.width,
+					renderer->font_atlas->dim.height,
+					0
+				);
 
 				if (success)
 				{
@@ -421,8 +421,8 @@ render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 	Render_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
 
 	for (Render_GlyphIndexNode *node = bucket->first;
-		 node != 0;
-		 node = node->next)
+			 node != 0;
+			 node = node->next)
 	{
 		if (node->codepoint == codepoint)
 		{
@@ -446,7 +446,7 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 	{
 		Render_Font *font = renderer->font_cache->entries + i;
 		if (str8_equal(font->load_params.path, font_key.path) &&
-			font->load_params.size == font_key.font_size)
+				font->load_params.size == font_key.font_size)
 		{
 			result = font;
 			break;
@@ -499,16 +499,16 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
 	F32 xpos = min.x + glyph->bearing_in_pixels.x;
 	F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-	F32 width = (F32) glyph->size_in_pixels.x;
-	F32 height = (F32) glyph->size_in_pixels.y;
+	F32 width = (F32)glyph->size_in_pixels.x;
+	F32 height = (F32)glyph->size_in_pixels.y;
 
 	render_rect(renderer,
-				v2f32(xpos, ypos),
-				v2f32(xpos + width,
-					  ypos + height),
-				.slice = glyph->slice,
-				.color = color,
-				.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
+							v2f32(xpos, ypos),
+							v2f32(xpos + width,
+							ypos + height),
+							.slice = glyph->slice,
+							.color = color,
+							.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
 }
 
 internal Void
@@ -593,16 +593,16 @@ render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, 
 		F32 xpos = min.x + glyph->bearing_in_pixels.x;
 		F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-		F32 width = (F32) glyph->size_in_pixels.x;
-		F32 height = (F32) glyph->size_in_pixels.y;
+		F32 width = (F32)glyph->size_in_pixels.x;
+		F32 height = (F32)glyph->size_in_pixels.y;
 
 		render_rect(renderer,
-					v2f32(xpos, ypos),
-					v2f32(xpos + width,
-						  ypos + height),
-					.slice = glyph->slice,
-					.color = color,
-					.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
+								v2f32(xpos, ypos),
+								v2f32(xpos + width,
+								ypos + height),
+								.slice = glyph->slice,
+								.color = color,
+								.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
 	}
 }
 
@@ -614,15 +614,15 @@ render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Fo
 }
 
 internal Vec2F32
-render_measure_text(Render_Font *font, Str8 text)
+render_measure_text_length(Render_Font *font, Str8 text, U64 length)
 {
 	Vec2F32 result = { 0 };
 	debug_function()
 	{
 		if (render_font_is_loaded(font))
 		{
-			S32 length = (S32) text.size;
-			for (S32 i = 0; i < length; ++i)
+			S32 length_s32 = (S32)length;
+			for (S32 i = 0; i < length_s32; ++i)
 			{
 				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
 				Render_Glyph *glyph = font->glyphs + index;
@@ -639,6 +639,13 @@ render_measure_text(Render_Font *font, Str8 text)
 			result.y = font->line_height;
 		}
 	}
+	return(result);
+}
+
+internal Vec2F32
+render_measure_text(Render_Font *font, Str8 text)
+{
+	Vec2F32 result = render_measure_text_length(font, text, text.size);
 	return(result);
 }
 
@@ -662,7 +669,7 @@ render_measure_multiline_text(Render_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
 	{
-		S32 length = (S32) text.size;
+		S32 length = (S32)text.size;
 		F32 max_row_width = 0;
 		F32 row_width = 0;
 		for (S32 i = 0; i < length; ++i)

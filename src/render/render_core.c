@@ -46,10 +46,10 @@ internal Vec4F32
 vec4f32_srgb_to_linear(Vec4F32 srgb)
 {
 	Vec4F32 result = v4f32(
-							 f32_srgb_to_linear(srgb.r),
-							 f32_srgb_to_linear(srgb.g),
-							 f32_srgb_to_linear(srgb.b),
-							 srgb.a
+		f32_srgb_to_linear(srgb.r),
+		f32_srgb_to_linear(srgb.g),
+		f32_srgb_to_linear(srgb.b),
+		srgb.a
 	);
 	return(result);
 }
@@ -73,10 +73,10 @@ internal Vec4F32
 vec4f32_linear_to_srgb(Vec4F32 linear)
 {
 	Vec4F32 result = v4f32(
-							 f32_linear_to_srgb(linear.r),
-							 f32_linear_to_srgb(linear.g),
-							 f32_linear_to_srgb(linear.b),
-							 linear.a
+		f32_linear_to_srgb(linear.r),
+		f32_linear_to_srgb(linear.g),
+		f32_linear_to_srgb(linear.b),
+		linear.a
 	);
 	return(result);
 }

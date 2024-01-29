@@ -966,13 +966,18 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 							adjustment_for_empty_space = f32_clamp(0, adjustment_for_empty_space, tabs_container->scroll.x);
 							tabs_container->scroll.x -= adjustment_for_empty_space;
 
-							Vec2F32 tab_visiblity_range = v2f32(active_tab->tab_container->rel_pos.x,
-																									active_tab->tab_container->rel_pos.x + active_tab->tab_container->fixed_size.x);
+							Vec2F32 tab_visiblity_range = v2f32(
+								active_tab->tab_container->rel_pos.x,
+								active_tab->tab_container->rel_pos.x + active_tab->tab_container->fixed_size.x
+							);
 
 							tab_visiblity_range.x = f32_max(0, tab_visiblity_range.x);
 							tab_visiblity_range.y = f32_max(0, tab_visiblity_range.y);
 
-							Vec2F32 tab_bar_visiblity_range = v2f32(tabs_container->scroll.x, tabs_container->scroll.x + tabs_container->fixed_size.x);
+							Vec2F32 tab_bar_visiblity_range = v2f32(
+								tabs_container->scroll.x,
+								tabs_container->scroll.x + tabs_container->fixed_size.x
+							);
 
 							F32 delta_left = tab_visiblity_range.x - tab_bar_visiblity_range.x ;
 							F32 delta_right = tab_visiblity_range.y - tab_bar_visiblity_range.y;

@@ -148,9 +148,7 @@ PROFILER_UI_COMMAND(panel_split)
 
 	// NOTE(hampus): Make the children siblings
 	// and hook them into the new parent
-	for (Side side = (Side) 0;
-		 side < Side_COUNT;
-		 side++)
+	for (Side side = (Side) 0; side < Side_COUNT; side++)
 	{
 		children[side]->sibling = children[side_flip(side)];
 		children[side]->parent = new_parent;
