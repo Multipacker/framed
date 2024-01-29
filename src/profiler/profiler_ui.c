@@ -576,13 +576,14 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 		ui_next_size(flipped_split_axis, ui_fill());
 	}
 
-	// NOTE(hampus): It is clickable so that it can consume
-	// all the click events at the end to prevent boxes
-	// from behind it to take click events
+	// NOTE(hampus): It is clickable and has view scroll so that it can consume
+	// all the click and scroll events at the end to prevent boxes from behind
+	// it to take them.
 	ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
 	UI_Box *box = ui_box_make(
 		UI_BoxFlag_Clip |
 		UI_BoxFlag_Clickable |
+		UI_BoxFlag_ViewScroll |
 		UI_BoxFlag_DrawBackground,
 		root->string
 	);
