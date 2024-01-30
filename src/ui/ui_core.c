@@ -1186,7 +1186,6 @@ internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
 	// NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
-	Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(&root->text_style));
 
 	if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
 	{
@@ -1204,6 +1203,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
 		case UI_SizeKind_TextContent:
 		{
+			Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(&root->text_style));
 			Vec2F32 text_dim = { 0 };
 			if (root->text_style.icon)
 			{
@@ -1546,8 +1546,6 @@ ui_draw(UI_Box *root)
 		UI_RectStyle *rect_style = &root->rect_style;
 		UI_TextStyle *text_style = &root->text_style;
 
-		Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(text_style));
-
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 		{
 			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
@@ -1618,6 +1616,8 @@ ui_draw(UI_Box *root)
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
 		{
+			Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(text_style));
+
 			if (text_style->icon)
 			{
 				Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->fixed_rect, text_style->align);
