@@ -272,6 +272,16 @@ ui_text_action_from_event(Gfx_Event *event)
 {
 	UI_TextAction result = { 0 };
 
+	if (event->key_modifiers & Gfx_KeyModifier_Control)
+	{
+		result.flags |= UI_TextActionFlag_WordScan;
+	}
+
+	if (event->key_modifiers & Gfx_KeyModifier_Shift)
+	{
+		result.flags |= UI_TextActionFlag_KeepMark;
+	}
+
 	if (event->kind == Gfx_EventKind_KeyPress)
 	{
 		switch (event->key)
@@ -360,6 +370,57 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	action->delta = s64_clamp(-state->cursor, action->delta, (S64) edit_str.size - state->cursor+1);
 	result.new_cursor += action->delta;
 
+	if (action->flags & UI_TextActionFlag_WordScan)
+	{
+		if (action->delta < 0)
+		{
+			U64 first_whitespace_index = 0;
+			Str8 string_before_cursor = str8_prefix(edit_str, result.new_cursor);
+			B32 found_next_word = false;
+			for (
+				U64 i = string_before_cursor.size - 1;
+				i != 0;
+				--i)
+			{
+				U8 next_character = next_character = string_before_cursor.data[i];;
+				if (next_character == ' ')
+				{
+					result.new_cursor = i;
+					found_next_word = true;
+					break;
+				}
+			}
+			if (!found_next_word)
+			{
+				// NOTE(hampus): Stop the cursor from moving while we 
+				// are holding CTRL and we didn't find a next word
+				result.new_cursor = 0;
+			}
+		}
+		else if (action->delta > 0)
+		{
+			U64 first_whitespace_index = 0;
+			Str8 string_after_cursor = str8_skip(edit_str, result.new_cursor);
+			U8 prev_character = 0;
+			B32 found_next_word = false;
+			for (U64 i = 0; i < string_after_cursor.size; ++i)
+			{
+				U8 character = string_after_cursor.data[i];
+				if (character != ' ' && prev_character == ' ')
+				{
+					result.new_cursor = state->cursor+i;
+					found_next_word = true;
+					break;
+				}
+				prev_character = character;
+			}
+			if (!found_next_word)
+			{
+				result.new_cursor = (S64) edit_str.size;
+			}
+		}
+	}
+
 	if (action->flags & UI_TextActionFlag_Delete)
 	{
 		result.range = v2s64(result.new_cursor, result.new_mark);
@@ -369,7 +430,10 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		}
 	}
 
-	result.new_mark = result.new_cursor;
+	if (!(action->flags & UI_TextActionFlag_KeepMark))
+	{
+		result.new_mark = result.new_cursor;
+	}
 
 	return(result);
 }
