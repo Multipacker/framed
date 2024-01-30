@@ -620,16 +620,15 @@ render_measure_text_length(Render_Font *font, Str8 text, U64 length)
 	{
 		if (render_font_is_loaded(font))
 		{
-			S32 length_s32 = (S32)length;
-			for (S32 i = 0; i < length_s32; ++i)
+			for (U32 i = 0; i < length; ++i)
 			{
 				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
 				Render_Glyph *glyph = font->glyphs + index;
 				result.x += (glyph->advance_width);
 
-				if ((U64)(i+1) < text.size)
+				if (i + 1 < length)
 				{
-					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
+					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i + 1]);
 					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
 					result.x += kerning_pair.value;
 				}
