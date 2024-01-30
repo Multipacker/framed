@@ -57,22 +57,6 @@ struct Render_Glyph
 	Render_TextureSlice slice;
 };
 
-typedef struct Render_GlyphIndexNode Render_GlyphIndexNode;
-struct Render_GlyphIndexNode
-{
-	Render_GlyphIndexNode *next;
-	U32 codepoint;
-	U32 index; // NOTE(hampus): The index into the glyphs array in the font
-};
-
-typedef struct Render_GlyphBucket Render_GlyphBucket;
-struct Render_GlyphBucket
-{
-	Render_GlyphIndexNode *first;
-	Render_GlyphIndexNode *last;
-};
-
-#define GLYPH_BUCKETS_ARRAY_SIZE 128
 #define RENDER_FONT_CACHE_SIZE   8
 
 typedef struct Render_KerningPair Render_KerningPair;
@@ -100,6 +84,13 @@ struct Render_FontLoadParams
 	Str8             path;
 };
 
+typedef struct Render_CodepointMap Render_CodepointMap;
+struct Render_CodepointMap
+{
+	U32 codepoint;
+	U32 glyph_index;
+};
+
 typedef struct Render_Font Render_Font;
 struct Render_Font
 {
@@ -107,7 +98,9 @@ struct Render_Font
 	// try to allocate from the renderer arena
 	Arena *arena;
 
-	Render_GlyphBucket glyph_bucket[GLYPH_BUCKETS_ARRAY_SIZE];
+	Render_CodepointMap *codepoint_map;
+	U32 codepoint_map_size; // NOTE(simon): Must be a power of 2.
+
 	Render_Glyph *glyphs;
 
 	U64 kern_map_size;

@@ -417,20 +417,15 @@ internal U32
 render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 {
 	assert(font);
-	U32 index = 0;
-	Render_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
 
-	for (Render_GlyphIndexNode *node = bucket->first;
-			 node != 0;
-			 node = node->next)
+	U64 map_mask = font->codepoint_map_size - 1;
+	U64 index = ((U64) codepoint * 11400714819323198485LLU) & map_mask;
+	while (font->codepoint_map[index].codepoint != codepoint && font->codepoint_map[index].codepoint != U32_MAX)
 	{
-		if (node->codepoint == codepoint)
-		{
-			index = node->index;
-			break;
-		}
+		index = (index + 1) & map_mask;
 	}
-	return(index);
+
+	return(font->codepoint_map[index].glyph_index);
 }
 
 internal Render_Font *

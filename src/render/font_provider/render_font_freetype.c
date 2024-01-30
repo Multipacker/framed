@@ -26,14 +26,18 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 
 	B32 index_already_allocated = false;
 
-	Render_GlyphBucket *bucket = font->glyph_bucket + (codepoint % GLYPH_BUCKETS_ARRAY_SIZE);
-	Render_GlyphIndexNode *node = push_struct(font->arena, Render_GlyphIndexNode);
-	node->codepoint = codepoint;
-	node->index = glyph_array_index;
-	sll_push_front(bucket->first, node);
+	U64 map_mask = font->codepoint_map_size - 1;
+	U64 index = ((U64) codepoint * 11400714819323198485LLU) & map_mask;
+	while (font->codepoint_map[index].codepoint != U32_MAX)
+	{
+		index = (index + 1) & map_mask;
+	}
+
+	font->codepoint_map[index].codepoint   = codepoint;
+	font->codepoint_map[index].glyph_index = glyph_array_index;
 
 	Str8 error = { 0 };
-	Render_Glyph *glyph = font->glyphs + node->index;
+	Render_Glyph *glyph = font->glyphs + glyph_array_index;
 	FT_Int32 ft_load_flags = 0;
 	FT_Render_Mode ft_render_flags = 0;
 	Render_FontAtlasRegion *atlas_region;
@@ -255,13 +259,11 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
 
 				FT_Select_Charmap(face, ft_encoding_unicode);
 				U64 num_glyphs_to_load = 128;
-				font->font_atlas_regions = push_array(font->arena, Render_FontAtlasRegion, num_glyphs_to_load+1);
-				font->glyphs             = push_array(font->arena, Render_Glyph, (U64) num_glyphs_to_load+1);
-				font->num_glyphs         = (U32) face->num_glyphs;
+				font->num_glyphs       = (U32) face->num_glyphs;
 
 				U32 *glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
 				U32 *codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
-				U32 glyph_count = 0;
+				U32 glyph_count     = 0;
 
 				for (
 					 U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
@@ -272,6 +274,16 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
 					glyph_indicies[glyph_count] = index;
 					codepoints[glyph_count]     = codepoint;
 					++glyph_count;
+				}
+
+				font->font_atlas_regions = push_array(font->arena, Render_FontAtlasRegion, glyph_count + 1);
+				font->glyphs             = push_array(font->arena, Render_Glyph, glyph_count + 1);
+				font->codepoint_map_size = u32_ceil_to_power_of_2((glyph_count * 4 + 2) / 3);
+				font->codepoint_map      = push_array(font->arena, Render_CodepointMap, font->codepoint_map_size);
+				for (U32 i = 0; i < font->codepoint_map_size; ++i)
+				{
+					font->codepoint_map[i].codepoint   = U32_MAX;
+					font->codepoint_map[i].glyph_index = 0;
 				}
 
 				Vec2F32 dpi = gfx_get_dpi(renderer->gfx);
