@@ -435,53 +435,57 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 	assert(font_key.font_size > 0);
 	assert(font_key.path.size > 0);
 	Render_Font *result = 0;
-	S32 unused_slot = -1;
-	U64 current_frame_index = renderer->frame_index;
-	for (S32 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
+
+	debug_function()
 	{
-		Render_Font *font = renderer->font_cache->entries + i;
-		if (str8_equal(font->load_params.path, font_key.path) &&
-				font->load_params.size == font_key.font_size)
+		S32 unused_slot = -1;
+		U64 current_frame_index = renderer->frame_index;
+		for (S32 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
 		{
-			result = font;
-			break;
+			Render_Font *font = renderer->font_cache->entries + i;
+			if (str8_equal(font->load_params.path, font_key.path) &&
+					font->load_params.size == font_key.font_size)
+			{
+				result = font;
+				break;
+			}
+
+			B32 slot_is_cold = false;
+
+			if (render_font_is_loaded(font))
+			{
+				slot_is_cold = font->last_frame_index_used < (current_frame_index-1);
+			}
+			else if (render_font_is_unloaded(font))
+			{
+				// NOTE(hampus): This would only be the case
+				// if the font hasn't been initialized since
+				// the program's start.
+				slot_is_cold = true;
+			}
+
+			if (slot_is_cold && (unused_slot == -1))
+			{
+				unused_slot = i;
+			}
 		}
 
-		B32 slot_is_cold = false;
+		if (!result)
+		{
+			assert(unused_slot != -1 && "Cache is hot and full");
+			Render_Font *empty_entry = renderer->font_cache->entries + unused_slot;
+			Render_FontLoadParams params =
+			{
+				.render_mode = Render_FontRenderMode_LCD,
+				.size = font_key.font_size,
+				.path = font_key.path,
+			};
+			render_push_font_to_queue(renderer, empty_entry, params);
+			result = empty_entry;
+		}
 
-		if (render_font_is_loaded(font))
-		{
-			slot_is_cold = font->last_frame_index_used < (current_frame_index-1);
-		}
-		else if (render_font_is_unloaded(font))
-		{
-			// NOTE(hampus): This would only be the case
-			// if the font hasn't been initialized since
-			// the program's start.
-			slot_is_cold = true;
-		}
-
-		if (slot_is_cold && (unused_slot == -1))
-		{
-			unused_slot = i;
-		}
+		result->last_frame_index_used = renderer->frame_index;
 	}
-
-	if (!result)
-	{
-		assert(unused_slot != -1 && "Cache is hot and full");
-		Render_Font *empty_entry = renderer->font_cache->entries + unused_slot;
-		Render_FontLoadParams params =
-		{
-			.render_mode = Render_FontRenderMode_LCD,
-			.size = font_key.font_size,
-			.path = font_key.path,
-		};
-		render_push_font_to_queue(renderer, empty_entry, params);
-		result = empty_entry;
-	}
-
-	result->last_frame_index_used = renderer->frame_index;
 
 	return(result);
 }
