@@ -394,7 +394,7 @@ render_push_font_to_queue(Render_Context *renderer, Render_Font *font, Render_Fo
 	font->state = Render_FontState_InQueue;
 	font->load_params = params;
 
-	while (font_queue->write_index - font_queue->read_index >= LOG_QUEUE_SIZE)
+	while (font_queue->write_index - font_queue->read_index >= FONT_QUEUE_SIZE)
 	{
 		// NOTE(simon): The queue is currently full. Bussy wait until there is
 		// space in it.
