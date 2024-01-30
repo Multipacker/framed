@@ -669,10 +669,7 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	{
 		memory_copy(new_buffer.data + range.x + replace_str.size, after_range.data, after_range.size);
 	}
-	if (new_buffer.size > buffer_size)
-	{
-		new_buffer.size = buffer_size;
-	}
+	new_buffer.size = u64_min(new_buffer.size, buffer_size);
 	return(new_buffer);
 }
 

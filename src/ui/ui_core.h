@@ -289,22 +289,22 @@ struct UI_Stats
 	U64 num_transient_boxes;
 };
 
-typedef enum TextActionFlag TextActionFlag;
-enum TextActionFlag
+typedef enum UI_TextActionFlag UI_TextActionFlag;
+enum UI_TextActionFlag
 {
-	TextActionFlag_WordScan                = (1 << 0),
-	TextActionFlag_KeepMark                = (1 << 1),
-	TextActionFlag_Delete                  = (1 << 2),
-	TextActionFlag_Copy                    = (1 << 3),
-	TextActionFlag_Paste                   = (1 << 4),
-	TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
-	TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
+	UI_TextActionFlag_WordScan                = (1 << 0),
+	UI_TextActionFlag_KeepMark                = (1 << 1),
+	UI_TextActionFlag_Delete                  = (1 << 2),
+	UI_TextActionFlag_Copy                    = (1 << 3),
+	UI_TextActionFlag_Paste                   = (1 << 4),
+	UI_TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
+	UI_TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
 };
 
 typedef struct UI_TextAction UI_TextAction;
 struct UI_TextAction
 {
-	TextActionFlag flags;
+	UI_TextActionFlag flags;
 	S64 delta;
 	U8 character;
 };
@@ -372,9 +372,9 @@ struct UI_Context
 	UI_Key  next_ctx_menu_anchor_key;
 	Vec2F32 next_anchor_offset;
 
-	UI_Key  active_key;
-	UI_Key  hot_key;
-	UI_Key  focus_key;
+	UI_Key active_key;
+	UI_Key hot_key;
+	UI_Key focus_key;
 
 	// NOTE(hampus): We only have this to for the
 	// "clicked" member in UI_Comm
@@ -663,7 +663,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_pop_height()    ui_pop_size()
 #define ui_height(sz)      defer_loop(ui_push_height(sz), ui_pop_height())
 
-// NOTE(hampus): For these to work, the box *has* to have either
+// NOTE(hampus): For these to work, the box has to have either
 // UI_BoxFlag_FloatingX and/or UI_BoxFlag_FloatingY flag
 #define ui_next_relative_pos(axis, p) ui_get_auto_pop_layout_style()->relative_pos.v[axis] = p
 #define ui_push_relative_pos(axis, p) ui_push_layout_style()->relative_pos.v[axis] = p

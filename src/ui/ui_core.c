@@ -299,13 +299,13 @@ ui_text_action_from_event(Gfx_Event *event)
 			case Gfx_Key_Backspace:
 			{
 				result.delta = -1;
-				result.flags |= TextActionFlag_Delete;
+				result.flags |= UI_TextActionFlag_Delete;
 			} break;
 
 			case Gfx_Key_Delete:
 			{
 				result.delta = +1;
-				result.flags |= TextActionFlag_Delete;
+				result.flags |= UI_TextActionFlag_Delete;
 			} break;
 
 			default: break;
@@ -360,7 +360,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	action->delta = s64_clamp(-state->cursor, action->delta, (S64) edit_str.size - state->cursor+1);
 	result.new_cursor += action->delta;
 
-	if (action->flags & TextActionFlag_Delete)
+	if (action->flags & UI_TextActionFlag_Delete)
 	{
 		result.range = v2s64(result.new_cursor, result.new_mark);
 	}
