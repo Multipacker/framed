@@ -1179,7 +1179,8 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						ProfilerUI_Tab *tab = root->tab_group.active_tab;
 						ui_next_width(ui_fill());
 						ui_next_height(ui_fill());
-						ui_column()
+						ui_next_extra_box_flags(UI_BoxFlag_Clip);
+						ui_named_column(str8_lit("PaddedContentBox"))
 						{
 							tab->view_info.function(&tab->view_info);
 						}
