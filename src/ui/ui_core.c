@@ -309,13 +309,13 @@ ui_text_action_from_event(Gfx_Event *event)
 			case Gfx_Key_Backspace:
 			{
 				result.delta = -1;
-				result.flags |= UI_TextActionFlag_Delete;
+				result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_ZeroDeltaWithSelection;
 			} break;
 
 			case Gfx_Key_Delete:
 			{
 				result.delta = +1;
-				result.flags |= UI_TextActionFlag_Delete;
+				result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_ZeroDeltaWithSelection;
 			} break;
 
 			default: break;
@@ -367,14 +367,21 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		result.range.y = result.new_cursor;
 	}
 
-	action->delta = s64_clamp(-state->cursor, action->delta, (S64) edit_str.size - state->cursor+1);
-	result.new_cursor += action->delta;
+	S64 delta = action->delta;
+
+	if ((action->flags & UI_TextActionFlag_ZeroDeltaWithSelection) && (state->mark != state->cursor))
+	{
+		delta = 0;
+	}
+
+	delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor+1);
+	result.new_cursor += delta;
 
 	if (action->flags & UI_TextActionFlag_WordScan)
 	{
 		// TODO(hampus): Collapse these two ifs and make it more robust.
 		// This is just to get it started.
-		if (action->delta < 0)
+		if (delta < 0)
 		{
 			U64 first_whitespace_index = 0;
 			Str8 string_before_cursor = str8_prefix(edit_str, result.new_cursor);
@@ -442,10 +449,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	if (action->flags & UI_TextActionFlag_Delete)
 	{
 		result.range = v2s64(result.new_cursor, result.new_mark);
-		if (action->delta > 0)
-		{
-			result.new_cursor -= 1;
-		}
+		result.new_cursor = s64_min(result.new_cursor, result.new_mark);
 	}
 
 	if (!(action->flags & UI_TextActionFlag_KeepMark))

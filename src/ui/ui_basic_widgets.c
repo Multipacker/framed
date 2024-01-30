@@ -722,9 +722,9 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
 			ui_parent(box)
 			{
-				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
+				Vec2F32 cursor_offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->cursor);
 				F32 cursor_extra_offset = ui_em(0.1f, 1).value;
-				ui_next_relative_pos(Axis2_X, offset.x+cursor_extra_offset);
+				ui_next_relative_pos(Axis2_X, cursor_offset.x+cursor_extra_offset);
 				ui_next_height(ui_pct(1, 1));
 				ui_next_width(ui_pixels(3, 1));
 				ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
@@ -733,6 +733,27 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					UI_BoxFlag_FloatingPos,
 					str8_lit("CursorBox")
 				);
+
+				{
+					Vec2F32 mark_offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
+					if (edit_state->mark < edit_state->cursor)
+					{
+						ui_next_relative_pos(Axis2_X, mark_offset.x+cursor_extra_offset);
+						ui_next_width(ui_pixels(cursor_offset.x - mark_offset.x, 1));
+					}
+					else
+					{
+						ui_next_relative_pos(Axis2_X, cursor_offset.x+cursor_extra_offset);
+						ui_next_width(ui_pixels(mark_offset.x - cursor_offset.x, 1));
+					}
+					ui_next_height(ui_pct(1, 1));
+					ui_next_color(v4f32(0.5f, 0.5f, 0.9f, 0.4f));
+					UI_Box *mark_box = ui_box_make(
+						UI_BoxFlag_DrawBackground |
+						UI_BoxFlag_FloatingPos,
+						str8_lit("MarkBox")
+					);
+				}
 
 				// NOTE(hampus): Make sure the cursor is in view
 
