@@ -495,7 +495,6 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 {
 	Render_Context *renderer = ui_renderer();
-	render_push_clip(renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
 
 	UI_RectStyle *rect_style = &root->rect_style;
 	UI_TextStyle *text_style = &root->text_style;
@@ -555,8 +554,6 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 		);
 	}
 
-
-	render_pop_clip(renderer);
 	if (ui_ctx->show_debug_lines)
 	{
 		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));

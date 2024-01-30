@@ -554,7 +554,6 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 		ui_textf("Text style push count: %"PRIU64, ui_stats->text_style_push_count);
 		ui_textf("Parent push count: %"PRIU64, ui_stats->parent_push_count);
 		ui_textf("Seed push count: %"PRIU64, ui_stats->seed_push_count);
-		ui_textf("Clip rect push count: %"PRIU64, ui_stats->clip_rect_push_count);
 		ui_textf("Total chain count: %"PRIU64, ui_stats->box_chain_count);
 		ui_textf("Max box chain count: %"PRIU64, ui_stats->max_box_chain_count);
 #endif

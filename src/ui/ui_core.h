@@ -35,9 +35,8 @@ enum UI_BoxFlags
 	UI_BoxFlag_OverflowX       = (1 << 9),
 	UI_BoxFlag_OverflowY       = (1 << 10),
 
-	// NOTE(hampus): This decides if the box's
-	// rect should be pushed as a clip rect
-	// when it is pushed to the parent stack
+	// NOTE(hampus): This decides if the box's rect should be pushed as a clip
+	// rect when it is rendered and for input.
 	UI_BoxFlag_Clip            = (1 << 11),
 
 	// NOTE(hampus): These makes the ui auto-layouting
@@ -158,21 +157,6 @@ struct UI_LayoutStyleStack
 	B32 auto_pop;
 };
 
-typedef struct UI_ClipRectStackNode UI_ClipRectStackNode;
-struct UI_ClipRectStackNode
-{
-	UI_ClipRectStackNode *next;
-	RectF32 *rect;
-	B32 clip_to_parent;
-};
-
-typedef struct UI_ClipBoxStack UI_ClipBoxStack;
-struct UI_ClipBoxStack
-{
-	UI_ClipRectStackNode *first;
-	UI_ClipRectStackNode *last;
-};
-
 typedef struct UI_Box UI_Box;
 
 #define UI_CUSTOM_DRAW_PROC(name) Void name(UI_Box *root)
@@ -211,8 +195,6 @@ struct UI_Box
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
 	UI_LayoutStyle layout_style;
-
-	UI_ClipRectStackNode *clip_rect;
 
 	UI_CustomDrawProc *custom_draw;
 
@@ -282,7 +264,6 @@ struct UI_Stats
 	U64 layout_style_push_count;
 	U64 parent_push_count;
 	U64 seed_push_count;
-	U64 clip_rect_push_count;
 	U64 box_chain_count;
 	U64 max_box_chain_count;
 	U64 num_hashed_boxes;
@@ -356,8 +337,6 @@ struct UI_Context
 	UI_RectStyleStack   rect_style_stack;
 	UI_TextStyleStack   text_style_stack;
 	UI_LayoutStyleStack layout_style_stack;
-
-	UI_ClipBoxStack clip_rect_stack;
 
 	UI_Box *root;
 	UI_Box *normal_root;
@@ -514,8 +493,6 @@ internal UI_Key          ui_push_seed(UI_Key key);
 internal UI_Key          ui_pop_seed(Void);
 internal Void            ui_push_string(Str8 string);
 internal Void            ui_pop_string(Void);
-internal Void            ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent);
-internal Void            ui_pop_clip_rect(Void);
 internal UI_RectStyle   *ui_top_rect_style(Void);
 internal UI_RectStyle   *ui_push_rect_style(Void);
 internal Void            ui_pop_rect_style(Void);

@@ -763,7 +763,6 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	result->rect_style   = *ui_top_rect_style();
 	result->text_style   = *ui_top_text_style();
 	result->layout_style = *ui_top_layout_style();
-	result->clip_rect = ui_ctx->clip_rect_stack.first;
 	result->parent = parent;
 	result->flags = flags | result->layout_style.box_flags;
 
@@ -894,7 +893,6 @@ ui_ctx_menu_begin(UI_Key key)
 	B32 is_open = ui_key_match(key, ui_ctx->ctx_menu_key);
 
 	ui_push_parent(ui_ctx->ctx_menu_root);
-	ui_push_clip_rect(&ui_ctx->root->fixed_rect, 0);
 
 	if (is_open)
 	{
@@ -918,7 +916,6 @@ ui_ctx_menu_end(Void)
 {
 	ui_column_end();
 	ui_pop_seed();
-	ui_pop_clip_rect();
 	ui_pop_parent();
 }
 
@@ -957,7 +954,6 @@ ui_ctx_menu_key(Void)
 internal Void
 ui_tooltip_begin(Void)
 {
-	ui_push_clip_rect(&ui_ctx->root->fixed_rect, 0);
 	ui_push_parent(ui_ctx->tooltip_root);
 }
 
@@ -965,7 +961,6 @@ internal Void
 ui_tooltip_end(Void)
 {
 	ui_pop_parent();
-	ui_pop_clip_rect();
 }
 
 ////////////////////////////////
@@ -1133,10 +1128,6 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	max_clip.x = (F32) client_area.x;
 	max_clip.y = (F32) client_area.y;
 
-	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
-	clip_rect->max = max_clip;
-
-	ui_push_clip_rect(clip_rect, false);
 	ui_push_seed(ui_key_from_string(ui_key_null(), str8_lit("RootSeed")));
 
 	ui_next_width(ui_pixels(max_clip.x, 1));
@@ -1196,9 +1187,6 @@ ui_end(Void)
 	// NOTE(hampus): Master root
 	ui_pop_parent();
 
-	// NOTE(hampus): Root clip rect
-	ui_pop_clip_rect();
-
 	if (!ui_key_is_null(ui_ctx->ctx_menu_key))
 	{
 		Vec2F32 anchor_pos = { 0 };
@@ -1242,7 +1230,6 @@ ui_end(Void)
 	ui_ctx->rect_style_stack.first   = 0;
 	ui_ctx->text_style_stack.first   = 0;
 	ui_ctx->layout_style_stack.first = 0;
-	ui_ctx->clip_rect_stack.first    = 0;
 	ui_ctx->frame_index++;
 	memory_zero_struct(ui_get_current_stats());
 	ui_ctx = 0;
@@ -1600,7 +1587,11 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 internal Void
 ui_draw(UI_Box *root)
 {
-	render_push_clip(ui_ctx->renderer, root->clip_rect->rect->min, root->clip_rect->rect->max, root->clip_rect->clip_to_parent);
+	if (ui_box_has_flag(root, UI_BoxFlag_Clip))
+	{
+		render_push_clip(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, true);
+	}
+
 	if (root->custom_draw)
 	{
 		root->custom_draw(root);
@@ -1716,7 +1707,6 @@ ui_draw(UI_Box *root)
 			}
 		}
 
-		render_pop_clip(ui_ctx->renderer);
 		if (ui_ctx->show_debug_lines)
 		{
 			render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
@@ -1726,6 +1716,11 @@ ui_draw(UI_Box *root)
 		{
 			ui_draw(child);
 		}
+	}
+
+	if (ui_box_has_flag(root, UI_BoxFlag_Clip))
+	{
+		render_pop_clip(ui_ctx->renderer);
 	}
 }
 
@@ -1781,11 +1776,6 @@ ui_push_parent(UI_Box *box)
 	UI_ParentStackNode *node = push_struct(ui_frame_arena(), UI_ParentStackNode);
 	node->box = box;
 	stack_push(ui_ctx->parent_stack, node);
-	if (ui_box_has_flag(box, UI_BoxFlag_Clip))
-	{
-		// TODO(hampus): Add an option to clip to parent
-		ui_push_clip_rect(&box->fixed_rect, false);
-	}
 	ui_stats_inc_val(parent_push_count);
 	return(ui_top_parent());
 }
@@ -1794,10 +1784,6 @@ internal UI_Box *
 ui_pop_parent(Void)
 {
 	UI_Box *parent = ui_top_parent();
-	if (ui_box_has_flag(parent, UI_BoxFlag_Clip))
-	{
-		ui_pop_clip_rect();
-	}
 	stack_pop(ui_ctx->parent_stack);
 	return(parent);
 }
@@ -1837,22 +1823,6 @@ internal Void
 ui_pop_string(Void)
 {
 	ui_pop_seed();
-}
-
-internal Void
-ui_push_clip_rect(RectF32 *rect, B32 clip_to_parent)
-{
-	UI_ClipRectStackNode *node = push_struct(ui_frame_arena(), UI_ClipRectStackNode);
-	node->rect = rect;
-	node->clip_to_parent = clip_to_parent;
-	ui_stats_inc_val(clip_rect_push_count);
-	stack_push(ui_ctx->clip_rect_stack.first, node);
-}
-
-internal Void
-ui_pop_clip_rect(Void)
-{
-	stack_pop(ui_ctx->clip_rect_stack.first);
 }
 
 internal UI_RectStyle *
