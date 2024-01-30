@@ -228,7 +228,7 @@ v4s32_div_s32(Vec4S32 a, S32 t)
 internal Vec2S64
 v2s64(S64 x, S64 y)
 {
-	Vec2S64 result = {x, y};
+	Vec2S64 result = { x, y };
 	return(result);
 }
 
@@ -361,7 +361,7 @@ rectf32(Vec2F32 min, Vec2F32 max)
 internal Vec2F32
 rectf32_center(RectF32 rect)
 {
-	Vec2F32 result = {0};
+	Vec2F32 result = { 0 };
 	result = v2f32_div_f32(v2f32_add_v2f32(rect.min, rect.max), 2.0f);
 	return(result);
 }
@@ -1225,13 +1225,13 @@ hsv_from_rgb(Vec3F32 rgb)
 	F32 c_min = f32_min(rgb.x, f32_min(rgb.y, rgb.z));
 	F32 delta = c_max - c_min;
 	F32 h = ((delta == 0.f) ? 0.f :
-			 (c_max == rgb.x) ? f32_mod((rgb.y - rgb.z)/delta + 6.f, 6.f) :
-			 (c_max == rgb.y) ? (rgb.z - rgb.x)/delta + 2.f :
-			 (c_max == rgb.z) ? (rgb.x - rgb.y)/delta + 4.f :
-			 0.f);
+					 (c_max == rgb.x) ? f32_mod((rgb.y - rgb.z)/delta + 6.f, 6.f) :
+					 (c_max == rgb.y) ? (rgb.z - rgb.x)/delta + 2.f :
+					 (c_max == rgb.z) ? (rgb.x - rgb.y)/delta + 4.f :
+					 0.f);
 	F32 s = (c_max == 0.f) ? 0.f : (delta/c_max);
 	F32 v = c_max;
-	Vec3F32 hsv = {h/6.f, s, v};
+	Vec3F32 hsv = { h/6.f, s, v };
 	return hsv;
 }
 
@@ -1287,6 +1287,6 @@ rgb_from_hsv(Vec3F32 hsv)
 		b = x;
 	}
 
-	Vec3F32 rgb = {r + m, g + m, b + m};
+	Vec3F32 rgb = { r + m, g + m, b + m };
 	return(rgb);
 }

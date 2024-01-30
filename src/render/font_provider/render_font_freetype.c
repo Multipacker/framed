@@ -81,7 +81,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 						{
 							atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
 							*atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
-																			 v2u32(bitmap_width+2, bitmap_height+2));
+																														 v2u32(bitmap_width+2, bitmap_height+2));
 						}
 
 						rect_region = atlas_region->region;
@@ -102,9 +102,9 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 							{
 								U8 val = *src++;
 								*dst_row++ = (U32) ((0xff <<  0) |
-													(0xff <<  8) |
-													(0xff << 16) |
-													(val  << 24));
+																		(0xff <<  8) |
+																		(0xff << 16) |
+																		(val  << 24));
 							}
 
 							dst += renderer->font_atlas->dim.x;
@@ -266,10 +266,10 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
 				U32 glyph_count     = 0;
 
 				for (
-					 U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
-					 index != 0 && glyph_count < num_glyphs_to_load;
-					 codepoint = (U32) FT_Get_Next_Char(face, codepoint, &index)
-					 )
+					U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
+					index != 0 && glyph_count < num_glyphs_to_load;
+					codepoint = (U32) FT_Get_Next_Char(face, codepoint, &index)
+					)
 				{
 					glyph_indicies[glyph_count] = index;
 					codepoints[glyph_count]     = codepoint;

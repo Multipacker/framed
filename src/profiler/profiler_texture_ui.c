@@ -11,12 +11,13 @@ ui_texture_view(Render_TextureSlice atlas)
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
 		ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
-		UI_Box *atlas_parent = ui_box_make(UI_BoxFlag_DrawBackground |
-										   UI_BoxFlag_Clip |
-										   UI_BoxFlag_Clickable |
-										   UI_BoxFlag_ViewScroll,
-										   str8_lit("TextureViewer")
-										   );
+		UI_Box *atlas_parent = ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			UI_BoxFlag_Clip |
+			UI_BoxFlag_Clickable |
+			UI_BoxFlag_ViewScroll,
+			str8_lit("TextureViewer")
+		);
 		ui_parent(atlas_parent)
 		{
 			local Vec2F32 offset = { 0 };
@@ -32,10 +33,11 @@ ui_texture_view(Render_TextureSlice atlas)
 			ui_next_color(v4f32(1, 1, 1, 1));
 
 			ui_next_corner_radius(0);
-			UI_Box *atlas_box = ui_box_make(UI_BoxFlag_FloatingPos |
-											UI_BoxFlag_DrawBackground,
-											str8_lit("Texture")
-											);
+			UI_Box *atlas_box = ui_box_make(
+				UI_BoxFlag_FloatingPos |
+				UI_BoxFlag_DrawBackground,
+				str8_lit("Texture")
+			);
 
 			UI_Comm atlas_comm = ui_comm_from_box(atlas_parent);
 
@@ -50,7 +52,8 @@ ui_texture_view(Render_TextureSlice atlas)
 
 		ui_column()
 		{
-			Str8 names[Render_TextureFilter_COUNT] = {
+			Str8 names[Render_TextureFilter_COUNT] =
+			{
 				[Render_TextureFilter_Bilinear] = str8_lit("Bilinear"),
 				[Render_TextureFilter_Nearest]  = str8_lit("Nearest"),
 			};

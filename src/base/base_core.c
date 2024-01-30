@@ -397,7 +397,8 @@ time_interval_from_ns(F64 ns)
 }
 
 typedef struct MemorySize MemorySize;
-struct MemorySize {
+struct MemorySize
+{
 	F64 amount;
 	Str8 unit;
 };

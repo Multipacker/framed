@@ -102,14 +102,14 @@ ui_debug_keep_alive(Void)
 				ui_debug_stats[stat_index].file          = entry->file;
 				ui_debug_stats[stat_index].line          = entry->line;
 				ui_debug_stats[stat_index].name          = str8_cstr(entry->name);
-				ui_debug_stats[stat_index].total_time_ns = (U32)(entry->end_ns - entry->start_ns);
+				ui_debug_stats[stat_index].total_time_ns = (U32) (entry->end_ns - entry->start_ns);
 				ui_debug_stats[stat_index].hit_count     = 1;
 				++ui_debug_stat_count;
 			}
 		}
 		else
 		{
-			ui_debug_stats[stat_index].total_time_ns += (U32)(entry->end_ns - entry->start_ns);
+			ui_debug_stats[stat_index].total_time_ns += (U32) (entry->end_ns - entry->start_ns);
 			++ui_debug_stats[stat_index].hit_count;
 		}
 	}
@@ -313,8 +313,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				{
 					for (U32 j = 0; j < ui_debug_stat_count - i - 1; ++j)
 					{
-						F64 this_avg_time = (F64)ui_debug_stats[j + 0].total_time_ns / (F64)ui_debug_stats[j + 0].hit_count;
-						F64 next_avg_time = (F64)ui_debug_stats[j + 1].total_time_ns / (F64)ui_debug_stats[j + 1].hit_count;
+						F64 this_avg_time = (F64) ui_debug_stats[j + 0].total_time_ns / (F64) ui_debug_stats[j + 0].hit_count;
+						F64 next_avg_time = (F64) ui_debug_stats[j + 1].total_time_ns / (F64) ui_debug_stats[j + 1].hit_count;
 						if (this_avg_time > next_avg_time)
 						{
 							swap(ui_debug_stats[j], ui_debug_stats[j + 1], Debug_Statistics);
@@ -360,7 +360,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					for (U32 i = 0; i < ui_debug_stat_count; ++i)
 					{
 						Debug_Statistics *entry = &ui_debug_stats[i];
-						TimeInterval total_time = time_interval_from_ns((F64)entry->total_time_ns);
+						TimeInterval total_time = time_interval_from_ns((F64) entry->total_time_ns);
 						ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
 					}
 				}
@@ -373,7 +373,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 					for (U32 i = 0; i < ui_debug_stat_count; ++i)
 					{
 						Debug_Statistics *entry = &ui_debug_stats[i];
-						TimeInterval average_time = time_interval_from_ns((F64)entry->total_time_ns / (F64)entry->hit_count);
+						TimeInterval average_time = time_interval_from_ns((F64) entry->total_time_ns / (F64) entry->hit_count);
 						ui_textf("%.2f%"PRISTR8, average_time.amount, str8_expand(average_time.unit));
 					}
 				}
@@ -572,7 +572,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
-	Render_TextureSlice texture = *(Render_TextureSlice *)view_info->data;
+	Render_TextureSlice texture = *(Render_TextureSlice *) view_info->data;
 	ui_texture_view(texture);
 }
 
@@ -590,7 +590,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 
 	if (!initialized)
 	{
-		for (ProfilerUI_Color color = (ProfilerUI_Color)0; color < ProfilerUI_Color_COUNT; ++color)
+		for (ProfilerUI_Color color = (ProfilerUI_Color) 0; color < ProfilerUI_Color_COUNT; ++color)
 		{
 			Vec4F32 rgba = profiler_ui_color_from_theme(color);
 			theme_view_state->hsva[color].rgb = hsv_from_rgb(rgba.rgb);
@@ -666,7 +666,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 
 	ui_column()
 	{
-		for (ProfilerUI_Color color = (ProfilerUI_Color)0; color < ProfilerUI_Color_COUNT; ++color)
+		for (ProfilerUI_Color color = (ProfilerUI_Color) 0; color < ProfilerUI_Color_COUNT; ++color)
 		{
 			ui_next_width(ui_em(20, 1));
 			ui_row()
@@ -702,7 +702,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 			if (ui_button(str8_lit("Dump theme to file")).clicked)
 			{
 				Str8List string_list = { 0 };
-				for (ProfilerUI_Color color = (ProfilerUI_Color)0; color < ProfilerUI_Color_COUNT; ++color)
+				for (ProfilerUI_Color color = (ProfilerUI_Color) 0; color < ProfilerUI_Color_COUNT; ++color)
 				{
 					Str8 label = profiler_ui_string_from_color(color);
 					Vec4F32 color_value = profiler_ui_color_from_theme(color);
@@ -970,7 +970,7 @@ os_main(Str8List arguments)
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
 
 		U64 end_counter = os_now_nanoseconds();
-		dt = (F64)(end_counter - start_counter) / (F64)billion(1);
+		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 		start_counter = end_counter;
 
 		profiler_ui_state->frame_index++;

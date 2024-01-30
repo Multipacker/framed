@@ -315,7 +315,7 @@ ui_text_action_from_event(Gfx_Event *event)
 	{
 		if (event->character >= ' ' && event->character <= '~')
 		{
-			result.character = (U8)event->character;
+			result.character = (U8) event->character;
 			result.delta = 1;
 		}
 	}
@@ -357,7 +357,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		result.range.y = result.new_cursor;
 	}
 
-	action->delta = s64_clamp(-state->cursor, action->delta, (S64)edit_str.size - state->cursor+1);
+	action->delta = s64_clamp(-state->cursor, action->delta, (S64) edit_str.size - state->cursor+1);
 	result.new_cursor += action->delta;
 
 	if (action->flags & UI_TextActionFlag_Delete)
@@ -572,7 +572,7 @@ internal UI_Box *
 ui_box_alloc(Void)
 {
 	assert(ui_ctx->box_storage.num_free_boxes > 0);
-	UI_Box *result = (UI_Box *)ui_ctx->box_storage.first_free_box;
+	UI_Box *result = (UI_Box *) ui_ctx->box_storage.first_free_box;
 	ASAN_UNPOISON_MEMORY_REGION(result, sizeof(UI_Box));
 	ui_ctx->box_storage.first_free_box = ui_ctx->box_storage.first_free_box->next;
 
@@ -585,7 +585,7 @@ ui_box_alloc(Void)
 internal Void
 ui_box_free(UI_Box *box)
 {
-	UI_FreeBox *free_box = (UI_FreeBox *)box;
+	UI_FreeBox *free_box = (UI_FreeBox *) box;
 	free_box->next = ui_ctx->box_storage.first_free_box;
 	ui_ctx->box_storage.first_free_box = free_box;
 	ui_ctx->box_storage.num_free_boxes++;
@@ -1026,7 +1026,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	text_style->font = str8_lit("data/fonts/Inter-Regular.ttf");
 	text_style->font_size = 15;
 
-	text_style->padding.v[Axis2_X] = (F32)ui_top_font_line_height();
+	text_style->padding.v[Axis2_X] = (F32) ui_top_font_line_height();
 
 	UI_LayoutStyle *layout_style = ui_push_layout_style();
 	layout_style->child_layout_axis = Axis2_Y;
@@ -1038,14 +1038,14 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 	rect_style->color[Corner_BottomRight] = color;
 	rect_style->border_color              = v4f32(0.6f, 0.6f, 0.6f, 1.0f);
 	rect_style->border_thickness          = 1;
-	F32 radius                            = (F32)ui_top_font_line_height() * 0.1f;
+	F32 radius                            = (F32) ui_top_font_line_height() * 0.1f;
 	rect_style->radies                    = v4f32(radius, radius, radius, radius);
 	rect_style->softness                  = 1;
 
 	Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
 	Vec2F32 max_clip;
-	max_clip.x = (F32)client_area.x;
-	max_clip.y = (F32)client_area.y;
+	max_clip.x = (F32) client_area.x;
+	max_clip.y = (F32) client_area.y;
 
 	RectF32 *clip_rect = push_struct(ui_frame_arena(), RectF32);
 	clip_rect->max = max_clip;
@@ -1262,7 +1262,7 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 		Axis2 child_layout_axis = root->layout_style.child_layout_axis;
 		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
-			if (!ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis)))
+			if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 			{
 				F32 child_size = child->fixed_size.v[axis];
 				if (axis == child_layout_axis)
@@ -1287,11 +1287,11 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 
 	F32 taken_space = 0;
 	F32 total_fixup_budget = 0;
-	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
 	{
 		for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 		{
-			if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+			if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 			{
 				if (axis == root->layout_style.child_layout_axis)
 				{
@@ -1307,14 +1307,14 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
 		}
 	}
 
-	if (!(ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_OverflowX << axis))))
+	if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_OverflowX << axis))))
 	{
 		F32 violation = taken_space - available_space;
 		if (violation > 0 && total_fixup_budget > 0)
 		{
 			for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 			{
-				if (!(ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis))))
+				if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis))))
 				{
 					F32 fixup_budget_this_child = child->fixed_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
 					F32 fixup_size_this_child = 0;
@@ -1358,7 +1358,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	}
 	else
 	{
-		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, -ui_animation_speed() * ui_ctx->dt));
 
 		if (f32_abs(root->rel_pos_animated.v[axis] - root->rel_pos.v[axis]) <= 0.5f)
 		{
@@ -1366,7 +1366,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		}
 		else
 		{
-			root->rel_pos_animated.v[axis] += (F32)(root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
+			root->rel_pos_animated.v[axis] += (F32) (root->rel_pos.v[axis] - root->rel_pos_animated.v[axis]) * animation_delta;
 		}
 
 		if (f32_abs(root->fixed_size_animated.v[axis] - root->fixed_size.v[axis]) <= 0.5f)
@@ -1388,7 +1388,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		}
 	}
 
-	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateX << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
 			ui_animations_enabled())
 	{
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos_animated.v[axis];
@@ -1398,7 +1398,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 		root->fixed_rect.min.v[axis] = offset + root->rel_pos.v[axis];
 	}
 
-	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateWidth << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
 			ui_animations_enabled())
 	{
 		root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size_animated.v[axis];
@@ -1412,7 +1412,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	root->fixed_rect.max.v[axis] = f32_floor(root->fixed_rect.max.v[axis]);
 
 	F32 child_offset = root->fixed_rect.min.v[axis];
-	if (ui_box_has_flag(root, (UI_BoxFlags)(UI_BoxFlag_AnimateScroll << axis)) &&
+	if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
 			ui_animations_enabled())
 	{
 		child_offset -= root->scroll_animated.v[axis];
@@ -1425,7 +1425,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 	F32 next_rel_child_pos = 0.0f;
 	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
-		if (!ui_box_has_flag(child, (UI_BoxFlags)(UI_BoxFlag_FloatingX << axis)))
+		if (!ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FloatingX << axis)))
 		{
 			child->rel_pos.v[axis] = next_rel_child_pos;
 			if (axis == root->layout_style.child_layout_axis)
@@ -1521,7 +1521,7 @@ ui_draw(UI_Box *root)
 	}
 	else
 	{
-		F32 animation_delta = (F32)(1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+		F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
 		if (ui_box_is_active(root))
 		{
 			root->active_t += (1.0f - root->active_t) * animation_delta;

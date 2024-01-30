@@ -206,10 +206,10 @@ ui_pop_scrollable_region(Void)
 			ui_next_size(axis, ui_pixels(size, 1));
 			UI_Box *scrollbar = ui_box_make(
 				UI_BoxFlag_DrawBackground |
-				(UI_BoxFlags)(UI_BoxFlag_FloatingX << axis) |
+				(UI_BoxFlags) (UI_BoxFlag_FloatingX << axis) |
 				UI_BoxFlag_HotAnimation |
 				UI_BoxFlag_Clickable |
-				(UI_BoxFlags)(UI_BoxFlag_AnimateWidth << axis) |
+				(UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis) |
 				UI_BoxFlag_ActiveAnimation,
 				str8_lit("Scrollbar")
 			);
@@ -221,7 +221,7 @@ ui_pop_scrollable_region(Void)
 			}
 			else
 			{
-				scrollbar->flags |= (UI_BoxFlags)(UI_BoxFlag_AnimateX << axis);
+				scrollbar->flags |= (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis);
 			}
 		}
 
@@ -234,7 +234,7 @@ ui_pop_scrollable_region(Void)
 	UI_Comm comm = ui_comm_from_box(content);
 	for (Axis2 axis = 0; axis < Axis2_COUNT; ++axis)
 	{
-		content->scroll.v[axis] += (F32)(comm.scroll.v[axis] * ui_dt() * 5000.0);
+		content->scroll.v[axis] += (F32) (comm.scroll.v[axis] * ui_dt() * 5000.0);
 		content->scroll.v[axis]  = f32_clamp(0, content->scroll.v[axis], content->fixed_size.v[axis] - view_region->fixed_size.v[axis]);
 	}
 }
@@ -524,8 +524,8 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 		rect.max = v2f32(root->fixed_rect.max.x, root->fixed_rect.min.y + rect_height / 6);
 		for (U32 i = 0; i < 6; ++i)
 		{
-			F32 hue0 = (F32)(i)/6;
-			F32 hue1 = (F32)(i+1)/6;
+			F32 hue0 = (F32) (i)/6;
+			F32 hue1 = (F32) (i+1)/6;
 			Vec3F32 rgb0 = rgb_from_hsv(v3f32(hue0, 1, 1));
 			Vec3F32 rgb1 = rgb_from_hsv(v3f32(hue1, 1, 1));
 			Vec4F32 rgba0 = v4f32(rgb0.x, rgb0.y, rgb0.z, 1);
@@ -646,8 +646,8 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 internal Str8
 ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U64 buffer_size, Str8 replace_str)
 {
-	U64 min_range = (U64)(range.x);
-	U64 max_range = (U64)(range.y);
+	U64 min_range = (U64) (range.x);
+	U64 max_range = (U64) (range.y);
 	min_range = u64_min(min_range, edit_str.size);
 	max_range = u64_min(max_range, edit_str.size);
 	if (min_range > max_range)
@@ -716,13 +716,13 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					*string_length = new_str.size;
 					edit_str.size = new_str.size;
 				}
-				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64)edit_str.size);
-				edit_state->mark = s64_clamp(0, edit_state->mark, (S64)edit_str.size);
+				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64) edit_str.size);
+				edit_state->mark = s64_clamp(0, edit_state->mark, (S64) edit_str.size);
 			}
 
 			ui_parent(box)
 			{
-				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64)edit_state->mark);
+				Vec2F32 offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
 				F32 cursor_extra_offset = ui_em(0.1f, 1).value;
 				ui_next_relative_pos(Axis2_X, offset.x+cursor_extra_offset);
 				ui_next_height(ui_pct(1, 1));

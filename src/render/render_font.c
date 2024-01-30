@@ -57,7 +57,7 @@ render_key_from_font(Str8 path, U32 font_size)
 internal Render_KerningPair
 render_kern_pair_from_glyph_indicies(Render_Font *font, U32 index0, U32 index1)
 {
-	U64 pair = (U64)index0 << 32 | (U64)index1;
+	U64 pair = (U64) index0 << 32 | (U64) index1;
 	U64 mask = font->kern_map_size - 1;
 	// NOTE(simon): Pseudo fibonacci hashing.
 	U64 index = (pair * 11400714819323198485LLU) & mask;
@@ -109,17 +109,17 @@ render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegion
 	U32 width = rect_region.x1 - rect_region.x0;
 	U32 height = rect_region.y1 - rect_region.y0;
 
-	U8 *data = (U8 *)atlas->memory + (rect_region.min.x + rect_region.min.y * atlas->dim.x)*4;
+	U8 *data = (U8 *) atlas->memory + (rect_region.min.x + rect_region.min.y * atlas->dim.x)*4;
 	U8 *dst = data;
 	for (U32 y = 0; y < height; ++y)
 	{
-		U32 *dst_row = (U32 *)dst;
+		U32 *dst_row = (U32 *) dst;
 		for (U32 x = 0; x < width; ++x)
 		{
 			*dst_row++ = 0;
 		}
 
-		dst += (S32)(atlas->dim.x * 4);
+		dst += (S32) (atlas->dim.x * 4);
 	}
 }
 
@@ -303,14 +303,14 @@ render_unload_font(Render_Context *renderer, Render_Font *font)
 		}
 	}
 	arena_pop_to(font->arena, 0);
-	memory_zero((U8 *)font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
+	memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
 
 internal Void
 render_font_stream_thread(Void *data)
 {
 	Render_FontLoaderThreadData *thread_data = data;
-	Render_Context *renderer = (Render_Context *)thread_data->renderer;
+	Render_Context *renderer = (Render_Context *) thread_data->renderer;
 	Render_FontQueue *font_queue = renderer->font_queue;
 
 	thread_ctx_init(thread_data->name);
@@ -348,7 +348,7 @@ render_font_stream_thread(Void *data)
 				{
 					U64 end_timer = os_now_nanoseconds();
 					U64 dt = end_timer - start_timer;
-					log_info("Successfully loaded font `%"PRISTR8"` in %.4fms", str8_expand(entry.params.path), (F32)dt/(F32)million(1));
+					log_info("Successfully loaded font `%"PRISTR8"` in %.4fms", str8_expand(entry.params.path), (F32) dt/(F32) million(1));
 				}
 				else
 				{
@@ -498,8 +498,8 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
 	F32 xpos = min.x + glyph->bearing_in_pixels.x;
 	F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-	F32 width = (F32)glyph->size_in_pixels.x;
-	F32 height = (F32)glyph->size_in_pixels.y;
+	F32 width = (F32) glyph->size_in_pixels.x;
+	F32 height = (F32) glyph->size_in_pixels.y;
 
 	render_rect(renderer,
 							v2f32(xpos, ypos),
@@ -592,8 +592,8 @@ render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, 
 		F32 xpos = min.x + glyph->bearing_in_pixels.x;
 		F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-		F32 width = (F32)glyph->size_in_pixels.x;
-		F32 height = (F32)glyph->size_in_pixels.y;
+		F32 width = (F32) glyph->size_in_pixels.x;
+		F32 height = (F32) glyph->size_in_pixels.y;
 
 		render_rect(renderer,
 								v2f32(xpos, ypos),
@@ -667,7 +667,7 @@ render_measure_multiline_text(Render_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
 	{
-		S32 length = (S32)text.size;
+		S32 length = (S32) text.size;
 		F32 max_row_width = 0;
 		F32 row_width = 0;
 		for (S32 i = 0; i < length; ++i)
