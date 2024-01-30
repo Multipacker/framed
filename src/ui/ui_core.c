@@ -372,18 +372,18 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 	if (action->flags & UI_TextActionFlag_WordScan)
 	{
+		// TODO(hampus): Collapse these two ifs and make it more robust.
+		// This is just to get it started.
 		if (action->delta < 0)
 		{
 			U64 first_whitespace_index = 0;
 			Str8 string_before_cursor = str8_prefix(edit_str, result.new_cursor);
 			B32 found_next_word = false;
-			for (
-				U64 i = string_before_cursor.size - 1;
-				i != 0;
-				--i)
+			for (U64 i = string_before_cursor.size - 1; i != 0; --i)
 			{
-				U8 next_character = next_character = string_before_cursor.data[i];;
-				if (next_character == ' ')
+				U8 next_character = next_character = string_before_cursor.data[i-1];
+				U8 character = string_before_cursor.data[i];
+				if (character != ' ' && next_character == ' ')
 				{
 					result.new_cursor = i;
 					found_next_word = true;
@@ -392,31 +392,49 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			}
 			if (!found_next_word)
 			{
-				// NOTE(hampus): Stop the cursor from moving while we 
-				// are holding CTRL and we didn't find a next word
-				result.new_cursor = 0;
+				S64 new_cursor = state->cursor;
+				for (U64 i = 0; i < string_before_cursor.size; ++i)
+				{
+					U8 character = string_before_cursor.data[i];
+					if (character != ' ')
+					{
+						new_cursor = i;
+						break;
+					}
+				}
+				result.new_cursor = new_cursor;
 			}
 		}
 		else if (action->delta > 0)
 		{
 			U64 first_whitespace_index = 0;
 			Str8 string_after_cursor = str8_skip(edit_str, result.new_cursor);
-			U8 prev_character = 0;
 			B32 found_next_word = false;
-			for (U64 i = 0; i < string_after_cursor.size; ++i)
+			for (U64 i = 0; i < (string_after_cursor.size-1); ++i)
 			{
+				U8 next_character = string_after_cursor.data[i+1];
 				U8 character = string_after_cursor.data[i];
-				if (character != ' ' && prev_character == ' ')
+				if (character != ' ' && next_character == ' ')
 				{
-					result.new_cursor = state->cursor+i;
+					result.new_cursor = state->cursor+i+2;
 					found_next_word = true;
 					break;
 				}
-				prev_character = character;
 			}
+
 			if (!found_next_word)
 			{
-				result.new_cursor = (S64) edit_str.size;
+				S64 new_cursor = state->cursor;
+				for (U64 i = (string_after_cursor.size-1); i != 0; --i)
+				{
+					U8 character = string_after_cursor.data[i];
+					if (character != ' ')
+					{
+						new_cursor = state->cursor+i+2;
+						break;
+					}
+				}
+				result.new_cursor = new_cursor;
 			}
 		}
 	}

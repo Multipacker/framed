@@ -246,7 +246,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 	local U8 text_buffer[256] = { 0 };
 	local UI_TextEditState edit_state = { 0 };
 	local U64 string_length = 0;
-	ui_next_width(ui_em(10, 1));
+	ui_next_width(ui_em(30, 1));
 	ui_line_edit(&edit_state, text_buffer, array_count(text_buffer), &string_length, str8_lit("LineEditTest"));
 
 	ui_next_width(ui_pct(1, 1));
