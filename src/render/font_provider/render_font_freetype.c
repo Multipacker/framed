@@ -297,7 +297,7 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
 					// an missing charcter
 					render_make_glyph(renderer, font, face, 0, 0, 0, params.render_mode);
 
-					for (U32 i = 0; i < num_glyphs_to_load; ++i)
+					for (U32 i = 0; i < glyph_count; ++i)
 					{
 						render_make_glyph(renderer, font, face, glyph_indicies[i], i+1, codepoints[i], params.render_mode);
 						// TODO(hampus): We don't have the declaration for
