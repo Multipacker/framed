@@ -184,7 +184,12 @@ str8_equal(Str8 a, Str8 b)
 {
 	if (a.size != b.size)
 	{
-		return false;
+		return(false);
+	}
+
+	if (a.data == b.data)
+	{
+		return(true);
 	}
 
 	U8 *a_ptr = a.data;
