@@ -650,24 +650,28 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	U64 max_range = (U64)(range.y);
 	min_range = u64_min(min_range, edit_str.size);
 	max_range = u64_min(max_range, edit_str.size);
+	if (min_range > max_range)
+	{
+		swap(min_range, max_range, U64);
+	}
 	U64 replace_range_length = max_range - min_range;
 	Str8 new_buffer = { 0 };
 	U64 new_buffer_size = edit_str.size - replace_range_length + replace_str.size;
 	new_buffer.data = push_array(arena, U8, new_buffer_size);
 	new_buffer.size = new_buffer_size;
-	Str8 before_range = str8_prefix(edit_str, (U64)range.x);
-	Str8 after_range  = str8_skip(edit_str, (U64)range.y);
+	Str8 before_range = str8_prefix(edit_str, min_range);
+	Str8 after_range  = str8_skip(edit_str, max_range);
 	if (before_range.size != 0)
 	{
 		memory_copy(new_buffer.data, before_range.data, before_range.size);
 	}
 	if (replace_str.size != 0)
 	{
-		memory_copy(new_buffer.data + range.x, replace_str.data, replace_str.size);
+		memory_copy(new_buffer.data + min_range, replace_str.data, replace_str.size);
 	}
 	if (after_range.size != 0)
 	{
-		memory_copy(new_buffer.data + range.x + replace_str.size, after_range.data, after_range.size);
+		memory_copy(new_buffer.data + min_range + replace_str.size, after_range.data, after_range.size);
 	}
 	new_buffer.size = u64_min(new_buffer.size, buffer_size);
 	return(new_buffer);
@@ -712,8 +716,8 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					*string_length = new_str.size;
 					edit_str.size = new_str.size;
 				}
-				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64) edit_str.size);
-				edit_state->mark = s64_clamp(0, edit_state->mark, (S64) edit_str.size);
+				edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64)edit_str.size);
+				edit_state->mark = s64_clamp(0, edit_state->mark, (S64)edit_str.size);
 			}
 
 			ui_parent(box)

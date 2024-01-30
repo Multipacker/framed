@@ -357,12 +357,16 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		result.range.y = result.new_cursor;
 	}
 
-	action->delta = s64_clamp(-state->cursor, action->delta, (S64) edit_str.size - state->cursor+1);
+	action->delta = s64_clamp(-state->cursor, action->delta, (S64)edit_str.size - state->cursor+1);
 	result.new_cursor += action->delta;
 
 	if (action->flags & UI_TextActionFlag_Delete)
 	{
 		result.range = v2s64(result.new_cursor, result.new_mark);
+		if (action->delta > 0)
+		{
+			result.new_cursor -= 1;
+		}
 	}
 
 	result.new_mark = result.new_cursor;
