@@ -1562,6 +1562,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				Vec2F32 prev_panel_pos = tab->panel->box->fixed_rect.min;
 				Vec2F32 first_tab_offset = tab->panel->tab_group.first->tab_box->fixed_rect.min;
 				Vec2F32 distance_between_panel_min_and_first_tab = v2f32_sub_v2f32(first_tab_offset, prev_panel_pos);
+				distance_between_panel_min_and_first_tab = v2f32_add_v2f32(distance_between_panel_min_and_first_tab, tab->tab_container->parent->scroll);
 
 				// NOTE(hampus): Calculate the new window size
 				Vec2F32 new_window_pct = v2f32(1, 1);
