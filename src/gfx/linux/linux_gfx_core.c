@@ -149,6 +149,12 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				{
 					event->kind = Gfx_EventKind_Null;
 				}
+				else
+				{
+					SDL_Keymod modifiers = SDL_GetModState();
+					event->key_modifiers |= (modifiers & KMOD_SHIFT ? Gfx_KeyModifier_Shift   : 0);
+					event->key_modifiers |= (modifiers & KMOD_CTRL  ? Gfx_KeyModifier_Control : 0);
+				}
 			} break;
 
 			// TODO(simon): We might want to use this event for candidate text.

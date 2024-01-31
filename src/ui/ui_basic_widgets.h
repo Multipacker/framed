@@ -45,6 +45,7 @@ internal Void    ui_column_end(Void);
 #define ui_named_columnf(string, ...) defer_loop(ui_named_column_beginf(string, __VA_ARGS__), ui_named_column_end())
 #define ui_column()             defer_loop(ui_column_begin(), ui_column_end())
 
+#define ui_scrollable_region_axis(string, axis) defer_loop(ui_push_scrollable_region_axis(string, axis), ui_pop_scrollable_region_axis(axis))
 #define ui_scrollable_region(string) defer_loop(ui_push_scrollable_region(string), ui_pop_scrollable_region())
 
 #endif //UI_BASIC_WIDGETS_H
