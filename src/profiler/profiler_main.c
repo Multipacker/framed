@@ -242,17 +242,19 @@ profiler_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Bo
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 {
-	ui_spacer(ui_em(0.5f, 1));
-	local U8 text_buffer[256] = { 0 };
-	local UI_TextEditState edit_state = { 0 };
-	local U64 string_length = 0;
-	ui_next_width(ui_em(30, 1));
-	ui_line_edit(&edit_state, text_buffer, array_count(text_buffer), &string_length, str8_lit("LineEditTest"));
-
-	ui_next_width(ui_pct(1, 1));
-	ui_next_height(ui_pct(1, 1));
-	ui_column()
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
+	ui_scrollable_region_axis(str8_lit("DebugScroll"), Axis2_Y)
 	{
+		ui_spacer(ui_em(0.5f, 1));
+		local U8 text_buffer[256] = { 0 };
+		local UI_TextEditState edit_state = { 0 };
+		local U64 string_length = 0;
+		ui_next_width(ui_em(30, 1));
+		ui_line_edit(&edit_state, text_buffer, array_count(text_buffer), &string_length, str8_lit("LineEditTest"));
+
+		ui_spacer(ui_em(0.5f, 1));
+
 		ui_row()
 		{
 			ui_spacer(ui_em(0.4f, 1));

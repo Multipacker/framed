@@ -131,13 +131,95 @@ ui_checkf(B32 *value, CStr fmt, ...)
 }
 
 internal UI_ScrollabelRegion
+ui_push_scrollable_region_axis(Str8 string, Axis2 axis)
+{
+	ui_push_string(string);
+	B32 smooth_scroll = true;
+	ui_next_child_layout_axis(axis_flip(axis));
+	UI_Box *container = ui_box_make(0, string);
+	ui_push_parent(container);
+
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
+	UI_Box *view_region = ui_box_make(UI_BoxFlag_Clip, str8_lit("ViewRegion"));
+
+	ui_push_parent(view_region);
+
+	ui_next_size(axis_flip(axis), ui_fill());
+	ui_next_size(axis, ui_children_sum(1));
+	UI_BoxFlags content_box_flags = UI_BoxFlag_ViewScroll;
+	if (smooth_scroll)
+	{
+		content_box_flags |= UI_BoxFlag_AnimateScroll;
+	}
+	UI_Box *content = ui_box_make(content_box_flags, str8_lit("ScrollContent"));
+	ui_push_parent(content);
+
+	UI_ScrollabelRegion result;
+	result.view_region = view_region;
+	result.content     = content;
+	return(result);
+}
+
+internal Void
+ui_pop_scrollable_region_axis(Axis2 axis)
+{
+	UI_Box *content     = ui_pop_parent();
+	UI_Box *view_region = ui_pop_parent();
+	UI_Box *container   = ui_pop_parent();
+
+	ui_push_parent(container);
+
+	F32 percent_in_view = view_region->fixed_size.v[axis] / content->fixed_size.v[axis];
+	if (percent_in_view < 1.0f)
+	{
+		F32 size             = container->fixed_size.v[axis] * percent_in_view;
+		F32 max_pos          = container->fixed_size.v[axis] - size;
+		F32 max_scroll       = content->fixed_size.v[axis] - view_region->fixed_size.v[axis];
+		F32 percent_scrolled = content->scroll.v[axis] / max_scroll;
+		F32 pos              = max_pos * percent_scrolled;
+
+		ui_next_relative_pos(axis, pos);
+		ui_next_color(v4f32(0.5f, 0.5f, 0.5f, 1));
+		ui_next_size(axis_flip(axis), ui_em(0.4f, 1));
+		ui_next_size(axis, ui_pixels(size, 1));
+		UI_Box *scrollbar = ui_box_make(
+			UI_BoxFlag_DrawBackground |
+			(UI_BoxFlags) (UI_BoxFlag_FloatingX << axis) |
+			UI_BoxFlag_HotAnimation |
+			UI_BoxFlag_Clickable |
+			(UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis) |
+			UI_BoxFlag_ActiveAnimation,
+			str8_lit("Scrollbar")
+		);
+
+		UI_Comm scrollbar_comm = ui_comm_from_box(scrollbar);
+		if (scrollbar_comm.dragging)
+		{
+			content->scroll.v[axis] -= scrollbar_comm.drag_delta.v[axis] / max_pos * max_scroll;
+		}
+		else
+		{
+			scrollbar->flags |= (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis);
+		}
+	}
+
+	ui_pop_parent();
+
+	ui_pop_string();
+
+	UI_Comm comm = ui_comm_from_box(content);
+	content->scroll.v[axis] += (F32) (comm.scroll.v[axis] * ui_dt() * 5000.0);
+	content->scroll.v[axis]  = f32_clamp(0, content->scroll.v[axis], content->fixed_size.v[axis] - view_region->fixed_size.v[axis]);
+}
+
+internal UI_ScrollabelRegion
 ui_push_scrollable_region(Str8 string)
 {
 	ui_push_string(string);
 	B32 smooth_scroll = true;
 	ui_next_child_layout_axis(Axis2_X);
-	UI_Box *vert_container = ui_box_make(0,
-																			 string);
+	UI_Box *vert_container = ui_box_make(0, string);
 	ui_push_parent(vert_container);
 
 	ui_next_width(ui_fill());
