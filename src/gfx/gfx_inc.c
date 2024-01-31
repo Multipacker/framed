@@ -1,4 +1,3 @@
-#include "gfx/gfx_core.c"
 #if OS_WINDOWS
 #	include "gfx/win32/win32_gfx_core.c"
 #    if defined(RENDERER_OPENGL)
