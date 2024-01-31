@@ -645,8 +645,8 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				{
 					if (node->kind == Gfx_EventKind_KeyPress &&
 							(node->key == Gfx_Key_MouseLeft ||
-							node->key == Gfx_Key_MouseRight ||
-							node->key == Gfx_Key_MouseMiddle))
+							 node->key == Gfx_Key_MouseRight ||
+							 node->key == Gfx_Key_MouseMiddle))
 					{
 						if (profiler_ui_panel_is_nil(profiler_ui_state->next_focused_panel))
 						{
@@ -1138,44 +1138,44 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 			profiler_ui_wait_for_drag_threshold();
 		}
 
-		if (!profiler_ui_tab_is_nil(root->tab_group.active_tab))
+
+		ui_next_width(ui_fill());
+		ui_next_height(ui_fill());
+		UI_Box *content_box_container = ui_box_make(0, str8_lit("ContentBoxContainer"));
+		ui_parent(content_box_container)
 		{
+			if (root == profiler_ui_state->focused_panel)
+			{
+				ui_next_border_color(profiler_ui_color_from_theme(ProfilerUI_Color_ActivePanelBorder));
+			}
+			else
+			{
+				ui_next_border_color(profiler_ui_color_from_theme(ProfilerUI_Color_InactivePanelBorder));
+			}
 			ui_next_width(ui_fill());
 			ui_next_height(ui_fill());
-			UI_Box *content_box_container = ui_box_make(0, str8_lit("ContentBoxContainer"));
-			ui_parent(content_box_container)
+			ui_next_child_layout_axis(Axis2_Y);
+			// TODO(hampus): Should this actually be called panel color...
+			ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
+			UI_Box *content_box = ui_box_make(
+				UI_BoxFlag_DrawBackground |
+				UI_BoxFlag_DrawBorder |
+				UI_BoxFlag_Clip,
+				str8_lit("ContentBox")
+			);
+
+			ui_parent(content_box)
 			{
-				if (root == profiler_ui_state->focused_panel)
-				{
-					ui_next_border_color(profiler_ui_color_from_theme(ProfilerUI_Color_ActivePanelBorder));
-				}
-				else
-				{
-					ui_next_border_color(profiler_ui_color_from_theme(ProfilerUI_Color_InactivePanelBorder));
-				}
+				// NOTE(hampus): Add some padding for the content
+				UI_Size padding = ui_em(0.3f, 1);
+				ui_spacer(padding);
 				ui_next_width(ui_fill());
 				ui_next_height(ui_fill());
-				ui_next_child_layout_axis(Axis2_Y);
-				// TODO(hampus): Should this actually be called panel color...
-				ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_Panel));
-				UI_Box *content_box = ui_box_make(
-					UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_DrawBorder |
-					UI_BoxFlag_Clip,
-					str8_lit("ContentBox")
-				);
-
-				ui_parent(content_box)
+				ui_row()
 				{
-					// NOTE(hampus): Add some padding for the content
-					UI_Size padding = ui_em(0.3f, 1);
 					ui_spacer(padding);
-					ui_next_width(ui_fill());
-					ui_next_height(ui_fill());
-					ui_row()
+					if (!profiler_ui_tab_is_nil(root->tab_group.active_tab))
 					{
-						ui_spacer(padding);
-
 						ProfilerUI_Tab *tab = root->tab_group.active_tab;
 						ui_next_width(ui_fill());
 						ui_next_height(ui_fill());
@@ -1185,8 +1185,8 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						}
 						ui_spacer(padding);
 					}
-					ui_spacer(padding);
 				}
+				ui_spacer(padding);
 			}
 		}
 

@@ -7,3 +7,6 @@
 /theme_dump.txt
 /theme_dump
 /.vscode
+/profiler.raddbg_profile
+/profiler.raddbg_user
+/script/start_raddbg.bat
