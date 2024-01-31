@@ -5,6 +5,7 @@
 // [ ] @feature Drag & hold to reorder tabs
 // [ ] @bug Tab offsetting looks weird if you remove any tab to the 
 //          left of the active tab when the tab bar is full
+// [ ] @bug Window offset is wrong if you reorder tabs and then drag out the tab
 
 ////////////////////////////////
 //~ hampus: Medium term
@@ -941,6 +942,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						if (!ui_box_is_nil(root->tab_group.first->tab_container))
 						{
 							UI_Box *first_tab_box = root->tab_group.first->tab_container;
+
 							UI_Box *active_tab_box = root->tab_group.active_tab->tab_container;
 
 							UI_Box *last_tab_box = root->tab_group.last->tab_container;
@@ -985,7 +987,11 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 							delta_left = f32_min(delta_left, 0);
 							delta_right = f32_max(delta_right, 0);
 
-							tabs_container->scroll.x += delta_left + delta_right;
+							if (tabs_container->fixed_size.x > active_tab_box->fixed_size.x)
+							{
+								tabs_container->scroll.x += delta_right;
+							}
+							tabs_container->scroll.x += delta_left;
 							tabs_container->scroll.x = f32_max(0, tabs_container->scroll.x);
 						}
 
