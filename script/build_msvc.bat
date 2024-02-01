@@ -24,7 +24,7 @@ set src_files=../src/profiler/profiler_main.c
 
 rem -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -MTd -Zi  -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -MTd -Zi -fsanitize=address -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console freetype_debug.lib
 
 rem -- Optimized build flags --
