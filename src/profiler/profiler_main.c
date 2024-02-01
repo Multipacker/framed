@@ -979,7 +979,7 @@ os_main(Str8List arguments)
 		ui_begin(ui, &events, renderer, dt);
 		U32 font_size = 15;
 #if PROFILER_USER_HAMPUS
-		font_size = 12;
+		font_size = 20;
 #elif PROFILER_USER_SIMON
 		font_size = 15;
 #else

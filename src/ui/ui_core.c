@@ -388,6 +388,8 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	result.new_cursor = state->cursor;
 	result.new_mark = state->mark;
 
+	S64 delta = action->delta;
+
 	if (action->character)
 	{
 		result.replace_string.data = push_array(arena, U8, 1);
@@ -396,9 +398,12 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 		result.range.x = result.new_mark;
 		result.range.y = result.new_cursor;
-	}
 
-	S64 delta = action->delta;
+		if (state->cursor > state->mark)
+		{
+			delta -= state->cursor - state->mark;
+		}
+	}
 
 	if ((action->flags & UI_TextActionFlag_ZeroDeltaWithSelection) && (state->mark != state->cursor))
 	{
@@ -408,7 +413,9 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor+1);
 	result.new_cursor += delta;
 
-	if (action->flags & UI_TextActionFlag_DeltaPicksSelectionSide && !(action->flags & UI_TextActionFlag_KeepMark))
+	if (
+		action->flags & UI_TextActionFlag_DeltaPicksSelectionSide &&
+		!(action->flags & UI_TextActionFlag_KeepMark))
 	{
 		if (state->cursor != state->mark)
 		{

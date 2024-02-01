@@ -750,6 +750,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 	{
 		Str8 buffer_str8 = str8(buffer, buffer_size);
 		ui_next_child_layout_axis(Axis2_X);
+		ui_next_hover_cursor(Gfx_Cursor_Beam);
 		UI_Box *box = ui_box_make(
 			UI_BoxFlag_DrawBackground |
 			UI_BoxFlag_HotAnimation |
