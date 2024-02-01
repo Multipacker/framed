@@ -1698,12 +1698,13 @@ ui_draw(UI_Box *root)
 
 		if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
 		{
-			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
-			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
+			Vec2F32 dpi = gfx_get_dpi(ui_renderer()->gfx);
+			Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x/6, dpi.x/6));
+			Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x/5, dpi.x/5));
 			// TODO(hampus): Make softness em dependent
 			Render_RectInstance *instance = render_rect(
 				ui_ctx->renderer, min, max,
-				.softness = 15,
+				.softness = dpi.x * 0.2f,
 				.color = v4f32(0, 0, 0, 1)
 			);
 			memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
