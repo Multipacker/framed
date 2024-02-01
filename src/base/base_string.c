@@ -55,9 +55,12 @@ str8_cstr(CStr data)
 	result.data = (U8 *) data;
 	result.size = 0;
 
-	while (result.data[result.size])
+	if (result.data)
 	{
-		++result.size;
+		while (result.data[result.size])
+		{
+			++result.size;
+		}
 	}
 
 	return result;
