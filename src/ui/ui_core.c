@@ -462,7 +462,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			if (!found_next_word)
 			{
 				S64 new_cursor = state->cursor;
-				for (S64 i = end; i >= 0; --i)
+				for (S64 i = (end-1); i >= 0; --i)
 				{
 					U8 character = string_after_cursor.data[i];
 					if (character != ' ')
