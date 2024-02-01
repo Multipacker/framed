@@ -116,6 +116,10 @@ ui_debug_keep_alive(Void)
 				ui_debug_stats.line[stat_index] = entry->line;
 				ui_debug_stats.name[stat_index] = str8_cstr(entry->name);
 
+				U64 hash = hash_str8(ui_debug_stats.name[stat_index]);
+				ui_debug_stats.colors[stat_index].rgb = rgb_from_hsv(v3f32((F32) hash / (F32) U16_MAX, 1, 1));
+				ui_debug_stats.colors[stat_index].a   = 1.0f;
+
 				ui_debug_stats.total_time_ns[frame_index][stat_index] = (U32) (entry->end_ns - entry->start_ns);
 				ui_debug_stats.hit_count[frame_index][stat_index]     = 1;
 				++ui_debug_stats.count;
@@ -124,9 +128,6 @@ ui_debug_keep_alive(Void)
 		else
 		{
 			ui_debug_stats.total_time_ns[frame_index][stat_index] += (U32) (entry->end_ns - entry->start_ns);
-			U64 hash = hash_str8(ui_debug_stats.name[stat_index]);
-			ui_debug_stats.colors[stat_index].rgb = rgb_from_hsv(v3f32((F32) hash / (F32) U16_MAX, 1, 1));
-			ui_debug_stats.colors[stat_index].a   = 1.0f;
 			++ui_debug_stats.hit_count[frame_index][stat_index];
 		}
 	}
