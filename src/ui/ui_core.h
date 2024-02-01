@@ -279,7 +279,6 @@ enum UI_TextActionFlag
 	UI_TextActionFlag_Copy                    = (1 << 3),
 	UI_TextActionFlag_Paste                   = (1 << 4),
 	UI_TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
-	UI_TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
 };
 
 typedef struct UI_TextAction UI_TextAction;
@@ -312,6 +311,7 @@ struct UI_TextOp
 	S64 new_mark;
 	Vec2S64 range;
 	Str8 replace_string;
+	Str8 copy_string;
 };
 
 typedef struct UI_TextEditState UI_TextEditState;

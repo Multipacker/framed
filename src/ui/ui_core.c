@@ -306,6 +306,27 @@ ui_text_action_from_event(Gfx_Event *event)
 				result.delta = S64_MAX;
 			} break;
 
+			case Gfx_Key_C:
+			{
+				if (event->key_modifiers & Gfx_KeyModifier_Control)
+				{
+					result.flags |= UI_TextActionFlag_Copy;
+				}
+			} break;
+
+			case Gfx_Key_X:
+			{
+				if (event->key_modifiers & Gfx_KeyModifier_Control)
+				{
+					result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_Copy;
+				}
+			} break;
+
+			case Gfx_Key_V:
+			{
+				result.flags |= UI_TextActionFlag_Paste;
+			} break;
+
 			case Gfx_Key_Backspace:
 			{
 				result.delta = -1;
@@ -446,6 +467,13 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		}
 	}
 
+	if (action->flags & UI_TextActionFlag_Copy)
+	{
+		U64 min = (U64) s64_min(result.new_cursor, result.new_mark);
+		U64 max = (U64) s64_max(result.new_cursor, result.new_mark);
+		result.copy_string = str8_substring(edit_str, min, max - min);
+	}
+
 	if (action->flags & UI_TextActionFlag_Delete)
 	{
 		result.range = v2s64(result.new_cursor, result.new_mark);
@@ -454,6 +482,24 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 	if (!(action->flags & UI_TextActionFlag_KeepMark))
 	{
+		if (action->delta != 0 || (action->flags & UI_TextActionFlag_Delete))
+		{
+			result.new_mark = result.new_cursor;
+		}
+	}
+
+	if (action->flags & UI_TextActionFlag_Paste)
+	{
+		result.replace_string = os_push_clipboard(ui_frame_arena());
+		result.range = v2s64(result.new_cursor, result.new_mark);
+		if (result.new_cursor > result.new_mark)
+		{
+			result.new_cursor += result.replace_string.size - (result.new_cursor - result.new_mark);
+		}
+		else
+		{
+			result.new_cursor += result.replace_string.size;
+		}
 		result.new_mark = result.new_cursor;
 	}
 
@@ -772,28 +818,28 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 	}
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollX) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollY) &&
-				 ui_key_is_null(result->key) &&
-				 "Why would you animate a keyless box"));
+					 ui_key_is_null(result->key) &&
+					 "Why would you animate a keyless box"));
 
 	result->last_frame_touched_index = ui_ctx->frame_index;
 

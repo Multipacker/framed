@@ -730,6 +730,7 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	new_buffer.size = new_buffer_size;
 	Str8 before_range = str8_prefix(edit_str, min_range);
 	Str8 after_range  = str8_skip(edit_str, max_range);
+
 	if (before_range.size != 0)
 	{
 		memory_copy(new_buffer.data, before_range.data, before_range.size);
@@ -776,6 +777,11 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 			{
 				UI_TextAction action = node->action;
 				UI_TextOp op = ui_text_op_from_state_and_action(ui_frame_arena(), edit_str, edit_state, &action);
+				if (op.copy_string.size)
+				{
+					os_set_clipboard(op.copy_string);
+				}
+
 				edit_state->cursor = op.new_cursor;
 				edit_state->mark = op.new_mark;
 				arena_scratch(0, 0)
