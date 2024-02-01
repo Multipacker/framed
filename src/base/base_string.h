@@ -60,7 +60,7 @@ internal Str8 str8(U8 *data, U64 size);
 internal Str8 str8_range(U8 *start, U8 *opl);
 internal Str8 str8_copy(Arena *arena, Str8 string);
 internal Str8 str8_cstr(CStr data);
-internal Str8 str8_copy_cstr(Arena *arena, U8 *data);
+internal Str8 str8_copy_cstr(Arena *arena, CStr data);
 
 internal Str8 str8_prefix(Str8 string, U64 size);
 internal Str8 str8_postfix(Str8 string, U64 size);

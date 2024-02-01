@@ -5,7 +5,6 @@
 // [ ] @feature Drag & hold to reorder tabs
 // [ ] @bug Tab offsetting looks weird if you remove any tab to the 
 //          left of the active tab when the tab bar is full
-// [ ] @bug Window offset is wrong if you reorder tabs and then drag out the tab
 
 ////////////////////////////////
 //~ hampus: Medium term

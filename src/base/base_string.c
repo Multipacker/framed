@@ -64,7 +64,7 @@ str8_cstr(CStr data)
 }
 
 internal Str8
-str8_copy_cstr(Arena *arena, U8 *data)
+str8_copy_cstr(Arena *arena, CStr data)
 {
 	Str8 result;
 	result.size = 0;

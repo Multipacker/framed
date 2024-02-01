@@ -296,8 +296,8 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
 					font->max_ascent          = (F32) render_pixels_from_font_unit(face->ascender, face->size->metrics.y_scale);
 					font->max_descent         = (F32) render_pixels_from_font_unit(face->descender, face->size->metrics.y_scale);
 					font->has_kerning         = FT_HAS_KERNING(face);
-					font->family_name         = str8_copy_cstr(font->arena, (U8 *) face->family_name);
-					font->style_name          = str8_copy_cstr(font->arena, (U8 *) face->style_name);
+					font->family_name         = str8_copy_cstr(font->arena, face->family_name);
+					font->style_name          = str8_copy_cstr(font->arena, face->style_name);
 
 					os_mutex(&renderer->font_atlas_mutex)
 					{
