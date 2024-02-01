@@ -296,7 +296,12 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 				F32 height = rect_height * (F32) ui_debug_stats.total_time_ns[frame_index][i] / (F32) total;
 
 				Vec4F32 color = ui_debug_stats.colors[i];
-				render_rect(renderer, v2f32(x, y - height), v2f32(x + width, y), .color = color);
+				render_rect(
+					renderer,
+					v2f32(f32_floor(x), f32_floor(y - height)),
+					v2f32(f32_floor(x + width), f32_floor(y)),
+					.color = color
+				);
 
 				y -= height;
 			}
