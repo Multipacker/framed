@@ -289,11 +289,13 @@ ui_text_action_from_event(Gfx_Event *event)
 			case Gfx_Key_Left:
 			{
 				result.delta = -1;
+				result.flags |= UI_TextActionFlag_DeltaPicksSelectionSide;
 			} break;
 
 			case Gfx_Key_Right:
 			{
 				result.delta = 1;
+				result.flags |= UI_TextActionFlag_DeltaPicksSelectionSide;
 			} break;
 
 			case Gfx_Key_Home:
@@ -405,6 +407,21 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 	delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor+1);
 	result.new_cursor += delta;
+
+	if (action->flags & UI_TextActionFlag_DeltaPicksSelectionSide && !(action->flags & UI_TextActionFlag_KeepMark))
+	{
+		if (state->cursor != state->mark)
+		{
+			if (action->delta < 0)
+			{
+				result.new_cursor = s64_min(state->cursor, state->mark);
+			}
+			else if (action->delta > 0)
+			{
+				result.new_cursor = s64_max(state->cursor, state->mark);
+			}
+		}
+	}
 
 	if (action->flags & UI_TextActionFlag_WordScan)
 	{
