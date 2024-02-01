@@ -44,8 +44,9 @@ render_backend_init(Render_Context *renderer)
 		flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 		D3D_FEATURE_LEVEL levels[] = { D3D_FEATURE_LEVEL_11_0 };
-		hr = D3D11CreateDevice(0, D3D_DRIVER_TYPE_HARDWARE, 0, flags, levels, ARRAYSIZE(levels),
-													 D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
+		hr = D3D11CreateDevice(
+			0, D3D_DRIVER_TYPE_HARDWARE, 0, flags, levels, ARRAYSIZE(levels),
+			D3D11_SDK_VERSION, &backend->device, 0, &backend->context);
 		assert_hr(hr);
 	}
 
@@ -466,9 +467,7 @@ render_backend_end(Render_Context *renderer)
 		ID3D11DeviceContext_ClearRenderTargetView(backend->context, backend->render_target_view, color);
 		ID3D11DeviceContext_ClearDepthStencilView(backend->context, backend->depth_stencil_view, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.f, 0);
 		D3D11_BatchList *batch_list = &backend->batch_list;
-		for (D3D11_Batch *batch = batch_list->first;
-				 batch != 0;
-				 batch = batch->next)
+		for (D3D11_Batch *batch = batch_list->first; batch != 0; batch = batch->next)
 		{
 			D3D11_BatchParams *params = &batch->params;
 
