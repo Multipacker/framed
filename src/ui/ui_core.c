@@ -438,7 +438,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			U64 first_whitespace_index = 0;
 			Str8 string_after_cursor = str8_skip(edit_str, (U64) result.new_cursor);
 			B32 found_next_word = false;
-			S64 end = (S64) (string_after_cursor.size-1);
+			S64 end = (S64)(string_after_cursor.size-1);
 			for (S64 i = 0; i < end; ++i)
 			{
 				U8 next_character = string_after_cursor.data[i+1];
@@ -454,7 +454,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			if (!found_next_word)
 			{
 				S64 new_cursor = state->cursor;
-				for (S64 i = end; i != 0; --i)
+				for (U64 i = (string_after_cursor.size-1); i != 0; --i)
 				{
 					U8 character = string_after_cursor.data[i];
 					if (character != ' ')
