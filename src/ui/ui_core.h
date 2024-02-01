@@ -279,6 +279,8 @@ enum UI_TextActionFlag
 	UI_TextActionFlag_Copy                    = (1 << 3),
 	UI_TextActionFlag_Paste                   = (1 << 4),
 	UI_TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
+	UI_TextActionFlag_DeltaPicksSelectionSide  = (1 << 6),
+	UI_TextActionFlag_SelectAll  = (1 << 7),
 };
 
 typedef struct UI_TextAction UI_TextAction;

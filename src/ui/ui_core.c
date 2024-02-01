@@ -306,6 +306,14 @@ ui_text_action_from_event(Gfx_Event *event)
 				result.delta = S64_MAX;
 			} break;
 
+			case Gfx_Key_A:
+			{
+				if (event->key_modifiers & Gfx_KeyModifier_Control)
+				{
+					result.flags |= UI_TextActionFlag_SelectAll;
+				}
+			} break;
+
 			case Gfx_Key_C:
 			{
 				if (event->key_modifiers & Gfx_KeyModifier_Control)
@@ -502,6 +510,12 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			result.new_cursor += result.replace_string.size;
 		}
 		result.new_mark = result.new_cursor;
+	}
+
+	if (action->flags & UI_TextActionFlag_SelectAll)
+	{
+		result.new_mark = 0;
+		result.new_cursor = S64_MAX;
 	}
 
 	return(result);
