@@ -971,6 +971,25 @@ os_run(Str8 program, Str8List arguments)
 	return(success);
 }
 
+internal Void
+os_set_clipboard(Str8 data)
+{
+	arena_scratch(0, 0)
+	{
+		CStr clipboard = cstr_from_str8(scratch, data);
+		SDL_SetClipboardText(clipboard);
+	}
+}
+
+internal Str8
+os_push_clipboard(Arena *arena)
+{
+	CStr clipboard = SDL_GetClipboardText();
+	Str8 result = str8_copy(arena, str8_cstr(clipboard));
+	SDL_free(clipboard);
+	return(result);
+}
+
 int
 main(int argument_count, char *arguments[])
 {
