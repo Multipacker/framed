@@ -1665,11 +1665,6 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 internal Void
 ui_draw(UI_Box *root)
 {
-	if (ui_box_has_flag(root, UI_BoxFlag_Clip))
-	{
-		render_push_clip(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, true);
-	}
-
 	if (root->custom_draw)
 	{
 		root->custom_draw(root);
@@ -1789,11 +1784,16 @@ ui_draw(UI_Box *root)
 		{
 			render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 		}
+	}
 
-		for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
-		{
-			ui_draw(child);
-		}
+	if (ui_box_has_flag(root, UI_BoxFlag_Clip))
+	{
+		render_push_clip(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, true);
+	}
+
+	for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
+	{
+		ui_draw(child);
 	}
 
 	if (ui_box_has_flag(root, UI_BoxFlag_Clip))

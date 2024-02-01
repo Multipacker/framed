@@ -453,13 +453,15 @@ rectf32_intersect_rectf32(RectF32 cookie, RectF32 cutter)
 	return(result);
 }
 
-internal U8 u8_min(U8 a, U8 b)
+internal U8
+u8_min(U8 a, U8 b)
 {
 	U8 result = (a < b ? a : b);
 	return(result);
 }
 
-internal U8 u8_max(U8 a, U8 b)
+internal U8
+u8_max(U8 a, U8 b)
 {
 	U8 result = (a > b ? a : b);
 	return(result);

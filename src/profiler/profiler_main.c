@@ -315,11 +315,6 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 	{
 		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
 	}
-
-	for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
-	{
-		ui_draw(child);
-	}
 }
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
