@@ -5,8 +5,10 @@ win32_print_error_message(Void)
 {
 	DWORD error = GetLastError();
 	U8 buffer[1024] = { 0 };
-	U64 size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-														0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
+	U64 size = FormatMessageA(
+		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+		0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
+	);
 	OutputDebugStringA((LPCSTR) buffer);
 }
 
@@ -73,9 +75,11 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 	U64 size = u64_round_up_to_power_of_2(minimum_size, info.dwAllocationGranularity);
 	U64 total_repeated_size = repeat_count * size;
 
-	HANDLE file_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, 0,
-																					PAGE_READWRITE, (DWORD) (size >> 32),
-																					(DWORD) (size & 0xffffffff), 0);
+	HANDLE file_mapping = CreateFileMapping(
+		INVALID_HANDLE_VALUE, 0,
+		PAGE_READWRITE, (DWORD) (size >> 32),
+		(DWORD) (size & 0xffffffff), 0
+	);
 
 	result.handle = int_from_ptr(file_mapping);
 	result.repeat_count = repeat_count;
@@ -174,13 +178,15 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	HANDLE file = INVALID_HANDLE_VALUE;
 	arena_scratch(&arena, 1)
 	{
-		file = CreateFile(cstr16_from_str8(scratch, path),
-											GENERIC_READ,
-											FILE_SHARE_READ,
-											0,
-											OPEN_EXISTING,
-											FILE_ATTRIBUTE_NORMAL,
-											0);
+		file = CreateFile(
+			cstr16_from_str8(scratch, path),
+			GENERIC_READ,
+			FILE_SHARE_READ,
+			0,
+			OPEN_EXISTING,
+			FILE_ATTRIBUTE_NORMAL,
+			0
+		);
 	}
 
 	if (file != INVALID_HANDLE_VALUE)
@@ -244,13 +250,15 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 		create_file_flags = CREATE_ALWAYS;
 	}
 
-	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path),
-													 GENERIC_READ | GENERIC_WRITE,
-													 0,
-													 0,
-													 create_file_flags,
-													 FILE_ATTRIBUTE_NORMAL,
-													 0);
+	HANDLE file = CreateFile(
+		cstr16_from_str8(scratch.arena, path),
+		GENERIC_READ | GENERIC_WRITE,
+		0,
+		0,
+		create_file_flags,
+		FILE_ATTRIBUTE_NORMAL,
+		0
+	);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
@@ -294,8 +302,10 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 
 	CStr16 path16 = cstr16_from_str8(scratch.arena, path);
 
-	HANDLE file_handle = CreateFile((LPCWSTR) path16, GENERIC_WRITE | GENERIC_READ,
-																	0, 0, creation_flags, 0, 0);
+	HANDLE file_handle = CreateFile(
+		(LPCWSTR) path16, GENERIC_WRITE | GENERIC_READ,
+		0, 0, creation_flags, 0, 0
+	);
 
 	if (file_handle != INVALID_HANDLE_VALUE)
 	{
@@ -304,7 +314,6 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 			// NOTE(hampus): Set the cursor position to the end of
 			// the file.
 			SetFilePointer(file_handle, 0, 0, FILE_END);
-
 		}
 
 		result->u64[0] = int_from_ptr(file_handle);
@@ -719,16 +728,17 @@ os_run(Str8 program, Str8List arguments)
 		startup_info.dwFlags = 0;
 
 		PROCESS_INFORMATION process_information = { 0 };
-		B32 could_launch = CreateProcess(0,
-																		 cstr16_from_str8(scratch, command_line),
-																		 0,
-																		 0,
-																		 false,
-																		 0,
-																		 0,
-																		 0,
-																		 &startup_info,
-																		 &process_information
+		B32 could_launch = CreateProcess(
+			0,
+			cstr16_from_str8(scratch, command_line),
+			0,
+			0,
+			false,
+			0,
+			0,
+			0,
+			&startup_info,
+			&process_information
 		);
 
 		success = could_launch;
