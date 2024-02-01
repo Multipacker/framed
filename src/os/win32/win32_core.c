@@ -6,7 +6,7 @@ win32_print_error_message(Void)
 	DWORD error = GetLastError();
 	U8 buffer[1024] = { 0 };
 	U64 size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-							  0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
+														0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
 	OutputDebugStringA((LPCSTR) buffer);
 }
 
@@ -74,8 +74,8 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 	U64 total_repeated_size = repeat_count * size;
 
 	HANDLE file_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, 0,
-											PAGE_READWRITE, (DWORD)(size >> 32),
-											(DWORD)(size & 0xffffffff), 0);
+																					PAGE_READWRITE, (DWORD) (size >> 32),
+																					(DWORD) (size & 0xffffffff), 0);
 
 	result.handle = int_from_ptr(file_mapping);
 	result.repeat_count = repeat_count;
@@ -83,12 +83,12 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 	if (file_mapping != INVALID_HANDLE_VALUE)
 	{
 		HMODULE kernel = LoadLibrary(cstr16_from_str8(scratch.arena, str8_lit("kernelbase.dll")));
-		VirtualAlloc2Proc *VirtualAlloc2 = (VirtualAlloc2Proc *)GetProcAddress(kernel, "VirtualAlloc2");
-		MapViewOfFile3Proc *MapViewOfFile3 = (MapViewOfFile3Proc *)GetProcAddress(kernel, "MapViewOfFile3");
+		VirtualAlloc2Proc *VirtualAlloc2 = (VirtualAlloc2Proc *) GetProcAddress(kernel, "VirtualAlloc2");
+		MapViewOfFile3Proc *MapViewOfFile3 = (MapViewOfFile3Proc *) GetProcAddress(kernel, "MapViewOfFile3");
 
 		if (VirtualAlloc2 && MapViewOfFile3)
 		{
-			U8 *base = (U8 *)VirtualAlloc2(0, 0, total_repeated_size, MEM_RESERVE|MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS, 0, 0);
+			U8 *base = (U8 *) VirtualAlloc2(0, 0, total_repeated_size, MEM_RESERVE|MEM_RESERVE_PLACEHOLDER, PAGE_NOACCESS, 0, 0);
 
 			B32 mapped = true;
 			for (U64 i = 0; i < repeat_count; ++i)
@@ -109,7 +109,7 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 		{
 			for (U32 i = 0; i < 100; ++i)
 			{
-				U8 *base = (U8 *)VirtualAlloc(0, total_repeated_size, MEM_RESERVE, PAGE_NOACCESS);
+				U8 *base = (U8 *) VirtualAlloc(0, total_repeated_size, MEM_RESERVE, PAGE_NOACCESS);
 				if (base)
 				{
 					VirtualFree(base, 0, MEM_RELEASE);
@@ -175,12 +175,12 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 	arena_scratch(&arena, 1)
 	{
 		file = CreateFile(cstr16_from_str8(scratch, path),
-						  GENERIC_READ,
-						  FILE_SHARE_READ,
-						  0,
-						  OPEN_EXISTING,
-						  FILE_ATTRIBUTE_NORMAL,
-						  0);
+											GENERIC_READ,
+											FILE_SHARE_READ,
+											0,
+											OPEN_EXISTING,
+											FILE_ATTRIBUTE_NORMAL,
+											0);
 	}
 
 	if (file != INVALID_HANDLE_VALUE)
@@ -245,12 +245,12 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 	}
 
 	HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path),
-							 GENERIC_READ | GENERIC_WRITE,
-							 0,
-							 0,
-							 create_file_flags,
-							 FILE_ATTRIBUTE_NORMAL,
-							 0);
+													 GENERIC_READ | GENERIC_WRITE,
+													 0,
+													 0,
+													 create_file_flags,
+													 FILE_ATTRIBUTE_NORMAL,
+													 0);
 
 	if (file != INVALID_HANDLE_VALUE)
 	{
@@ -289,13 +289,13 @@ os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 		case OS_FileMode_Fail:    creation_flags = CREATE_NEW; break;
 		case OS_FileMode_Replace: creation_flags = CREATE_ALWAYS; break;
 		case OS_FileMode_Append:  creation_flags = OPEN_ALWAYS; break;
-		invalid_case;
+			invalid_case;
 	}
 
 	CStr16 path16 = cstr16_from_str8(scratch.arena, path);
 
 	HANDLE file_handle = CreateFile((LPCWSTR) path16, GENERIC_WRITE | GENERIC_READ,
-									0, 0, creation_flags, 0, 0);
+																	0, 0, creation_flags, 0, 0);
 
 	if (file_handle != INVALID_HANDLE_VALUE)
 	{
@@ -328,7 +328,7 @@ os_file_stream_write(OS_File file, Str8 data)
 		DWORD bytes_written = 0;
 		assert(data.size <= U32_MAX);
 		// TODO(hampus): Does this actually write it all at once?
-		BOOL write_file_result = WriteFile(file_handle, data.data, (DWORD)data.size, &bytes_written, 0);
+		BOOL write_file_result = WriteFile(file_handle, data.data, (DWORD) data.size, &bytes_written, 0);
 		if (bytes_written != data.size)
 		{
 			success = false;
@@ -420,7 +420,7 @@ os_file_delete_directory(Str8 path)
 internal Str16
 win32_str16_from_wchar(WCHAR *wide_char)
 {
-	Str16 result = {0};
+	Str16 result = { 0 };
 	result.data = wide_char;
 	while (*wide_char++)
 	{
@@ -696,6 +696,56 @@ os_mutex_release(OS_Mutex *mutex)
 	ReleaseMutex(mutex->handle);
 }
 
+internal B32
+os_run(Str8 program, Str8List arguments)
+{
+	B32 success = true;
+
+	arena_scratch(0, 0)
+	{
+		Str8List arguments_spaces = { 0 };
+		for (Str8Node *node = arguments.first; node; node = node->next)
+		{
+			str8_list_push(scratch, &arguments_spaces, node->string);
+			if (node->next)
+			{
+				str8_list_push(scratch, &arguments_spaces, str8_lit(" "));
+			}
+		}
+		Str8 command_line = str8_join(scratch, &arguments_spaces);
+
+		STARTUPINFO startup_info = { 0 };
+		startup_info.cb = sizeof(startup_info);
+		startup_info.dwFlags = 0;
+
+		PROCESS_INFORMATION process_information = { 0 };
+		B32 could_launch = CreateProcess(0,
+																		 cstr16_from_str8(scratch, command_line),
+																		 0,
+																		 0,
+																		 false,
+																		 0,
+																		 0,
+																		 0,
+																		 &startup_info,
+																		 &process_information
+		);
+
+		success = could_launch;
+
+		if (could_launch)
+		{
+			CloseHandle(process_information.hProcess);
+			CloseHandle(process_information.hThread);
+		}
+		else
+		{
+			win32_print_error_message();
+		}
+	}
+	return(success);
+}
+
 internal Void
 os_thread_create(ThreadProc *proc, Void *data)
 {
@@ -719,53 +769,27 @@ os_thread_set_name(Str8 string)
 	}
 }
 
-internal B32
-os_run(Str8 program, Str8List arguments)
+internal Void
+os_set_clipboard(Str8 data)
 {
-	B32 success = true;
+	// TODO(hampus): Memory leak?
+	HGLOBAL memory =  GlobalAlloc(GMEM_MOVEABLE, data.size+1);
+	memory_copy(GlobalLock(memory), data.data, data.size);
+	GlobalUnlock(memory);
+	OpenClipboard(0);
+	EmptyClipboard();
+	SetClipboardData(CF_TEXT, memory);
+	CloseClipboard();
+}
 
-	arena_scratch(0, 0)
-	{
-		Str8List arguments_spaces = { 0 };
-		for (Str8Node *node = arguments.first; node; node = node->next) {
-			str8_list_push(scratch, &arguments_spaces, node->string);
-			if (node->next)
-			{
-				str8_list_push(scratch, &arguments_spaces, str8_lit(" "));
-			}
-		}
-		Str8 command_line = str8_join(scratch, &arguments_spaces);
-
-		STARTUPINFO startup_info = { 0 };
-		startup_info.cb = sizeof(startup_info);
-		startup_info.dwFlags = 0;
-
-		PROCESS_INFORMATION process_information = { 0 };
-		B32 could_launch = CreateProcess(0,
-										 cstr16_from_str8(scratch, command_line),
-										 0,
-										 0,
-										 false,
-										 0,
-										 0,
-										 0,
-										 &startup_info,
-										 &process_information
-										 );
-
-		success = could_launch;
-
-		if (could_launch)
-		{
-			CloseHandle(process_information.hProcess);
-			CloseHandle(process_information.hThread);
-		}
-		else
-		{
-			win32_print_error_message();
-		}
-	}
-	return(success);
+internal Str8
+os_push_clipboard(Arena *arena)
+{
+	OpenClipboard(0);
+	CStr data = GetClipboardData(CF_TEXT);
+	Str8 result = str8_copy_cstr(arena, data);
+	CloseClipboard();
+	return(result);
 }
 
 internal S32
@@ -774,6 +798,7 @@ win32_common_main(Void)
 	timeBeginPeriod(0);
 	QueryPerformanceFrequency(&win32_state.frequency);
 	win32_state.permanent_arena = arena_create("Win32Perm");
+	win32_state.clipboard = GlobalAlloc(GMEM_MOVEABLE, 1024+1);
 
 	win32_state.tls_index = TlsAlloc();
 	ThreadContext *context = thread_ctx_alloc();

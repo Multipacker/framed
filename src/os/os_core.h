@@ -106,6 +106,9 @@ internal B32 os_run(Str8 program, Str8List arguments);
 internal Void os_thread_create(ThreadProc *proc, Void *data);
 internal Void os_thread_set_name(Str8 string);
 
+internal Void os_set_clipboard(Str8 data);
+internal Str8 os_push_clipboard(Arena *arena);
+
 #define os_mutex(mutex) defer_loop(os_mutex_take(mutex), os_mutex_release(mutex))
 
 internal S32 os_main(Str8List arguments);

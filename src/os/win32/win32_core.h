@@ -37,7 +37,7 @@ struct Win32_ThreadArguments
 
 struct OS_Semaphore
 {
-	 HANDLE handle;
+	HANDLE handle;
 };
 
 struct OS_Mutex
