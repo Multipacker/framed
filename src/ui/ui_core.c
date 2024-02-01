@@ -407,7 +407,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			U64 first_whitespace_index = 0;
 			Str8 string_before_cursor = str8_prefix(edit_str, (U64) result.new_cursor);
 			B32 found_next_word = false;
-			for (S64 i = string_before_cursor.size - 1; i > 0; --i)
+			for (S64 i = (S64) string_before_cursor.size - 1; i > 0; --i)
 			{
 				U8 next_character = next_character = string_before_cursor.data[i-1];
 				U8 character = string_before_cursor.data[i];
@@ -495,7 +495,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		result.range = v2s64(result.new_cursor, result.new_mark);
 		if (result.new_cursor > result.new_mark)
 		{
-			result.new_cursor += result.replace_string.size - (result.new_cursor - result.new_mark);
+			result.new_cursor += (S64) result.replace_string.size - (result.new_cursor - result.new_mark);
 		}
 		else
 		{
