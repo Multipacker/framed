@@ -912,13 +912,15 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						ui_next_hover_cursor(Gfx_Cursor_Hand);
 						ui_next_vert_corner_radius(corner_radius, 0);
 						ui_next_color(profiler_ui_color_from_theme(ProfilerUI_Color_TabBarButtons));
-						UI_Box *tab_dropdown_list_box = ui_box_make(UI_BoxFlag_DrawBackground |
-																												UI_BoxFlag_DrawBorder |
-																												UI_BoxFlag_HotAnimation |
-																												UI_BoxFlag_ActiveAnimation |
-																												UI_BoxFlag_Clickable |
-																												UI_BoxFlag_DrawText,
-																												str8_lit("TabDropdownList"));
+						UI_Box *tab_dropdown_list_box = ui_box_make(
+							UI_BoxFlag_DrawBackground |
+							UI_BoxFlag_DrawBorder |
+							UI_BoxFlag_HotAnimation |
+							UI_BoxFlag_ActiveAnimation |
+							UI_BoxFlag_Clickable |
+							UI_BoxFlag_DrawText,
+							str8_lit("TabDropdownList")
+						);
 						UI_Comm tab_dropdown_list_comm = ui_comm_from_box(tab_dropdown_list_box);
 						if (tab_dropdown_list_comm.pressed)
 						{

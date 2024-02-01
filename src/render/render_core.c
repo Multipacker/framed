@@ -141,10 +141,7 @@ render_begin(Render_Context *renderer)
 internal Void
 render_end(Render_Context *renderer)
 {
-	debug_function()
-	{
-		render_backend_end(renderer);
-		renderer->frame_index++;
-		arena_pop_to(renderer->frame_arena, 0);
-	}
+	render_backend_end(renderer);
+	renderer->frame_index++;
+	arena_pop_to(renderer->frame_arena, 0);
 }
