@@ -438,25 +438,41 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 				}
 			}
 
+			UI_Key debug_time_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("DebugTimeColorCtxMenu"));
+
+			local Vec4F32 *selected_color = 0;
+			ui_ctx_menu(debug_time_color_ctx_menu)
+			{
+				ui_color_picker(selected_color);
+			}
+
 			ui_parent(columns[0])
 			{
 				for (U32 i = 0; i < ui_debug_stats.count; ++i)
 				{
 					ui_row()
 					{
-						ui_next_color(ui_debug_stats.colors[time_index[i]]);
-						ui_next_hover_cursor(Gfx_Cursor_Hand);
-						ui_next_corner_radius(5);
-						ui_next_width(ui_em(0.8f, 1));
-						ui_next_height(ui_em(0.8f, 1));
-						UI_Box *box = ui_box_make(
-							UI_BoxFlag_DrawBackground |
-							UI_BoxFlag_DrawBorder |
-							UI_BoxFlag_Clickable |
-							UI_BoxFlag_HotAnimation |
-							UI_BoxFlag_ActiveAnimation,
-							ui_debug_stats.name[time_index[i]]
-						);
+						ui_spacer(ui_em(0.1f, 1));
+						ui_column()
+						{
+							ui_spacer(ui_em(0.1f, 1));
+							ui_next_color(ui_debug_stats.colors[time_index[i]]);
+							ui_next_hover_cursor(Gfx_Cursor_Hand);
+							ui_next_corner_radius(5);
+							ui_next_width(ui_em(0.8f, 1));
+							ui_next_height(ui_em(0.8f, 1));
+							UI_Box *box = ui_box_make(
+								UI_BoxFlag_DrawBackground |
+								UI_BoxFlag_DrawBorder |
+								UI_BoxFlag_Clickable |
+								UI_BoxFlag_HotAnimation |
+								UI_BoxFlag_ActiveAnimation,
+								ui_debug_stats.name[time_index[i]]
+							);
+						}
+						ui_spacer(ui_em(0.1f, 1));
+
+						ui_next_text_padding(Axis2_X, 0);
 						ui_text(ui_debug_stats.name[time_index[i]]);
 					}
 				}
