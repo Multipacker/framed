@@ -1401,7 +1401,7 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 	for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
 	{
 		ui_solve_upward_dependent_sizes(child, axis);
-}
+	}
 }
 
 internal Void

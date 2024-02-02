@@ -742,6 +742,27 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	return(new_buffer);
 }
 
+internal U64
+ui_get_character_index_from_cursor_pos(UI_Box *box, Str8 edit_str)
+{
+	U64 result = 0;
+	F32 x = -box->scroll.x;
+	for (U64 i = 0; i < edit_str.size; ++i)
+	{
+		Vec2F32 dim = render_measure_character(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str.data[i]);
+		RectF32 character_rect = box->fixed_rect;
+		character_rect.min.x = x;
+		character_rect.max.x = x + dim.x;
+		if (rectf32_contains_v2f32(character_rect, ui_mouse_pos()))
+		{
+			result = i;
+			break;
+		}
+		x += dim.x;
+	}
+	return(result);
+}
+
 internal UI_Comm
 ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, Str8 string)
 {
@@ -754,7 +775,6 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 		UI_Box *box = ui_box_make(
 			UI_BoxFlag_DrawBackground |
 			UI_BoxFlag_HotAnimation |
-			UI_BoxFlag_ActiveAnimation |
 			UI_BoxFlag_FocusAnimation |
 			UI_BoxFlag_Clickable |
 			UI_BoxFlag_DrawBorder |
@@ -763,9 +783,19 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 			string
 		);
 
-		comm = ui_comm_from_box(box);
-
 		Str8 edit_str = (Str8) { buffer, *string_length };
+
+		comm = ui_comm_from_box(box);
+		if (comm.pressed)
+		{
+			edit_state->cursor = edit_state->mark = (S64) ui_get_character_index_from_cursor_pos(box, edit_str);
+
+		}
+		if (comm.dragging)
+		{
+			edit_state->cursor = (S64) ui_get_character_index_from_cursor_pos(box, edit_str);
+		}
+
 		if (ui_box_is_focused(box))
 		{
 			UI_TextActionList text_actions = ui_text_action_list_from_events(ui_frame_arena(), ui_events());

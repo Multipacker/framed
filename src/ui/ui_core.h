@@ -211,14 +211,14 @@ struct UI_Comm
 	Vec2F32 rel_mouse;
 	Vec2F32 drag_delta;
 	Vec2F32 scroll;
-	B8 clicked;
-	B8 pressed;
-	B8 released;
-	B8 double_clicked;
-	B8 right_pressed;
-	B8 right_released;
-	B8 dragging;
-	B8 hovering;
+	B8 clicked        : 1;
+	B8 pressed        : 1;
+	B8 released       : 1;
+	B8 double_clicked : 1;
+	B8 right_pressed  : 1;
+	B8 right_released : 1;
+	B8 dragging       : 1;
+	B8 hovering       : 1;
 };
 
 typedef struct UI_FreeBox UI_FreeBox;
