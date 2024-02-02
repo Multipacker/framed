@@ -871,30 +871,60 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 				{
 					UI_Key tab_dropown_menu_key = ui_key_from_string(title_bar->key, str8_lit("TabDropdownMenu"));
 
+					// NOTE(hampus): Calculate the largest tab to decice the dropdown list size
+					Vec2F32 largest_dim = v2f32(0, 0);
+					for (ProfilerUI_Tab *tab = root->tab_group.first; !profiler_ui_tab_is_nil(tab); tab = tab->next)
+					{
+						Vec2F32 dim = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), tab->string);
+						largest_dim.x = f32_max(largest_dim.x, dim.x);
+						largest_dim.y = f32_max(largest_dim.y, dim.y);
+					}
+
+					largest_dim.x += ui_top_font_line_height()*0.5f;
 					ui_ctx_menu(tab_dropown_menu_key)
-						ui_width(ui_em(4, 1))
 					{
 						ui_corner_radius(0)
 						{
 							for (ProfilerUI_Tab *tab = root->tab_group.first; !profiler_ui_tab_is_nil(tab); tab = tab->next)
 							{
 								ui_next_hover_cursor(Gfx_Cursor_Hand);
+								ui_next_extra_box_flags(UI_BoxFlag_DrawBorder | UI_BoxFlag_DrawBackground | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_HotAnimation | UI_BoxFlag_Clickable);
+								UI_Box *row_box = ui_named_row_beginf("TabDropDownListEntry%p", tab);
 								ui_next_height(ui_em(1, 0.0f));
+								ui_next_width(ui_pixels(largest_dim.x, 1));
 								// TODO(hampus): Theming
 								UI_Box *tab_box = ui_box_make(
-									UI_BoxFlag_DrawText |
-									UI_BoxFlag_DrawBorder |
-									UI_BoxFlag_HotAnimation |
-									UI_BoxFlag_ActiveAnimation |
-									UI_BoxFlag_Clickable |
-									UI_BoxFlag_DrawBackground,
-									tab->string);
+									UI_BoxFlag_DrawText,
+									str8_lit(""));
 								ui_box_equip_display_string(tab_box, tab->string);
-								UI_Comm tab_comm = ui_comm_from_box(tab_box);
-								if (tab_comm.pressed)
+								ui_next_height(ui_em(1, 1));
+								ui_next_width(ui_em(1, 1));
+								ui_next_icon(RENDER_ICON_CROSS);
+								ui_next_hover_cursor(Gfx_Cursor_Hand);
+								UI_Box *close_box = ui_box_make_f(
+									UI_BoxFlag_Clickable |
+									UI_BoxFlag_DrawText |
+									UI_BoxFlag_HotAnimation |
+									UI_BoxFlag_ActiveAnimation,
+									"TabCloseButton%p", tab
+								);
+								UI_Comm close_comm = ui_comm_from_box(close_box);
+								if (close_comm.hovering)
+								{
+									close_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder;
+
+								}
+								if (close_comm.clicked)
+								{
+									profiler_ui_attempt_to_close_tab(tab);
+								}
+								ui_named_row_end();
+								UI_Comm row_comm = ui_comm_from_box(row_box);
+								if (row_comm.pressed)
 								{
 									profiler_ui_set_tab_to_active(tab);
 								}
+
 							}
 						}
 					}
