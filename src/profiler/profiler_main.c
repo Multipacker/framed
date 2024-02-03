@@ -849,6 +849,43 @@ os_main(Str8List arguments)
 	debug_init();
 	log_init(str8_lit("log.txt"));
 
+#if 0
+	B32 host = false;
+
+	for (Str8Node *node = arguments.first; node != 0; node = node->next)
+	{
+		if (str8_equal(node->string, str8_lit("-host")))
+		{
+			host = true;
+			break;
+		}
+	}
+
+	net_socket_init();
+	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AF_INET);
+	Net_Address address =
+	{
+		.ip.u8[0] = 127,
+		.ip.u8[1] = 0,
+		.ip.u8[2] = 0,
+		.ip.u8[3] = 1,
+		.port = 1234,
+	};
+	if (host)
+	{
+		net_socket_bind(socket, address);
+		Net_AcceptResult accept_result = net_socket_accept(socket);
+		U8 buffer[256] = { 0 };
+		net_socket_recieve_from(accept_result.socket, accept_result.address, buffer, array_count(buffer));
+		log_info((CStr) buffer);
+	}
+	else
+	{
+		net_socket_connect(socket, address);
+		Str8 buffer = str8_lit("Hello socket!");
+		net_socket_send_to(socket, address, buffer);
+	}
+#endif
 	Arena *perm_arena = arena_create("ProfilerPerm");
 
 	profiler_ui_state = push_struct(perm_arena, ProfilerUI_State);
@@ -981,7 +1018,7 @@ os_main(Str8List arguments)
 		ui_begin(ui, &events, renderer, dt);
 		U32 font_size = 15;
 #if PROFILER_USER_HAMPUS
-		font_size = 20;
+		font_size = 15;
 #elif PROFILER_USER_SIMON
 		font_size = 15;
 #else

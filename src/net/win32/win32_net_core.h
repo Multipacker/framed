@@ -2,10 +2,6 @@
 #define WIN32_NET_CORE_H
 
 #include <winsock2.h>
-
-struct Net_Socket
-{
-	SOCKET socket;
-};
+#include <ws2tcpip.h>
 
 #endif

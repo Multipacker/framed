@@ -2,6 +2,10 @@
 #define NET_CORE_H
 
 typedef struct Net_Socket Net_Socket;
+struct Net_Socket
+{
+	U64 u64[1];
+};
 
 typedef enum Net_Protocol Net_Protocol;
 enum Net_Protocol
@@ -12,19 +16,50 @@ enum Net_Protocol
 	Net_Protocol_COUNT,
 };
 
+typedef enum Net_AF Net_AF;
+enum Net_AF
+{
+	Net_AF_INET,
+	Net_AF_INET6,
+	Net_AF_UNIX,
+	
+	Net_AF_COUNT,
+};
+
 typedef struct Net_Address Net_Address;
 struct Net_Address
 {
 	U16 port;
-	U32 ip;
+	union
+	{
+		U32 u32[1];
+		U8 u8[4];
+	} ip;
+	Net_AF address_family;
 };
 
-internal Void       net_socket_init(Void);
-internal Net_Socket net_socket_alloc(Net_Protocol protocol);
-internal Void       net_socket_free(Net_Socket socket);
-internal Void       net_socket_bind(Net_Socket socket, Net_Address address);
-internal Void       net_socket_accept(Net_Socket socket);
-internal U64        net_socket_send(Net_Socket socket, Str8 data);
-internal U64        net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size);
+typedef struct Net_RecieveResult Net_RecieveResult;
+struct Net_RecieveResult
+{
+	U64 bytes_recieved;
+};
+
+typedef struct Net_AcceptResult Net_AcceptResult;
+struct Net_AcceptResult
+{
+	Net_Socket socket;
+	Net_Address address;
+};
+
+internal Void              net_socket_init(Void);
+internal Net_Socket        net_socket_alloc(Net_Protocol protocol, Net_AF address_family);
+internal Void              net_socket_free(Net_Socket socket);
+internal Void              net_socket_bind(Net_Socket socket, Net_Address address);
+internal Void              net_socket_connect(Net_Socket socket, Net_Address to);
+internal Net_AcceptResult  net_socket_accept(Net_Socket socket);
+internal Void              net_socket_send(Net_Socket socket, Str8 data);
+internal Void              net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data);
+internal Net_RecieveResult net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size);
+internal Net_RecieveResult net_socket_recieve_from(Net_Socket socket, Net_Address address, U8 *buffer, U64 buffer_size);
 
 #endif
