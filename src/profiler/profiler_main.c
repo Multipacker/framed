@@ -6,6 +6,7 @@
 #include "render/render_inc.h"
 #include "image/image_inc.h"
 #include "ui/ui_inc.h"
+#include "net/net_inc.h"
 
 #include "base/base_inc.c"
 #include "os/os_inc.c"
@@ -15,6 +16,7 @@
 #include "render/render_inc.c"
 #include "image/image_inc.c"
 #include "ui/ui_inc.c"
+#include "net/net_inc.c"
 
 #if OS_LINUX
 #   define PROFILER_USER_SIMON 1
