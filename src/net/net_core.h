@@ -16,14 +16,14 @@ enum Net_Protocol
 	Net_Protocol_COUNT,
 };
 
-typedef enum Net_AF Net_AF;
-enum Net_AF
+typedef enum Net_AddressFamily Net_AddressFamily;
+enum Net_AddressFamily
 {
-	Net_AF_INET,
-	Net_AF_INET6,
-	Net_AF_UNIX,
-	
-	Net_AF_COUNT,
+	Net_AddressFamily_INET,
+	Net_AddressFamily_INET6,
+	Net_AddressFamily_UNIX,
+
+	Net_AddressFamily_COUNT,
 };
 
 typedef struct Net_Address Net_Address;
@@ -35,7 +35,7 @@ struct Net_Address
 		U32 u32[1];
 		U8 u8[4];
 	} ip;
-	Net_AF address_family;
+	Net_AddressFamily address_family;
 };
 
 typedef struct Net_RecieveResult Net_RecieveResult;
@@ -52,7 +52,7 @@ struct Net_AcceptResult
 };
 
 internal Void              net_socket_init(Void);
-internal Net_Socket        net_socket_alloc(Net_Protocol protocol, Net_AF address_family);
+internal Net_Socket        net_socket_alloc(Net_Protocol protocol, Net_AddressFamily address_family);
 internal Void              net_socket_free(Net_Socket socket);
 internal Void              net_socket_bind(Net_Socket socket, Net_Address address);
 internal Void              net_socket_connect(Net_Socket socket, Net_Address to);

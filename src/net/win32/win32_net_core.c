@@ -11,7 +11,7 @@ net_win32_print_error_message(Void)
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
 	);
-	log_error((CStr)buffer);
+	log_error((CStr) buffer);
 	assert(false);
 }
 
@@ -26,15 +26,15 @@ net_win32_sockaddr_in_from_address(Net_Address address)
 	result.sin_port = u16_reverse(address.port);
 	switch (address.address_family)
 	{
-		case Net_AF_INET:
+		case Net_AddressFamily_INET:
 		{
 			result.sin_family = AF_INET;
 		} break;
-		case Net_AF_INET6:
+		case Net_AddressFamily_INET6:
 		{
 			result.sin_family = AF_INET6;
 		} break;
-		case Net_AF_UNIX:
+		case Net_AddressFamily_UNIX:
 		{
 			result.sin_family = AF_UNIX;
 		} break;
@@ -56,15 +56,15 @@ net_win32_address_from_sockaddr_in(struct sockaddr_in sockadd)
 	{
 		case AF_INET:
 		{
-			result.address_family = Net_AF_INET;
+			result.address_family = Net_AddressFamily_INET;
 		} break;
 		case AF_INET6:
 		{
-			result.address_family = Net_AF_INET6;
+			result.address_family = Net_AddressFamily_INET6;
 		} break;
 		case AF_UNIX:
 		{
-			result.address_family = Net_AF_UNIX;
+			result.address_family = Net_AddressFamily_UNIX;
 		} break;
 		invalid_case;
 	}
@@ -80,7 +80,7 @@ net_socket_init(Void)
 }
 
 internal Net_Socket
-net_socket_alloc(Net_Protocol protocol, Net_AF address_family)
+net_socket_alloc(Net_Protocol protocol, Net_AddressFamily address_family)
 {
 	Net_Socket result = { 0 };
 	int ipproto = 0;
@@ -102,15 +102,15 @@ net_socket_alloc(Net_Protocol protocol, Net_AF address_family)
 	int af = 0;
 	switch (address_family)
 	{
-		case Net_AF_INET:
+		case Net_AddressFamily_INET:
 		{
 			af = AF_INET;
 		} break;
-		case Net_AF_INET6:
+		case Net_AddressFamily_INET6:
 		{
 			af = AF_INET6;
 		} break;
-		case Net_AF_UNIX:
+		case Net_AddressFamily_UNIX:
 		{
 			af = AF_UNIX;
 		} break;

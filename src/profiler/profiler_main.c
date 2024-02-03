@@ -862,7 +862,7 @@ os_main(Str8List arguments)
 	}
 
 	net_socket_init();
-	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AF_INET);
+	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
 	Net_Address address =
 	{
 		.ip.u8[0] = 127,
