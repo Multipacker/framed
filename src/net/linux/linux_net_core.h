@@ -1,0 +1,3 @@
+#ifndef LINUX_NET_CORE_H
+#define LINUX_NET_CORE_H
+#endif // LINUX_NET_CORE_H
