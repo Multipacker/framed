@@ -789,7 +789,6 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 		if (comm.pressed)
 		{
 			edit_state->cursor = edit_state->mark = (S64) ui_get_character_index_from_cursor_pos(box, edit_str);
-
 		}
 		if (comm.dragging)
 		{
