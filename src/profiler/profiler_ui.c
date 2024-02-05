@@ -400,18 +400,20 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 			ProfilerUI_Tab *drag_tab = profiler_ui_state->drag_data.tab;
 			if (tab != drag_tab)
 			{
-				B32 hovered  = ui_mouse_is_inside_box(title_container->parent);
-				if (hovered)
-				{
-					if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
+				Vec2F32 mouse_pos = ui_mouse_pos();
+				F32 center = (title_container->parent->fixed_rect.x0 +  title_container->parent->fixed_rect.x1) / 2;
+					B32 hovered  = mouse_pos.x >= center - ui_top_font_line_height() * 0.2f && mouse_pos.x <= center + ui_top_font_line_height() * 0.2f;
+					if (hovered)
 					{
-						profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab);
+						if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
+						{
+							profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab);
+						}
 					}
-				}
 			}
 		}
 
-		if (!profiler_ui_is_dragging())
+		if (profiler_ui_drag_is_inactive())
 		{
 			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
 			UI_Comm close_box_comm = { 0 };
