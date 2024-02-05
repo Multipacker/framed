@@ -1787,13 +1787,13 @@ ui_draw(UI_Box *root)
 				render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 			}
 		}
-
-		if (ui_ctx->show_debug_lines)
-		{
-			render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
-		}
 	}
 
+	if (ui_ctx->show_debug_lines)
+	{
+		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+	}
+	
 	if (ui_box_has_flag(root, UI_BoxFlag_Clip))
 	{
 		render_push_clip(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, true);

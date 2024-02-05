@@ -56,40 +56,82 @@ PROFILER_UI_COMMAND(tab_attach)
 	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
 }
 
-PROFILER_UI_COMMAND(tab_reorder)
+PROFILER_UI_COMMAND(tab_swap)
 {
-	ProfilerUI_TabReorder *data = (ProfilerUI_TabReorder *) params;
-	ProfilerUI_Panel *panel = data->tab->panel;
+	ProfilerUI_TabSwap *data = (ProfilerUI_TabSwap *) params;
+	ProfilerUI_Panel *panel = data->tab0->panel;
 
-	ProfilerUI_Tab *tab = data->tab;
-	ProfilerUI_Tab *next = data->next;
+	ProfilerUI_Tab *tab0 = data->tab0;
+	ProfilerUI_Tab *tab1 = data->tab1;
 
-	if (next == panel->tab_group.first)
+	if (tab0 == panel->tab_group.first)
 	{
-		panel->tab_group.first = tab;
+		panel->tab_group.first = tab1;
+	}
+	else if (tab1 == panel->tab_group.first)
+	{
+		panel->tab_group.first = tab0;
 	}
 
-	if (tab == panel->tab_group.last)
+	if (tab0 == panel->tab_group.last)
 	{
-		panel->tab_group.last = next;
+		panel->tab_group.last = tab1;
+	}
+	else if (tab1 == panel->tab_group.last)
+	{
+		panel->tab_group.last = tab0;
 	}
 
-	if (data->side == Side_Min)
+	ProfilerUI_Tab *tab0_prev = &g_nil_tab;
+	ProfilerUI_Tab *tab0_next = &g_nil_tab;
+
+	ProfilerUI_Tab *tab1_prev = &g_nil_tab;
+	ProfilerUI_Tab *tab1_next = &g_nil_tab;
+
+	tab0_prev = tab1->prev;
+	if (tab0->prev == tab1)
 	{
-		if (!profiler_ui_tab_is_nil(next->prev))
-		{
-			next->prev->next = tab;
-		}
-		tab->prev = next->prev;
+		tab0_next = tab1;
+	}
+	else
+	{
+		tab0_next = tab1->next;
+	}
 
-		next->next = tab->next;
-		if (!profiler_ui_tab_is_nil(tab->next))
-		{
-			tab->next->prev = next;
-		}
+	tab1_prev = tab0->prev;
+	if (tab1->prev == tab0)
+	{
+		tab1_next = tab0;
+	}
+	else
+	{
+		tab1_next = tab0->next;
+	}
 
-		tab->next = next;
-		next->prev = tab;
+	tab0->next = tab0_next;
+	tab0->prev = tab0_prev;
+
+	tab1->next = tab1_next;
+	tab1->prev = tab1_prev;
+
+	if (!profiler_ui_tab_is_nil(tab0->next))
+	{
+		tab0->next->prev = tab0;
+	}
+
+	if (!profiler_ui_tab_is_nil(tab1->next))
+	{
+		tab1->next->prev = tab1;
+	}
+
+	if (!profiler_ui_tab_is_nil(tab0->prev))
+	{
+		tab0->prev->next = tab0;
+	}
+
+	if (!profiler_ui_tab_is_nil(tab1->prev))
+	{
+		tab1->prev->next = tab1;
 	}
 
 	log_info("Executed command: tab_reorder");
@@ -232,7 +274,7 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 
 	profiler_ui_command_tab_attach(&tab_attach_data);
 	log_info("Executed command: panel_split_and_attach");
-}
+	}
 
 PROFILER_UI_COMMAND(panel_close)
 {

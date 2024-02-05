@@ -18,7 +18,7 @@ enum ProfilerUI_CommandKind
 {
 	ProfilerUI_CommandKind_TabAttach,
 	ProfilerUI_CommandKind_TabClose,
-	ProfilerUI_CommandKind_TabReorder,
+	ProfilerUI_CommandKind_TabSwap,
 	ProfilerUI_CommandKind_PanelSplit,
 	ProfilerUI_CommandKind_PanelSplitAndAttach,
 	ProfilerUI_CommandKind_PanelSetActiveTab,
@@ -227,12 +227,11 @@ struct ProfilerUI_TabAttach
 	B32    set_active;
 };
 
-typedef struct ProfilerUI_TabReorder ProfilerUI_TabReorder;
-struct ProfilerUI_TabReorder
+typedef struct ProfilerUI_TabSwap ProfilerUI_TabSwap;
+struct ProfilerUI_TabSwap
 {
-	ProfilerUI_Tab *tab;
-	ProfilerUI_Tab *next;
-	Side side;
+	ProfilerUI_Tab *tab0;
+	ProfilerUI_Tab *tab1;
 };
 
 typedef struct ProfilerUI_PanelSplit ProfilerUI_PanelSplit;

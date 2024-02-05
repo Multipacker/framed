@@ -625,11 +625,6 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 			.color = rect_style->border_color
 		);
 	}
-
-	if (ui_ctx->show_debug_lines)
-	{
-		render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
-	}
 }
 
 internal Void
@@ -725,7 +720,6 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	new_buffer.size = new_buffer_size;
 	Str8 before_range = str8_prefix(edit_str, min_range);
 	Str8 after_range  = str8_skip(edit_str, max_range);
-
 	if (before_range.size != 0)
 	{
 		memory_copy(new_buffer.data, before_range.data, before_range.size);

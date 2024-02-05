@@ -157,14 +157,14 @@ profiler_ui_panel_split_and_attach_tab(ProfilerUI_Panel *panel, ProfilerUI_Tab *
 }
 
 internal B32
-profiler_ui_reorder_tab_in_front(ProfilerUI_Tab *tab, ProfilerUI_Tab *next)
+profiler_ui_swap_tabs(ProfilerUI_Tab *tab0, ProfilerUI_Tab *tab1)
 {
 	B32 result = false;
-	if (!next->pinned && tab->pinned)
+	if (!(tab0->pinned || tab1->pinned))
 	{
-		ProfilerUI_TabReorder *data = profiler_ui_command_push(&profiler_ui_state->cmd_buffer, ProfilerUI_CommandKind_TabReorder);
-		data->tab = tab;
-		data->next = next;
+		ProfilerUI_TabSwap *data = profiler_ui_command_push(&profiler_ui_state->cmd_buffer, ProfilerUI_CommandKind_TabSwap);
+		data->tab0 = tab0;
+		data->tab1 = tab1;
 		result = true;
 	}
 	return(result);
@@ -404,15 +404,10 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 				B32 hovered  = ui_mouse_is_inside_box(title_container->parent);
 				if (hovered)
 				{
-					if (profiler_ui_state->drag_data.tab == tab->next)
+					if (profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab))
 					{
-						profiler_ui_reorder_tab_in_front(profiler_ui_state->drag_data.tab, tab);
+						profiler_ui_drag_end();
 					}
-					else
-					{
-						profiler_ui_reorder_tab_in_front(tab, profiler_ui_state->drag_data.tab);
-					}
-					profiler_ui_drag_end();
 				}
 			}
 		}
@@ -430,7 +425,6 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 			if (title_comm.pressed)
 			{
 				profiler_ui_drag_begin_reordering(tab, title_comm.rel_mouse);
-
 				profiler_ui_set_tab_to_active(tab);
 			}
 
@@ -1686,7 +1680,7 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		{
 			case ProfilerUI_CommandKind_TabAttach:  profiler_ui_command_tab_attach(cmd->data); break;
 			case ProfilerUI_CommandKind_TabClose:   profiler_ui_command_tab_close(cmd->data); break;
-			case ProfilerUI_CommandKind_TabReorder: profiler_ui_command_tab_reorder(cmd->data); break;
+			case ProfilerUI_CommandKind_TabSwap:    profiler_ui_command_tab_swap(cmd->data); break;
 
 			case ProfilerUI_CommandKind_PanelSplit:          profiler_ui_command_panel_split(cmd->data);            break;
 			case ProfilerUI_CommandKind_PanelSplitAndAttach: profiler_ui_command_panel_split_and_attach(cmd->data); break;
