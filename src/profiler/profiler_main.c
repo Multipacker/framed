@@ -917,6 +917,10 @@ os_main(Str8List arguments)
 	{
 		image_texture = render_create_texture_slice(renderer, arguments.first->next->string);
 	}
+	else
+	{
+		image_texture = render_create_texture_slice(renderer, str8_lit("data/16.png"));
+	}
 
 	UI_Context *ui = ui_init();
 
