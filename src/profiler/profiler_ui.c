@@ -162,9 +162,8 @@ profiler_ui_swap_tabs(ProfilerUI_Tab *tab0, ProfilerUI_Tab *tab1)
 	B32 result = false;
 	if (!(tab0->pinned || tab1->pinned))
 	{
-		ProfilerUI_TabSwap *data = profiler_ui_command_push(&profiler_ui_state->cmd_buffer, ProfilerUI_CommandKind_TabSwap);
-		data->tab0 = tab0;
-		data->tab1 = tab1;
+		profiler_ui_state->swap_tab0 = tab0;
+		profiler_ui_state->swap_tab1 = tab1;
 		result = true;
 	}
 	return(result);
@@ -398,15 +397,15 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 		// left in the queue if dragging is ocurring.
 		if (profiler_ui_is_tab_reordering())
 		{
-			assert(profiler_ui_state->drag_data.tab);
-			if (tab != profiler_ui_state->drag_data.tab)
+			ProfilerUI_Tab *drag_tab = profiler_ui_state->drag_data.tab;
+			if (tab != drag_tab)
 			{
 				B32 hovered  = ui_mouse_is_inside_box(title_container->parent);
 				if (hovered)
 				{
-					if (profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab))
+					if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
 					{
-						profiler_ui_drag_end();
+						profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab);
 					}
 				}
 			}
@@ -1549,6 +1548,21 @@ profiler_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 	profiler_ui_state->focused_panel = profiler_ui_state->next_focused_panel;
 	profiler_ui_state->next_focused_panel = &g_nil_panel;
+
+	// TODO(hampus): This is really ugly. Fix this.
+	if (!profiler_ui_tab_is_nil(profiler_ui_state->swap_tab0))
+	{
+		ProfilerUI_TabSwap data =
+		{
+			.tab0 = profiler_ui_state->swap_tab0,
+			.tab1 = profiler_ui_state->swap_tab1,
+		};
+		profiler_ui_command_tab_swap(&data);
+		profiler_ui_state->swap_tab0->tab_container->rel_pos.x = 0;
+		profiler_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
+		profiler_ui_state->swap_tab0 = &g_nil_tab;
+		profiler_ui_state->swap_tab1 = &g_nil_tab;
+	}
 
 	//- hampus: Update Windows
 

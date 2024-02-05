@@ -943,6 +943,8 @@ os_main(Str8List arguments)
 	profiler_ui_set_color(ProfilerUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
 	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
+	ProfilerUI_Tab *test_tab = &g_nil_tab;
+
 	{
 		ProfilerUI_Window *master_window = profiler_ui_window_make(profiler_ui_state->perm_arena, v2f32(1.0f, 1.0f));
 
@@ -998,9 +1000,12 @@ os_main(Str8List arguments)
 					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
+				test_tab = attach.tab;
 				profiler_ui_command_tab_attach(&attach);
 			}
 		}
+
+
 
 		profiler_ui_state->master_window = master_window;
 		profiler_ui_state->next_focused_panel = first_panel;

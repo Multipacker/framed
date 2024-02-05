@@ -207,6 +207,9 @@ struct ProfilerUI_State
 	ProfilerUI_DragStatus drag_status;
 	ProfilerUI_DragData   drag_data;
 
+	ProfilerUI_Tab *swap_tab0;
+	ProfilerUI_Tab *swap_tab1;
+
 	ProfilerUI_Theme theme;
 
 	// NOTE(hampus): Debug purposes
