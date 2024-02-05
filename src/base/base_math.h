@@ -12,6 +12,10 @@ union Vec2F32
 	{
 		F32 width, height;
 	};
+	struct
+	{
+		F32 min, max;
+	};
 	F32 v[2];
 };
 
@@ -77,6 +81,11 @@ union Vec2S64
 	struct
 	{
 		S64 width, height;
+	};
+
+	struct
+	{
+		S64 min, max;
 	};
 	S64 v[2];
 };

@@ -396,8 +396,8 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		*result.replace_string.data = action->character;
 		result.replace_string.size = 1;
 
-		result.range.x = result.new_mark;
-		result.range.y = result.new_cursor;
+		result.range.min = result.new_mark;
+		result.range.max = result.new_cursor;
 
 		if (state->cursor > state->mark)
 		{

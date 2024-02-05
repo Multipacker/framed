@@ -710,8 +710,8 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 internal Str8
 ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U64 buffer_size, Str8 replace_str)
 {
-	U64 min_range = (U64) (range.x);
-	U64 max_range = (U64) (range.y);
+	U64 min_range = (U64) (range.min);
+	U64 max_range = (U64) (range.max);
 	min_range = u64_min(min_range, edit_str.size);
 	max_range = u64_min(max_range, edit_str.size);
 	if (min_range > max_range)
@@ -757,7 +757,7 @@ ui_get_character_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
 		Vec2F32 dim = render_measure_character(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str.data[i]);
 		RectF32 character_rect = box->fixed_rect;
 		character_rect.min.x = x;
-		character_rect.max.x = x + dim.x;
+		character_rect.max.x = character_rect.min.x + dim.x;
 		if (mouse_pos.x >= character_rect.x0 && mouse_pos.x < character_rect.x1)
 		{
 			result = i;
@@ -880,12 +880,12 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					cursor_box->rel_pos.x + cursor_box->fixed_size.x
 				);
 
-				cursor_visiblity_range.x = f32_max(0, cursor_visiblity_range.x);
-				cursor_visiblity_range.y = f32_max(0, cursor_visiblity_range.y);
+				cursor_visiblity_range.min = f32_max(0, cursor_visiblity_range.min);
+				cursor_visiblity_range.max = f32_max(0, cursor_visiblity_range.max);
 
 				Vec2F32 box_visibility_range = v2f32(box->scroll.x, box->scroll.x + box->fixed_size.x-padding);
-				F32 delta_left = cursor_visiblity_range.x - box_visibility_range.x ;
-				F32 delta_right = cursor_visiblity_range.y - box_visibility_range.y;
+				F32 delta_left = cursor_visiblity_range.min - box_visibility_range.min;
+				F32 delta_right = cursor_visiblity_range.max - box_visibility_range.max;
 				delta_left = f32_min(delta_left, 0);
 				delta_right = f32_max(delta_right, 0);
 
