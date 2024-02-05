@@ -1,8 +1,8 @@
 @echo off
 
-set ft_root=../../vendor/freetype
+set ft_root=../vendor/freetype
 
-set additional_includes=-I../../vendor/
+set freetype_additional_includes=-I../vendor/
 
 set ft_files=%ft_root%\src\base\ftsystem.c
 set ft_files=%ft_files% %ft_root%\src\base\ftinit.c
@@ -20,19 +20,28 @@ set ft_files=%ft_files% %ft_root%\src\psnames\psnames.c
 set ft_files=%ft_files% %ft_root%\src\gzip\ftgzip.c
 set ft_files=%ft_files% %ft_root%\src\smooth\smooth.c
 
-if not exist build\freetype mkdir build\freetype
-pushd build\freetype
+set freetype_compile_flags=-c -FC -nologo %ft_files% -I%ft_root% %freetype_additional_includes% -DFT_CONFIG_OPTION_ERROR_STRINGS -DFT2_BUILD_LIBRARY
+set freetype_link_flags=
+set freetype_lib_flags=*.obj
 
-cl -c -nologo -O2 -Oi -fp:fast -GS- %ft_files% -I%ft_root% %additional_includes% -DFT_CONFIG_OPTION_ERROR_STRINGS -DFT2_BUILD_LIBRARY -link -opt:icf -opt:ref libvcruntime.lib -fixed
+set freetype_build_mode="%1%"
 
-lib *.obj -OUT:freetype.lib
+if not exist build mkdir build
+pushd build
 
-del *.obj
+if %freetype_build_mode% == "debug" (
+	set freetype_compile_flags=%freetype_compile_flags% -Od -MTd
+	set freetype_link_flags=%freetype_link_flags%
+	set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype_debug.lib
+) else if %freetype_build_mode% == "release" (
+	set freetype_compile_flags=%freetype_compile_flags% -O2 -Oi -fp:fast -GS-
+	set freetype_link_flags=%freetype_link_flags% -opt:icf -opt:ref libvcruntime.lib -fixed
+	set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype.lib
+)
 
-cl -c -nologo -Od %ft_files% -MTd -I%ft_root% %additional_includes% -DFT_CONFIG_OPTION_ERROR_STRINGS -DFT2_BUILD_LIBRARY
-
-lib *.obj -OUT:freetype_debug.lib
-
+cl %freetype_compile_flags% -link %freetype_link_flags%
+lib %freetype_lib_flags%
+	
 del *.obj
 
 popd
