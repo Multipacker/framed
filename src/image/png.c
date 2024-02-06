@@ -559,9 +559,16 @@ png_zlib_decode_huffman_block(PNG_State *state, PNG_Huffman *literal_huffman, PN
 		{
 			U32 length = png_length_base[literal - 257] + (U32) png_get_bits_no_refill(state, png_length_extra_bits[literal - 257]);
 			U32 distance_code = png_read_huffman(state, distance_huffman);
-			U32 distance = png_distance_base[distance_code] + (U32) png_get_bits_no_refill(state, png_distance_extra_bits[distance_code]);
 
-			// TODO(simon): Verify that no "unused" codes appear in the input stream.
+			// NOTE(simon): These distance codes are only used for constructing
+			// the Huffman codes and should never appear in compressed data.
+			if (distance_code >= 30)
+			{
+				log_error("Invalid distance code, corrupted PNG");
+				return(false);
+			}
+
+			U32 distance = png_distance_base[distance_code] + (U32) png_get_bits_no_refill(state, png_distance_extra_bits[distance_code]);
 
 			if (distance > state->zlib_ptr - state->zlib_output)
 			{
