@@ -820,6 +820,12 @@ png_unfilter(PNG_State *state)
 		U32 scanline_size   = u32_round_up_to_power_of_2(state->bit_depth * components * scanline_length, 8) / 8;
 		U32 byte_stride     = u32_round_up_to_power_of_2(state->bit_depth, 8) * components / 8;
 
+		if (state->zlib_opl - scanline < 1 + scanline_size)
+		{
+			log_error("ZLIB stream doesn't contain enough data for image, corrupted PNG");
+			return false;
+		}
+
 		for (U32 y = row_offsets[pass_index]; y < state->height; y += row_advances[pass_index])
 		{
 			U8 filter_type = scanline[0];
