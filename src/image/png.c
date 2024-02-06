@@ -695,8 +695,6 @@ png_zlib_inflate(PNG_State *state)
 				return(false);
 			}
 
-			// TODO(simon): Check for end of input buffer.
-
 			if (length > state->zlib_opl - state->zlib_ptr)
 			{
 				log_error("ZLIB Uncompressed block contains too much data, corruped PNG");
@@ -704,6 +702,12 @@ png_zlib_inflate(PNG_State *state)
 			}
 
 			assert(state->bit_count % 8 == 0);
+			if (length > state->bit_count / 8)
+			{
+				log_error("ZLIB Uncompressed block doesn't have enough data, corrupted PNG");
+				return(false);
+			}
+
 			while (state->bit_count)
 			{
 				*state->zlib_ptr++ = (U8) png_get_bits_no_refill(state, 8);
@@ -712,7 +716,22 @@ png_zlib_inflate(PNG_State *state)
 
 			for (U32 i = 0; i < length; ++i)
 			{
-				*state->zlib_ptr++ = png_get_byte(state);
+				while (state->current_node && state->current_offset >= state->current_node->data.size)
+				{
+					state->current_node = state->current_node->next;
+					state->current_offset = 0;
+				}
+
+				// NOTE(simon): At this point, we either have a node with data
+				// that we haven't read yet, or we have run out of IDAT chunks.
+				if (!state->current_node)
+				{
+					log_error("ZLIB Uncompressed block doesn't have enough data, corrupted PNG");
+					return(false);
+				}
+
+				*state->zlib_ptr++ = state->current_node->data.data[state->current_offset];
+				++state->current_offset;
 			}
 		}
 		else if (block_type == 1)
