@@ -935,7 +935,7 @@ internal Void
 ui_box_equip_display_string(UI_Box *box, Str8 string)
 {
 	Str8 display_string = ui_get_display_part_from_string(string);
-	box->string = str8_copy(ui_frame_arena(), display_string);
+	box->string = string;
 }
 
 internal Void
