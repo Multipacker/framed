@@ -832,6 +832,7 @@ s32_from_str8(Str8 string, S32 *destination)
 	S64 temp = 0;
 	result = s64_from_str8(string, &temp);
 	assert(temp <= S32_MAX);
+	assert(temp >= S32_MIN);
 	*destination = (S32) temp;
 
 	return(result);
@@ -844,6 +845,7 @@ s16_from_str8(Str8 string, S16 *destination)
 	S64 temp = 0;
 	result = s64_from_str8(string, &temp);
 	assert(temp <= S16_MAX);
+	assert(temp >= S16_MIN);
 	*destination = (S16) temp;
 
 	return(result);
@@ -856,16 +858,66 @@ s8_from_str8(Str8 string, S8 *destination)
 	S64 temp = 0;
 	result = s64_from_str8(string, &temp);
 	assert(temp <= S8_MAX);
+	assert(temp >= S8_MIN);
 	*destination = (S8) temp;
 
 	return(result);
 }
 
-internal F64
+internal U64
 f64_from_str8(Str8 string, F64 *destination)
 {
-	assert_not_implemented();
-	return 0.0;
+	U64 result = 0;
+	arena_scratch(0, 0)
+	{
+		CStr buffer = push_array(scratch, char, string.size+1);
+		U64 i = 0;
+		B32 found_sign = false;
+		B32 found_dot = false;
+		for (; i < string.size; ++i)
+		{
+			U8 ch = string.data[i];
+			if (ch == '-' || ch == '+')
+			{
+				if (!found_sign)
+				{
+					found_sign = true;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else if (ch == '.')
+			{
+				if (!found_dot)
+				{
+					found_dot = true;
+				}
+				else
+				{
+					break;
+				}
+			}
+			else if (ch == 'f')
+			{
+				i++;
+				break;
+			}
+			else if (!is_num(ch))
+			{
+				break;
+			}
+
+			buffer[i] = ch;
+		}
+		buffer[i] = 0;
+
+		*destination = atof(buffer);
+
+		result = i;
+	}
+	return(result);
 }
 
 internal

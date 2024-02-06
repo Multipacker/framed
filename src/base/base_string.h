@@ -108,7 +108,7 @@ internal U64 s32_from_str8(Str8 string, S32 *destination);
 internal U64 s16_from_str8(Str8 string, S16 *destination);
 internal U64 s8_from_str8(Str8 string, S8 *destination);
 
-internal F64 f64_from_str8(Str8 string, F64 *destination);
+internal U64 f64_from_str8(Str8 string, F64 *destination);
 
 internal B32 is_num(U8 ch);
 
