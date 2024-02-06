@@ -383,11 +383,13 @@ render_create_texture(Render_Context *renderer, Str8 path)
 		else
 		{
 			// TODO(simon): Could not load image data.
+			log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
 		}
 	}
 	else
 	{
 		// TODO(simon): Could not read file.
+		log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
 	}
 
 	release_scratch(scratch);
