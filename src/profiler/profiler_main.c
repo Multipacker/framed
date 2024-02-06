@@ -172,9 +172,38 @@ ui_debug_keep_alive(Void)
 	}
 }
 
-internal Void
-ui_color_picker(Vec4F32 *rgba)
+typedef struct UI_ColorPickerData UI_ColorPickerData;
+struct UI_ColorPickerData
 {
+	Vec4F32 *rgba;
+
+	// NOTE(hampus): Stuff for the line edit
+	UI_TextEditState text_edit_state[4];
+	U8 *text_buffer[4];
+	U64 text_buffer_size[4];
+	U64 string_length[4];
+};
+
+internal Void
+ui_color_picker(UI_ColorPickerData *data)
+{
+	if (data->string_length[0] == 0)
+	{
+		arena_scratch(0, 0)
+		{
+			for (U64 i = 0; i < 4; ++i)
+			{
+				data->text_buffer_size[i] = 4;
+				data->string_length[i] = 4;
+				data->text_buffer[i] = push_array(profiler_ui_state->perm_arena, U8, data->text_buffer_size[i]);
+
+				Str8 str8 = str8_pushf(scratch, "%.2f", data->rgba->v[i]);
+				memory_copy_typed(data->text_buffer[i], str8.data, data->string_length[i]);
+				data->string_length[i] = 4;
+			}
+		}
+	}
+	Vec4F32 *rgba = data->rgba;
 	Vec3F32 hsv = hsv_from_rgb(rgba->rgb);
 	ui_next_width(ui_children_sum(1));
 	ui_next_height(ui_children_sum(1));
@@ -230,6 +259,51 @@ ui_color_picker(Vec4F32 *rgba)
 			ui_textf("V: %.2f", hsv.z);
 		}
 		ui_spacer(ui_em(0.5f, 1));
+		Str8 line_edit_labels[] =
+		{
+			str8_lit("R:"),
+			str8_lit("G:"),
+			str8_lit("B:"),
+			str8_lit("A:"),
+		};
+
+		Str8 text_buffer_str8[4] = { 0 };
+
+		for (U64 i = 0; i < 4; ++i)
+		{
+			U64 length = 0;
+			UI_Box *box = 0;
+
+			ui_row()
+			{
+				ui_spacer(ui_em(0.5f, 1));
+				ui_next_width(ui_em(1, 1));
+				ui_text(line_edit_labels[i]);
+				ui_spacer(ui_em(0.3f, 1));
+				ui_next_width(ui_em(3, 1));
+				UI_Comm comm = ui_line_editf(
+					data->text_edit_state + i,
+					data->text_buffer[i],
+					data->text_buffer_size[i],
+					data->string_length + i,
+					"ColorPickerLineEdit%d", i
+				);
+				box = comm.box;
+				F64 f64 = 0;
+				length = f64_from_str8(str8(data->text_buffer[i], data->string_length[i]), &f64);
+				rgba->v[i] = f32_clamp(0, (F32) f64, 1.0f);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			if (!ui_box_is_focused(box))
+			{
+				arena_scratch(0, 0)
+				{
+					data->string_length[i] = 4;
+					text_buffer_str8[i] = str8_pushf(scratch, "%.2f", rgba->v[i]);
+					memory_copy_typed(data->text_buffer[i], text_buffer_str8[i].data, 4);
+				}
+			}
+		}
 	}
 }
 
@@ -390,6 +464,10 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 {
+	B32 view_info_data_initialized = view_info->data != 0;
+
+	UI_ColorPickerData *color_picker_data = profiler_ui_get_view_data(view_info, UI_ColorPickerData);
+
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
 	ui_scrollable_region_axis(str8_lit("DebugScroll"), Axis2_Y)
@@ -511,7 +589,8 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			local Vec4F32 *selected_color = 0;
 			ui_ctx_menu(debug_time_color_ctx_menu)
 			{
-				ui_color_picker(selected_color);
+				color_picker_data->rgba = selected_color;
+				ui_color_picker(color_picker_data);
 			}
 
 			ui_parent(columns[0])
@@ -780,15 +859,26 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 	ui_texture_view(texture);
 }
 
+typedef struct ProfilerUI_ThemeTabData ProfilerUI_ThemeTabData;
+struct ProfilerUI_ThemeTabData
+{
+	UI_ColorPickerData color_picker_data;
+};
+
 PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 {
+	B32 view_info_data_initialized = view_info->data != 0;
+
+	UI_ColorPickerData *color_picker_data = profiler_ui_get_view_data(view_info, UI_ColorPickerData);
+
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
 	local Vec4F32 *selected_color = 0;
 
 	ui_ctx_menu(theme_color_ctx_menu)
 	{
-		ui_color_picker(selected_color);
+		color_picker_data->rgba = selected_color;
+		ui_color_picker(color_picker_data);
 	}
 
 	ui_column()
@@ -1144,8 +1234,8 @@ os_main(Str8List arguments)
 
 		U64 end_counter = os_now_nanoseconds();
 		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
-		start_counter = end_counter;
 
+		start_counter = end_counter;
 		profiler_ui_state->frame_index++;
 	}
 
