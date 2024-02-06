@@ -709,7 +709,7 @@ png_zlib_inflate(PNG_State *state)
 				--length;
 			}
 
-			for (U32 i = 0; i < length; ++i)
+			while (length)
 			{
 				while (state->current_node && state->current_offset >= state->current_node->data.size)
 				{
@@ -725,8 +725,12 @@ png_zlib_inflate(PNG_State *state)
 					return(false);
 				}
 
-				*state->zlib_ptr++ = state->current_node->data.data[state->current_offset];
-				++state->current_offset;
+				U16 bytes_to_copy = (U16) u64_min(length, state->current_node->data.size - state->current_offset);
+				memory_copy(state->zlib_ptr, &state->current_node->data.data[state->current_offset], bytes_to_copy);
+
+				state->zlib_ptr       += bytes_to_copy;
+				state->current_offset += bytes_to_copy;
+				length                -= bytes_to_copy;
 			}
 		}
 		else if (block_type == 1)
