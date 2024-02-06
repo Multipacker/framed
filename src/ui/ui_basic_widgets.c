@@ -897,3 +897,14 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
 	return(comm);
 }
+internal UI_Comm
+ui_line_editf(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, CStr format, ...)
+{
+	UI_Comm comm = { 0 };
+	va_list args;
+	va_start(args, format);
+	Str8 string = str8_pushfv(ui_frame_arena(), format, args);
+	UI_Comm result = ui_line_edit(edit_state, buffer, buffer_size, string_length, string);
+	va_end(args);
+	return(result);
+}
