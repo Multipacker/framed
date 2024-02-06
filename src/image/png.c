@@ -701,13 +701,8 @@ png_zlib_inflate(PNG_State *state)
 				return(false);
 			}
 
+			// TODO(simon): Check for end marker in bit buffer.
 			assert(state->bit_count % 8 == 0);
-			if (length > state->bit_count / 8)
-			{
-				log_error("ZLIB Uncompressed block doesn't have enough data, corrupted PNG");
-				return(false);
-			}
-
 			while (state->bit_count)
 			{
 				*state->zlib_ptr++ = (U8) png_get_bits_no_refill(state, 8);
