@@ -909,7 +909,7 @@ f64_from_str8(Str8 string, F64 *destination)
 				break;
 			}
 
-			buffer[i] = ch;
+			buffer[i] = (char) ch;
 		}
 		buffer[i] = 0;
 

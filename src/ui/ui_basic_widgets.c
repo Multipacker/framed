@@ -754,7 +754,7 @@ ui_get_character_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
 		character_rect.max.x = character_rect.min.x + dim.x;
 		if (mouse_pos.x >= character_rect.x0 && mouse_pos.x < character_rect.x1)
 		{
-			result = i;
+			result = (S64) i;
 			break;
 		}
 		x += dim.x;
