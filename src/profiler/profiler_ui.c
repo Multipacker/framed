@@ -2,9 +2,9 @@
 //~ hampus: Short term
 //
 // [ ] @code @feature UI startup builder
-// [ ] @feature Drag & hold to reorder tabs
 // [ ] @bug Tab offsetting looks weird if you remove any tab to the 
 //          left of the active tab when the tab bar is full
+// [ ] @bug New window offset is wrong if you reorder tab and then drag it out
 
 ////////////////////////////////
 //~ hampus: Medium term
@@ -402,14 +402,14 @@ profiler_ui_tab_button(ProfilerUI_Tab *tab)
 			{
 				Vec2F32 mouse_pos = ui_mouse_pos();
 				F32 center = (title_container->parent->fixed_rect.x0 +  title_container->parent->fixed_rect.x1) / 2;
-					B32 hovered  = mouse_pos.x >= center - ui_top_font_line_height() * 0.2f && mouse_pos.x <= center + ui_top_font_line_height() * 0.2f;
-					if (hovered)
+				B32 hovered  = mouse_pos.x >= center - ui_top_font_line_height() * 0.2f && mouse_pos.x <= center + ui_top_font_line_height() * 0.2f;
+				if (hovered)
+				{
+					if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
 					{
-						if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
-						{
-							profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab);
-						}
+						profiler_ui_swap_tabs(profiler_ui_state->drag_data.tab, tab);
 					}
+				}
 			}
 		}
 
@@ -791,8 +791,7 @@ profiler_ui_update_panel(ProfilerUI_Panel *root)
 						invalid_case;
 					}
 					profiler_ui_drag_release();
-				}
-			}
+				}			}
 		}
 
 		//- hampus: Drag & split preview overlay
@@ -1351,8 +1350,10 @@ profiler_ui_window_corner_resizer(ProfilerUI_Window *window, Str8 string, Corner
 			case Corner_TopLeft:
 			{
 				window->pos           = v2f32_sub_v2f32(window->pos, comm.drag_delta);
-				window->size          = v2f32_add_v2f32(window->size,
-																								v2f32_hadamard_div_v2f32(comm.drag_delta, screen_size));
+				window->size          = v2f32_add_v2f32(
+					window->size,
+					v2f32_hadamard_div_v2f32(comm.drag_delta, screen_size)
+				);
 			} break;
 
 			case Corner_BottomLeft:
@@ -1371,8 +1372,10 @@ profiler_ui_window_corner_resizer(ProfilerUI_Window *window, Str8 string, Corner
 
 			case Corner_BottomRight:
 			{
-				window->size = v2f32_sub_v2f32(window->size,
-																			 v2f32_hadamard_div_v2f32(comm.drag_delta, screen_size));
+				window->size = v2f32_sub_v2f32(
+					window->size,
+					v2f32_hadamard_div_v2f32(comm.drag_delta, screen_size)
+				);
 			} break;
 
 			invalid_case;
