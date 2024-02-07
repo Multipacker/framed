@@ -222,7 +222,7 @@ os_main(Str8List arguments)
 	framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
 	FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), v2f32(1.0f, 1.0f));
-	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), v2f32(0.5f, 0.5f));
+	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 50), v2f32(0.5f, 0.5f));
 	{
 
 		FramedUI_Panel *first_panel = master_window->root_panel;

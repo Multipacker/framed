@@ -163,7 +163,9 @@ struct FramedUI_Window
 
 	UI_Box *box;
 
+	// TODO(hampus): Change this to min and max instead
 	Vec2F32 pos;
+	// TODO(hampus): Change to pixels
 	Vec2F32 size;
 
 	Str8 string;

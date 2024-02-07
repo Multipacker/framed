@@ -1647,26 +1647,21 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->tab_box->fixed_rect.min);
 					Vec2F32 window_pos = v2f32_sub_v2f32(mouse_pos, distance_between_panel_min_and_first_tab);
-					window_pos = v2f32_sub_v2f32(window_pos,
-																			 offset);
+					window_pos = v2f32_sub_v2f32(window_pos, offset);
 					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, window_pos, new_window_pct);
-
+					FramedUI_TabAttach tab_attach =
 					{
-						FramedUI_TabAttach tab_attach =
-						{
-							.tab = drag_data->tab,
-							.panel = new_window->root_panel,
-							.set_active = true,
-						};
-						framed_ui_command_tab_attach(&tab_attach);
-					}
+						.tab = drag_data->tab,
+						.panel = new_window->root_panel,
+						.set_active = true,
+					};
+					framed_ui_command_tab_attach(&tab_attach);
 				}
 				else
 				{
 					drag_data->tab->panel->sibling = &g_nil_panel;
 					framed_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
-
 
 				framed_ui_state->next_focused_panel = drag_data->tab->panel;
 				framed_ui_state->drag_status = FramedUI_DragStatus_Dragging;
