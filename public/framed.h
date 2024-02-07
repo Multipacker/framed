@@ -112,7 +112,7 @@
 #	define ARCH_ARM64 0
 #endif
 
-#if defined(COMPILER_CL)
+#if COMPILER_CL
 
 typedef signed char          Framed_S8;
 typedef signed short         Framed_S16;
@@ -156,6 +156,7 @@ void framed_zone_end(void);
 #define FRAMED_BUFFER_CAPACITY (4 * 1024)
 
 # include <string.h>
+
 #if COMPILER_CL
 # include <intrin.h>
 #endif

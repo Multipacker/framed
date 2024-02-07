@@ -1,3 +1,13 @@
+////////////////////////////////
+// Stuff to get done before going public
+// 
+// [ ] Remove PROFILER_USER_*** stuff
+// [ ] Put all debug visualization stuff on its own toggleable window
+// [ ] Create a panel for displaying clock values with the name as text
+// [ ] Change profiler_ prefix to framed_
+// [ ] Add a git readme
+// [ ] Add os_system_path() where you can get differnet path (current dir, data, temp, ...)
+
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
