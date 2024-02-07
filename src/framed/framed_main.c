@@ -221,36 +221,14 @@ os_main(Str8List arguments)
 	framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
 	framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
-	FramedUI_Tab *test_tab = &g_nil_tab;
-
+	FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), v2f32(1.0f, 1.0f));
+	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), v2f32(0.5f, 0.5f));
 	{
-		FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(1.0f, 1.0f));
 
 		FramedUI_Panel *first_panel = master_window->root_panel;
 
 		FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
 		{
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
-					framed_ui_tab_view_debug,
-					0, str8_lit("Debug")),
-					.panel = split_panel_result.panels[Side_Min],
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
-					framed_ui_tab_view_logger,
-					0,
-					str8_lit("Log")),
-					.panel = split_panel_result.panels[Side_Min],
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
 			{
 				FramedUI_TabAttach attach =
 				{
@@ -264,27 +242,51 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
-					framed_ui_tab_view_texture_viewer,
-					&image_texture,
-					str8_lit("Texture Viewer")),
-					.panel = split_panel_result.panels[Side_Max],
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			{
-				FramedUI_TabAttach attach =
-				{
 					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
-				test_tab = attach.tab;
 				framed_ui_command_tab_attach(&attach);
 			}
 		}
 
 		framed_ui_state->master_window = master_window;
 		framed_ui_state->next_focused_panel = first_panel;
+		// NOTE(hampus): Setup debug window
+
+		{
+			{
+				{
+					FramedUI_TabAttach attach =
+					{
+						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_debug,
+						0, str8_lit("Debug")),
+						.panel = debug_window->root_panel,
+					};
+					framed_ui_command_tab_attach(&attach);
+				}
+				{
+					FramedUI_TabAttach attach =
+					{
+						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_logger,
+						0,
+						str8_lit("Log")),
+						.panel = debug_window->root_panel,
+					};
+					framed_ui_command_tab_attach(&attach);
+				}
+				{
+					FramedUI_TabAttach attach =
+					{
+						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_texture_viewer,
+						&image_texture,
+						str8_lit("Texture Viewer")),
+						.panel = debug_window->root_panel,
+					};
+					framed_ui_command_tab_attach(&attach);
+				}
+			}
+			debug_window->flags |= FramedUI_WindowFlags_Closed;
+		}
 	}
 	framed_ui_state->frame_index = 1;
 
@@ -309,6 +311,17 @@ os_main(Str8List arguments)
 				if (event->key == Gfx_Key_F11)
 				{
 					gfx_toggle_fullscreen(&gfx);
+				}
+				else if (event->key == Gfx_Key_F1)
+				{
+					if (debug_window->flags & FramedUI_WindowFlags_Closed)
+					{
+						debug_window->flags &= ~FramedUI_WindowFlags_Closed;
+					}
+					else
+					{
+						debug_window->flags |= FramedUI_WindowFlags_Closed;
+					}
 				}
 			}
 		}

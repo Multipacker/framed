@@ -145,6 +145,14 @@ struct FramedUI_Panel
 	U64 frame_index;
 };
 
+typedef enum FramedUI_WindowFlags FramedUI_WindowFlags;
+enum FramedUI_WindowFlags
+{
+	FramedUI_WindowFlags_Closed = (1 << 0),
+
+	FramedUI_WindowFlags_COUNT,
+};
+
 typedef struct FramedUI_Window FramedUI_Window;
 struct FramedUI_Window
 {
@@ -159,6 +167,8 @@ struct FramedUI_Window
 	Vec2F32 size;
 
 	Str8 string;
+
+	FramedUI_WindowFlags flags;
 };
 
 typedef struct FramedUI_WindowList FramedUI_WindowList;

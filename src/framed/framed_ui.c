@@ -578,14 +578,13 @@ framed_ui_update_panel(FramedUI_Panel *root)
 	UI_Box *box = ui_box_make(
 		UI_BoxFlag_Clip |
 		UI_BoxFlag_Clickable |
-		UI_BoxFlag_ViewScroll |
-		UI_BoxFlag_DrawBackground,
+		UI_BoxFlag_ViewScroll,
 		root->string
 	);
 	root->box = box;
 
 	ui_push_parent(box);
-
+#if 1
 	if (!framed_ui_panel_is_leaf(root))
 	{
 		FramedUI_Panel *child0 = root->children[Side_Min];
@@ -769,9 +768,10 @@ framed_ui_update_panel(FramedUI_Panel *root)
 						case FramedUI_TabReleaseKind_Center:
 						{
 							framed_ui_panel_attach_tab(root, drag_data->tab, true);
-							dll_remove(framed_ui_state->window_list.first,
-												 framed_ui_state->window_list.last,
-												 drag_data->tab->panel->window);
+							dll_remove(
+								framed_ui_state->window_list.first,
+								framed_ui_state->window_list.last,
+								drag_data->tab->panel->window);
 							framed_ui_state->drag_status = FramedUI_DragStatus_Released;
 						} break;
 
@@ -1247,7 +1247,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 		// NOTE(hampus): Consume all non-taken events
 		UI_Comm root_comm = ui_comm_from_box(box);
 	}
-
+#endif
 	ui_pop_parent();
 }
 
@@ -1287,7 +1287,7 @@ framed_ui_window_alloc(Arena *arena)
 }
 
 internal FramedUI_Window *
-framed_ui_window_make(Arena *arena, Vec2F32 size)
+framed_ui_window_make(Arena *arena, Vec2F32 pos, Vec2F32 size)
 {
 	FramedUI_Window *result = framed_ui_window_alloc(arena);
 	result->root_panel = &g_nil_panel;
@@ -1295,6 +1295,7 @@ framed_ui_window_make(Arena *arena, Vec2F32 size)
 	FramedUI_Panel *panel = framed_ui_panel_alloc(arena);
 	panel->window = result;
 	result->size = size;
+	result->pos = pos;
 	framed_ui_window_push_to_front(result);
 	result->root_panel = panel;
 	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
@@ -1307,8 +1308,7 @@ framed_ui_window_edge_resizer(FramedUI_Window *window, Str8 string, Axis2 axis, 
 	ui_next_size(axis, ui_em(0.4f, 1));
 	ui_next_size(axis_flip(axis), ui_fill());
 	ui_next_hover_cursor(axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
-	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable,
-														string);
+	UI_Box *box = ui_box_make(UI_BoxFlag_Clickable, string);
 
 	Vec2U32 screen_size = gfx_get_window_client_area(ui_renderer()->gfx);
 	UI_Comm comm = { 0 };
@@ -1409,9 +1409,7 @@ framed_ui_update_window(FramedUI_Window *window)
 			ui_next_relative_pos(Axis2_Y, pos.v[Axis2_Y]);
 			ui_next_child_layout_axis(Axis2_X);
 			ui_next_color(framed_ui_color_from_theme(FramedUI_Color_Panel));
-			UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos |
-																						 UI_BoxFlag_DrawDropShadow,
-																						 str8_lit(""));
+			UI_Box *window_container = ui_box_make(UI_BoxFlag_FloatingPos | UI_BoxFlag_DrawDropShadow, str8_lit(""));
 			window->box = window_container;
 			ui_parent(window_container)
 			{
@@ -1580,7 +1578,10 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	{
 		for (FramedUI_Window *window = framed_ui_state->window_list.first; window != 0; window = window->next)
 		{
-			framed_ui_update_window(window);
+			if (!(window->flags & FramedUI_WindowFlags_Closed))
+			{
+				framed_ui_update_window(window);
+			}
 		}
 	}
 
@@ -1627,9 +1628,11 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				new_window_pct.y *= tab->panel->window->size.y;
 
 				FramedUI_Panel *tab_panel = tab->panel;
-				B32 create_new_window = !(tab->panel == tab->panel->window->root_panel &&
-																	tab_panel->tab_group.count == 1 &&
-																	tab_panel->window != framed_ui_state->master_window);
+				B32 create_new_window =
+					!(tab->panel == tab->panel->window->root_panel &&
+						tab_panel->tab_group.count == 1 &&
+						tab_panel->window != framed_ui_state->master_window);
+
 				if (create_new_window)
 				{
 					// NOTE(hampus): Close the tab from the old panel
@@ -1641,7 +1644,11 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 						framed_ui_command_tab_close(&tab_close);
 					}
 
-					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, new_window_pct);
+					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->tab_box->fixed_rect.min);
+					Vec2F32 window_pos = v2f32_sub_v2f32(mouse_pos, distance_between_panel_min_and_first_tab);
+					window_pos = v2f32_sub_v2f32(window_pos,
+																			 offset);
+					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, window_pos, new_window_pct);
 
 					{
 						FramedUI_TabAttach tab_attach =
@@ -1659,10 +1666,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 					framed_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
 
-				Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->tab_box->fixed_rect.min);
-				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(mouse_pos, distance_between_panel_min_and_first_tab);
-				drag_data->tab->panel->window->pos = v2f32_sub_v2f32(drag_data->tab->panel->window->pos,
-																														 offset);
+
 				framed_ui_state->next_focused_panel = drag_data->tab->panel;
 				framed_ui_state->drag_status = FramedUI_DragStatus_Dragging;
 				log_info("Drag: dragging");

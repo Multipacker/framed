@@ -201,6 +201,7 @@ struct UI_Box
 
 	UI_BoxFlags flags;
 	Str8        string;
+	Str8        debug_string;
 
 	UI_RectStyle   rect_style;
 	UI_TextStyle   text_style;
