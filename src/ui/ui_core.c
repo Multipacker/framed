@@ -15,16 +15,6 @@
 //~ hampus: Long term
 //
 
-#define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
-
-#define UI_GATHER_STATS 1
-
-#if UI_GATHER_STATS
-#  define ui_stats_inc_val(name) ui_get_current_stats()->name++
-#else
-#  define ui_stats_inc_val(name)
-#endif
-
 ////////////////////////////////
 //~ hampus: Globals
 

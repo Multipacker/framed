@@ -1,6 +1,16 @@
 #ifndef UI_CORE_H
 #define UI_CORE_H
 
+#define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
+
+#define UI_GATHER_STATS 1
+
+#if UI_GATHER_STATS
+#  define ui_stats_inc_val(name) ui_get_current_stats()->name++
+#else
+#  define ui_stats_inc_val(name)
+#endif
+
 typedef struct UI_Config UI_Config;
 struct UI_Config
 {

@@ -417,13 +417,6 @@ ui_column_end(Void)
 	ui_named_column_end();
 }
 
-typedef struct UI_ComboBoxParams UI_ComboBoxParams;
-struct UI_ComboBoxParams
-{
-	UI_Size item_size;
-};
-#define ui_combo_box(name, selected_index, item_names, item_count, ...) ui_combo_box_internal(name, selected_index, item_names, item_count, &(UI_ComboBoxParams) { 0, __VA_ARGS__ });
-
 // TODO(simon): Maybe we only want to return true if the value changes.
 internal B32
 ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count, UI_ComboBoxParams *params)
@@ -897,6 +890,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
 	return(comm);
 }
+
 internal UI_Comm
 ui_line_editf(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, CStr format, ...)
 {
@@ -907,4 +901,127 @@ ui_line_editf(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *st
 	UI_Comm result = ui_line_edit(edit_state, buffer, buffer_size, string_length, string);
 	va_end(args);
 	return(result);
+}
+
+internal Void
+ui_color_picker(UI_ColorPickerData *data)
+{
+	if (data->string_length[0] == 0)
+	{
+		arena_scratch(0, 0)
+		{
+			for (U64 i = 0; i < 4; ++i)
+			{
+				data->text_buffer_size[i] = 4;
+				data->string_length[i] = 4;
+				data->text_buffer[i] = push_array(ui_permanent_arena(), U8, data->text_buffer_size[i]);
+
+				Str8 str8 = str8_pushf(scratch, "%.2f", data->rgba->v[i]);
+				memory_copy_typed(data->text_buffer[i], str8.data, data->string_length[i]);
+				data->string_length[i] = 4;
+			}
+		}
+	}
+	Vec4F32 *rgba = data->rgba;
+	Vec3F32 hsv = hsv_from_rgb(rgba->rgb);
+	ui_next_width(ui_children_sum(1));
+	ui_next_height(ui_children_sum(1));
+	UI_Box *container = ui_box_make(
+		UI_BoxFlag_DrawBackground |
+		UI_BoxFlag_DrawBorder,
+		str8_lit("")
+	);
+	ui_parent(container)
+	{
+		ui_spacer(ui_em(0.5f, 1));
+		ui_row()
+		{
+			ui_spacer(ui_em(0.5f, 1));
+			// NOTE(hampus): Saturation and value
+			ui_next_width(ui_em(10, 1));
+			ui_next_height(ui_em(10, 1));
+			ui_sat_val_picker(hsv.x, &hsv.y, &hsv.z, str8_lit("SatValPicker"));
+			ui_spacer(ui_em(0.5f, 1));
+			ui_column()
+			{
+				// NOTE(hampus): Hue
+				ui_next_height(ui_em(10, 1));
+				ui_next_width(ui_em(1, 1));
+				ui_hue_picker(&hsv.x, str8_lit("HuePicker"));
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			ui_column()
+			{
+				// NOTE(hampus): Alpha
+				ui_next_height(ui_em(10, 1));
+				ui_next_width(ui_em(1, 1));
+				ui_alpha_picker(hsv, &rgba->a, str8_lit("AlphaPicker"));
+			}
+			rgba->rgb = rgb_from_hsv(hsv);
+			ui_spacer(ui_em(0.5f, 1));
+		}
+		ui_spacer(ui_em(0.5f, 1));
+		ui_row()
+			ui_width(ui_em(4, 1))
+		{
+			ui_textf("R: %.2f", rgba->r);
+			ui_textf("G: %.2f", rgba->g);
+			ui_textf("B: %.2f", rgba->b);
+			ui_textf("A: %.2f", rgba->a);
+		}
+		ui_spacer(ui_em(0.5f, 1));
+		ui_row()
+			ui_width(ui_em(4, 1))
+		{
+			ui_textf("H: %.2f", hsv.x);
+			ui_textf("S: %.2f", hsv.y);
+			ui_textf("V: %.2f", hsv.z);
+		}
+		ui_spacer(ui_em(0.5f, 1));
+		Str8 line_edit_labels[] =
+		{
+			str8_lit("R:"),
+			str8_lit("G:"),
+			str8_lit("B:"),
+			str8_lit("A:"),
+		};
+
+		Str8 text_buffer_str8[4] = { 0 };
+
+		for (U64 i = 0; i < 4; ++i)
+		{
+			U64 length = 0;
+			UI_Box *box = 0;
+
+			ui_row()
+			{
+				ui_spacer(ui_em(0.5f, 1));
+				ui_next_width(ui_em(1, 1));
+				ui_text(line_edit_labels[i]);
+				ui_spacer(ui_em(0.3f, 1));
+				ui_next_width(ui_em(3, 1));
+				UI_Comm comm = ui_line_editf(
+					data->text_edit_state + i,
+					data->text_buffer[i],
+					data->text_buffer_size[i],
+					data->string_length + i,
+					"ColorPickerLineEdit%d", i
+				);
+				box = comm.box;
+				F64 f64 = 0;
+				length = f64_from_str8(str8(data->text_buffer[i], data->string_length[i]), &f64);
+				rgba->v[i] = f32_clamp(0, (F32) f64, 1.0f);
+			}
+			ui_spacer(ui_em(0.5f, 1));
+			if (!ui_box_is_focused(box))
+			{
+				arena_scratch(0, 0)
+				{
+					data->string_length[i] = 4;
+					text_buffer_str8[i] = str8_pushf(scratch, "%.2f", rgba->v[i]);
+					memory_copy_typed(data->text_buffer[i], text_buffer_str8[i].data, 4);
+				}
+			}
+		}
+	}
 }
