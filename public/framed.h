@@ -115,7 +115,7 @@
 #if defined(COMPILER_CL)
 
 typedef signed char          Framed_S8;
-typedef signed short         Framed_16;
+typedef signed short         Framed_S16;
 typedef signed int           Framed_S32;
 typedef signed long long int Framed_S64;
 
@@ -212,6 +212,8 @@ framed__socket_send(void)
 ////////////////////////////////
 // NOTE: Internal functions
 
+#define framed__assert(expr)
+
 static Framed_U64
 framed__rdtsc(void)
 {
@@ -227,10 +229,10 @@ framed__rdtsc(void)
 static void
 framed__ensure_space(U64 size)
 {
-	assert(size <= FRAMED_BUFFER_CAPACITY;
+	framed__assert(size <= FRAMED_BUFFER_CAPACITY);
 
 	Framed_State *framed = &global_framed_state;
-	if ((frame->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
+	if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
 	{
 		framed_flush();
 	}
@@ -245,7 +247,7 @@ framed_init(Framed_B32 wait_for_connection)
 	Framed_State *framed = &global_framed_state;
 
 	framed__socket_init(wait_for_connection);
-	framed->buffer     = malloc(FRAMED_BUFFER_CAPACITY);
+	framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
 	framed->buffer_pos = 0;
 }
 
@@ -268,15 +270,15 @@ framed_zone_begin(char *name)
 	Framed_State *framed = &global_framed_state;
 
 	Framed_U64 length  = strlen(name);
-	assert(length != 0);
+	framed__assert(length != 0);
 
 	Framed_U64 entry_size = 2 * sizeof(Framed_U64) + length;
 	framed__ensure_space(entry_size);
 
 	Framed_U64 counter = framed__rdtsc();
 
-	*(U64 *) &framed->buffer[framed->buffer_pos] = counter;
-	*(U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
+	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
+	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
 	(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
 
 	framed->buffer_pos += entry_size;
@@ -285,13 +287,15 @@ framed_zone_begin(char *name)
 void
 framed_zone_end(void)
 {
+	Framed_State *framed = &global_framed_state;
+
 	Framed_U64 counter = framed__rdtsc();
 
 	Framed_U64 entry_size = 2 * sizeof(Framed_U64);
 	framed__ensure_space(entry_size);
 
-	*(U64 *) &framed->buffer[framed->buffer_pos] = counter;
-	*(U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
+	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
+	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
 	framed->buffer_pos += entry_size;
 }
 
