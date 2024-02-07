@@ -4,7 +4,7 @@ mode=${1:-debug}
 
 mkdir -p build
 
-src_files="src/profiler/profiler_main.c"
+src_files="src/framed/framed_main.c"
 out_file="build/out"
 errors="-Werror -Wall -Wextra -Wno-missing-braces -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable -Wconversion -Wno-comment -Wno-array-bounds"
 common_flags="-Isrc -Ivendor -o $out_file -DRENDERER_OPENGL=1 -pthread"

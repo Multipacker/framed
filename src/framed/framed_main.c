@@ -4,7 +4,6 @@
 // [ ] Remove PROFILER_USER_*** stuff
 // [ ] Put all debug visualization stuff on its own toggleable window
 // [ ] Create a panel for displaying clock values with the name as text
-// [ ] Change profiler_ prefix to framed_
 // [ ] Add a git readme
 // [ ] Add os_system_path() where you can get differnet path (current dir, data, temp, ...)
 
@@ -44,11 +43,11 @@
 #   define PROFILER_USER_HAMPUS 0
 #endif
 
-#include "profiler/profiler_ui.h"
+#include "framed/framed_ui.h"
 
-#include "profiler/profiler_ui.c"
-#include "profiler/profiler_log_ui.c"
-#include "profiler/profiler_texture_ui.c"
+#include "framed/framed_ui.c"
+#include "framed/framed_log_ui.c"
+#include "framed/framed_texture_ui.c"
 
 ////////////////////////////////
 //~ hampus: Tab views
@@ -97,7 +96,7 @@ ui_debug_keep_alive(Void)
 		return;
 	}
 
-	U32 frame_index = profiler_ui_state->frame_index % DEBUG_STAT_FRAMES;
+	U32 frame_index = framed_ui_state->frame_index % DEBUG_STAT_FRAMES;
 	ui_debug_stats.latest_frame_index = frame_index;
 	for (U32 stat_index = 0; stat_index < DEBUG_STAT_LOCATIONS; ++stat_index)
 	{
@@ -205,7 +204,7 @@ ui_color_picker(UI_ColorPickerData *data)
 			{
 				data->text_buffer_size[i] = 4;
 				data->string_length[i] = 4;
-				data->text_buffer[i] = push_array(profiler_ui_state->perm_arena, U8, data->text_buffer_size[i]);
+				data->text_buffer[i] = push_array(framed_ui_state->perm_arena, U8, data->text_buffer_size[i]);
 
 				Str8 str8 = str8_pushf(scratch, "%.2f", data->rgba->v[i]);
 				memory_copy_typed(data->text_buffer[i], str8.data, data->string_length[i]);
@@ -318,7 +317,7 @@ ui_color_picker(UI_ColorPickerData *data)
 }
 
 internal Void
-profiler_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box **columns, U32 column_count, U32 *sort_column, B32 *reverse)
+framed_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box **columns, U32 column_count, U32 *sort_column, B32 *reverse)
 {
 	F32 drag_delta = 0.0f;
 	U32 drag_index = 0;
@@ -472,11 +471,11 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 	}
 }
 
-PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
+frame_ui_tab_view(framed_ui_tab_view_debug)
 {
 	B32 view_info_data_initialized = view_info->data != 0;
 
-	UI_ColorPickerData *color_picker_data = profiler_ui_get_view_data(view_info, UI_ColorPickerData);
+	UI_ColorPickerData *color_picker_data = framed_ui_get_view_data(view_info, UI_ColorPickerData);
 
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -514,7 +513,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			UI_Box *columns[4] = { 0 };
 			local B32 reverse = true;
 			local U32 sort_column = 1;
-			profiler_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
+			framed_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
 			U64 frame_index = ui_debug_stats.latest_frame_index;
 
@@ -715,7 +714,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 			UI_Box *columns[4] = { 0 };
 			local B32 reverse = true;
 			local U32 sort_column = 1;
-			profiler_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
+			framed_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
 			// NOTE(simon): Bubble sort for the win!
 			if (sort_column == 0)
@@ -854,14 +853,14 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_debug)
 	}
 }
 
-PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_logger)
+frame_ui_tab_view(framed_ui_tab_view_logger)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
 	ui_logger();
 }
 
-PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
+frame_ui_tab_view(framed_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -869,17 +868,17 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_texture_viewer)
 	ui_texture_view(texture);
 }
 
-typedef struct ProfilerUI_ThemeTabData ProfilerUI_ThemeTabData;
-struct ProfilerUI_ThemeTabData
+typedef struct FramedUI_ThemeTabData FramedUI_ThemeTabData;
+struct FramedUI_ThemeTabData
 {
 	UI_ColorPickerData color_picker_data;
 };
 
-PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
+frame_ui_tab_view(framed_ui_tab_view_theme)
 {
 	B32 view_info_data_initialized = view_info->data != 0;
 
-	UI_ColorPickerData *color_picker_data = profiler_ui_get_view_data(view_info, UI_ColorPickerData);
+	UI_ColorPickerData *color_picker_data = framed_ui_get_view_data(view_info, UI_ColorPickerData);
 
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
@@ -893,15 +892,15 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 
 	ui_column()
 	{
-		for (ProfilerUI_Color color = (ProfilerUI_Color) 0; color < ProfilerUI_Color_COUNT; ++color)
+		for (FramedUI_Color color = (FramedUI_Color) 0; color < FramedUI_Color_COUNT; ++color)
 		{
 			ui_next_width(ui_em(20, 1));
 			ui_row()
 			{
-				Str8 string = profiler_ui_string_from_color(color);
+				Str8 string = framed_ui_string_from_color(color);
 				ui_text(string);
 				ui_spacer(ui_fill());
-				ui_next_color(profiler_ui_color_from_theme(color));
+				ui_next_color(framed_ui_color_from_theme(color));
 				ui_next_hover_cursor(Gfx_Cursor_Hand);
 				ui_next_corner_radius(5);
 				ui_next_width(ui_em(1, 1));
@@ -918,7 +917,7 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 				if (comm.clicked)
 				{
 					ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
-					selected_color = &profiler_ui_state->theme.colors[color];
+					selected_color = &framed_ui_state->theme.colors[color];
 				}
 			}
 			ui_spacer(ui_em(0.5f, 1));
@@ -929,10 +928,10 @@ PROFILER_UI_TAB_VIEW(profiler_ui_tab_view_theme)
 			if (ui_button(str8_lit("Dump theme to file")).clicked)
 			{
 				Str8List string_list = { 0 };
-				for (ProfilerUI_Color color = (ProfilerUI_Color) 0; color < ProfilerUI_Color_COUNT; ++color)
+				for (FramedUI_Color color = (FramedUI_Color) 0; color < FramedUI_Color_COUNT; ++color)
 				{
-					Str8 label = profiler_ui_string_from_color(color);
-					Vec4F32 color_value = profiler_ui_color_from_theme(color);
+					Str8 label = framed_ui_string_from_color(color);
+					Vec4F32 color_value = framed_ui_color_from_theme(color);
 					str8_list_push(scratch, &string_list, label);
 					str8_list_pushf(
 						scratch, &string_list, ": %.2f, %.2f, %.2f, %.2f\n",
@@ -1000,17 +999,17 @@ os_main(Str8List arguments)
 		net_socket_send_to(socket, address, buffer);
 	}
 #endif
-	Arena *perm_arena = arena_create("ProfilerPerm");
+	Arena *perm_arena = arena_create("MainPerm");
 
-	profiler_ui_state = push_struct(perm_arena, ProfilerUI_State);
-	profiler_ui_state->perm_arena = perm_arena;
+	framed_ui_state = push_struct(perm_arena, FramedUI_State);
+	framed_ui_state->perm_arena = perm_arena;
 
-	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Title"));
+	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
 
 	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
-	frame_arenas[0] = arena_create("ProfilerFrame0");
-	frame_arenas[1] = arena_create("ProfilerFrame1");
+	frame_arenas[0] = arena_create("MainFrame0");
+	frame_arenas[1] = arena_create("MainFrame1");
 
 	Render_TextureSlice image_texture = { 0 };
 	if (arguments.first->next)
@@ -1027,90 +1026,90 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
-	profiler_ui_state->cmd_buffer.buffer = push_array(profiler_ui_state->perm_arena, ProfilerUI_Command, CMD_BUFFER_SIZE);
-	profiler_ui_state->cmd_buffer.size = CMD_BUFFER_SIZE;
+	framed_ui_state->cmd_buffer.buffer = push_array(framed_ui_state->perm_arena, FramedUI_Command, CMD_BUFFER_SIZE);
+	framed_ui_state->cmd_buffer.size = CMD_BUFFER_SIZE;
 
 	//- hampus: Build startup UI
 
-	profiler_ui_set_color(ProfilerUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-	profiler_ui_set_color(ProfilerUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
+	framed_ui_set_color(FramedUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+	framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
-	ProfilerUI_Tab *test_tab = &g_nil_tab;
+	FramedUI_Tab *test_tab = &g_nil_tab;
 
 	{
-		ProfilerUI_Window *master_window = profiler_ui_window_make(profiler_ui_state->perm_arena, v2f32(1.0f, 1.0f));
+		FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(1.0f, 1.0f));
 
-		ProfilerUI_Panel *first_panel = master_window->root_panel;
+		FramedUI_Panel *first_panel = master_window->root_panel;
 
-		ProfilerUI_SplitPanelResult split_panel_result = profiler_ui_builder_split_panel(first_panel, Axis2_X);
+		FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
 		{
 			{
-				ProfilerUI_TabAttach attach =
+				FramedUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-					profiler_ui_tab_view_debug,
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
+					framed_ui_tab_view_debug,
 					0, str8_lit("Debug")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
-				profiler_ui_command_tab_attach(&attach);
+				framed_ui_command_tab_attach(&attach);
 			}
 			{
-				ProfilerUI_TabAttach attach =
+				FramedUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-					profiler_ui_tab_view_logger,
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
+					framed_ui_tab_view_logger,
 					0,
 					str8_lit("Log")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
-				profiler_ui_command_tab_attach(&attach);
+				framed_ui_command_tab_attach(&attach);
 			}
 			{
-				ProfilerUI_TabAttach attach =
+				FramedUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-					profiler_ui_tab_view_theme,
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
+					framed_ui_tab_view_theme,
 					0, str8_lit("Theme")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
-				profiler_ui_command_tab_attach(&attach);
+				framed_ui_command_tab_attach(&attach);
 			}
 			{
-				ProfilerUI_TabAttach attach =
+				FramedUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena,
-					profiler_ui_tab_view_texture_viewer,
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
+					framed_ui_tab_view_texture_viewer,
 					&image_texture,
 					str8_lit("Texture Viewer")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
-				profiler_ui_command_tab_attach(&attach);
+				framed_ui_command_tab_attach(&attach);
 			}
 			{
-				ProfilerUI_TabAttach attach =
+				FramedUI_TabAttach attach =
 				{
-					.tab = profiler_ui_tab_make(profiler_ui_state->perm_arena, 0, 0, str8_lit("")),
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, 0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				test_tab = attach.tab;
-				profiler_ui_command_tab_attach(&attach);
+				framed_ui_command_tab_attach(&attach);
 			}
 		}
 
 
 
-		profiler_ui_state->master_window = master_window;
-		profiler_ui_state->next_focused_panel = first_panel;
+		framed_ui_state->master_window = master_window;
+		framed_ui_state->next_focused_panel = first_panel;
 	}
-	profiler_ui_state->frame_index = 1;
+	framed_ui_state->frame_index = 1;
 
 	gfx_show_window(&gfx);
 	B32 running = true;
@@ -1233,7 +1232,7 @@ os_main(Str8List arguments)
 
 		ui_log_keep_alive(current_arena);
 
-		profiler_ui_update(renderer, &events);
+		framed_ui_update(renderer, &events);
 
 		render_end(renderer);
 
@@ -1246,7 +1245,7 @@ os_main(Str8List arguments)
 		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 
 		start_counter = end_counter;
-		profiler_ui_state->frame_index++;
+		framed_ui_state->frame_index++;
 	}
 
 	return(0);

@@ -5,17 +5,17 @@ PROFILER_UI_COMMAND(panel_close);
 
 PROFILER_UI_COMMAND(tab_close)
 {
-	ProfilerUI_TabDelete *data = (ProfilerUI_TabDelete *) params;
+	FramedUI_TabDelete *data = (FramedUI_TabDelete *) params;
 
-	ProfilerUI_Tab *tab = data->tab;
-	ProfilerUI_Panel *panel = tab->panel;
+	FramedUI_Tab *tab = data->tab;
+	FramedUI_Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
 	{
-		if (!profiler_ui_tab_is_nil(tab->prev))
+		if (!framed_ui_tab_is_nil(tab->prev))
 		{
 			panel->tab_group.active_tab = tab->prev;
 		}
-		else if (!profiler_ui_tab_is_nil(tab->next))
+		else if (!framed_ui_tab_is_nil(tab->next))
 		{
 			panel->tab_group.active_tab = tab->next;
 		}
@@ -29,21 +29,21 @@ PROFILER_UI_COMMAND(tab_close)
 	tab->next = tab->prev = &g_nil_tab;
 	if (panel->tab_group.count == 0)
 	{
-		ProfilerUI_PanelClose close =
+		FramedUI_PanelClose close =
 		{
 			.panel = panel,
 		};
-		profiler_ui_command_panel_close(&close);
+		framed_ui_command_panel_close(&close);
 	}
 	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
 }
 
 PROFILER_UI_COMMAND(tab_attach)
 {
-	ProfilerUI_TabAttach *data = (ProfilerUI_TabAttach *) params;
+	FramedUI_TabAttach *data = (FramedUI_TabAttach *) params;
 
-	ProfilerUI_Panel *panel = data->panel;
-	ProfilerUI_Tab *tab = data->tab;
+	FramedUI_Panel *panel = data->panel;
+	FramedUI_Tab *tab = data->tab;
 	dll_push_back_npz(panel->tab_group.first, panel->tab_group.last, tab, next, prev, &g_nil_tab);
 	tab->panel = panel;
 	B32 set_active = panel->tab_group.count == 0 || data->set_active;
@@ -52,17 +52,17 @@ PROFILER_UI_COMMAND(tab_attach)
 		panel->tab_group.active_tab = tab;
 	}
 	panel->tab_group.count++;
-	profiler_ui_state->focused_panel = panel;
+	framed_ui_state->focused_panel = panel;
 	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
 }
 
 PROFILER_UI_COMMAND(tab_swap)
 {
-	ProfilerUI_TabSwap *data = (ProfilerUI_TabSwap *) params;
-	ProfilerUI_Panel *panel = data->tab0->panel;
+	FramedUI_TabSwap *data = (FramedUI_TabSwap *) params;
+	FramedUI_Panel *panel = data->tab0->panel;
 
-	ProfilerUI_Tab *tab0 = data->tab0;
-	ProfilerUI_Tab *tab1 = data->tab1;
+	FramedUI_Tab *tab0 = data->tab0;
+	FramedUI_Tab *tab1 = data->tab1;
 
 	if (tab0 == panel->tab_group.first)
 	{
@@ -82,11 +82,11 @@ PROFILER_UI_COMMAND(tab_swap)
 		panel->tab_group.last = tab0;
 	}
 
-	ProfilerUI_Tab *tab0_prev = &g_nil_tab;
-	ProfilerUI_Tab *tab0_next = &g_nil_tab;
+	FramedUI_Tab *tab0_prev = &g_nil_tab;
+	FramedUI_Tab *tab0_next = &g_nil_tab;
 
-	ProfilerUI_Tab *tab1_prev = &g_nil_tab;
-	ProfilerUI_Tab *tab1_next = &g_nil_tab;
+	FramedUI_Tab *tab1_prev = &g_nil_tab;
+	FramedUI_Tab *tab1_next = &g_nil_tab;
 
 	tab0_prev = tab1->prev;
 	if (tab0->prev == tab1)
@@ -114,22 +114,22 @@ PROFILER_UI_COMMAND(tab_swap)
 	tab1->next = tab1_next;
 	tab1->prev = tab1_prev;
 
-	if (!profiler_ui_tab_is_nil(tab0->next))
+	if (!framed_ui_tab_is_nil(tab0->next))
 	{
 		tab0->next->prev = tab0;
 	}
 
-	if (!profiler_ui_tab_is_nil(tab1->next))
+	if (!framed_ui_tab_is_nil(tab1->next))
 	{
 		tab1->next->prev = tab1;
 	}
 
-	if (!profiler_ui_tab_is_nil(tab0->prev))
+	if (!framed_ui_tab_is_nil(tab0->prev))
 	{
 		tab0->prev->next = tab0;
 	}
 
-	if (!profiler_ui_tab_is_nil(tab1->prev))
+	if (!framed_ui_tab_is_nil(tab1->prev))
 	{
 		tab1->prev->next = tab1;
 	}
@@ -142,9 +142,9 @@ PROFILER_UI_COMMAND(tab_swap)
 
 PROFILER_UI_COMMAND(panel_set_active_tab)
 {
-	ProfilerUI_PanelSetActiveTab *data = (ProfilerUI_PanelSetActiveTab *) params;
-	ProfilerUI_Panel *panel = data->panel;
-	ProfilerUI_Tab *tab = data->tab;
+	FramedUI_PanelSetActiveTab *data = (FramedUI_PanelSetActiveTab *) params;
+	FramedUI_Panel *panel = data->panel;
+	FramedUI_Tab *tab = data->tab;
 	panel->tab_group.active_tab = tab;
 	log_info("Executed command: panel_set_active_tab");
 }
@@ -160,20 +160,20 @@ PROFILER_UI_COMMAND(panel_split)
 	//             a   b
 	//
 	// where c is ´new_parent´, and b is ´child1´
-	ProfilerUI_PanelSplit *data  = (ProfilerUI_PanelSplit *) params;
+	FramedUI_PanelSplit *data  = (FramedUI_PanelSplit *) params;
 	Axis2 split_axis  = data->axis;
-	ProfilerUI_Panel *child0     = data->panel;
-	ProfilerUI_Panel *child1     = profiler_ui_panel_alloc(profiler_ui_state->perm_arena);
+	FramedUI_Panel *child0     = data->panel;
+	FramedUI_Panel *child1     = framed_ui_panel_alloc(framed_ui_state->perm_arena);
 	child1->window = child0->window;
-	ProfilerUI_Panel *new_parent = profiler_ui_panel_alloc(profiler_ui_state->perm_arena);
+	FramedUI_Panel *new_parent = framed_ui_panel_alloc(framed_ui_state->perm_arena);
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
-	ProfilerUI_Panel *children[Side_COUNT] = { child0, child1 };
+	FramedUI_Panel *children[Side_COUNT] = { child0, child1 };
 
 	// NOTE(hampus): Hook the new parent as a sibling
 	// to the panel's sibling
-	if (!profiler_ui_panel_is_nil(child0->sibling))
+	if (!framed_ui_panel_is_nil(child0->sibling))
 	{
 		child0->sibling->sibling = new_parent;
 	}
@@ -181,9 +181,9 @@ PROFILER_UI_COMMAND(panel_split)
 
 	// NOTE(hampus): Hook the new parent as a child
 	// to the panels parent
-	if (!profiler_ui_panel_is_nil(child0->parent))
+	if (!framed_ui_panel_is_nil(child0->parent))
 	{
-		Side side = profiler_ui_get_panel_side(child0);
+		Side side = framed_ui_get_panel_side(child0);
 		child0->parent->children[side] = new_parent;
 	}
 	new_parent->parent = child0->parent;
@@ -208,19 +208,19 @@ PROFILER_UI_COMMAND(panel_split)
 
 PROFILER_UI_COMMAND(panel_split_and_attach)
 {
-	ProfilerUI_PanelSplitAndAttach *data = (ProfilerUI_PanelSplitAndAttach *) params;
+	FramedUI_PanelSplitAndAttach *data = (FramedUI_PanelSplitAndAttach *) params;
 
 	B32 releasing_on_same_panel =
 		data->panel == data->tab->panel &&
 		data->panel->tab_group.count == 0;
 
-	ProfilerUI_PanelSplit split_data =
+	FramedUI_PanelSplit split_data =
 	{
 		.panel      = data->panel,
 		.axis       = data->axis,
 	};
 
-	profiler_ui_command_panel_split(&split_data);
+	framed_ui_command_panel_split(&split_data);
 
 	// NOTE(hampus): panel_split always put the new panel
 	// to the left/top
@@ -228,14 +228,14 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 	{
 		if (data->panel_side == Side_Max)
 		{
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], ProfilerUI_Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], FramedUI_Panel *);
 		}
 	}
 	else
 	{
 		if (data->panel_side == Side_Min)
 		{
-			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], ProfilerUI_Panel *);
+			swap(data->panel->parent->children[Side_Min], data->panel->parent->children[Side_Max], FramedUI_Panel *);
 		}
 	}
 
@@ -245,7 +245,7 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 		// NOTE(hampus): This is needed because if we're releasing
 		// on the same panel as we dragged the tab away from, and it
 		// was the last tab, we will have to allocate a new tab for the split
-		Tab *tab = ui_tab_make(profiler_ui_state->perm_arena, 0, 0);
+		Tab *tab = ui_tab_make(framed_ui_state->perm_arena, 0, 0);
 		UI_TabAttach attach =
 		{
 			.tab = tab,
@@ -257,47 +257,47 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 	}
 #endif
 
-	ProfilerUI_Panel *panel = data->panel->parent->children[data->panel_side];
+	FramedUI_Panel *panel = data->panel->parent->children[data->panel_side];
 
-	ProfilerUI_TabAttach tab_attach_data =
+	FramedUI_TabAttach tab_attach_data =
 	{
 		.tab        = data->tab,
 		.panel      = panel,
 		.set_active = true,
 	};
 
-	profiler_ui_state->next_focused_panel = panel;
-	if (data->panel->window != profiler_ui_state->master_window)
+	framed_ui_state->next_focused_panel = panel;
+	if (data->panel->window != framed_ui_state->master_window)
 	{
-		profiler_ui_state->next_top_most_window = data->panel->window;
+		framed_ui_state->next_top_most_window = data->panel->window;
 	}
 
-	profiler_ui_command_tab_attach(&tab_attach_data);
+	framed_ui_command_tab_attach(&tab_attach_data);
 	log_info("Executed command: panel_split_and_attach");
-	}
+}
 
 PROFILER_UI_COMMAND(panel_close)
 {
-	ProfilerUI_PanelClose *data = (ProfilerUI_PanelClose *) params;
-	ProfilerUI_Panel *root = data->panel;
-	if (!profiler_ui_panel_is_nil(root->parent))
+	FramedUI_PanelClose *data = (FramedUI_PanelClose *) params;
+	FramedUI_Panel *root = data->panel;
+	if (!framed_ui_panel_is_nil(root->parent))
 	{
 		B32 is_first       = root->parent->children[0] == root;
-		ProfilerUI_Panel *replacement = root->sibling;
-		if (!profiler_ui_panel_is_nil(root->parent->parent))
+		FramedUI_Panel *replacement = root->sibling;
+		if (!framed_ui_panel_is_nil(root->parent->parent))
 		{
-			if (root == profiler_ui_state->focused_panel)
+			if (root == framed_ui_state->focused_panel)
 			{
-				if (!profiler_ui_panel_is_nil(root->sibling))
+				if (!framed_ui_panel_is_nil(root->sibling))
 				{
-					profiler_ui_state->next_focused_panel = root->sibling;
+					framed_ui_state->next_focused_panel = root->sibling;
 				}
 				else
 				{
-					profiler_ui_state->next_focused_panel = root->parent;
+					framed_ui_state->next_focused_panel = root->parent;
 				}
 			}
-			Side parent_side = profiler_ui_get_panel_side(root->parent);
+			Side parent_side = framed_ui_get_panel_side(root->parent);
 			Side flipped_parent_side = side_flip(parent_side);
 
 			root->parent->parent->children[parent_side] = replacement;
@@ -306,11 +306,11 @@ PROFILER_UI_COMMAND(panel_close)
 			replacement->pct_of_parent = 1.0f - replacement->sibling->pct_of_parent;
 			replacement->parent = root->parent->parent;
 		}
-		else if (!profiler_ui_panel_is_nil(root->parent))
+		else if (!framed_ui_panel_is_nil(root->parent))
 		{
-			if (root == profiler_ui_state->focused_panel)
+			if (root == framed_ui_state->focused_panel)
 			{
-				profiler_ui_state->next_focused_panel = root->sibling;
+				framed_ui_state->next_focused_panel = root->sibling;
 			}
 			// NOTE(hampus): We closed one of the root's children
 			root->window->root_panel = replacement;
@@ -320,10 +320,10 @@ PROFILER_UI_COMMAND(panel_close)
 	}
 	else
 	{
-		ProfilerUI_Window *window = root->window;
-		if (window != profiler_ui_state->master_window)
+		FramedUI_Window *window = root->window;
+		if (window != framed_ui_state->master_window)
 		{
-			dll_remove(profiler_ui_state->window_list.first, profiler_ui_state->window_list.last, window);
+			dll_remove(framed_ui_state->window_list.first, framed_ui_state->window_list.last, window);
 		}
 	}
 	log_info("Executed command: panel_close");
@@ -331,16 +331,16 @@ PROFILER_UI_COMMAND(panel_close)
 
 PROFILER_UI_COMMAND(window_push_to_front)
 {
-	ProfilerUI_WindowPushToFront *data = params;
-	ProfilerUI_Window *window = data->window;
-	profiler_ui_window_push_to_front(window);
+	FramedUI_WindowPushToFront *data = params;
+	FramedUI_Window *window = data->window;
+	framed_ui_window_push_to_front(window);
 	log_info("Executed command: window_push_to_front");
 }
 
 PROFILER_UI_COMMAND(window_remove_from_list)
 {
-	ProfilerUI_WindowRemoveFromList *data = params;
-	ProfilerUI_Window *window = data->window;
-	profiler_ui_window_remove_from_list(window);
+	FramedUI_WindowRemoveFromList *data = params;
+	FramedUI_Window *window = data->window;
+	framed_ui_window_remove_from_list(window);
 	log_info("Executed command: window_remove_from_list");
 }

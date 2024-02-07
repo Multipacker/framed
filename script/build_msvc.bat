@@ -20,7 +20,7 @@ set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:main
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
 set linker_flags=%libs% -incremental:no 
-set src_files=../src/profiler/profiler_main.c
+set src_files=../src/framed/framed_main.c
 
 :: -- Debug build flags --
 
