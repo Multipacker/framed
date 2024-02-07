@@ -1,9 +1,9 @@
-PROFILER_UI_COMMAND(panel_close);
+FRAMED_UI_COMMAND(panel_close);
 
 ////////////////////////////////
 //~ hampus: Tab commands
 
-PROFILER_UI_COMMAND(tab_close)
+FRAMED_UI_COMMAND(tab_close)
 {
 	FramedUI_TabDelete *data = (FramedUI_TabDelete *) params;
 
@@ -38,7 +38,7 @@ PROFILER_UI_COMMAND(tab_close)
 	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
 }
 
-PROFILER_UI_COMMAND(tab_attach)
+FRAMED_UI_COMMAND(tab_attach)
 {
 	FramedUI_TabAttach *data = (FramedUI_TabAttach *) params;
 
@@ -56,7 +56,7 @@ PROFILER_UI_COMMAND(tab_attach)
 	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
 }
 
-PROFILER_UI_COMMAND(tab_swap)
+FRAMED_UI_COMMAND(tab_swap)
 {
 	FramedUI_TabSwap *data = (FramedUI_TabSwap *) params;
 	FramedUI_Panel *panel = data->tab0->panel;
@@ -140,7 +140,7 @@ PROFILER_UI_COMMAND(tab_swap)
 ////////////////////////////////
 //~ hampus: UI_Panel commands
 
-PROFILER_UI_COMMAND(panel_set_active_tab)
+FRAMED_UI_COMMAND(panel_set_active_tab)
 {
 	FramedUI_PanelSetActiveTab *data = (FramedUI_PanelSetActiveTab *) params;
 	FramedUI_Panel *panel = data->panel;
@@ -150,7 +150,7 @@ PROFILER_UI_COMMAND(panel_set_active_tab)
 }
 
 // NOTE(hampus): This _always_ put the new child to the right or bottom
-PROFILER_UI_COMMAND(panel_split)
+FRAMED_UI_COMMAND(panel_split)
 {
 	// NOTE(hampus): We will create a new parent that will
 	// have this panel and a new child as children:
@@ -206,7 +206,7 @@ PROFILER_UI_COMMAND(panel_split)
 	log_info("Executed command: panel_split");
 }
 
-PROFILER_UI_COMMAND(panel_split_and_attach)
+FRAMED_UI_COMMAND(panel_split_and_attach)
 {
 	FramedUI_PanelSplitAndAttach *data = (FramedUI_PanelSplitAndAttach *) params;
 
@@ -276,7 +276,7 @@ PROFILER_UI_COMMAND(panel_split_and_attach)
 	log_info("Executed command: panel_split_and_attach");
 }
 
-PROFILER_UI_COMMAND(panel_close)
+FRAMED_UI_COMMAND(panel_close)
 {
 	FramedUI_PanelClose *data = (FramedUI_PanelClose *) params;
 	FramedUI_Panel *root = data->panel;
@@ -329,7 +329,7 @@ PROFILER_UI_COMMAND(panel_close)
 	log_info("Executed command: panel_close");
 }
 
-PROFILER_UI_COMMAND(window_push_to_front)
+FRAMED_UI_COMMAND(window_push_to_front)
 {
 	FramedUI_WindowPushToFront *data = params;
 	FramedUI_Window *window = data->window;
@@ -337,7 +337,7 @@ PROFILER_UI_COMMAND(window_push_to_front)
 	log_info("Executed command: window_push_to_front");
 }
 
-PROFILER_UI_COMMAND(window_remove_from_list)
+FRAMED_UI_COMMAND(window_remove_from_list)
 {
 	FramedUI_WindowRemoveFromList *data = params;
 	FramedUI_Window *window = data->window;

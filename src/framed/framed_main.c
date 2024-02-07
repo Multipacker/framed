@@ -1,7 +1,6 @@
 ////////////////////////////////
 // Stuff to get done before going public
 // 
-// [ ] Remove PROFILER_USER_*** stuff
 // [ ] Put all debug visualization stuff on its own toggleable window
 // [ ] Create a panel for displaying clock values with the name as text
 // [ ] Add a git readme
@@ -26,22 +25,6 @@
 #include "image/image_inc.c"
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
-
-#if OS_LINUX
-#   define PROFILER_USER_SIMON 1
-#elif OS_WINDOWS
-#   define PROFILER_USER_HAMPUS 1
-#else
-#   define PROFILER_USER_SIMON 1
-#endif
-
-#if !defined(PROFILER_USER_SIMON)
-#   define PROFILER_USER_SIMON 0
-#endif
-
-#if !defined(PROFILER_USER_HAMPUS)
-#   define PROFILER_USER_HAMPUS 0
-#endif
 
 #include "framed/framed_ui.h"
 
@@ -942,11 +925,7 @@ frame_ui_tab_view(framed_ui_tab_view_theme)
 					);
 				}
 				Str8 dump_data = str8_join(scratch, &string_list);
-#if PROFILER_USER_SIMON
-				Str8 theme_dump_file_name = str8_lit("theme_dump");
-#elif PROFILER_USER_HAMPUS
-				Str8 theme_dump_file_name = str8_lit("theme_dump.txt");
-#endif
+				Str8 theme_dump_file_name = str8_lit("theme_dump.framed");
 				os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
 			}
 		}
@@ -1139,13 +1118,6 @@ os_main(Str8List arguments)
 
 		ui_begin(ui, &events, renderer, dt);
 		U32 font_size = 15;
-#if PROFILER_USER_HAMPUS
-		font_size = 15;
-#elif PROFILER_USER_SIMON
-		font_size = 15;
-#else
-		font_size = 15;
-#endif
 		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
 		ui_push_font_size(font_size);
 

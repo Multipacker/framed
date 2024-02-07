@@ -1,7 +1,7 @@
 #ifndef UI_PANEL_TEST_H
 #define UI_PANEL_TEST_H
 
-#define PROFILER_UI_COMMAND(name) Void framed_ui_command_##name(Void *params)
+#define FRAMED_UI_COMMAND(name) Void framed_ui_command_##name(Void *params)
 
 #define frame_ui_tab_view(name) Void name(struct FramedUI_TabViewInfo *view_info)
 
@@ -279,7 +279,7 @@ struct FramedUI_WindowPushToFront
 	FramedUI_Window *window;
 };
 
-PROFILER_UI_COMMAND(tab_close);
+FRAMED_UI_COMMAND(tab_close);
 
 ////////////////////////////////
 //~ hampus: Command helpers
