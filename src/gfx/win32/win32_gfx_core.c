@@ -55,7 +55,7 @@ struct Win32_WindowCreationData
 DWORD
 win32_gfx_startup_thread(Void *data)
 {
-	Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *)data;
+	Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *) data;
 
 	ThreadContext *context = thread_ctx_init(str8_lit("Events"));
 
@@ -81,7 +81,7 @@ win32_gfx_startup_thread(Void *data)
 	window_class.lpfnWndProc = win32_window_proc;
 	window_class.hInstance = instance;
 	window_class.lpszClassName = class_name;
-	window_class.hCursor = LoadCursor(0, (LPCWSTR)IDC_ARROW);
+	window_class.hCursor = LoadCursor(0, (LPCWSTR) IDC_ARROW);
 
 	ATOM register_class_result = RegisterClass(&window_class);
 	if (register_class_result)
@@ -90,7 +90,7 @@ win32_gfx_startup_thread(Void *data)
 
 		CStr16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
 		result.hwnd = CreateWindow(
-			window_class.lpszClassName, (LPCWSTR)title_s16,
+			window_class.lpszClassName, (LPCWSTR) title_s16,
 			create_window_flags,
 			window_creation_data->x, window_creation_data->y,
 			window_creation_data->width, window_creation_data->height,
@@ -175,7 +175,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 			case WM_CHAR:
 			{
 				event->kind = Gfx_EventKind_Char;
-				event->character = (char)message.wParam;
+				event->character = (char) message.wParam;
 			} break;
 
 			case WM_SIZE:
@@ -186,7 +186,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 			case WM_MOUSEWHEEL:
 			{
 				event->kind = Gfx_EventKind_Scroll;
-				event->scroll.y = (F32)(GET_WHEEL_DELTA_WPARAM(message.wParam) / WHEEL_DELTA);
+				event->scroll.y = (F32) (GET_WHEEL_DELTA_WPARAM(message.wParam) / WHEEL_DELTA);
 			} break;
 
 			case WM_LBUTTONDBLCLK:
@@ -234,7 +234,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 			case WM_KEYDOWN:
 			{
 			key_begin:
-				U32 vk_code = (U32)message.wParam;
+				U32 vk_code = (U32) message.wParam;
 				B32 was_down = ((message.lParam & (1 << 30)) != 0);
 				B32 is_down = ((message.lParam & (1 << 31)) == 0);
 				B32 alt_key_was_down = ((message.lParam & (1 << 29)));
@@ -243,17 +243,17 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 				{
 					for (U64 i = 0; i < 10; ++i)
 					{
-						win32_gfx_state.key_table[0x30 + i] = (char)(Gfx_Key_0 + i);
+						win32_gfx_state.key_table[0x30 + i] = (char) (Gfx_Key_0 + i);
 					}
 
 					for (U64 i = 0; i < 26; ++i)
 					{
-						win32_gfx_state.key_table[0x41 + i] = (char)(Gfx_Key_A + i);
+						win32_gfx_state.key_table[0x41 + i] = (char) (Gfx_Key_A + i);
 					}
 
 					for (U64 i = 0; i < 12; ++i)
 					{
-						win32_gfx_state.key_table[VK_F1 + i] = (char)(Gfx_Key_F1 + i);
+						win32_gfx_state.key_table[VK_F1 + i] = (char) (Gfx_Key_F1 + i);
 					}
 
 					win32_gfx_state.key_table[VK_BACK]    = Gfx_Key_Backspace;
@@ -314,8 +314,8 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
 	POINT point = { 0 };
 	GetCursorPos(&point);
 	ScreenToClient(gfx->hwnd, &point);
-	result.x = (F32)point.x;
-	result.y = (F32)point.y;
+	result.x = (F32) point.x;
+	result.y = (F32) point.y;
 	return(result);
 }
 
@@ -345,28 +345,28 @@ internal Void
 gfx_toggle_fullscreen(Gfx_Context *context)
 {
 	local WINDOWPLACEMENT prev_placement = { sizeof(prev_placement) };
-	DWORD WindowStyle = GetWindowLong(context->hwnd, GWL_STYLE);
-	if (WindowStyle & WS_OVERLAPPEDWINDOW)
+	DWORD window_style = GetWindowLong(context->hwnd, GWL_STYLE);
+	if (window_style & WS_OVERLAPPEDWINDOW)
 	{
-		MONITORINFO MonitorInfo = { sizeof(MonitorInfo) };
+		MONITORINFO monitor_info = { sizeof(monitor_info) };
 		if (
 			GetWindowPlacement(context->hwnd, &prev_placement) &&
-			GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &MonitorInfo))
+			GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info))
 		{
-			SetWindowLong(context->hwnd, GWL_STYLE, WindowStyle & ~WS_OVERLAPPEDWINDOW);
+			SetWindowLong(context->hwnd, GWL_STYLE, window_style & ~WS_OVERLAPPEDWINDOW);
 
 			SetWindowPos(
 				context->hwnd, HWND_TOP,
-				MonitorInfo.rcMonitor.left, MonitorInfo.rcMonitor.top,
-				MonitorInfo.rcMonitor.right - MonitorInfo.rcMonitor.left,
-				MonitorInfo.rcMonitor.bottom - MonitorInfo.rcMonitor.top,
+				monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
+				monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
+				monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
 				SWP_NOOWNERZORDER | SWP_FRAMECHANGED
 			);
 		}
 	}
 	else
 	{
-		SetWindowLong(context->hwnd, GWL_STYLE, WindowStyle | WS_OVERLAPPEDWINDOW);
+		SetWindowLong(context->hwnd, GWL_STYLE, window_style | WS_OVERLAPPEDWINDOW);
 		SetWindowPlacement(context->hwnd, &prev_placement);
 		SetWindowPos(
 			context->hwnd, NULL, 0, 0, 0, 0,
@@ -386,8 +386,8 @@ gfx_get_dpi(Gfx_Context *gfx)
 	U32 dpi_x, dpi_y;
 	GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
 	Vec2F32 result;
-	result.x = (F32)dpi_x;
-	result.y = (F32)dpi_y;
+	result.x = (F32) dpi_x;
+	result.y = (F32) dpi_y;
 	return(result);
 }
 
@@ -396,4 +396,10 @@ gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 {
 	win32_gfx_state.cursor = cursor;
 	PostMessage(ctx->hwnd, WM_SETCURSOR, 0, 0);
+}
+
+internal void
+gfx_set_window_maximized(Gfx_Context *ctx)
+{
+	ShowWindow(ctx->hwnd, SW_MAXIMIZE);
 }

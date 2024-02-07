@@ -176,7 +176,7 @@ os_main(Str8List arguments)
 		net_socket_connect(socket, address);
 		Str8 buffer = str8_lit("Hello socket!");
 		net_socket_send_to(socket, address, buffer);
-}
+	}
 #endif
 
 	Arena *perm_arena = arena_create("MainPerm");
@@ -185,7 +185,6 @@ os_main(Str8List arguments)
 	framed_ui_state->perm_arena = perm_arena;
 
 	Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
-
 	Render_Context *renderer = render_init(&gfx);
 	Arena *frame_arenas[2];
 	frame_arenas[0] = arena_create("MainFrame0");
@@ -289,6 +288,7 @@ os_main(Str8List arguments)
 	}
 	framed_ui_state->frame_index = 1;
 
+	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
 	B32 running = true;
 	while (running)
@@ -407,7 +407,7 @@ os_main(Str8List arguments)
 
 		render_end(renderer);
 
-		ui_debug_keep_alive((U32)framed_ui_state->frame_index);
+		ui_debug_keep_alive((U32) framed_ui_state->frame_index);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);

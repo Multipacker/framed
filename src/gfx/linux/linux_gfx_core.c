@@ -131,7 +131,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 					case SDLK_LALT:     event->key = Gfx_Key_Alt;      break;
 					case SDLK_RALT:     event->key = Gfx_Key_Alt;      break;
 					case SDLK_LGUI:     event->key = Gfx_Key_OS;       break;
- 					case SDLK_RGUI:     event->key = Gfx_Key_OS;       break;
+					case SDLK_RGUI:     event->key = Gfx_Key_OS;       break;
 					default:
 					{
 						if (SDLK_F1 <= sdl_keycode && sdl_keycode <= SDLK_F12)
@@ -315,4 +315,10 @@ internal Void
 gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 {
 	// TODO(simon): SDL doesn't seem to have support for this for some reason?
+}
+
+internal void
+gfx_set_window_maximized(Gfx_Context *ctx)
+{
+	SDL_MaximizeWindow(ctx->window);
 }
