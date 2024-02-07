@@ -1,14 +1,16 @@
 ////////////////////////////////
 //~ hampus: Short term
 //
-// [ ] @code @feature UI startup builder
+// [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @bug Tab offsetting looks weird if you remove any tab to the 
 //          left of the active tab when the tab bar is full
 // [ ] @bug New window offset is wrong if you reorder tab and then drag it out
+// [ ] @code Keep a list of closed windows instead of flags
 
 ////////////////////////////////
 //~ hampus: Medium term
 //
+// [ ] @code @feature UI startup builder
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 // [ ] @polish Adding a tab with a tab offset active doesn't look perfect
 
@@ -19,7 +21,6 @@
 //            - Solved by removing the clip box flag, but this shouldn't solve it
 // [ ] @feature Move around windows that have multiple panels
 // [ ] @feature Be able to pin windows which disables closing
-// [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @code @cleanup UI commands. Discriminated unions instead of data array?
 // [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
