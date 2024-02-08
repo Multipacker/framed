@@ -91,7 +91,8 @@ struct FramedUI_DragData
 {
 	FramedUI_Tab    *tab;
 	FramedUI_Panel  *hovered_panel;
-	Vec2F32  drag_origin;
+	Vec2F32  				window_offset;
+	Vec2F32  				drag_origin;
 };
 
 typedef struct FramedUI_Tab FramedUI_Tab;
@@ -103,7 +104,6 @@ struct FramedUI_Tab
 	FramedUI_Panel *panel;
 
 	UI_Box *tab_container;
-	UI_Box *tab_box;
 
 	Str8 string;
 	B32 pinned;

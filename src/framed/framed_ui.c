@@ -47,7 +47,7 @@ read_only FramedUI_Tab g_nil_tab =
 	&g_nil_tab,
 	&g_nil_panel,
 	&g_nil_box,
-	&g_nil_box,
+	// &g_nil_box,
 };
 
 ////////////////////////////////
@@ -201,7 +201,7 @@ framed_ui_attempt_to_close_panel(FramedUI_Panel *panel)
 //~ hampus: Tab dragging
 
 internal Void
-framed_ui_drag_begin_reordering(FramedUI_Tab *tab, Vec2F32 mouse_offset)
+framed_ui_drag_begin_reordering(FramedUI_Tab *tab)
 {
 	if (!tab->pinned)
 	{
@@ -286,7 +286,7 @@ framed_ui_tab_make(Arena *arena, FramedUI_TabViewProc *function, Void *data, Str
 	FramedUI_Tab *result = framed_ui_tab_alloc(arena);
 	result->next = result->prev = &g_nil_tab;
 	result->panel = &g_nil_panel;
-	result->tab_container = result->tab_box = &g_nil_box;
+	// result->tab_container = result->tab_box = &g_nil_box;
 	if (!name.size)
 	{
 		// NOTE(hampus): We probably won't do this in the future because
@@ -363,7 +363,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 		UI_BoxFlag_AnimateY,
 		str8_lit("TitleContainer"));
 
-	tab->tab_box = title_container;
+	// tab->tab_box = title_container;
 	ui_parent(title_container)
 	{
 		ui_next_height(ui_pct(1, 1));
@@ -426,7 +426,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 			UI_Comm title_comm = ui_comm_from_box(title_container);
 			if (title_comm.pressed)
 			{
-				framed_ui_drag_begin_reordering(tab, title_comm.rel_mouse);
+				framed_ui_drag_begin_reordering(tab);
 				framed_ui_set_tab_to_active(tab);
 			}
 
@@ -1153,7 +1153,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 				UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
 				if (title_bar_comm.pressed)
 				{
-					framed_ui_drag_begin_reordering(root->tab_group.active_tab, title_bar_comm.rel_mouse);
+					framed_ui_drag_begin_reordering(root->tab_group.active_tab);
 					framed_ui_wait_for_drag_threshold();
 				}
 			}
@@ -1610,11 +1610,6 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 			{
 				FramedUI_Tab *tab = drag_data->tab;
 
-				Vec2F32 prev_panel_pos = tab->panel->box->fixed_rect.min;
-				Vec2F32 first_tab_offset = tab->panel->tab_group.first->tab_box->fixed_rect.min;
-				Vec2F32 distance_between_panel_min_and_first_tab = v2f32_sub_v2f32(first_tab_offset, prev_panel_pos);
-				distance_between_panel_min_and_first_tab = v2f32_add_v2f32(distance_between_panel_min_and_first_tab, tab->tab_container->parent->scroll);
-
 				// NOTE(hampus): Calculate the new window size
 				Vec2F32 new_window_pct = v2f32(1, 1);
 				FramedUI_Panel *panel_child = tab->panel;
@@ -1645,10 +1640,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 						framed_ui_command_tab_close(&tab_close);
 					}
 
-					Vec2F32 offset = v2f32_sub_v2f32(drag_data->drag_origin, tab->tab_box->fixed_rect.min);
-					Vec2F32 window_pos = v2f32_sub_v2f32(mouse_pos, distance_between_panel_min_and_first_tab);
-					window_pos = v2f32_sub_v2f32(window_pos, offset);
-					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, window_pos, new_window_pct);
+					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), new_window_pct);
+
 					FramedUI_TabAttach tab_attach =
 					{
 						.tab = drag_data->tab,
@@ -1662,6 +1655,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 					drag_data->tab->panel->sibling = &g_nil_panel;
 					framed_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
+				
+				drag_data->tab->panel->window->pos = ui_mouse_pos();
 
 				framed_ui_state->next_focused_panel = drag_data->tab->panel;
 				framed_ui_state->drag_status = FramedUI_DragStatus_Dragging;
