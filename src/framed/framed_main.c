@@ -316,7 +316,7 @@ os_main(Str8List arguments)
 				{
 					if (debug_window->flags & FramedUI_WindowFlags_Closed)
 					{
-						debug_window->flags &= ~FramedUI_WindowFlags_Closed;
+						debug_window->flags &= (FramedUI_WindowFlags) ~FramedUI_WindowFlags_Closed;
 					}
 					else
 					{
