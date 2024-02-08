@@ -13,6 +13,8 @@
 // [ ] @code @feature UI startup builder
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 // [ ] @polish Adding a tab with a tab offset active doesn't look perfect
+// [ ] @feature Tab reordering again
+// [ ] @polish Tab dragging new window offset should be relative to where you began to drag the tab
 
 ////////////////////////////////
 //~ hampus: Long term
@@ -46,7 +48,6 @@ read_only FramedUI_Tab g_nil_tab =
 	&g_nil_tab,
 	&g_nil_tab,
 	&g_nil_panel,
-	&g_nil_box,
 	// &g_nil_box,
 };
 
@@ -363,7 +364,6 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 		UI_BoxFlag_AnimateY,
 		str8_lit("TitleContainer"));
 
-	// tab->tab_box = title_container;
 	ui_parent(title_container)
 	{
 		ui_next_height(ui_pct(1, 1));
@@ -403,13 +403,10 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 			{
 				Vec2F32 mouse_pos = ui_mouse_pos();
 				F32 center = (title_container->parent->fixed_rect.x0 +  title_container->parent->fixed_rect.x1) / 2;
-				B32 hovered  = mouse_pos.x >= center - ui_top_font_line_height() * 0.2f && mouse_pos.x <= center + ui_top_font_line_height() * 0.2f;
+				B32 hovered = mouse_pos.x >= center - ui_top_font_line_height() * 0.2f && mouse_pos.x <= center + ui_top_font_line_height() * 0.2f;
 				if (hovered)
 				{
-					if (f32_abs(drag_tab->tab_container->rel_pos.x - drag_tab->tab_container->rel_pos_animated.x) <= 0.5f && f32_abs(tab->tab_container->rel_pos.x - tab->tab_container->rel_pos_animated.x) <= 0.5f)
-					{
-						framed_ui_swap_tabs(framed_ui_state->drag_data.tab, tab);
-					}
+					// framed_ui_swap_tabs(framed_ui_state->drag_data.tab, tab);
 				}
 			}
 		}
@@ -662,7 +659,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 		UI_Comm tab_release_comms[FramedUI_TabReleaseKind_COUNT] = { 0 };
 		B32     hovering_any_symbols = false;
 
-		//- hampus: Drag & split symbols
+		// NOTE(hampus): Drag & split symbols
 
 		if (framed_ui_is_dragging())
 		{
@@ -796,7 +793,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 			}
 		}
 
-		//- hampus: Drag & split preview overlay
+		// NOTE(hampus): Drag & split preview overlay
 
 		if (hovering_any_symbols)
 		{
@@ -833,7 +830,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 			}
 		}
 
-		//- hampus: Tab bar
+		// NOTE(hampus): Tab bar
 
 		F32 title_bar_height_em = 1.2f;
 		F32 tab_spacing_em = 0.2f;
@@ -859,7 +856,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 			title_bar = ui_box_make(UI_BoxFlag_DrawBackground, str8_lit("TitleBar"));
 			ui_parent(title_bar)
 			{
-				//- hampus: Tab dropdown menu
+				// NOTE(hampus): Tab dropdown menu
 
 				ui_next_width(ui_fill());
 				ui_next_height(ui_fill());
@@ -960,94 +957,96 @@ framed_ui_update_panel(FramedUI_Panel *root)
 
 					ui_spacer(ui_em(tab_spacing_em, 1));
 
-					//- hampus: Tab buttons
+					// NOTE(hampus): Tab buttons
+
+					Arena_Temporary scratch = get_scratch(0, 0);
+
+					typedef struct Task Task;
+					struct Task
+					{
+						Task *next;
+						FramedUI_Tab *tab;
+						UI_Box *box;
+					};
+
+					UI_Box *active_box = &g_nil_box;
+					Task *first_task = 0;
+					Task *last_task = 0;
 
 					B32 tab_overflow = false;
 					ui_next_width(ui_fill());
 					ui_next_height(ui_pct(1, 1));
 					ui_next_extra_box_flags(UI_BoxFlag_Clip | UI_BoxFlag_AnimateScroll);
 					tabs_container = ui_named_row_begin(str8_lit("TabsContainer"));
+					for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
+					{
+						ui_next_height(ui_pct(1, 1));
+						ui_next_width(ui_children_sum(1));
+						ui_next_child_layout_axis(Axis2_Y);
+						UI_Box *tab_column = ui_box_make_f(UI_BoxFlag_AnimateX, "TabColumn%p", tab);
+						ui_parent(tab_column)
+						{
+							if (tab != root->tab_group.active_tab)
+							{
+								ui_spacer(ui_em(0.1f, 1));
+							}
+							else
+							{
+								active_box = tab_column;
+							}
+							ui_spacer(ui_em(0.2f, 1));
+							UI_Box *tab_box = framed_ui_tab_button(tab);
+							Task *task = push_struct(scratch.arena, Task);
+							task->tab = tab;
+							task->box = tab_column;
+							queue_push(first_task, last_task, task);
+						}
+						ui_spacer(ui_em(tab_spacing_em, 1));
+					}
+
+					ui_named_row_end();
+
+					// NOTE(hampus): Make sure the active box is in view
+					if (first_task)
 					{
 						FramedUI_Tab *active_tab = root->tab_group.active_tab;
 
-						if (!ui_box_is_nil(root->tab_group.first->tab_container))
+						F32 end = last_task->box->rel_pos.x + last_task->box->fixed_size.x;
+
+						F32 required_tab_bar_width = end - first_task->box->rel_pos.x;
+						tab_overflow = required_tab_bar_width > tabs_container->fixed_size.x && root->tab_group.count >= 2;
+
+						F32 adjustment_for_empty_space = tabs_container->fixed_size.x - (end-tabs_container->scroll.x);
+						adjustment_for_empty_space = f32_clamp(0, adjustment_for_empty_space, tabs_container->scroll.x);
+						tabs_container->scroll.x -= adjustment_for_empty_space;
+
+						Vec2F32 tab_visiblity_range = v2f32(
+							active_box->rel_pos.x,
+							active_box->rel_pos.x + active_box->fixed_size.x
+						);
+
+						tab_visiblity_range.x = f32_max(0, tab_visiblity_range.x);
+						tab_visiblity_range.y = f32_max(0, tab_visiblity_range.y);
+
+						Vec2F32 tab_bar_visiblity_range = v2f32(
+							tabs_container->scroll.x,
+							tabs_container->scroll.x + tabs_container->fixed_size.x
+						);
+
+						F32 delta_left = tab_visiblity_range.x - tab_bar_visiblity_range.x ;
+						F32 delta_right = tab_visiblity_range.y - tab_bar_visiblity_range.y;
+						delta_left = f32_min(delta_left, 0);
+						delta_right = f32_max(delta_right, 0);
+
+						if (tabs_container->fixed_size.x > active_box->fixed_size.x)
 						{
-							UI_Box *first_tab_box = root->tab_group.first->tab_container;
-
-							UI_Box *active_tab_box = root->tab_group.active_tab->tab_container;
-
-							UI_Box *last_tab_box = root->tab_group.last->tab_container;
-							for (FramedUI_Tab *tab = root->tab_group.last; ui_box_is_nil(last_tab_box); tab = tab->prev)
-							{
-								if (framed_ui_tab_is_nil(tab))
-								{
-									// NOTE(hampus): Atleast the first tab should have a box
-									assert(false);
-								}
-								last_tab_box = tab->tab_container;
-							}
-							if (!last_tab_box)
-							{
-								last_tab_box = first_tab_box;
-							}
-
-							F32 end = last_tab_box->rel_pos.x + last_tab_box->fixed_size.x;
-
-							F32 required_tab_bar_width = end - first_tab_box->rel_pos.x;
-							tab_overflow = required_tab_bar_width > tabs_container->fixed_size.x && root->tab_group.count >= 2;
-
-							F32 adjustment_for_empty_space = tabs_container->fixed_size.x - (end-tabs_container->scroll.x);
-							adjustment_for_empty_space = f32_clamp(0, adjustment_for_empty_space, tabs_container->scroll.x);
-							tabs_container->scroll.x -= adjustment_for_empty_space;
-
-							Vec2F32 tab_visiblity_range = v2f32(
-								active_tab->tab_container->rel_pos.x,
-								active_tab->tab_container->rel_pos.x + active_tab->tab_container->fixed_size.x
-							);
-
-							tab_visiblity_range.x = f32_max(0, tab_visiblity_range.x);
-							tab_visiblity_range.y = f32_max(0, tab_visiblity_range.y);
-
-							Vec2F32 tab_bar_visiblity_range = v2f32(
-								tabs_container->scroll.x,
-								tabs_container->scroll.x + tabs_container->fixed_size.x
-							);
-
-							F32 delta_left = tab_visiblity_range.x - tab_bar_visiblity_range.x ;
-							F32 delta_right = tab_visiblity_range.y - tab_bar_visiblity_range.y;
-							delta_left = f32_min(delta_left, 0);
-							delta_right = f32_max(delta_right, 0);
-
-							if (tabs_container->fixed_size.x > active_tab_box->fixed_size.x)
-							{
-								tabs_container->scroll.x += delta_right;
-							}
-							tabs_container->scroll.x += delta_left;
-							tabs_container->scroll.x = f32_max(0, tabs_container->scroll.x);
+							tabs_container->scroll.x += delta_right;
 						}
-
-						// NOTE(hampus): Build tabs
-
-						for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
-						{
-							ui_next_height(ui_pct(1, 1));
-							ui_next_width(ui_children_sum(1));
-							ui_next_child_layout_axis(Axis2_Y);
-							UI_Box *tab_column = ui_box_make_f(UI_BoxFlag_AnimateX, "TabColumn%p", tab);
-							ui_parent(tab_column)
-							{
-								tab->tab_container = tab_column;
-								if (tab != root->tab_group.active_tab)
-								{
-									ui_spacer(ui_em(0.1f, 1));
-								}
-								ui_spacer(ui_em(0.2f, 1));
-								UI_Box *tab_box = framed_ui_tab_button(tab);
-							}
-							ui_spacer(ui_em(tab_spacing_em, 1));
-						}
+						tabs_container->scroll.x += delta_left;
+						tabs_container->scroll.x = f32_max(0, tabs_container->scroll.x);
 					}
-					ui_named_row_end();
+
+					release_scratch(scratch);
 
 					// NOTE(hampus): Build prev/next tab buttons
 
@@ -1159,7 +1158,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 			}
 		}
 
-		//- hampus: Tab content
+		// NOTE(hampus): Tab content
 
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
@@ -1553,7 +1552,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 	framed_ui_state->focused_panel = framed_ui_state->next_focused_panel;
 	framed_ui_state->next_focused_panel = &g_nil_panel;
-
+#if 0
 	// TODO(hampus): This is really ugly. Fix this.
 	if (!framed_ui_tab_is_nil(framed_ui_state->swap_tab0))
 	{
@@ -1568,8 +1567,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
 	}
-
-	//- hampus: Update Windows
+#endif
+	// NOTE(hampus): Update Windows
 
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -1586,7 +1585,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		}
 	}
 
-	//- hampus: Update tab drag
+	// NOTE(hampus): Update tab drag
 
 	if (left_mouse_released &&
 			framed_ui_is_dragging())
@@ -1655,7 +1654,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 					drag_data->tab->panel->sibling = &g_nil_panel;
 					framed_ui_window_reorder_to_front(drag_data->tab->panel->window);
 				}
-				
+
 				drag_data->tab->panel->window->pos = ui_mouse_pos();
 
 				framed_ui_state->next_focused_panel = drag_data->tab->panel;

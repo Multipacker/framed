@@ -103,8 +103,6 @@ struct FramedUI_Tab
 
 	FramedUI_Panel *panel;
 
-	UI_Box *tab_container;
-
 	Str8 string;
 	B32 pinned;
 

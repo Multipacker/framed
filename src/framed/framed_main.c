@@ -208,7 +208,7 @@ os_main(Str8List arguments)
 	framed_ui_state->cmd_buffer.buffer = push_array(framed_ui_state->perm_arena, FramedUI_Command, CMD_BUFFER_SIZE);
 	framed_ui_state->cmd_buffer.size = CMD_BUFFER_SIZE;
 
-	//- hampus: Build startup UI
+	// NOTE(hampus): Build startup UI
 
 	framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
 	framed_ui_set_color(FramedUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
@@ -332,7 +332,7 @@ os_main(Str8List arguments)
 		U32 font_size = 15;
 		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
 		ui_push_font_size(font_size);
-#if 0
+
 		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
 
 		ui_ctx_menu(my_ctx_menu)
@@ -413,7 +413,7 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
 		}
-#endif
+
 		ui_log_keep_alive(current_arena);
 
 		framed_ui_update(renderer, &events);
