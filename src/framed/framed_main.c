@@ -37,7 +37,13 @@ frame_ui_tab_view(framed_ui_tab_view_logger)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
-	ui_logger();
+	B32 view_info_data_initialized = view_info->data != 0;
+	LogUI_State *log_ui = framed_ui_get_view_data(view_info, LogUI_State);
+	if (!view_info_data_initialized)
+	{
+		log_ui->perm_arena = arena_create("LogUIPerm");
+	}
+	ui_logger(log_ui);
 }
 
 frame_ui_tab_view(framed_ui_tab_view_texture_viewer)
@@ -413,8 +419,6 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
 		}
-
-		ui_log_keep_alive(current_arena);
 
 		framed_ui_update(renderer, &events);
 

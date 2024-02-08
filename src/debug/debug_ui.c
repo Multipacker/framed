@@ -1,14 +1,6 @@
 #define DEBUG_STAT_FRAMES 200
 #define DEBUG_STAT_LOCATIONS 100
 
-typedef struct LogUI_Thread LogUI_Thread;
-struct LogUI_Thread
-{
-	LogUI_Thread *next;
-	Str8 name;
-	B32 show;
-};
-
 typedef struct Debug_Statistics Debug_Statistics;
 struct Debug_Statistics
 {
@@ -37,117 +29,178 @@ global Debug_Statistics ui_debug_stats;
 global B32              ui_debug_freeze;
 global Debug_MemoryBuffer *ui_debug_memory;
 
-global LogUI_Thread *log_ui_previous_threads = 0;
-global LogUI_Thread *log_ui_current_threads  = 0;
-global Log_QueueEntry log_ui_entries[1000];
-global U32 log_ui_entry_count = 0;
-global U32 log_ui_has_new_entries = 0;
-global B32 log_ui_freeze = false;
-global B32 log_ui_compact_display = false;
-global B32 log_ui_level_fillters[Log_Level_COUNT] = { 0 };
-
-internal Void
-ui_log_keep_alive(Arena *frame_arena)
+typedef struct LogUI_Thread LogUI_Thread;
+struct LogUI_Thread
 {
-	if (!log_ui_freeze)
+	LogUI_Thread *next;
+	Str8 name;
+	B32 show;
+};
+
+typedef struct LogUI_State LogUI_State;
+struct LogUI_State {
+	Arena *perm_arena;
+	LogUI_Thread *threads;
+
+	B32 compact_display;
+	B32 freeze;
+	B32 level_filters[Log_Level_COUNT];
+
+	U32 entry_count;
+	Log_QueueEntry entries[1000];
+	U32 has_new_entries;
+};
+
+internal B32
+ui_logger_entry_passes_filter(LogUI_State *state, Log_QueueEntry *entry)
+{
+	B32 show_all_threads = true;
+	for (LogUI_Thread *thread = state->threads; thread; thread = thread->next)
 	{
-		Log_EntryBuffer new_entries = *log_get_new_entries();
-
-		if (log_ui_entry_count + new_entries.count > array_count(log_ui_entries))
-		{
-			U32 entries_to_keep     = (U32) s64_max(0, (S64) array_count(log_ui_entries) - (S64) new_entries.count);
-			U32 first_entry_to_keep = log_ui_entry_count - entries_to_keep;
-			memory_move(log_ui_entries, &log_ui_entries[first_entry_to_keep], entries_to_keep * sizeof(*log_ui_entries));
-			log_ui_entry_count = entries_to_keep;
-		}
-
-		U32 entries_to_copy     = u32_min(array_count(log_ui_entries) - log_ui_entry_count, new_entries.count);
-		U32 first_entry_to_copy = new_entries.count - entries_to_copy;
-		memory_copy(&log_ui_entries[log_ui_entry_count], &new_entries.buffer[first_entry_to_copy], entries_to_copy * sizeof(*new_entries.buffer));
-		log_ui_entry_count += entries_to_copy;
-
-		// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
-		log_ui_has_new_entries |= (entries_to_copy != 0 ? 2 : 0);
+		show_all_threads &= !thread->show;
 	}
 
-	// NOTE(simon): Find threads.
-	log_ui_current_threads = 0;
-	for (U32 i = 0; i < log_ui_entry_count; ++i)
+	B32 show_all_levels = true;
+	for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
 	{
-		Str8 thread_name = str8_cstr((CStr) log_ui_entries[i].thread_name);
+		show_all_levels &= !state->level_filters[level];
+	}
 
-		B32 unique = true;
-		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+	B32 show = true;
+	if (!show_all_threads)
+	{
+		Str8 thread_name = str8_cstr((CStr) entry->thread_name);
+		for (LogUI_Thread *thread = state->threads; thread; thread = thread->next)
 		{
 			if (str8_equal(thread_name, thread->name))
 			{
-				unique = false;
+				show = thread->show;
 				break;
 			}
 		}
-
-		if (unique)
-		{
-			LogUI_Thread *thread = push_struct(frame_arena, LogUI_Thread);
-			thread->name = thread_name;
-			thread->show = false;
-			stack_push(log_ui_current_threads, thread);
-		}
 	}
 
-	// NOTE(simon): Copy over state from previous frame.
-	for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+	if (!show_all_levels)
 	{
-		for (LogUI_Thread *old_thread = log_ui_previous_threads; old_thread; old_thread = old_thread->next)
-		{
-			if (str8_equal(thread->name, old_thread->name))
-			{
-				thread->show = old_thread->show;
-				break;
-			}
-		}
+		show &= state->level_filters[entry->level];
 	}
 
-	log_ui_previous_threads = log_ui_current_threads;
+	return(show);
 }
 
 internal Void
-ui_logger(Void)
+ui_logger_update_entries(LogUI_State *state)
 {
+	Log_EntryBuffer new_entries = *log_get_new_entries();
+
+	if (state->entry_count + new_entries.count > array_count(state->entries))
+	{
+		U32 entries_to_keep     = (U32) s64_max(0, (S64) array_count(state->entries) - (S64) new_entries.count);
+		U32 first_entry_to_keep = state->entry_count - entries_to_keep;
+		memory_move(state->entries, &state->entries[first_entry_to_keep], entries_to_keep * sizeof(*state->entries));
+		state->entry_count = entries_to_keep;
+	}
+
+	U32 entries_to_copy     = u32_min(array_count(state->entries) - state->entry_count, new_entries.count);
+	U32 first_entry_to_copy = new_entries.count - entries_to_copy;
+	memory_copy(&state->entries[state->entry_count], &new_entries.buffer[first_entry_to_copy], entries_to_copy * sizeof(*new_entries.buffer));
+
+	// NOTE(simon): Look for any new threads.
+	for (U32 i = state->entry_count; i < state->entry_count + entries_to_copy; ++i)
+	{
+		Str8 thread_name = str8_cstr((CStr) state->entries[i].thread_name);
+
+		B32 is_new_thread = true;
+		for (LogUI_Thread *thread = state->threads; thread; thread = thread->next)
+		{
+			if (str8_equal(thread_name, thread->name))
+			{
+				is_new_thread = false;
+				break;
+			}
+		}
+
+		if (is_new_thread)
+		{
+			LogUI_Thread *thread = push_struct(state->perm_arena, LogUI_Thread);
+			thread->name = thread_name;
+			thread->show = false;
+			stack_push(state->threads, thread);
+		}
+	}
+
+	// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
+	state->has_new_entries |= (entries_to_copy != 0 ? 2 : 0);
+	state->entry_count += entries_to_copy;
+}
+
+internal Void
+ui_logger_checkbox(Str8 name, B32 *value) {
+	ui_row()
+	{
+		ui_spacer(ui_em(0.4f, 1));
+		ui_check(value, name);
+		ui_spacer(ui_em(0.4f, 1));
+		ui_text(name);
+	}
+}
+
+internal Str8
+ui_logger_format_entry(LogUI_State *state, Log_QueueEntry *entry)
+{
+	Str8 message = { 0 };
+
+	if (state->compact_display)
+	{
+		Str8 path_display = str8_cstr(entry->file);
+		U64 slash_index = 0;
+		if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
+		{
+			++slash_index;
+		}
+		path_display = str8_skip(path_display, slash_index);
+
+		message = str8_pushf(
+			ui_frame_arena(),
+			"%.2u:%.2u:%.2u.%03u %s %"PRISTR8":%u: %s",
+			entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
+			entry->thread_name,
+			str8_expand(path_display), entry->line,
+			entry->message
+		);
+	}
+	else
+	{
+		// NOTE(simon): Skip the trailing newline.
+		message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
+	}
+
+	return(message);
+}
+
+internal Void
+ui_logger(LogUI_State *state)
+{
+	if (!state->freeze)
+	{
+		ui_logger_update_entries(state);
+	}
+
 	ui_next_child_layout_axis(Axis2_Y);
-
 	UI_Box *log_window = ui_box_make(0, str8_lit("LogWindow"));
-
 	ui_parent(log_window)
 	{
 		ui_next_width(ui_fill());
 		ui_next_height(ui_em(10, 1));
-		ui_push_scrollable_region(str8_lit("LogControls"));
-		ui_row()
+		ui_scrollable_region(str8_lit("LogControls"))
+			ui_row()
 		{
 			ui_column()
 			{
 				ui_spacer(ui_em(0.4f, 1));
-
-				ui_row()
-				{
-					ui_spacer(ui_em(0.4f, 1));
-					ui_check(&log_ui_freeze, str8_lit("LogFreeze"));
-					ui_spacer(ui_em(0.4f, 1));
-					ui_text(str8_lit("Freeze entries"));
-				}
-
+				ui_logger_checkbox(str8_lit("Freeze entries"), &state->freeze);
 				ui_spacer(ui_em(0.4f, 1));
-
-				ui_row()
-				{
-					ui_spacer(ui_em(0.4f, 1));
-					ui_check(&log_ui_compact_display, str8_lit("LogCompact"));
-					ui_spacer(ui_em(0.4f, 1));
-					ui_text(str8_lit("Compact display"));
-				}
-
-
+				ui_logger_checkbox(str8_lit("Compact display"), &state->compact_display);
 			}
 
 			ui_spacer(ui_em(0.4f, 1));
@@ -156,16 +209,10 @@ ui_logger(Void)
 			{
 				ui_text(str8_lit("Threads:"));
 
-				for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+				for (LogUI_Thread *thread = state->threads; thread; thread = thread->next)
 				{
 					ui_spacer(ui_em(0.4f, 1));
-					ui_row()
-					{
-						ui_spacer(ui_em(0.8f, 1));
-						ui_check(&thread->show, thread->name);
-						ui_spacer(ui_em(0.4f, 1));
-						ui_text(thread->name);
-					}
+					ui_logger_checkbox(thread->name, &thread->show);
 				}
 			}
 
@@ -174,28 +221,16 @@ ui_logger(Void)
 			ui_column()
 			{
 				ui_text(str8_lit("Level filter:"));
-
-				Str8 level_names[] = {
-					[Log_Level_Info] = str8_lit("Infos"),
-					[Log_Level_Warning] = str8_lit("Warnings"),
-					[Log_Level_Error]   = str8_lit("Errors"),
-					[Log_Level_Trace]   = str8_lit("Traces"),
-				};
-				for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
-				{
-					ui_spacer(ui_em(0.4f, 1));
-					ui_row()
-					{
-						B32 test = false;
-						ui_spacer(ui_em(0.8f, 1));
-						ui_check(&log_ui_level_fillters[level], level_names[level]);
-						ui_spacer(ui_em(0.4f, 1));
-						ui_text(level_names[level]);
-					}
-				}
+				ui_spacer(ui_em(0.4f, 1));
+				ui_logger_checkbox(str8_lit("Infos"), &state->level_filters[Log_Level_Info]);
+				ui_spacer(ui_em(0.4f, 1));
+				ui_logger_checkbox(str8_lit("Warnings"), &state->level_filters[Log_Level_Warning]);
+				ui_spacer(ui_em(0.4f, 1));
+				ui_logger_checkbox(str8_lit("Errors"), &state->level_filters[Log_Level_Error]);
+				ui_spacer(ui_em(0.4f, 1));
+				ui_logger_checkbox(str8_lit("Traces"), &state->level_filters[Log_Level_Trace]);
 			}
 		}
-		ui_pop_scrollable_region();
 
 		ui_next_width(ui_fill());
 		ui_next_height(ui_fill());
@@ -203,82 +238,28 @@ ui_logger(Void)
 		UI_ScrollabelRegion entries_list = ui_push_scrollable_region(str8_lit("LogEntries"));
 
 		// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
-		if (!log_ui_freeze && log_ui_has_new_entries)
+		if (!state->freeze && state->has_new_entries)
 		{
 			ui_scrollabel_region_set_scroll(entries_list, F32_MAX);
-			--log_ui_has_new_entries;
+			--state->has_new_entries;
 		}
 
 		ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 		ui_push_font_size(11);
 
-		B32 show_all_threads = true;
-		for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
+		for (U32 i = 0; i < state->entry_count; ++i)
 		{
-			show_all_threads &= !thread->show;
-		}
+			Log_QueueEntry *entry = &state->entries[i];
 
-		B32 show_all_levels = true;
-		for (Log_Level level = 0; level < Log_Level_COUNT; ++level)
-		{
-			show_all_levels &= !log_ui_level_fillters[level];
-		}
-
-		for (U32 i = 0; i < log_ui_entry_count; ++i)
-		{
-			Log_QueueEntry *entry = &log_ui_entries[i];
-
-			B32 show = true;
-			if (!show_all_threads)
-			{
-				Str8 thread_name = str8_cstr((CStr) entry->thread_name);
-				for (LogUI_Thread *thread = log_ui_current_threads; thread; thread = thread->next)
-				{
-					if (str8_equal(thread_name, thread->name))
-					{
-						show = thread->show;
-						break;
-					}
-				}
-			}
-			if (!show_all_levels)
-			{
-				show &= log_ui_level_fillters[entry->level];
-			}
-
-			if (!show)
+			if (!ui_logger_entry_passes_filter(state, entry))
 			{
 				continue;
 			}
 
-			Str8 message = { 0 };
-			if (log_ui_compact_display)
-			{
-				Str8 path_display = str8_cstr(entry->file);
-				U64 slash_index = 0;
-				if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
-				{
-					++slash_index;
-				}
-				path_display = str8_skip(path_display, slash_index);
-
-				message = str8_pushf(
-					ui_frame_arena(),
-					"%.2u:%.2u:%.2u.%03u %s %"PRISTR8":%u: %s",
-					entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
-					entry->thread_name,
-					str8_expand(path_display), entry->line,
-					entry->message
-				);
-			}
-			else
-			{
-				// NOTE(simon): Skip the trailing newline.
-				message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
-			}
+			Str8 message = ui_logger_format_entry(state, entry);
 
 			Vec4F32 level_colors[] = {
-				[Log_Level_Info] = v4f32_mul_f32(v4f32(229.0f, 229.0f, 229.0f, 255.0f), 1.0f / 255.0f),
+				[Log_Level_Info]    = v4f32_mul_f32(v4f32(229.0f, 229.0f, 229.0f, 255.0f), 1.0f / 255.0f),
 				[Log_Level_Warning] = v4f32_mul_f32(v4f32(229.0f, 227.0f, 91.0f, 255.0f), 1.0f / 255.0f),
 				[Log_Level_Error]   = v4f32_mul_f32(v4f32(229.0f, 100.0f, 91.0f, 255.0f), 1.0f / 255.0f),
 				[Log_Level_Trace]   = v4f32_mul_f32(v4f32(121.4f, 229.0f, 91.4f, 255.0f), 1.0f / 255.0f),
@@ -1001,7 +982,6 @@ ui_texture_view(Render_TextureSlice atlas)
 			Vec2F32 scale_offset = v2f32_mul_f32(v2f32_sub_v2f32(atlas_comm.rel_mouse, offset), scale / old_scale - 1.0f);
 			offset = v2f32_add_v2f32(v2f32_sub_v2f32(offset, atlas_comm.drag_delta), scale_offset);
 		}
-
 
 		ui_column()
 		{
