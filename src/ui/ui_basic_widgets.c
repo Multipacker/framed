@@ -906,19 +906,18 @@ ui_line_editf(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *st
 internal Void
 ui_color_picker(UI_ColorPickerData *data)
 {
-	if (data->string_length[0] == 0)
+	if (data->text_buffer_size[0] == 0)
 	{
 		arena_scratch(0, 0)
 		{
 			for (U64 i = 0; i < 4; ++i)
 			{
 				data->text_buffer_size[i] = 4;
-				data->string_length[i] = 4;
 				data->text_buffer[i] = push_array(ui_permanent_arena(), U8, data->text_buffer_size[i]);
 
 				Str8 str8 = str8_pushf(scratch, "%.2f", data->rgba->v[i]);
+				data->string_length[i] = u64_min(str8.size, data->text_buffer_size[i]);
 				memory_copy_typed(data->text_buffer[i], str8.data, data->string_length[i]);
-				data->string_length[i] = 4;
 			}
 		}
 	}
@@ -986,8 +985,6 @@ ui_color_picker(UI_ColorPickerData *data)
 			str8_lit("A:"),
 		};
 
-		Str8 text_buffer_str8[4] = {0};
-
 		for (U64 i = 0; i < 4; ++i)
 		{
 			U64 length = 0;
@@ -1017,9 +1014,9 @@ ui_color_picker(UI_ColorPickerData *data)
 			{
 				arena_scratch(0, 0)
 				{
-					data->string_length[i] = 4;
-					text_buffer_str8[i] = str8_pushf(scratch, "%.2f", rgba->v[i]);
-					memory_copy_typed(data->text_buffer[i], text_buffer_str8[i].data, 4);
+					Str8 text_buffer_str8 = str8_pushf(scratch, "%.2f", rgba->v[i]);
+					data->string_length[i] = u64_min(text_buffer_str8.size, data->text_buffer_size[i]);
+					memory_copy_typed(data->text_buffer[i], text_buffer_str8.data, data->string_length[i]);
 				}
 			}
 		}
