@@ -1128,11 +1128,6 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 		}
 	}
 
-	if (left_mouse_released)
-	{
-		ui_ctx->active_key = ui_key_null();
-	}
-
 	for (U64 i = 0; i < ui_ctx->box_hash_map_count; ++i)
 	{
 		UI_Box *box = ui_ctx->box_hash_map[i];
@@ -1165,11 +1160,21 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 		}
 	}
 
+	UI_Box *active_box = ui_box_from_key(ui_ctx->active_key);
+
+	if (left_mouse_released || ui_box_is_nil(active_box))
+	{
+		ui_ctx->active_key = ui_key_null();
+	}
+
+	if (ui_key_is_null(ui_ctx->active_key))
+	{
+		ui_ctx->hot_key = ui_key_null();
+	}
+
 	// NOTE(hampus): Setup default config
 	ui_ctx->config.animations      = true;
 	ui_ctx->config.animation_speed = 20;
-
-	ui_ctx->hot_key = ui_key_null();
 
 	Vec4F32 color = v4f32(0.1f, 0.1f, 0.1f, 1.0f);
 
