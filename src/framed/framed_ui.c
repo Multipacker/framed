@@ -108,14 +108,12 @@ framed_ui_string_from_color(FramedUI_Color color)
 // hampus: Command
 
 internal Void *
-framed_ui_command_push(FramedUI_CommandBuffer *buffer, FramedUI_CommandKind kind)
+framed_ui_command_push(FramedUI_CommandKind kind)
 {
-	assert(buffer->pos < buffer->size);
-	FramedUI_Command *result = buffer->buffer + buffer->pos;
-	memory_zero_struct(result);
-	result->kind = kind;
-	buffer->pos++;
-	return(result->data);
+	FramedUI_CommandNode *node = push_struct(framed_ui_state->frame_arena, FramedUI_CommandNode);
+	node->command.kind = kind;
+	dll_push_back(framed_ui_state->cmd_list.first, framed_ui_state->cmd_list.last, node);
+	return(node->command.data);
 }
 
 internal Void
@@ -123,7 +121,7 @@ framed_ui_attempt_to_close_tab(FramedUI_Tab *tab)
 {
 	if (!tab->pinned)
 	{
-		FramedUI_TabDelete *data = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_TabClose);
+		FramedUI_TabDelete *data = framed_ui_command_push(FramedUI_CommandKind_TabClose);
 		data->tab = tab;
 	}
 }
@@ -131,7 +129,7 @@ framed_ui_attempt_to_close_tab(FramedUI_Tab *tab)
 internal Void
 framed_ui_panel_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, B32 set_active)
 {
-	FramedUI_TabAttach *data  = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_TabAttach);
+	FramedUI_TabAttach *data  = framed_ui_command_push(FramedUI_CommandKind_TabAttach);
 	data->tab        = tab;
 	data->panel      = panel;
 	data->set_active = set_active;
@@ -140,7 +138,7 @@ framed_ui_panel_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, B32 set_act
 internal Void
 framed_ui_panel_split(FramedUI_Panel *first, Axis2 split_axis)
 {
-	FramedUI_PanelSplit *data = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_PanelSplit);
+	FramedUI_PanelSplit *data = framed_ui_command_push(FramedUI_CommandKind_PanelSplit);
 	data->panel = first;
 	data->axis = split_axis;
 }
@@ -148,7 +146,7 @@ framed_ui_panel_split(FramedUI_Panel *first, Axis2 split_axis)
 internal Void
 framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, Axis2 axis, Side side)
 {
-	FramedUI_PanelSplitAndAttach *data  = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_PanelSplitAndAttach);
+	FramedUI_PanelSplitAndAttach *data  = framed_ui_command_push(FramedUI_CommandKind_PanelSplitAndAttach);
 	data->tab           = tab;
 	data->panel         = panel;
 	data->axis          = axis;
@@ -171,7 +169,7 @@ framed_ui_swap_tabs(FramedUI_Tab *tab0, FramedUI_Tab *tab1)
 internal Void
 framed_ui_set_tab_to_active(FramedUI_Tab *tab)
 {
-	FramedUI_PanelSetActiveTab *data = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_PanelSetActiveTab);
+	FramedUI_PanelSetActiveTab *data = framed_ui_command_push(FramedUI_CommandKind_PanelSetActiveTab);
 	data->tab = tab;
 	data->panel = tab->panel;
 }
@@ -190,7 +188,7 @@ framed_ui_attempt_to_close_panel(FramedUI_Panel *panel)
 	}
 	if (!any_tab_pinned)
 	{
-		FramedUI_PanelClose *data = framed_ui_command_push(&framed_ui_state->cmd_buffer, FramedUI_CommandKind_PanelClose);
+		FramedUI_PanelClose *data = framed_ui_command_push(FramedUI_CommandKind_PanelClose);
 		data->panel = panel;
 	}
 }
@@ -389,7 +387,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 		ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
 		ui_next_color(framed_ui_color_from_theme(FramedUI_Color_InactiveTab));
 		UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable, str8_lit("CloseButton"));
-		
+
 		// TODO(hampus): We shouldn't need to do this here
 		// since there shouldn't even be any input events
 		// left in the queue if dragging is ocurring.
@@ -1677,9 +1675,9 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 	ui_end();
 
-	for (U64 i = 0; i < framed_ui_state->cmd_buffer.pos; ++i)
+	for (FramedUI_CommandNode *node = framed_ui_state->cmd_list.first; node; node = node->next)
 	{
-		FramedUI_Command *cmd = framed_ui_state->cmd_buffer.buffer + i;
+		FramedUI_Command *cmd = &node->command;
 		switch (cmd->kind)
 		{
 			case FramedUI_CommandKind_TabAttach:  framed_ui_command_tab_attach(cmd->data); break;
@@ -1696,6 +1694,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		}
 	}
 
+
 	if (framed_ui_state->next_top_most_window)
 	{
 		FramedUI_Window *window = framed_ui_state->next_top_most_window;
@@ -1709,6 +1708,6 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	}
 
 	framed_ui_state->next_top_most_window = 0;
-
-	framed_ui_state->cmd_buffer.pos = 0;
+	framed_ui_state->cmd_list.first = 0;
+	framed_ui_state->cmd_list.last = 0;
 }

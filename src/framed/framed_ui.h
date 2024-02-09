@@ -175,22 +175,30 @@ typedef struct FramedUI_Command FramedUI_Command;
 struct FramedUI_Command
 {
 	FramedUI_CommandKind kind;
-	U8 data[512];
+	U8 data[256];
 };
 
-#define CMD_BUFFER_SIZE 16
-typedef struct FramedUI_CommandBuffer FramedUI_CommandBuffer;
-struct FramedUI_CommandBuffer
+typedef struct FramedUI_CommandNode FramedUI_CommandNode;
+struct FramedUI_CommandNode
 {
-	U64 pos;
-	U64 size;
-	FramedUI_Command *buffer;
+	FramedUI_CommandNode *next;
+	FramedUI_CommandNode *prev;
+	FramedUI_Command command;
+};
+
+typedef struct FramedUI_CommandList FramedUI_CommandList;
+struct FramedUI_CommandList
+{
+	FramedUI_CommandNode *first;
+	FramedUI_CommandNode *last;
 };
 
 typedef struct FramedUI_State FramedUI_State;
 struct FramedUI_State
 {
 	Arena *perm_arena;
+	Arena *frame_arena;
+
 	U64 num_panels;
 	U64 num_tabs;
 	U64 num_windows;
@@ -201,7 +209,7 @@ struct FramedUI_State
 	FramedUI_Panel *focused_panel;
 	FramedUI_Panel *next_focused_panel;
 
-	FramedUI_CommandBuffer cmd_buffer;
+	FramedUI_CommandList cmd_list;
 
 	FramedUI_WindowList window_list;
 

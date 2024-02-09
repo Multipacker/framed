@@ -211,9 +211,6 @@ os_main(Str8List arguments)
 	U64 start_counter = os_now_nanoseconds();
 	F64 dt = 0;
 
-	framed_ui_state->cmd_buffer.buffer = push_array(framed_ui_state->perm_arena, FramedUI_Command, CMD_BUFFER_SIZE);
-	framed_ui_state->cmd_buffer.size = CMD_BUFFER_SIZE;
-
 	// NOTE(hampus): Build startup UI
 
 	framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
@@ -307,6 +304,8 @@ os_main(Str8List arguments)
 		Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
 		Arena *current_arena  = frame_arenas[0];
 		Arena *previous_arena = frame_arenas[1];
+		
+		framed_ui_state->frame_arena = current_arena;
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first; event != 0; event = event->next)
