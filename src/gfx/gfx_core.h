@@ -143,6 +143,12 @@ struct Gfx_EventList
 	U64 count;
 };
 
+typedef struct Gfx_Monitor Gfx_Monitor;
+struct Gfx_Monitor
+{
+	U64 u64[1];
+};
+
 internal B32 gfx_key_pressed(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
 internal B32 gfx_key_released(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
 
@@ -157,5 +163,7 @@ internal Void          gfx_swap_buffers(Gfx_Context *gfx);
 internal Vec2F32       gfx_get_dpi(Gfx_Context *ctx);
 internal Void          gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor);
 internal Void          gfx_set_window_maximized(Gfx_Context *ctx);
+internal Gfx_Monitor   gfx_monitor_from_window(Gfx_Context *ctx);
+internal Vec2F32       gfx_dim_from_monitor(Gfx_Monitor monitor);
 
 #endif //GFX_ESSENTIAL_H

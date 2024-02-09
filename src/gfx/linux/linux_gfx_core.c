@@ -3,7 +3,7 @@ global Gfx_Key linux_sdl_to_gfx_keycode[128];
 internal Gfx_Context
 gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
-	Gfx_Context gfx = { 0 };
+	Gfx_Context gfx = {0};
 
 	Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -79,9 +79,9 @@ gfx_show_window(Gfx_Context *gfx)
 internal Gfx_EventList
 gfx_get_events(Arena *arena, Gfx_Context *gfx)
 {
-	Gfx_EventList events = { 0 };
+	Gfx_EventList events = {0};
 
-	for (SDL_Event sdl_event = { 0 }; SDL_PollEvent(&sdl_event);)
+	for (SDL_Event sdl_event = {0}; SDL_PollEvent(&sdl_event);)
 	{
 		Gfx_Event *event = push_struct_zero(arena, Gfx_Event);
 
@@ -305,7 +305,7 @@ gfx_swap_buffers(Gfx_Context *gfx)
 internal Vec2F32
 gfx_get_dpi(Gfx_Context *ctx)
 {
-	Vec2F32 dpi = { 0 };
+	Vec2F32 dpi = {0};
 	int display_index = SDL_GetWindowDisplayIndex(ctx->window);
 	SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
 	return(dpi);
@@ -321,4 +321,24 @@ internal Void
 gfx_set_window_maximized(Gfx_Context *ctx)
 {
 	SDL_MaximizeWindow(ctx->window);
+}
+
+internal Gfx_Monitor
+gfx_monitor_from_window(Gfx_Context *ctx)
+{
+	Gfx_Monitor result = {0};
+	int display_index = SDL_GetWindowDisplayIndex(ctx->window);
+	result.u64[0] = (U64) display_index;
+	return(result);
+}
+
+internal Vec2F32
+gfx_dim_from_monitor(Gfx_Monitor monitor)
+{
+	Vec2F32 result = {0};
+	SDL_DisplayMode display_mode = {0};
+	SDL_GetCurrentDisplayMode((int) monitor.u64[0], &display_mode);
+	result.x = (F32) display_mode.w;
+	result.y = (F32) display_mode.h;
+	return(result);
 }
