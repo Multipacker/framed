@@ -1013,15 +1013,8 @@ framed_ui_update_panel(FramedUI_Panel *root)
 								break;
 							}
 						}
-
-						F32 end = last_box->rel_pos.x + last_box->fixed_size.x;
-
-						F32 required_tab_bar_width = end - first_task->box->rel_pos.x;
-						tab_overflow = required_tab_bar_width > tabs_container->fixed_size.x && root->tab_group.count >= 2;
-
-						F32 adjustment_for_empty_space = tabs_container->fixed_size.x - (end-tabs_container->scroll.x);
-						adjustment_for_empty_space = f32_clamp(0, adjustment_for_empty_space, tabs_container->scroll.x);
-						tabs_container->scroll.x -= adjustment_for_empty_space;
+						
+						tab_overflow = tabs_container->scroll.x != 0 || (last_box->rel_pos.x+last_box->fixed_size.x) > tabs_container->fixed_size.x;
 
 						Vec2F32 tab_visiblity_range = v2f32(
 							active_box->rel_pos.x,
@@ -1041,10 +1034,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 						delta_left = f32_min(delta_left, 0);
 						delta_right = f32_max(delta_right, 0);
 
-						if (tabs_container->fixed_size.x > active_box->fixed_size.x)
-						{
-							tabs_container->scroll.x += delta_right;
-						}
+						tabs_container->scroll.x += delta_right;
 						tabs_container->scroll.x += delta_left;
 						tabs_container->scroll.x = f32_max(0, tabs_container->scroll.x);
 					}
@@ -1562,7 +1552,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
-}
+	}
 #endif
 	// NOTE(hampus): Update Windows
 
