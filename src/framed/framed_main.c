@@ -71,11 +71,8 @@ frame_ui_tab_view(framed_ui_tab_view_theme)
 
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
-	local Vec4F32 *selected_color = 0;
-
 	ui_ctx_menu(theme_color_ctx_menu)
 	{
-		color_picker_data->rgba = selected_color;
 		ui_color_picker(color_picker_data);
 	}
 
@@ -106,7 +103,7 @@ frame_ui_tab_view(framed_ui_tab_view_theme)
 				if (comm.clicked)
 				{
 					ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
-					selected_color = &framed_ui_state->theme.colors[color];
+					color_picker_data->rgba = &framed_ui_state->theme.colors[color];
 				}
 			}
 			ui_spacer(ui_em(0.5f, 1));

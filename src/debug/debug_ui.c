@@ -674,10 +674,8 @@ ui_debug(Void *data)
 
 			UI_Key debug_time_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("DebugTimeColorCtxMenu"));
 
-			local Vec4F32 *selected_color = 0;
 			ui_ctx_menu(debug_time_color_ctx_menu)
 			{
-				color_picker_data->rgba = selected_color;
 				ui_color_picker(color_picker_data);
 			}
 
@@ -708,7 +706,7 @@ ui_debug(Void *data)
 							if (comm.clicked)
 							{
 								ui_ctx_menu_open(box->key, v2f32(0, 0), debug_time_color_ctx_menu);
-								selected_color = &ui_debug_stats.colors[time_index[i]];
+								color_picker_data->rgba = &ui_debug_stats.colors[time_index[i]];
 							}
 						}
 						ui_spacer(ui_em(0.1f, 1));
