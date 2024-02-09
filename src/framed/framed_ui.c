@@ -467,16 +467,6 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 ////////////////////////////////
 // hampus: Panels
 
-internal RectF32
-framed_ui_rect_from_panel(FramedUI_Panel *panel)
-{
-	// TODO(hampus): Can we calculate this without the need of UI_Box?
-	RectF32 result = {0};
-	UI_Box *box = ui_box_from_key(panel->box_key);
-	result = box->fixed_rect;
-	return(result);
-}
-
 internal FramedUI_Panel *
 framed_ui_panel_alloc(Arena *arena)
 {
@@ -583,8 +573,6 @@ framed_ui_update_panel(FramedUI_Panel *root)
 		UI_BoxFlag_ViewScroll,
 		root->string
 	);
-
-	root->box_key = box->key;
 
 	ui_push_parent(box);
 #if 1
@@ -970,6 +958,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 					struct Task
 					{
 						Task *next;
+						Task *prev;
 						FramedUI_Tab *tab;
 						UI_Box *box;
 					};
@@ -1004,7 +993,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 							Task *task = push_struct(scratch.arena, Task);
 							task->tab = tab;
 							task->box = tab_column;
-							queue_push(first_task, last_task, task);
+							dll_push_back(first_task, last_task, task);
 						}
 						ui_spacer(ui_em(tab_spacing_em, 1));
 					}
@@ -1012,11 +1001,20 @@ framed_ui_update_panel(FramedUI_Panel *root)
 					ui_named_row_end();
 
 					// NOTE(hampus): Make sure the active box is in view
-					if (first_task)
+					if (root->tab_group.count > 0)
 					{
 						FramedUI_Tab *active_tab = root->tab_group.active_tab;
+						UI_Box *last_box = &g_nil_box;
+						for (Task *task = last_task; task; task = task->prev)
+						{
+							last_box = task->box;
+							if (!ui_box_was_created_this_frame(last_box))
+							{
+								break;
+							}
+						}
 
-						F32 end = last_task->box->rel_pos.x + last_task->box->fixed_size.x;
+						F32 end = last_box->rel_pos.x + last_box->fixed_size.x;
 
 						F32 required_tab_bar_width = end - first_task->box->rel_pos.x;
 						tab_overflow = required_tab_bar_width > tabs_container->fixed_size.x && root->tab_group.count >= 2;
@@ -1564,7 +1562,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
-	}
+}
 #endif
 	// NOTE(hampus): Update Windows
 

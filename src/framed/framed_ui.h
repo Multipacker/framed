@@ -89,8 +89,8 @@ struct FramedUI_TabViewInfo
 typedef struct FramedUI_DragData FramedUI_DragData;
 struct FramedUI_DragData
 {
-	FramedUI_Tab    *tab;
-	FramedUI_Panel  *hovered_panel;
+	FramedUI_Tab   *tab;
+	FramedUI_Panel *hovered_panel;
 	Vec2F32 drag_origin;
 };
 
@@ -130,8 +130,6 @@ struct FramedUI_Panel
 	FramedUI_TabGroup tab_group;
 
 	FramedUI_Window *window;
-
-	UI_Key box_key;
 
 	Axis2 split_axis;
 	F32 pct_of_parent;
@@ -296,7 +294,6 @@ internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, Framed
 ////////////////////////////////
 // hampus: Panels
 
-internal RectF32 framed_ui_rect_from_panel(FramedUI_Panel *panel);
 internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////

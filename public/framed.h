@@ -155,7 +155,7 @@ void framed_zone_end(void);
 
 #define FRAMED_BUFFER_CAPACITY (4 * 1024)
 
-# include <string.h>
+#include <string.h>
 
 #if COMPILER_CL
 # include <intrin.h>
