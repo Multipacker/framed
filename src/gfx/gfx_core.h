@@ -156,5 +156,6 @@ internal Void          gfx_toggle_fullscreen(Gfx_Context *gfx);
 internal Void          gfx_swap_buffers(Gfx_Context *gfx);
 internal Vec2F32       gfx_get_dpi(Gfx_Context *ctx);
 internal Void          gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor);
+internal Void          gfx_set_window_maximized(Gfx_Context *ctx);
 
 #endif //GFX_ESSENTIAL_H

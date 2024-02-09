@@ -317,7 +317,7 @@ gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 	// TODO(simon): SDL doesn't seem to have support for this for some reason?
 }
 
-internal void
+internal Void
 gfx_set_window_maximized(Gfx_Context *ctx)
 {
 	SDL_MaximizeWindow(ctx->window);
