@@ -867,57 +867,52 @@ s8_from_str8(Str8 string, S8 *destination)
 internal U64
 f64_from_str8(Str8 string, F64 *destination)
 {
-	U64 result = 0;
+	U64 bytes_read = 0;
+	B32 found_sign = false;
+	B32 found_dot = false;
+	for (; bytes_read < string.size; ++bytes_read)
+	{
+		U8 ch = string.data[bytes_read];
+		if (ch == '-' || ch == '+')
+		{
+			if (!found_sign)
+			{
+				found_sign = true;
+			}
+			else
+			{
+				break;
+			}
+		}
+		else if (ch == '.')
+		{
+			if (!found_dot)
+			{
+				found_dot = true;
+			}
+			else
+			{
+				break;
+			}
+		}
+		else if (ch == 'f')
+		{
+			bytes_read++;
+			break;
+		}
+		else if (!is_num(ch))
+		{
+			break;
+		}
+	}
+
 	arena_scratch(0, 0)
 	{
-		CStr buffer = push_array(scratch, char, string.size+1);
-		U64 i = 0;
-		B32 found_sign = false;
-		B32 found_dot = false;
-		for (; i < string.size; ++i)
-		{
-			U8 ch = string.data[i];
-			if (ch == '-' || ch == '+')
-			{
-				if (!found_sign)
-				{
-					found_sign = true;
-				}
-				else
-				{
-					break;
-				}
-			}
-			else if (ch == '.')
-			{
-				if (!found_dot)
-				{
-					found_dot = true;
-				}
-				else
-				{
-					break;
-				}
-			}
-			else if (ch == 'f')
-			{
-				i++;
-				break;
-			}
-			else if (!is_num(ch))
-			{
-				break;
-			}
-
-			buffer[i] = (char) ch;
-		}
-		buffer[i] = 0;
-
-		*destination = atof(buffer);
-
-		result = i;
+		CStr cstr = cstr_from_str8(scratch, str8_prefix(string, bytes_read));
+		*destination = atof(cstr);
 	}
-	return(result);
+
+	return(bytes_read);
 }
 
 internal
