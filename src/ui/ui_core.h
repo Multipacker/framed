@@ -42,8 +42,8 @@ enum UI_BoxFlags
 	// NOTE(hampus): This decides if the children
 	// of the box are allowed to go outside of
 	// the parent region
-	UI_BoxFlag_OverflowX       = (1 << 9),
-	UI_BoxFlag_OverflowY       = (1 << 10),
+	UI_BoxFlag_AllowOverflowX       = (1 << 9),
+	UI_BoxFlag_AllowOverflowY       = (1 << 10),
 
 	// NOTE(hampus): This decides if the box's rect should be pushed as a clip
 	// rect when it is rendered and for input.
@@ -55,22 +55,24 @@ enum UI_BoxFlags
 	//
 	// Set the position with ui_push/next_relative_pos
 	// It will be relative to the parent.
-	UI_BoxFlag_FloatingX       = (1 << 12),
-	UI_BoxFlag_FloatingY       = (1 << 13),
+	UI_BoxFlag_FixedX       = (1 << 12),
+	UI_BoxFlag_FixedY       = (1 << 13),
 
-	UI_BoxFlag_AnimateX        = (1 << 14),
-	UI_BoxFlag_AnimateY        = (1 << 15),
+	UI_BoxFlag_FixedRect = (1 << 14),
 
-	UI_BoxFlag_AnimateWidth    = (1 << 16),
-	UI_BoxFlag_AnimateHeight   = (1 << 17),
+	UI_BoxFlag_AnimateX = (1 << 15),
+	UI_BoxFlag_AnimateY = (1 << 16),
 
-	UI_BoxFlag_AnimateScrollX    = (1 << 17),
-	UI_BoxFlag_AnimateScrollY   = (1 << 18),
+	UI_BoxFlag_AnimateWidth  = (1 << 17),
+	UI_BoxFlag_AnimateHeight = (1 << 18),
+
+	UI_BoxFlag_AnimateScrollX = (1 << 19),
+	UI_BoxFlag_AnimateScrollY = (1 << 20),
 
 	UI_BoxFlag_AnimateScroll = UI_BoxFlag_AnimateScrollX | UI_BoxFlag_AnimateScrollY,
-	UI_BoxFlag_FloatingPos     = UI_BoxFlag_FloatingX | UI_BoxFlag_FloatingY,
-	UI_BoxFlag_AnimatePos      = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
-	UI_BoxFlag_AnimateDim      = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
+	UI_BoxFlag_FixedPos      = UI_BoxFlag_FixedX | UI_BoxFlag_FixedY,
+	UI_BoxFlag_AnimatePos    = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
+	UI_BoxFlag_AnimateDim    = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
 };
 
 typedef enum UI_SizeKind UI_SizeKind;
@@ -144,6 +146,9 @@ struct UI_LayoutStyle
 	Vec2F32     relative_pos;
 	Axis2       child_layout_axis;
 	UI_BoxFlags box_flags;
+
+	// TODO(hampus): This will make each UI_Box have a double fixed_rect
+	RectF32     fixed_rect;
 };
 
 typedef struct UI_RectStyleStack UI_RectStyleStack;
@@ -389,7 +394,7 @@ struct UI_Context
 };
 
 ////////////////////////////////
-//~ hampus: Accessor functions
+// hampus: Accessor functions
 
 internal F64             ui_dt(Void);
 internal Render_Context *ui_renderer(Void);
@@ -404,18 +409,18 @@ internal B32             ui_animations_enabled(Void);
 internal F32             ui_animation_speed(Void);
 
 ////////////////////////////////
-//~ hampus: Keying
+// hampus: Keying
 
 internal UI_Key ui_key_null(Void);
 internal B32    ui_key_is_null(UI_Key key);
 internal B32    ui_key_match(UI_Key a, UI_Key b);
 internal UI_Key ui_key_from_string(UI_Key seed, Str8 string);
-internal UI_Key ui_key_from_string_f(UI_Key seed, CStr fmt, ...);
+internal UI_Key ui_key_from_stringf(UI_Key seed, CStr fmt, ...);
 internal Str8   ui_get_hash_part_from_string(Str8 string);
 internal Str8   ui_get_display_part_from_string(Str8 string);
 
 ////////////////////////////////
-//~ hampus: Sizing
+// hampus: Sizing
 
 internal UI_Size ui_pixels(F32 value, F32 strictness);
 internal UI_Size ui_text_content(F32 strictness);
@@ -425,12 +430,12 @@ internal UI_Size ui_em(F32 value, F32 strictness);
 internal UI_Size ui_fill(Void);
 
 ////////////////////////////////
-//~ hampus: Text editing
+// hampus: Text editing
 
 internal UI_TextAction ui_text_action_from_event(Gfx_Event *event);
 
 ////////////////////////////////
-//~ hampus: Box
+// hampus: Box
 
 internal UI_Comm ui_comm_from_box(UI_Box *box);
 internal B32     ui_box_is_active(UI_Box *box);
@@ -441,15 +446,14 @@ internal Void    ui_box_free(UI_Box *box);
 internal B32     ui_box_has_flag(UI_Box *box, UI_BoxFlags flag);
 internal UI_Box *ui_box_from_key(UI_Key key);
 internal UI_Box *ui_box_make(UI_BoxFlags flags, Str8 string);
-internal UI_Box *ui_box_make_f(UI_BoxFlags flags, CStr fmt, ...);
+internal UI_Box *ui_box_makef(UI_BoxFlags flags, CStr fmt, ...);
 internal Void    ui_box_equip_display_string(UI_Box *box, Str8 string);
 internal Void    ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc);
-internal RectF32 ui_box_get_fixed_rect(UI_Box *box);
 internal B32     ui_box_was_created_this_frame(UI_Box *box);
 internal B32     ui_mouse_is_inside_box(UI_Box *box);
 
 ////////////////////////////////
-//~ hampus: Ctx menu
+// hampus: Ctx menu
 
 internal B32    ui_ctx_menu_begin(UI_Key key);
 internal Void   ui_ctx_menu_end(Void);
@@ -459,20 +463,20 @@ internal B32    ui_ctx_menu_is_open(Void);
 internal UI_Key ui_ctx_menu_key(Void);
 
 ////////////////////////////////
-//~ hampus: Tooltip
+// hampus: Tooltip
 
 internal Void ui_tooltip_begin(Void);
 internal Void ui_tooltip_end(Void);
 
 ////////////////////////////////
-//~ hampus: Init, begin end
+// hampus: Init, begin end
 
 internal UI_Context *ui_init(Void);
 internal Void        ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
 internal Void        ui_end(Void);
 
 ////////////////////////////////
-//~ hampus: Layout pass
+// hampus: Layout pass
 
 internal Void ui_solve_independent_sizes(UI_Box *root, Axis2 axis);
 internal Void ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis);
@@ -482,21 +486,21 @@ internal Void ui_layout(UI_Box *root);
 internal Void ui_solve_size_violations(UI_Box *root, Axis2 axis);
 
 ////////////////////////////////
-//~ hampus: Draw pass
+// hampus: Draw pass
 
 internal Vec2F32 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding);
 internal Vec2F32 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align);
 internal Void    ui_draw(UI_Box *root);
 
 ////////////////////////////////
-//~ hampus: Stack helpers
+// hampus: Stack helpers
 
 internal F32            ui_top_font_line_height(Void);
 internal Render_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
 internal Render_FontKey ui_top_font_key(Void);
 
 ////////////////////////////////
-//~ hampus: Stack managing
+// hampus: Stack managing
 
 internal UI_Box         *ui_top_parent(Void);
 internal UI_Box         *ui_push_parent(UI_Box *box);
@@ -520,7 +524,7 @@ internal Void            ui_pop_layout_style(Void);
 internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 
 ////////////////////////////////
-//~ hampus: Defers
+// hampus: Defers
 
 #define ui_parent(box)   defer_loop(ui_push_parent(box), ui_pop_parent())
 #define ui_seed(string)  defer_loop(ui_push_string(string), ui_pop_string())
@@ -528,7 +532,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_ctx_menu(key) defer_loop_checked(ui_ctx_menu_begin(key), ui_ctx_menu_end())
 
 ////////////////////////////////
-//~ hampus: Rect styling
+// hampus: Rect styling
 
 #define ui_next_colors(c0, c1, c2, c3) memory_copy_array(ui_get_auto_pop_rect_style()->color, ((Vec4F32[4]){c0, c1, c2, c3}))
 
@@ -603,7 +607,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_hover_cursor(x)      defer_loop(ui_push_hover_cursor(x), ui_pop_hover_cursor())
 
 ////////////////////////////////
-//~ hampus: Text styling
+// hampus: Text styling
 
 #define ui_next_text_color(c) ui_get_auto_pop_text_style()->color = c
 #define ui_push_text_color(c) ui_push_text_style()->color = c
@@ -636,7 +640,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_font(x)      defer_loop(ui_push_font(x), ui_pop_font())
 
 ////////////////////////////////
-//~ hampus: Layout styling
+// hampus: Layout styling
 
 #define ui_next_size(axis, sz) ui_get_auto_pop_layout_style()->size[axis] = sz
 #define ui_push_size(axis, sz) ui_push_layout_style()->size[axis] = sz
@@ -654,7 +658,7 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_height(sz)      defer_loop(ui_push_height(sz), ui_pop_height())
 
 // NOTE(hampus): For these to work, the box has to have either
-// UI_BoxFlag_FloatingX and/or UI_BoxFlag_FloatingY flag
+// UI_BoxFlag_FixedX and/or UI_BoxFlag_FixedY flag
 #define ui_next_relative_pos(axis, p) ui_get_auto_pop_layout_style()->relative_pos.v[axis] = p
 #define ui_push_relative_pos(axis, p) ui_push_layout_style()->relative_pos.v[axis] = p
 #define ui_pop_relative_pos()         ui_pop_layout_style()
@@ -669,5 +673,10 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_push_extra_box_flags(x) ui_push_layout_style()->box_flags = x
 #define ui_pop_extra_box_flags()   ui_pop_layout_style()
 #define ui_extra_box_flags(x)      defer_loop(ui_push_extra_box_flags(x), ui_pop_extra_box_flags());
+
+#define ui_next_fixed_rect(x) ui_get_auto_pop_layout_style()->fixed_rect = x
+#define ui_push_fixed_rect(x) ui_push_layout_style()->fixed_rect = x
+#define ui_pop_fixed_rect()   ui_pop_layout_style()
+#define ui_fixed_rect(x)      defer_loop(ui_push_fixed_rect(x), ui_pop_fixed_rect());
 
 #endif //UI_CORE_H

@@ -24,7 +24,7 @@ ui_text(Str8 string)
 internal Void
 ui_textf(CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -44,7 +44,7 @@ ui_image(Render_TextureSlice slice, Str8 string)
 internal UI_Comm
 ui_imagef(Render_TextureSlice slice, CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -74,7 +74,7 @@ ui_button(Str8 string)
 internal UI_Comm
 ui_buttonf(CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -86,7 +86,7 @@ ui_buttonf(CStr fmt, ...)
 internal UI_Comm
 ui_check(B32 *value, Str8 string)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 
 	ui_next_width(ui_em(1.0f, 1));
 	ui_next_height(ui_em(1.0f, 1));
@@ -121,7 +121,7 @@ ui_check(B32 *value, Str8 string)
 internal UI_Comm
 ui_checkf(B32 *value, CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
@@ -180,7 +180,7 @@ ui_pop_scrollable_region_axis(Axis2 axis)
 		ui_next_size(axis, ui_pixels(size, 1));
 		UI_Box *scrollbar = ui_box_make(
 			UI_BoxFlag_DrawBackground |
-			(UI_BoxFlags) (UI_BoxFlag_FloatingX << axis) |
+			(UI_BoxFlags) (UI_BoxFlag_FixedX << axis) |
 			UI_BoxFlag_HotAnimation |
 			UI_BoxFlag_Clickable |
 			(UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis) |
@@ -278,7 +278,7 @@ ui_pop_scrollable_region(Void)
 			ui_next_size(axis, ui_pixels(size, 1));
 			UI_Box *scrollbar = ui_box_make(
 				UI_BoxFlag_DrawBackground |
-				(UI_BoxFlags) (UI_BoxFlag_FloatingX << axis) |
+				(UI_BoxFlags) (UI_BoxFlag_FixedX << axis) |
 				UI_BoxFlag_HotAnimation |
 				UI_BoxFlag_Clickable |
 				(UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis) |
@@ -338,7 +338,7 @@ ui_named_row_end(Void)
 internal UI_Box *
 ui_named_row_beginfv(CStr fmt, va_list args)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_row_begin(string);
 	return(box);
@@ -347,7 +347,7 @@ ui_named_row_beginfv(CStr fmt, va_list args)
 internal UI_Box *
 ui_named_row_beginf(CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	UI_Box *box = ui_named_row_beginfv(fmt, args);
@@ -387,7 +387,7 @@ ui_named_column_end(Void)
 internal UI_Box *
 ui_named_column_beginfv(CStr fmt, va_list args)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
 	UI_Box *box = ui_named_column_begin(string);
 	return(box);
@@ -396,7 +396,7 @@ ui_named_column_beginfv(CStr fmt, va_list args)
 internal UI_Box *
 ui_named_column_beginf(CStr fmt, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, fmt);
 	UI_Box *box = ui_named_column_beginfv(fmt, args);
@@ -454,7 +454,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 
 		ui_parent(combo_box)
 		{
-			UI_Key combo_box_key = ui_key_from_string_f(ui_key_null(), "%"PRISTR8"ComboItems", str8_expand(name));
+			UI_Key combo_box_key = ui_key_from_stringf(ui_key_null(), "%"PRISTR8"ComboItems", str8_expand(name));
 
 			ui_next_width(params->item_size);
 			ui_next_height(ui_text_content(1));
@@ -542,7 +542,7 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 	// NOTE(hampus): Indicator
 	ui_parent(sat_val_box)
 	{
-		Vec2F32 pos = { 0 };
+		Vec2F32 pos = {0};
 		F32 indicator_size_px = ui_em(0.5f, 1).value;
 		ui_next_width(ui_pixels(indicator_size_px, 1));
 		ui_next_height(ui_pixels(indicator_size_px, 1));
@@ -551,7 +551,7 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 		ui_next_corner_radius(5);
 		ui_box_make(
 			UI_BoxFlag_DrawBorder |
-			UI_BoxFlag_FloatingPos,
+			UI_BoxFlag_FixedPos,
 			str8_lit("")
 		);
 	}
@@ -583,7 +583,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 	{
 		F32 rect_width = root->fixed_rect.max.x - root->fixed_rect.min.x;
 		F32 rect_height = root->fixed_rect.max.y - root->fixed_rect.min.y;
-		RectF32 rect = { 0 };
+		RectF32 rect = {0};
 		rect.min = root->fixed_rect.min;
 		rect.max = v2f32(root->fixed_rect.max.x, root->fixed_rect.min.y + rect_height / 6);
 		for (U32 i = 0; i < 6; ++i)
@@ -649,7 +649,7 @@ ui_hue_picker(F32 *out_hue, Str8 string)
 		ui_next_height(ui_pixels(3, 1));
 		ui_box_make(
 			UI_BoxFlag_DrawBackground |
-			UI_BoxFlag_FloatingPos,
+			UI_BoxFlag_FixedPos,
 			str8_lit("")
 		);
 	}
@@ -658,7 +658,7 @@ ui_hue_picker(F32 *out_hue, Str8 string)
 internal Void
 ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 {
-	Vec4F32 top_color = { 0 };
+	Vec4F32 top_color = {0};
 	top_color.rgb = rgb_from_hsv(hsv);
 	top_color.a = 1.0f;
 	Vec4F32 bottom_color = top_color;
@@ -689,7 +689,7 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
 		ui_next_height(ui_pixels(3, 1));
 		ui_box_make(
 			UI_BoxFlag_DrawBackground |
-			UI_BoxFlag_FloatingPos,
+			UI_BoxFlag_FixedPos,
 			str8_lit("")
 		);
 	}
@@ -707,7 +707,7 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 		swap(min_range, max_range, U64);
 	}
 	U64 replace_range_length = max_range - min_range;
-	Str8 new_buffer = { 0 };
+	Str8 new_buffer = {0};
 	U64 new_buffer_size = edit_str.size - replace_range_length + replace_str.size;
 	new_buffer.data = push_array(arena, U8, new_buffer_size);
 	new_buffer.size = new_buffer_size;
@@ -758,7 +758,7 @@ ui_get_character_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
 internal UI_Comm
 ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, Str8 string)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	ui_seed(string)
 	{
 		Str8 buffer_str8 = str8(buffer, buffer_size);
@@ -775,7 +775,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 			string
 		);
 
-		Str8 edit_str = (Str8) { buffer, *string_length };
+		Str8 edit_str = (Str8) {buffer, *string_length};
 
 		comm = ui_comm_from_box(box);
 		if (comm.pressed)
@@ -824,7 +824,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 				ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
 				UI_Box *cursor_box = ui_box_make(
 					UI_BoxFlag_DrawBackground |
-					UI_BoxFlag_FloatingPos,
+					UI_BoxFlag_FixedPos,
 					str8_lit("CursorBox")
 				);
 
@@ -844,7 +844,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 					ui_next_color(v4f32(0.5f, 0.5f, 0.9f, 0.4f));
 					UI_Box *mark_box = ui_box_make(
 						UI_BoxFlag_DrawBackground |
-						UI_BoxFlag_FloatingPos,
+						UI_BoxFlag_FixedPos,
 						str8_lit("MarkBox")
 					);
 				}
@@ -894,7 +894,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 internal UI_Comm
 ui_line_editf(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *string_length, CStr format, ...)
 {
-	UI_Comm comm = { 0 };
+	UI_Comm comm = {0};
 	va_list args;
 	va_start(args, format);
 	Str8 string = str8_pushfv(ui_frame_arena(), format, args);
@@ -986,7 +986,7 @@ ui_color_picker(UI_ColorPickerData *data)
 			str8_lit("A:"),
 		};
 
-		Str8 text_buffer_str8[4] = { 0 };
+		Str8 text_buffer_str8[4] = {0};
 
 		for (U64 i = 0; i < 4; ++i)
 		{

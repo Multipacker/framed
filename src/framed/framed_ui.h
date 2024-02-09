@@ -91,8 +91,7 @@ struct FramedUI_DragData
 {
 	FramedUI_Tab    *tab;
 	FramedUI_Panel  *hovered_panel;
-	Vec2F32  				window_offset;
-	Vec2F32  				drag_origin;
+	Vec2F32 drag_origin;
 };
 
 typedef struct FramedUI_Tab FramedUI_Tab;
@@ -130,9 +129,9 @@ struct FramedUI_Panel
 
 	FramedUI_TabGroup tab_group;
 
-	UI_Box *box;
-
 	FramedUI_Window *window;
+
+	UI_Key box_key;
 
 	Axis2 split_axis;
 	F32 pct_of_parent;
@@ -159,12 +158,7 @@ struct FramedUI_Window
 
 	FramedUI_Panel *root_panel;
 
-	UI_Box *box;
-
-	// TODO(hampus): Change this to min and max instead
-	Vec2F32 pos;
-	// TODO(hampus): Change to pixels
-	Vec2F32 size;
+	RectF32 rect;
 
 	Str8 string;
 
@@ -203,7 +197,6 @@ struct FramedUI_State
 	U64 num_tabs;
 	U64 num_windows;
 
-	UI_Box *window_container;
 	FramedUI_Window *master_window;
 	FramedUI_Window *next_top_most_window;
 
@@ -292,7 +285,7 @@ struct FramedUI_WindowPushToFront
 FRAMED_UI_COMMAND(tab_close);
 
 ////////////////////////////////
-//~ hampus: Command helpers
+// hampus: Command helpers
 
 internal Void framed_ui_tab_close(FramedUI_Tab *tab);
 
@@ -301,12 +294,13 @@ internal Void framed_ui_panel_split(FramedUI_Panel *first, Axis2 split_axis);
 internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////
-//~ hampus: Panels
+// hampus: Panels
 
+internal RectF32 framed_ui_rect_from_panel(FramedUI_Panel *panel);
 internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, Axis2 axis, Side side);
 
 ////////////////////////////////
-//~ hampus: Window
+// hampus: Window
 
 internal Void framed_ui_window_reorder_to_front(FramedUI_Window *window);
 internal Void framed_ui_window_push_to_front(FramedUI_Window *window);

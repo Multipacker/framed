@@ -31,7 +31,7 @@
 #include "framed/framed_ui.c"
 
 ////////////////////////////////
-//~ hampus: Tab views
+// hampus: Tab views
 
 frame_ui_tab_view(framed_ui_tab_view_logger)
 {
@@ -116,7 +116,7 @@ frame_ui_tab_view(framed_ui_tab_view_theme)
 			ui_next_width(ui_text_content(1));
 			if (ui_button(str8_lit("Dump theme to file")).clicked)
 			{
-				Str8List string_list = { 0 };
+				Str8List string_list = {0};
 				for (FramedUI_Color color = (FramedUI_Color) 0; color < FramedUI_Color_COUNT; ++color)
 				{
 					Str8 label = framed_ui_string_from_color(color);
@@ -139,7 +139,7 @@ frame_ui_tab_view(framed_ui_tab_view_theme)
 }
 
 ////////////////////////////////
-//~ hampus: Main
+// hampus: Main
 
 internal S32
 os_main(Str8List arguments)
@@ -173,7 +173,7 @@ os_main(Str8List arguments)
 	{
 		net_socket_bind(socket, address);
 		Net_AcceptResult accept_result = net_socket_accept(socket);
-		U8 buffer[256] = { 0 };
+		U8 buffer[256] = {0};
 		net_socket_recieve_from(accept_result.socket, accept_result.address, buffer, array_count(buffer));
 		log_info((CStr) buffer);
 	}
@@ -196,7 +196,7 @@ os_main(Str8List arguments)
 	frame_arenas[0] = arena_create("MainFrame0");
 	frame_arenas[1] = arena_create("MainFrame1");
 
-	Render_TextureSlice image_texture = { 0 };
+	Render_TextureSlice image_texture = {0};
 	if (arguments.first->next)
 	{
 		image_texture = render_create_texture_slice(renderer, arguments.first->next->string);
@@ -227,14 +227,19 @@ os_main(Str8List arguments)
 	framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
 	framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
-	FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), v2f32(1.0f, 1.0f));
-	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 50), v2f32(0.5f, 0.5f));
+	Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
+	Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
+	FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), monitor_dim);
+
+	// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
+	// the window size, because on windows going maximized also shows the window which we don't want. So
+	// this will be a temporary solution
+	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 50), v2f32(500, 500));
 	{
-
-		FramedUI_Panel *first_panel = master_window->root_panel;
-
-		FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
 		{
+			// NOTE(hampus): Setup master window
+			FramedUI_Panel *first_panel = master_window->root_panel;
+			FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
 			{
 				FramedUI_TabAttach attach =
 				{
@@ -253,49 +258,47 @@ os_main(Str8List arguments)
 				};
 				framed_ui_command_tab_attach(&attach);
 			}
-		}
 
-		framed_ui_state->master_window = master_window;
-		framed_ui_state->next_focused_panel = first_panel;
-		// NOTE(hampus): Setup debug window
+			framed_ui_state->master_window = master_window;
+			framed_ui_state->next_focused_panel = first_panel;
+		}
 
 		{
+			// NOTE(hampus): Setup debug window
 			{
+				FramedUI_TabAttach attach =
 				{
-					FramedUI_TabAttach attach =
-					{
-						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_debug,
-						0, str8_lit("Debug")),
-						.panel = debug_window->root_panel,
-					};
-					framed_ui_command_tab_attach(&attach);
-				}
-				{
-					FramedUI_TabAttach attach =
-					{
-						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_logger,
-						0,
-						str8_lit("Log")),
-						.panel = debug_window->root_panel,
-					};
-					framed_ui_command_tab_attach(&attach);
-				}
-				{
-					FramedUI_TabAttach attach =
-					{
-						.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_texture_viewer,
-						&image_texture,
-						str8_lit("Texture Viewer")),
-						.panel = debug_window->root_panel,
-					};
-					framed_ui_command_tab_attach(&attach);
-				}
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_debug,
+					0, str8_lit("Debug")),
+					.panel = debug_window->root_panel,
+				};
+				framed_ui_command_tab_attach(&attach);
 			}
-			debug_window->flags |= FramedUI_WindowFlags_Closed;
+			{
+				FramedUI_TabAttach attach =
+				{
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_logger,
+					0,
+					str8_lit("Log")),
+					.panel = debug_window->root_panel,
+				};
+				framed_ui_command_tab_attach(&attach);
+			}
+			{
+				FramedUI_TabAttach attach =
+				{
+					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_texture_viewer,
+					&image_texture,
+					str8_lit("Texture Viewer")),
+					.panel = debug_window->root_panel,
+				};
+				framed_ui_command_tab_attach(&attach);
+			}
+			// debug_window->flags |= FramedUI_WindowFlags_Closed;
 		}
 	}
-	framed_ui_state->frame_index = 1;
 
+	framed_ui_state->frame_index = 1;
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
 	B32 running = true;

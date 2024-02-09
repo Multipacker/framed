@@ -61,6 +61,10 @@ if %build_mode% == "debug" (
 	echo Release Build
 	set compiler_flags=%compiler_flags% %release_compiler_flags%
 	set linker_flags=%linker_flags% %release_linker_flags%
+) else (
+	echo Debug Build
+	set compiler_flags=%compiler_flags% %debug_compiler_flags%
+	set linker_flags=%linker_flags% %debug_linker_flags%
 )
 
 if not exist build mkdir build

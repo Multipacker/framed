@@ -968,7 +968,7 @@ ui_texture_view(Render_TextureSlice atlas)
 
 			ui_next_corner_radius(0);
 			UI_Box *atlas_box = ui_box_make(
-				UI_BoxFlag_FloatingPos |
+				UI_BoxFlag_FixedX |
 				UI_BoxFlag_DrawBackground,
 				str8_lit("Texture")
 			);

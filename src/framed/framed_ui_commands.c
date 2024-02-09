@@ -1,7 +1,7 @@
 FRAMED_UI_COMMAND(panel_close);
 
 ////////////////////////////////
-//~ hampus: Tab commands
+// hampus: Tab commands
 
 FRAMED_UI_COMMAND(tab_close)
 {
@@ -138,7 +138,7 @@ FRAMED_UI_COMMAND(tab_swap)
 }
 
 ////////////////////////////////
-//~ hampus: UI_Panel commands
+// hampus: UI_Panel commands
 
 FRAMED_UI_COMMAND(panel_set_active_tab)
 {
