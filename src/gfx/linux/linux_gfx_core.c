@@ -326,7 +326,7 @@ gfx_set_window_maximized(Gfx_Context *ctx)
 internal Gfx_Monitor
 gfx_monitor_from_window(Gfx_Context *ctx)
 {
-	Gfx_Monitor result = {0};
+	Gfx_Monitor result = { 0 };
 	int display_index = SDL_GetWindowDisplayIndex(ctx->window);
 	result.u64[0] = (U64) display_index;
 	return(result);
@@ -335,8 +335,8 @@ gfx_monitor_from_window(Gfx_Context *ctx)
 internal Vec2F32
 gfx_dim_from_monitor(Gfx_Monitor monitor)
 {
-	Vec2F32 result = {0};
-	SDL_DisplayMode display_mode = {0};
+	Vec2F32 result = { 0 };
+	SDL_DisplayMode display_mode = { 0 };
 	SDL_GetCurrentDisplayMode((int) monitor.u64[0], &display_mode);
 	result.x = (F32) display_mode.w;
 	result.y = (F32) display_mode.h;
