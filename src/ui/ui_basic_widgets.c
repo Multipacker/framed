@@ -908,19 +908,13 @@ ui_color_picker(UI_ColorPickerData *data)
 {
 	if (data->text_buffer_size[0] == 0)
 	{
-		arena_scratch(0, 0)
+		for (U64 i = 0; i < 4; ++i)
 		{
-			for (U64 i = 0; i < 4; ++i)
-			{
-				data->text_buffer_size[i] = 4;
-				data->text_buffer[i] = push_array(ui_permanent_arena(), U8, data->text_buffer_size[i]);
-
-				Str8 str8 = str8_pushf(scratch, "%.2f", data->rgba->v[i]);
-				data->string_length[i] = u64_min(str8.size, data->text_buffer_size[i]);
-				memory_copy_typed(data->text_buffer[i], str8.data, data->string_length[i]);
-			}
+			data->text_buffer_size[i] = 4;
+			data->text_buffer[i] = push_array(ui_permanent_arena(), U8, data->text_buffer_size[i]);
 		}
 	}
+
 	Vec4F32 *rgba = data->rgba;
 	Vec3F32 hsv = hsv_from_rgb(rgba->rgb);
 	ui_next_width(ui_children_sum(1));
@@ -987,9 +981,6 @@ ui_color_picker(UI_ColorPickerData *data)
 
 		for (U64 i = 0; i < 4; ++i)
 		{
-			U64 length = 0;
-			UI_Box *box = 0;
-
 			ui_row()
 			{
 				ui_spacer(ui_em(0.5f, 1));
@@ -1004,21 +995,24 @@ ui_color_picker(UI_ColorPickerData *data)
 					data->string_length + i,
 					"ColorPickerLineEdit%d", i
 				);
-				box = comm.box;
-				F64 f64 = 0;
-				length = f64_from_str8(str8(data->text_buffer[i], data->string_length[i]), &f64);
-				rgba->v[i] = f32_clamp(0, (F32) f64, 1.0f);
-			}
-			ui_spacer(ui_em(0.5f, 1));
-			if (!ui_box_is_focused(box))
-			{
-				arena_scratch(0, 0)
+
+				if (ui_box_is_focused(comm.box))
 				{
-					Str8 text_buffer_str8 = str8_pushf(scratch, "%.2f", rgba->v[i]);
-					data->string_length[i] = u64_min(text_buffer_str8.size, data->text_buffer_size[i]);
-					memory_copy_typed(data->text_buffer[i], text_buffer_str8.data, data->string_length[i]);
+					F64 f64 = 0;
+					f64_from_str8(str8(data->text_buffer[i], data->string_length[i]), &f64);
+					rgba->v[i] = f32_clamp(0, (F32) f64, 1.0f);
+				}
+				else
+				{
+					arena_scratch(0, 0)
+					{
+						Str8 text_buffer_str8 = str8_pushf(scratch, "%.2f", rgba->v[i]);
+						data->string_length[i] = u64_min(text_buffer_str8.size, data->text_buffer_size[i]);
+						memory_copy_typed(data->text_buffer[i], text_buffer_str8.data, data->string_length[i]);
+					}
 				}
 			}
+			ui_spacer(ui_em(0.5f, 1));
 		}
 	}
 }
