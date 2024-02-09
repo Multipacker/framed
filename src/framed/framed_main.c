@@ -322,14 +322,7 @@ os_main(Str8List arguments)
 				}
 				else if (event->key == Gfx_Key_F1)
 				{
-					if (debug_window->flags & FramedUI_WindowFlags_Closed)
-					{
-						debug_window->flags &= (FramedUI_WindowFlags) ~FramedUI_WindowFlags_Closed;
-					}
-					else
-					{
-						debug_window->flags |= FramedUI_WindowFlags_Closed;
-					}
+					debug_window->flags ^= FramedUI_WindowFlags_Closed;
 				}
 			}
 		}
