@@ -6,6 +6,7 @@
 //          left of the active tab when the tab bar is full
 // [ ] @bug New window offset is wrong if you reorder tab and then drag it out
 // [ ] @code Keep a list of closed windows instead of flags
+// [ ] @code Free list of panels and tabs
 
 ////////////////////////////////
 // hampus: Medium term
@@ -388,6 +389,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 		ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
 		ui_next_color(framed_ui_color_from_theme(FramedUI_Color_InactiveTab));
 		UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable, str8_lit("CloseButton"));
+		
 		// TODO(hampus): We shouldn't need to do this here
 		// since there shouldn't even be any input events
 		// left in the queue if dragging is ocurring.
@@ -418,8 +420,12 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 			UI_Comm title_comm = ui_comm_from_box(title_container);
 			if (title_comm.pressed)
 			{
-				framed_ui_drag_begin_reordering(tab);
 				framed_ui_set_tab_to_active(tab);
+			}
+
+			if (title_comm.dragging && !title_comm.hovering)
+			{
+				framed_ui_drag_begin_reordering(tab);
 			}
 
 			// NOTE(hampus): Icon appearance
@@ -1013,7 +1019,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 								break;
 							}
 						}
-						
+
 						tab_overflow = tabs_container->scroll.x != 0 || (last_box->rel_pos.x+last_box->fixed_size.x) > tabs_container->fixed_size.x;
 
 						Vec2F32 tab_visiblity_range = v2f32(
