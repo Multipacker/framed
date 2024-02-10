@@ -424,6 +424,11 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 			if (title_comm.dragging && !title_comm.hovering)
 			{
 				framed_ui_drag_begin_reordering(tab);
+				// NOTE(hampus): Null the active key so the split previews
+				// can take input. This is needed because else the box will
+				// persist as the active & hot box
+				// TODO(hampus): Figure out some other way to do this.
+				ui_ctx->active_key = ui_key_null();
 			}
 
 			// NOTE(hampus): Icon appearance
