@@ -3,11 +3,9 @@ FRAMED_UI_COMMAND(panel_close);
 ////////////////////////////////
 // hampus: Tab commands
 
-FRAMED_UI_COMMAND(tab_close)
+FRAMED_UI_COMMAND(tab_deattach)
 {
-	FramedUI_TabDelete *data = (FramedUI_TabDelete *) params;
-
-	FramedUI_Tab *tab = data->tab;
+	FramedUI_Tab *tab = (FramedUI_Tab *) params;
 	FramedUI_Panel *panel = tab->panel;
 	if (tab == panel->tab_group.active_tab)
 	{
@@ -35,6 +33,16 @@ FRAMED_UI_COMMAND(tab_close)
 		};
 		framed_ui_command_panel_close(&close);
 	}
+	log_info("Executed command: tab_deattach (%"PRISTR8")", str8_expand(tab->string));
+}
+
+FRAMED_UI_COMMAND(tab_close)
+{
+	FramedUI_TabDelete *data = (FramedUI_TabDelete *) params;
+	FramedUI_Tab *tab = data->tab;
+	FramedUI_Panel *panel = tab->panel;
+	framed_ui_command_tab_deattach(tab);
+	framed_ui_tab_free(tab);
 	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
 }
 
@@ -163,13 +171,13 @@ FRAMED_UI_COMMAND(panel_split)
 	FramedUI_PanelSplit *data  = (FramedUI_PanelSplit *) params;
 	Axis2 split_axis  = data->axis;
 	FramedUI_Panel *child0     = data->panel;
-	FramedUI_Panel *child1     = framed_ui_panel_alloc(framed_ui_state->perm_arena);
+	FramedUI_Panel *child1     = framed_ui_panel_make();
 	child1->window = child0->window;
-	FramedUI_Panel *new_parent = framed_ui_panel_alloc(framed_ui_state->perm_arena);
+	FramedUI_Panel *new_parent = framed_ui_panel_make();
 	new_parent->window = child0->window;
 	new_parent->pct_of_parent = child0->pct_of_parent;
 	new_parent->split_axis = split_axis;
-	FramedUI_Panel *children[Side_COUNT] = { child0, child1 };
+	FramedUI_Panel *children[Side_COUNT] = {child0, child1};
 
 	// NOTE(hampus): Hook the new parent as a sibling
 	// to the panel's sibling

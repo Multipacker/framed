@@ -159,8 +159,6 @@ framed_ui_swap_tabs(FramedUI_Tab *tab0, FramedUI_Tab *tab1)
 	B32 result = false;
 	if (!(tab0->pinned || tab1->pinned))
 	{
-		framed_ui_state->swap_tab0 = tab0;
-		framed_ui_state->swap_tab1 = tab1;
 		result = true;
 	}
 	return(result);
@@ -265,8 +263,27 @@ framed_ui_drag_is_inactive(Void)
 internal FramedUI_Tab *
 framed_ui_tab_alloc(Arena *arena)
 {
-	FramedUI_Tab *result = push_struct(arena, FramedUI_Tab);
+	FramedUI_Tab *result = (FramedUI_Tab *) framed_ui_state->first_free_tab;
+	if (result == 0)
+	{
+		result = push_struct(framed_ui_state->perm_arena, FramedUI_Tab);
+	}
+	else
+	{
+		framed_ui_state->first_free_tab = framed_ui_state->first_free_tab->next;
+	}
+	memory_zero_struct(result);
+	result->next = result->prev = &g_nil_tab;
+	result->panel = &g_nil_panel;
 	return(result);
+}
+
+internal Void
+framed_ui_tab_free(FramedUI_Tab *tab)
+{
+	FramedUI_FreeTab *free_tab = (FramedUI_FreeTab *) tab;
+	free_tab->next = framed_ui_state->first_free_tab;
+	framed_ui_state->first_free_tab = free_tab;
 }
 
 internal Void
@@ -276,12 +293,11 @@ framed_ui_tab_equip_view_info(FramedUI_Tab *tab, FramedUI_TabViewInfo view_info)
 }
 
 frame_ui_tab_view(framed_ui_tab_view_default);
+
 internal FramedUI_Tab *
 framed_ui_tab_make(Arena *arena, FramedUI_TabViewProc *function, Void *data, Str8 name)
 {
 	FramedUI_Tab *result = framed_ui_tab_alloc(arena);
-	result->next = result->prev = &g_nil_tab;
-	result->panel = &g_nil_panel;
 	if (!name.size)
 	{
 		// NOTE(hampus): We probably won't do this in the future because
@@ -301,8 +317,8 @@ framed_ui_tab_make(Arena *arena, FramedUI_TabViewProc *function, Void *data, Str
 		result->view_info.function = framed_ui_tab_view_default;
 		result->view_info.data = result;
 	}
-	framed_ui_state->num_tabs++;
 	log_info("Allocated tab: %"PRISTR8, str8_expand(result->string));
+	framed_ui_state->num_tabs++;
 	return(result);
 }
 
@@ -330,8 +346,6 @@ framed_ui_tab_is_dragged(FramedUI_Tab *tab)
 internal UI_Box *
 framed_ui_tab_button(FramedUI_Tab *tab)
 {
-	assert(tab->frame_index != framed_ui_state->frame_index);
-	tab->frame_index = framed_ui_state->frame_index;
 	ui_push_string(tab->string);
 
 	B32 active = framed_ui_tab_is_active(tab);
@@ -408,7 +422,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 
 		if (framed_ui_drag_is_inactive())
 		{
-			UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
+			UI_Comm pin_box_comm = ui_comm_from_box(pin_box);
 			UI_Comm close_box_comm = {0};
 			if (!tab->pinned)
 			{
@@ -476,15 +490,40 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 ////////////////////////////////
 // hampus: Panels
 
+
 internal FramedUI_Panel *
-framed_ui_panel_alloc(Arena *arena)
+framed_ui_panel_alloc(Void)
 {
-	FramedUI_Panel *result = push_struct(arena, FramedUI_Panel);
+	FramedUI_Panel *result = (FramedUI_Panel *) framed_ui_state->first_free_panel;
+	if (result == 0)
+	{
+		result = push_struct(framed_ui_state->perm_arena, FramedUI_Panel);
+	}
+	else
+	{
+		framed_ui_state->first_free_panel = framed_ui_state->first_free_panel->next;
+	}
+	memory_zero_struct(result);
 	result->children[Side_Min] = result->children[Side_Max] = result->sibling = result->parent = &g_nil_panel;
 	result->tab_group.first = result->tab_group.active_tab = result->tab_group.last = &g_nil_tab;
+	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
+	return(result);
+}
+
+internal Void
+framed_ui_panel_free(FramedUI_Panel *panel)
+{
+	FramedUI_FreePanel *free_panel = (FramedUI_FreePanel *) panel;
+	free_panel->next = framed_ui_state->first_free_panel;
+	framed_ui_state->first_free_panel = free_panel;
+}
+
+internal FramedUI_Panel *
+framed_ui_panel_make(Void)
+{
+	FramedUI_Panel *result = framed_ui_panel_alloc();
 	result->string = str8_pushf(framed_ui_state->perm_arena, "UI_Panel%"PRIS32, framed_ui_state->num_panels);
 	framed_ui_state->num_panels++;
-	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
 	return(result);
 }
 
@@ -549,8 +588,6 @@ framed_ui_hover_panel_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, A
 internal Void
 framed_ui_update_panel(FramedUI_Panel *root)
 {
-	assert(root->frame_index != framed_ui_state->frame_index);
-	root->frame_index = framed_ui_state->frame_index;
 	switch (root->split_axis)
 	{
 		case Axis2_X: ui_next_child_layout_axis(Axis2_X); break;
@@ -1301,7 +1338,7 @@ framed_ui_window_make(Arena *arena, Vec2F32 min, Vec2F32 max)
 {
 	FramedUI_Window *result = framed_ui_window_alloc(arena);
 	result->root_panel = &g_nil_panel;
-	FramedUI_Panel *panel = framed_ui_panel_alloc(arena);
+	FramedUI_Panel *panel = framed_ui_panel_make();
 	panel->window = result;
 	result->rect.min = min;
 	result->rect.max = max;
@@ -1623,14 +1660,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
 				if (create_new_window)
 				{
-					// NOTE(hampus): Close the tab from the old panel
-					{
-						FramedUI_TabDelete tab_close =
-						{
-							.tab = drag_data->tab
-						};
-						framed_ui_command_tab_close(&tab_close);
-					}
+					framed_ui_command_tab_deattach(drag_data->tab);
 
 					FramedUI_Window *new_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), new_window_dim);
 
@@ -1685,6 +1715,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		FramedUI_Command *cmd = &node->command;
 		switch (cmd->kind)
 		{
+			case FramedUI_CommandKind_TabDeattach:  framed_ui_command_tab_deattach(cmd->data); break;
 			case FramedUI_CommandKind_TabAttach:  framed_ui_command_tab_attach(cmd->data); break;
 			case FramedUI_CommandKind_TabClose:   framed_ui_command_tab_close(cmd->data); break;
 			case FramedUI_CommandKind_TabSwap:    framed_ui_command_tab_swap(cmd->data); break;

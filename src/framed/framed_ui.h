@@ -16,6 +16,7 @@ typedef frame_ui_tab_view(FramedUI_TabViewProc);
 typedef enum FramedUI_CommandKind FramedUI_CommandKind;
 enum FramedUI_CommandKind
 {
+	FramedUI_CommandKind_TabDeattach,
 	FramedUI_CommandKind_TabAttach,
 	FramedUI_CommandKind_TabClose,
 	FramedUI_CommandKind_TabSwap,
@@ -94,6 +95,12 @@ struct FramedUI_DragData
 	Vec2F32 drag_origin;
 };
 
+typedef struct FramedUI_FreeTab FramedUI_FreeTab;
+struct FramedUI_FreeTab
+{
+	FramedUI_FreeTab *next;
+};
+
 typedef struct FramedUI_Tab FramedUI_Tab;
 struct FramedUI_Tab
 {
@@ -106,9 +113,6 @@ struct FramedUI_Tab
 	B32 pinned;
 
 	FramedUI_TabViewInfo view_info;
-
-	// NOTE(hampus): For debugging
-	U64 frame_index;
 };
 
 typedef struct FramedUI_TabGroup FramedUI_TabGroup;
@@ -118,6 +122,12 @@ struct FramedUI_TabGroup
 	FramedUI_Tab *first;
 	FramedUI_Tab *last;
 	U64 count;
+};
+
+typedef struct FramedUI_FreePanel FramedUI_FreePanel;
+struct FramedUI_FreePanel
+{
+	FramedUI_FreePanel *next;
 };
 
 typedef struct FramedUI_Panel FramedUI_Panel;
@@ -135,9 +145,6 @@ struct FramedUI_Panel
 	F32 pct_of_parent;
 
 	Str8 string;
-
-	// NOTE(hampus): For debugging
-	U64 frame_index;
 };
 
 typedef enum FramedUI_WindowFlags FramedUI_WindowFlags;
@@ -209,15 +216,15 @@ struct FramedUI_State
 	FramedUI_Panel *focused_panel;
 	FramedUI_Panel *next_focused_panel;
 
+	FramedUI_FreeTab *first_free_tab;
+	FramedUI_FreePanel *first_free_panel;
+
 	FramedUI_CommandList cmd_list;
 
 	FramedUI_WindowList window_list;
 
 	FramedUI_DragStatus drag_status;
 	FramedUI_DragData   drag_data;
-
-	FramedUI_Tab *swap_tab0;
-	FramedUI_Tab *swap_tab1;
 
 	FramedUI_Theme theme;
 
