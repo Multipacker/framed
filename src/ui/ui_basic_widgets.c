@@ -729,19 +729,25 @@ ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U
 	return(new_buffer);
 }
 
+// TODO(simon): This scan routine will drift if the font has kerning. This
+// means that the more "total kerning" we have, the more we will drift away
+// from the true character the mouse is really over.
 internal S64
-ui_get_character_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
+ui_get_codepoint_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
 {
 	S64 result = S64_MAX;
-	F32 x = -box->scroll.x;
 	Vec2F32 mouse_pos = ui_mouse_pos();
 	if (mouse_pos.x < box->fixed_rect.x0)
 	{
 		result = S64_MIN;
 	}
-	for (U64 i = 0; i < edit_str.size; ++i)
+
+	F32 x = -box->scroll.x;
+	for (U64 i = 0; i < edit_str.size;)
 	{
-		Vec2F32 dim = render_measure_character(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str.data[i]);
+		StringDecode decode = string_decode_utf8(&edit_str.data[i], edit_str.size - i);
+
+		Vec2F32 dim = render_measure_character(render_font_from_key(ui_renderer(), ui_top_font_key()), decode.codepoint);
 		RectF32 character_rect = box->fixed_rect;
 		character_rect.min.x = x;
 		character_rect.max.x = character_rect.min.x + dim.x;
@@ -750,8 +756,11 @@ ui_get_character_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
 			result = (S64) i;
 			break;
 		}
+
 		x += dim.x;
+		i += decode.size;
 	}
+
 	return(result);
 }
 
@@ -780,12 +789,12 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 		comm = ui_comm_from_box(box);
 		if (comm.pressed)
 		{
-			edit_state->cursor = edit_state->mark = (S64) ui_get_character_index_from_mouse_pos(box, edit_str);
+			edit_state->cursor = edit_state->mark = (S64) ui_get_codepoint_index_from_mouse_pos(box, edit_str);
 			edit_state->mark = s64_clamp(0, edit_state->mark, (S64) edit_str.size);
 		}
 		if (comm.dragging)
 		{
-			edit_state->cursor = (S64) ui_get_character_index_from_mouse_pos(box, edit_str);
+			edit_state->cursor = (S64) ui_get_codepoint_index_from_mouse_pos(box, edit_str);
 		}
 		edit_state->cursor = s64_clamp(0, edit_state->cursor, (S64) edit_str.size);
 
