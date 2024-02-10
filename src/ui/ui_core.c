@@ -521,7 +521,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		}
 		else
 		{
-			result.new_cursor += result.replace_string.size;
+			result.new_cursor += (S64) result.replace_string.size;
 		}
 		result.new_mark = result.new_cursor;
 	}
