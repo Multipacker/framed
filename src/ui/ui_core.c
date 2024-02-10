@@ -382,9 +382,9 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 	if (action->character)
 	{
-		result.replace_string.data = push_array(arena, U8, 1);
-		*result.replace_string.data = action->character;
-		result.replace_string.size = 1;
+		// NOTE(simon): Allocate enough space for encoding the longest Unicode codepoint in UTF-8.
+		result.replace_string.data = push_array(arena, U8, 4);
+		result.replace_string.size = string_encode_utf8(result.replace_string.data, action->character);
 
 		result.range.min = result.new_mark;
 		result.range.max = result.new_cursor;
