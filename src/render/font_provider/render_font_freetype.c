@@ -100,11 +100,8 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 							U32 *dst_row = dst;
 							for (U32 x = 0; x < bitmap_width; ++x)
 							{
-								U8 val = *src++;
-								*dst_row++ = (U32) ((0xff <<  0) |
-																		(0xff <<  8) |
-																		(0xff << 16) |
-																		(val  << 24));
+								U32 val = *src++;
+								*dst_row++ = (U32) (val << 24 | 0x00FFFFFF);
 							}
 
 							dst += renderer->font_atlas->dim.x;
@@ -161,12 +158,12 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 								*dst_row++ = 0xff;
 							}
 
-							dst += (S32) (renderer->font_atlas->dim.x * 4);
+							dst += renderer->font_atlas->dim.x * 4;
 
 							// NOTE(hampus): Freetype actually adds padding
 							// so the pitch is the correct width to increment
 							// by.
-							src += (S32) (face->glyph->bitmap.pitch);
+							src += face->glyph->bitmap.pitch;
 						}
 					}
 					else
@@ -223,8 +220,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
 internal S32
 render_pixels_from_font_unit(S32 funit, FT_Fixed scale)
 {
-	S32 result = 0;
-	result = (S32) ((F32) funit * ((F32) scale / 65536.0f)) >> 6;
+	S32 result = (S32) ((F32) funit * ((F32) scale / 65536.0f)) >> 6;
 	return(result);
 }
 

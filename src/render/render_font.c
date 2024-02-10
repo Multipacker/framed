@@ -119,7 +119,7 @@ render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegion
 			*dst_row++ = 0;
 		}
 
-		dst += (S32) (atlas->dim.x * 4);
+		dst += atlas->dim.x * 4;
 	}
 }
 
@@ -490,7 +490,7 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 	return(result);
 }
 
-internal void
+internal Void
 render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font, Vec4F32 color)
 {
 	Render_Glyph *glyph = font->glyphs + index;
@@ -498,16 +498,17 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
 	F32 xpos = min.x + glyph->bearing_in_pixels.x;
 	F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-	F32 width = (F32) glyph->size_in_pixels.x;
+	F32 width  = (F32) glyph->size_in_pixels.x;
 	F32 height = (F32) glyph->size_in_pixels.y;
 
-	render_rect(renderer,
-							v2f32(xpos, ypos),
-							v2f32(xpos + width,
-							ypos + height),
-							.slice = glyph->slice,
-							.color = color,
-							.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
+	render_rect(
+		renderer,
+		v2f32(xpos, ypos),
+		v2f32(xpos + width, ypos + height),
+		.slice = glyph->slice,
+		.color = color,
+		.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING
+	);
 }
 
 internal Void
@@ -523,7 +524,7 @@ render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Fo
 				U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
 				// TODO(hampus): Remove this if
-				if ((i+1) < text.size)
+				if (i + 1 < text.size)
 				{
 					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
 					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
@@ -566,7 +567,7 @@ render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_F
 				U32 index = render_glyph_index_from_codepoint(font, codepoint);
 
 				// TODO(hampus): Remove this if
-				if ((i+1) < text.size)
+				if (i + 1 < text.size)
 				{
 					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
 					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
@@ -592,16 +593,17 @@ render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, 
 		F32 xpos = min.x + glyph->bearing_in_pixels.x;
 		F32 ypos = min.y + (-glyph->bearing_in_pixels.y) + (font->max_ascent);
 
-		F32 width = (F32) glyph->size_in_pixels.x;
+		F32 width  = (F32) glyph->size_in_pixels.x;
 		F32 height = (F32) glyph->size_in_pixels.y;
 
-		render_rect(renderer,
-								v2f32(xpos, ypos),
-								v2f32(xpos + width,
-								ypos + height),
-								.slice = glyph->slice,
-								.color = color,
-								.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING);
+		render_rect(
+			renderer,
+			v2f32(xpos, ypos),
+			v2f32(xpos + width, ypos + height),
+			.slice = glyph->slice,
+			.color = color,
+			.is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING
+		);
 	}
 }
 
@@ -667,10 +669,9 @@ render_measure_multiline_text(Render_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
 	{
-		S32 length = (S32) text.size;
 		F32 max_row_width = 0;
 		F32 row_width = 0;
-		for (S32 i = 0; i < length; ++i)
+		for (U64 i = 0; i < text.size; ++i)
 		{
 			if (text.data[i] == '\n')
 			{
