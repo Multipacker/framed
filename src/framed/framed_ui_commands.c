@@ -338,12 +338,13 @@ FRAMED_UI_COMMAND(panel_close)
 	framed_ui_panel_free(data->panel);
 }
 
-FRAMED_UI_COMMAND(window_push_to_front)
+FRAMED_UI_COMMAND(window_set_top_most)
 {
-	FramedUI_WindowPushToFront *data = params;
+	FramedUI_WindowSetTopMost *data = params;
 	FramedUI_Window *window = data->window;
-	framed_ui_window_set_top_most(window);
-	log_info("Executed command: window_push_to_front");
+	dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
+	dll_push_front(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
+	log_info("Executed command: window_set_top_most");
 }
 
 FRAMED_UI_COMMAND(window_close)
@@ -351,5 +352,5 @@ FRAMED_UI_COMMAND(window_close)
 	FramedUI_WindowClose *data = params;
 	FramedUI_Window *window = data->window;
 	framed_ui_window_close(window);
-	log_info("Executed command: window_remove_from_list");
+	log_info("Executed command: window_close");
 }

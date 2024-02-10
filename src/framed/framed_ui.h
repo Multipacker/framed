@@ -24,7 +24,7 @@ enum FramedUI_CommandKind
 	FramedUI_CommandKind_PanelSetActiveTab,
 	FramedUI_CommandKind_PanelClose,
 	FramedUI_CommandKind_WindowClose,
-	FramedUI_CommandKind_WindowPushToFront,
+	FramedUI_CommandKind_WindowSetTopMost,
 };
 
 typedef enum FramedUI_TabReleaseKind FramedUI_TabReleaseKind;
@@ -285,13 +285,14 @@ struct FramedUI_WindowClose
 	FramedUI_Window *window;
 };
 
-typedef struct FramedUI_WindowPushToFront FramedUI_WindowPushToFront;
-struct FramedUI_WindowPushToFront
+typedef struct FramedUI_WindowSetTopMost FramedUI_WindowSetTopMost;
+struct FramedUI_WindowSetTopMost
 {
 	FramedUI_Window *window;
 };
 
 FRAMED_UI_COMMAND(tab_close);
+FRAMED_UI_COMMAND(window_set_top_most);
 
 ////////////////////////////////
 // hampus: Command helpers
@@ -312,7 +313,6 @@ internal Void framed_ui_panel_free(FramedUI_Panel *panel);
 // hampus: Window
 
 internal Void framed_ui_window_free(FramedUI_Window *window);
-internal Void framed_ui_window_reorder_to_front(FramedUI_Window *window);
 internal Void framed_ui_window_set_top_most(FramedUI_Window *window);
 internal Void framed_ui_window_close(FramedUI_Window *window);
 

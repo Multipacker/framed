@@ -681,7 +681,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 					}
 					if (root->window != framed_ui_state->master_window)
 					{
-						framed_ui_window_reorder_to_front(root->window);
+						framed_ui_window_set_top_most(root->window);
 					}
 				}
 			}
@@ -1289,22 +1289,13 @@ framed_ui_update_panel(FramedUI_Panel *root)
 // hampus: Window
 
 internal Void
-framed_ui_window_reorder_to_front(FramedUI_Window *window)
+framed_ui_window_set_top_most(FramedUI_Window *window)
 {
 	if (window != framed_ui_state->master_window)
 	{
-		if (!framed_ui_state->next_top_most_window)
-		{
-			framed_ui_state->next_top_most_window = window;
-		}
+		FramedUI_WindowSetTopMost *data = framed_ui_command_push(FramedUI_CommandKind_WindowSetTopMost);
+		data->window = window;
 	}
-}
-
-internal Void
-framed_ui_window_set_top_most(FramedUI_Window *window)
-{
-	dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
-	dll_push_front(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
 }
 
 internal Void
@@ -1359,7 +1350,8 @@ framed_ui_window_make(Arena *arena, Vec2F32 min, Vec2F32 max)
 	panel->window = result;
 	result->rect.min = min;
 	result->rect.max = max;
-	framed_ui_window_set_top_most(result);
+	FramedUI_WindowSetTopMost params = {result};
+	framed_ui_command_window_set_top_most(&params);
 	result->root_panel = panel;
 	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
 	return(result);
@@ -1689,7 +1681,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 				else
 				{
 					drag_data->tab->panel->sibling = &g_nil_panel;
-					framed_ui_window_reorder_to_front(drag_data->tab->panel->window);
+					framed_ui_window_set_top_most(drag_data->tab->panel->window);
 				}
 
 				framed_ui_window_set_pos(drag_data->tab->panel->window, ui_mouse_pos());
@@ -1740,14 +1732,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 			case FramedUI_CommandKind_PanelClose:          framed_ui_command_panel_close(cmd->data);            break;
 
 			case FramedUI_CommandKind_WindowClose:          framed_ui_command_window_close(cmd->data); break;
-			case FramedUI_CommandKind_WindowPushToFront:    framed_ui_command_window_push_to_front(cmd->data);    break;
+			case FramedUI_CommandKind_WindowSetTopMost:    framed_ui_command_window_set_top_most(cmd->data);    break;
 		}
-	}
-
-	if (framed_ui_state->next_top_most_window)
-	{
-		FramedUI_Window *window = framed_ui_state->next_top_most_window;
-		framed_ui_window_set_top_most(window);
 	}
 
 	if (framed_ui_panel_is_nil(framed_ui_state->next_focused_panel))
