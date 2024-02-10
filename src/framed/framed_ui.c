@@ -670,7 +670,7 @@ framed_ui_update_panel(FramedUI_Panel *root)
 
 		{
 			Gfx_EventList *event_list = ui_events();
-			if (ui_mouse_is_inside_box(box))
+			if (ui_mouse_is_inside_box(box) && !rectf32_contains_v2f32(ui_ctx->ctx_menu_root->fixed_rect, ui_mouse_pos()))
 			{
 				for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 				{
