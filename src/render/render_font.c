@@ -518,21 +518,38 @@ render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Fo
 	{
 		if (render_font_is_loaded(font))
 		{
-			for (U64 i = 0; i < text.size; ++i)
+			arena_scratch(0, 0)
 			{
-				U32 codepoint = text.data[i];
-				U32 index = render_glyph_index_from_codepoint(font, codepoint);
+				U32 *glyph_indicies = push_array(scratch, U32, text.size);
+				U64 count = 0;
 
-				// TODO(hampus): Remove this if
-				if (i + 1 < text.size)
+				U8 *ptr = text.data;
+				U8 *opl = text.data + text.size;
+
+				while (ptr < opl)
 				{
-					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
-					min.x += kerning_pair.value;
+					StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+					glyph_indicies[count] = render_glyph_index_from_codepoint(font, decode.codepoint);
+
+					++count;
+					ptr += decode.size;
 				}
 
-				render_glyph(renderer, min, index, font, color);
-				min.x += (font->glyphs[index].advance_width);
+				for (U64 i = 0; i < count; ++i)
+				{
+					U32 index = glyph_indicies[i];
+
+					// TODO(hampus): Remove this if
+					if (i + 1 < count)
+					{
+						U32 next_index = glyph_indicies[i + 1];
+						Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+						min.x += kerning_pair.value;
+					}
+
+					render_glyph(renderer, min, index, font, color);
+					min.x += font->glyphs[index].advance_width;
+				}
 			}
 		}
 	}
@@ -552,30 +569,48 @@ render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_F
 
 	if (render_font_is_loaded(font))
 	{
-		Vec2F32 origin = min;
-		for (U64 i = 0; i < text.size; ++i)
+		arena_scratch(0, 0)
 		{
-			U32 codepoint = text.data[i];
+			U32 *codepoints = push_array(scratch, U32, text.size);
+			U32 *glyph_indicies = push_array(scratch, U32, text.size);
+			U64 count = 0;
 
-			if (codepoint == '\n')
+			U8 *ptr = text.data;
+			U8 *opl = text.data + text.size;
+
+			while (ptr < opl)
 			{
-				min.x = origin.x;
-				min.y += font->line_height;
+				StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+				codepoints[count] = decode.codepoint;
+				glyph_indicies[count] = render_glyph_index_from_codepoint(font, decode.codepoint);
+
+				++count;
+				ptr += decode.size;
 			}
-			else
+
+			Vec2F32 origin = min;
+			for (U64 i = 0; i < count; ++i)
 			{
-				U32 index = render_glyph_index_from_codepoint(font, codepoint);
-
-				// TODO(hampus): Remove this if
-				if (i + 1 < text.size)
+				if (codepoints[i] == '\n')
 				{
-					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i+1]);
-					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
-					min.x += kerning_pair.value;
+					min.x  = origin.x;
+					min.y += font->line_height;
 				}
+				else
+				{
+					U32 index = glyph_indicies[i];
 
-				render_glyph(renderer, min, index, font, color);
-				min.x += (font->glyphs[index].advance_width);
+					// TODO(hampus): Remove this if
+					if (i + 1 < count)
+					{
+						U32 next_index = glyph_indicies[i + 1];
+						Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+						min.x += kerning_pair.value;
+					}
+
+					render_glyph(renderer, min, index, font, color);
+					min.x += font->glyphs[index].advance_width;
+				}
 			}
 		}
 	}
@@ -615,24 +650,42 @@ render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Fo
 }
 
 internal Vec2F32
-render_measure_text_length(Render_Font *font, Str8 text, U64 length)
+render_measure_text(Render_Font *font, Str8 text)
 {
 	Vec2F32 result = { 0 };
 	debug_function()
 	{
 		if (render_font_is_loaded(font))
 		{
-			for (U32 i = 0; i < length; ++i)
+			arena_scratch(0, 0)
 			{
-				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-				Render_Glyph *glyph = font->glyphs + index;
-				result.x += (glyph->advance_width);
+				U32 *glyph_indicies = push_array(scratch, U32, text.size);
+				U64 count = 0;
 
-				if (i + 1 < length)
+				U8 *ptr = text.data;
+				U8 *opl = text.data + text.size;
+
+				while (ptr < opl)
 				{
-					U32 next_index = render_glyph_index_from_codepoint(font, text.data[i + 1]);
-					Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
-					result.x += kerning_pair.value;
+					StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+					glyph_indicies[count] = render_glyph_index_from_codepoint(font, decode.codepoint);
+
+					++count;
+					ptr += decode.size;
+				}
+
+				for (U64 i = 0; i < count; ++i)
+				{
+					U32 index = glyph_indicies[i];
+					Render_Glyph *glyph = font->glyphs + index;
+					result.x += glyph->advance_width;
+
+					if (i + 1 < count)
+					{
+						U32 next_index = glyph_indicies[i + 1];
+						Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+						result.x += kerning_pair.value;
+					}
 				}
 			}
 
@@ -643,9 +696,9 @@ render_measure_text_length(Render_Font *font, Str8 text, U64 length)
 }
 
 internal Vec2F32
-render_measure_text(Render_Font *font, Str8 text)
+render_measure_text_length(Render_Font *font, Str8 text, U64 length)
 {
-	Vec2F32 result = render_measure_text_length(font, text, text.size);
+	Vec2F32 result = render_measure_text(font, str8_prefix(text, length));
 	return(result);
 }
 
@@ -669,26 +722,55 @@ render_measure_multiline_text(Render_Font *font, Str8 text)
 	Vec2F32 result = { 0 };
 	if (render_font_is_loaded(font))
 	{
-		F32 max_row_width = 0;
-		F32 row_width = 0;
-		for (U64 i = 0; i < text.size; ++i)
+		arena_scratch(0, 0)
 		{
-			if (text.data[i] == '\n')
+			U32 *codepoints = push_array(scratch, U32, text.size);
+			U32 *glyph_indicies = push_array(scratch, U32, text.size);
+			U32 count = 0;
+
+			U8 *ptr = text.data;
+			U8 *opl = text.data + text.size;
+
+			while (ptr < opl)
 			{
-				max_row_width = f32_max(row_width, max_row_width);
-				row_width = 0;
-				result.y += font->line_height;
+				StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+				codepoints[count] = decode.codepoint;
+				glyph_indicies[count] = render_glyph_index_from_codepoint(font, decode.codepoint);
+
+				++count;
+				ptr += decode.size;
 			}
-			else
+
+			F32 max_row_width = 0;
+			F32 row_width = 0;
+			for (U64 i = 0; i < count; ++i)
 			{
-				U32 index = render_glyph_index_from_codepoint(font, text.data[i]);
-				Render_Glyph *glyph = font->glyphs + index;
-				row_width += (glyph->advance_width);
+				if (codepoints[i] == '\n')
+				{
+					max_row_width = f32_max(row_width, max_row_width);
+					row_width = 0;
+					result.y += font->line_height;
+				}
+				else
+				{
+					U32 index = glyph_indicies[i];
+					Render_Glyph *glyph = font->glyphs + index;
+					row_width += glyph->advance_width;
+
+					// TODO(hampus): Remove this if
+					if (i + 1 < count)
+					{
+						U32 next_index = glyph_indicies[i + 1];
+						Render_KerningPair kerning_pair = render_kern_pair_from_glyph_indicies(font, index, next_index);
+						row_width += kerning_pair.value;
+					}
+				}
 			}
+
+			result.y += font->line_height;
+			result.x = f32_max(max_row_width, row_width);
 		}
 
-		result.y += font->line_height;
-		result.x = max_row_width;
 	}
 	return(result);
 }
