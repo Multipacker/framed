@@ -181,10 +181,10 @@ net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data)
 }
 
 internal Net_RecieveResult
-net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
+net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 {
 	Net_RecieveResult result = { 0 };
-	SOCKET sock = (SOCKET) socket.u64[0];
+	SOCKET sock = (SOCKET) connected_socket.u64[0];
 	int bytes_recieved = recv(sock, (char *) buffer, (int) buffer_size, 0);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR);
 	result.bytes_recieved = bytes_recieved;
@@ -192,14 +192,15 @@ net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
 }
 
 internal Net_RecieveResult
-net_socket_recieve_from(Net_Socket socket, Net_Address address, U8 *buffer, U64 buffer_size)
+net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
 	Net_RecieveResult result = { 0 };
-	SOCKET sock = (SOCKET) socket.u64[0];
-	struct sockaddr_in sockaddrin = net_win32_sockaddr_in_from_address(address);
+	SOCKET sock = (SOCKET) listen_socket.u64[0];
+	struct sockaddr_in sockaddrin = {0};
 	int from_len = sizeof(sockaddrin);
 	int bytes_recieved = recvfrom(sock, (char *) buffer, (int) buffer_size, 0, (struct sockaddr *) &sockaddrin, &from_len);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR);
 	result.bytes_recieved = bytes_recieved;
+	*address = net_win32_address_from_sockaddr_in(sockaddrin);
 	return(result);
 }
