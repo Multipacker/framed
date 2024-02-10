@@ -225,7 +225,7 @@ net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
 }
 
 internal Net_RecieveResult
-net_socket_recieve_from(Net_Socket socket, Net_Address address, U8 *buffer, U64 buffer_size)
+net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
 	Net_RecieveResult result = { 0 };
 
@@ -233,11 +233,13 @@ net_socket_recieve_from(Net_Socket socket, Net_Address address, U8 *buffer, U64 
 
 	arena_scratch(0, 0)
 	{
-		struct sockaddr *socket_address = net_linux_sockaddr_from_address(scratch, address);
-		socklen_t socket_length = net_linux_socklen_from_sockaddr(socket_address);
+		// TODO(simon): Use the size of the largest socket type.
+		socklen_t socket_length = sizeof(struct sockaddr_in);
+		struct sockaddr *socket_address = (struct sockaddr *) arena_push(scratch, socket_length);
 		ssize_t bytes_recieved = recvfrom(linux_socket, buffer, (size_t) buffer_size, 0, socket_address, &socket_length);
 		assert(bytes_recieved != -1);
 
+		*address = net_linux_address_from_sockaddr(socket_address, socket_length);
 		result.bytes_recieved = (U64) bytes_recieved;
 	}
 
