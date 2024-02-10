@@ -2,14 +2,12 @@
 // hampus: Short term
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
-// [ ] @code Keep a list of closed windows instead of flags
 
 ////////////////////////////////
 // hampus: Medium term
 //
 // [ ] @code @feature UI startup builder
 // [ ] @polish Resizing panels with tab animation doesn't look that good right now.
-// [ ] @polish Adding a tab with a tab offset active doesn't look perfect
 // [ ] @feature Tab reordering again
 // [ ] @polish Tab dragging new window offset should be relative to where you began to drag the tab
 
@@ -18,7 +16,6 @@
 //
 // [ ] @feature Move around windows that have multiple panels
 // [ ] @feature Be able to pin windows which disables closing
-// [ ] @code @cleanup UI commands. Make a linked list
 // [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
 
