@@ -420,6 +420,9 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		}
 	}
 
+	// TODO(simon): Implement Unicode algorithm for finding word boundaries.
+	// (https://www.unicode.org/reports/tr29/#Word_Boundaries) This should
+	// probably end up in `base_string`.
 	if (action->flags & UI_TextActionFlag_WordScan)
 	{
 		// TODO(hampus): Collapse these two ifs and make it more robust.
