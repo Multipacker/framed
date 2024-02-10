@@ -42,8 +42,8 @@ FRAMED_UI_COMMAND(tab_close)
 	FramedUI_Tab *tab = data->tab;
 	FramedUI_Panel *panel = tab->panel;
 	framed_ui_command_tab_deattach(tab);
-	framed_ui_tab_free(tab);
 	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
+	framed_ui_tab_free(tab);
 }
 
 FRAMED_UI_COMMAND(tab_attach)
@@ -331,24 +331,25 @@ FRAMED_UI_COMMAND(panel_close)
 		FramedUI_Window *window = root->window;
 		if (window != framed_ui_state->master_window)
 		{
-			dll_remove(framed_ui_state->window_list.first, framed_ui_state->window_list.last, window);
+			dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
 		}
 	}
 	log_info("Executed command: panel_close");
+	framed_ui_panel_free(data->panel);
 }
 
 FRAMED_UI_COMMAND(window_push_to_front)
 {
 	FramedUI_WindowPushToFront *data = params;
 	FramedUI_Window *window = data->window;
-	framed_ui_window_push_to_front(window);
+	framed_ui_window_set_top_most(window);
 	log_info("Executed command: window_push_to_front");
 }
 
-FRAMED_UI_COMMAND(window_remove_from_list)
+FRAMED_UI_COMMAND(window_close)
 {
-	FramedUI_WindowRemoveFromList *data = params;
+	FramedUI_WindowClose *data = params;
 	FramedUI_Window *window = data->window;
-	framed_ui_window_remove_from_list(window);
+	framed_ui_window_close(window);
 	log_info("Executed command: window_remove_from_list");
 }

@@ -33,7 +33,7 @@
 ////////////////////////////////
 // hampus: Tab views
 
-frame_ui_tab_view(framed_ui_tab_view_logger)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_logger)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -46,7 +46,7 @@ frame_ui_tab_view(framed_ui_tab_view_logger)
 	ui_logger(log_ui);
 }
 
-frame_ui_tab_view(framed_ui_tab_view_texture_viewer)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_texture_viewer)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -54,7 +54,7 @@ frame_ui_tab_view(framed_ui_tab_view_texture_viewer)
 	ui_texture_view(texture);
 }
 
-frame_ui_tab_view(framed_ui_tab_view_debug)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_debug)
 {
 	ui_next_width(ui_fill());
 	ui_next_height(ui_fill());
@@ -63,7 +63,7 @@ frame_ui_tab_view(framed_ui_tab_view_debug)
 	ui_debug(color_picker_data);
 }
 
-frame_ui_tab_view(framed_ui_tab_view_theme)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_theme)
 {
 	B32 view_info_data_initialized = view_info->data != 0;
 
@@ -301,7 +301,7 @@ os_main(Str8List arguments)
 		Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
 		Arena *current_arena  = frame_arenas[0];
 		Arena *previous_arena = frame_arenas[1];
-		
+
 		framed_ui_state->frame_arena = current_arena;
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
@@ -319,7 +319,7 @@ os_main(Str8List arguments)
 				}
 				else if (event->key == Gfx_Key_F1)
 				{
-					debug_window->flags ^= FramedUI_WindowFlags_Closed;
+					// debug_window->flags ^= FramedUI_WindowFlags_Closed;
 				}
 			}
 		}

@@ -3,15 +3,14 @@
 
 #define FRAMED_UI_COMMAND(name) Void framed_ui_command_##name(Void *params)
 
-#define frame_ui_tab_view(name) Void name(struct FramedUI_TabViewInfo *view_info)
+#define FRAME_UI_TAB_VIEW(name) Void name(struct FramedUI_TabViewInfo *view_info)
 
 typedef struct FramedUI_Panel FramedUI_Panel;
 typedef struct FramedUI_Tab FramedUI_Tab;
-typedef struct FramedUI_Command FramedUI_Commands;
 typedef struct FramedUI_Window FramedUI_Window;
 typedef struct FramedUI_TabViewInfo FramedUI_TabViewInfo;
 
-typedef frame_ui_tab_view(FramedUI_TabViewProc);
+typedef FRAME_UI_TAB_VIEW(FramedUI_TabViewProc);
 
 typedef enum FramedUI_CommandKind FramedUI_CommandKind;
 enum FramedUI_CommandKind
@@ -24,7 +23,7 @@ enum FramedUI_CommandKind
 	FramedUI_CommandKind_PanelSplitAndAttach,
 	FramedUI_CommandKind_PanelSetActiveTab,
 	FramedUI_CommandKind_PanelClose,
-	FramedUI_CommandKind_WindowRemoveFromList,
+	FramedUI_CommandKind_WindowClose,
 	FramedUI_CommandKind_WindowPushToFront,
 };
 
@@ -147,12 +146,10 @@ struct FramedUI_Panel
 	Str8 string;
 };
 
-typedef enum FramedUI_WindowFlags FramedUI_WindowFlags;
-enum FramedUI_WindowFlags
+typedef struct FramedUI_FreeWindow FramedUI_FreeWindow;
+struct FramedUI_FreeWindow
 {
-	FramedUI_WindowFlags_Closed = (1 << 0),
-
-	FramedUI_WindowFlags_COUNT,
+	FramedUI_FreeWindow *next;
 };
 
 typedef struct FramedUI_Window FramedUI_Window;
@@ -166,8 +163,6 @@ struct FramedUI_Window
 	RectF32 rect;
 
 	Str8 string;
-
-	FramedUI_WindowFlags flags;
 };
 
 typedef struct FramedUI_WindowList FramedUI_WindowList;
@@ -210,6 +205,8 @@ struct FramedUI_State
 	U64 num_tabs;
 	U64 num_windows;
 
+	FramedUI_WindowList open_windows;
+
 	FramedUI_Window *master_window;
 	FramedUI_Window *next_top_most_window;
 
@@ -218,10 +215,9 @@ struct FramedUI_State
 
 	FramedUI_FreeTab *first_free_tab;
 	FramedUI_FreePanel *first_free_panel;
+	FramedUI_FreeWindow *first_free_window;
 
 	FramedUI_CommandList cmd_list;
-
-	FramedUI_WindowList window_list;
 
 	FramedUI_DragStatus drag_status;
 	FramedUI_DragData   drag_data;
@@ -283,8 +279,8 @@ struct FramedUI_PanelClose
 	FramedUI_Panel *panel;
 };
 
-typedef struct FramedUI_WindowRemoveFromList FramedUI_WindowRemoveFromList;
-struct FramedUI_WindowRemoveFromList
+typedef struct FramedUI_WindowClose FramedUI_WindowClose;
+struct FramedUI_WindowClose
 {
 	FramedUI_Window *window;
 };
@@ -310,12 +306,14 @@ internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, Framed
 // hampus: Panels
 
 internal Void framed_ui_panel_split_and_attach_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, Axis2 axis, Side side);
+internal Void framed_ui_panel_free(FramedUI_Panel *panel);
 
 ////////////////////////////////
 // hampus: Window
 
+internal Void framed_ui_window_free(FramedUI_Window *window);
 internal Void framed_ui_window_reorder_to_front(FramedUI_Window *window);
-internal Void framed_ui_window_push_to_front(FramedUI_Window *window);
-internal Void framed_ui_window_remove_from_list(FramedUI_Window *window);
+internal Void framed_ui_window_set_top_most(FramedUI_Window *window);
+internal Void framed_ui_window_close(FramedUI_Window *window);
 
 #endif

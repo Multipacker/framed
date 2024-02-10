@@ -2,11 +2,7 @@
 // hampus: Short term
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
-// [ ] @bug Tab offsetting looks weird if you remove any tab to the 
-//          left of the active tab when the tab bar is full
-// [ ] @bug New window offset is wrong if you reorder tab and then drag it out
 // [ ] @code Keep a list of closed windows instead of flags
-// [ ] @code Free list of panels and tabs
 
 ////////////////////////////////
 // hampus: Medium term
@@ -261,7 +257,7 @@ framed_ui_drag_is_inactive(Void)
 // hampus: Tabs
 
 internal FramedUI_Tab *
-framed_ui_tab_alloc(Arena *arena)
+framed_ui_tab_alloc(Void)
 {
 	FramedUI_Tab *result = (FramedUI_Tab *) framed_ui_state->first_free_tab;
 	if (result == 0)
@@ -270,6 +266,7 @@ framed_ui_tab_alloc(Arena *arena)
 	}
 	else
 	{
+		ASAN_UNPOISON_MEMORY_REGION(result, sizeof(FramedUI_Tab));
 		framed_ui_state->first_free_tab = framed_ui_state->first_free_tab->next;
 	}
 	memory_zero_struct(result);
@@ -284,6 +281,7 @@ framed_ui_tab_free(FramedUI_Tab *tab)
 	FramedUI_FreeTab *free_tab = (FramedUI_FreeTab *) tab;
 	free_tab->next = framed_ui_state->first_free_tab;
 	framed_ui_state->first_free_tab = free_tab;
+	ASAN_POISON_MEMORY_REGION(tab, sizeof(FramedUI_Tab));
 }
 
 internal Void
@@ -292,12 +290,12 @@ framed_ui_tab_equip_view_info(FramedUI_Tab *tab, FramedUI_TabViewInfo view_info)
 	tab->view_info = view_info;
 }
 
-frame_ui_tab_view(framed_ui_tab_view_default);
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_default);
 
 internal FramedUI_Tab *
 framed_ui_tab_make(Arena *arena, FramedUI_TabViewProc *function, Void *data, Str8 name)
 {
-	FramedUI_Tab *result = framed_ui_tab_alloc(arena);
+	FramedUI_Tab *result = framed_ui_tab_alloc();
 	if (!name.size)
 	{
 		// NOTE(hampus): We probably won't do this in the future because
@@ -501,6 +499,7 @@ framed_ui_panel_alloc(Void)
 	}
 	else
 	{
+		ASAN_UNPOISON_MEMORY_REGION(result, sizeof(FramedUI_Panel));
 		framed_ui_state->first_free_panel = framed_ui_state->first_free_panel->next;
 	}
 	memory_zero_struct(result);
@@ -516,6 +515,7 @@ framed_ui_panel_free(FramedUI_Panel *panel)
 	FramedUI_FreePanel *free_panel = (FramedUI_FreePanel *) panel;
 	free_panel->next = framed_ui_state->first_free_panel;
 	framed_ui_state->first_free_panel = free_panel;
+	ASAN_POISON_MEMORY_REGION(panel, sizeof(FramedUI_Panel));
 }
 
 internal FramedUI_Panel *
@@ -668,25 +668,23 @@ framed_ui_update_panel(FramedUI_Panel *root)
 
 		box->layout_style.child_layout_axis = Axis2_Y;
 
+		Gfx_EventList *event_list = ui_events();
+		if (ui_mouse_is_inside_box(box) && !rectf32_contains_v2f32(ui_ctx->ctx_menu_root->fixed_rect, ui_mouse_pos()))
 		{
-			Gfx_EventList *event_list = ui_events();
-			if (ui_mouse_is_inside_box(box) && !rectf32_contains_v2f32(ui_ctx->ctx_menu_root->fixed_rect, ui_mouse_pos()))
+			for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
 			{
-				for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
+				if (node->kind == Gfx_EventKind_KeyPress &&
+						(node->key == Gfx_Key_MouseLeft ||
+						 node->key == Gfx_Key_MouseRight ||
+						 node->key == Gfx_Key_MouseMiddle))
 				{
-					if (node->kind == Gfx_EventKind_KeyPress &&
-							(node->key == Gfx_Key_MouseLeft ||
-							 node->key == Gfx_Key_MouseRight ||
-							 node->key == Gfx_Key_MouseMiddle))
+					if (framed_ui_panel_is_nil(framed_ui_state->next_focused_panel))
 					{
-						if (framed_ui_panel_is_nil(framed_ui_state->next_focused_panel))
-						{
-							framed_ui_state->next_focused_panel = root;
-						}
-						if (root->window != framed_ui_state->master_window)
-						{
-							framed_ui_window_reorder_to_front(root->window);
-						}
+						framed_ui_state->next_focused_panel = root;
+					}
+					if (root->window != framed_ui_state->master_window)
+					{
+						framed_ui_window_reorder_to_front(root->window);
 					}
 				}
 			}
@@ -806,8 +804,8 @@ framed_ui_update_panel(FramedUI_Panel *root)
 						{
 							framed_ui_panel_attach_tab(root, drag_data->tab, true);
 							dll_remove(
-								framed_ui_state->window_list.first,
-								framed_ui_state->window_list.last,
+								framed_ui_state->open_windows.first,
+								framed_ui_state->open_windows.last,
 								drag_data->tab->panel->window);
 							framed_ui_state->drag_status = FramedUI_DragStatus_Released;
 						} break;
@@ -819,8 +817,8 @@ framed_ui_update_panel(FramedUI_Panel *root)
 						{
 							framed_ui_panel_split_and_attach_tab(root, drag_data->tab, hover_axis, hover_side);
 							dll_remove(
-								framed_ui_state->window_list.first,
-								framed_ui_state->window_list.last,
+								framed_ui_state->open_windows.first,
+								framed_ui_state->open_windows.last,
 								drag_data->tab->panel->window);
 							framed_ui_state->drag_status = FramedUI_DragStatus_Released;
 						} break;
@@ -1306,23 +1304,18 @@ framed_ui_window_reorder_to_front(FramedUI_Window *window)
 }
 
 internal Void
-framed_ui_window_push_to_front(FramedUI_Window *window)
+framed_ui_window_set_top_most(FramedUI_Window *window)
 {
-	dll_push_front(framed_ui_state->window_list.first, framed_ui_state->window_list.last, window);
+	dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
+	dll_push_front(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
 }
 
 internal Void
-framed_ui_window_remove_from_list(FramedUI_Window *window)
+framed_ui_window_close(FramedUI_Window *window)
 {
-	dll_remove(framed_ui_state->window_list.first, framed_ui_state->window_list.last, window);
-}
-
-internal FramedUI_Window *
-framed_ui_window_alloc(Arena *arena)
-{
-	FramedUI_Window *result = push_struct(arena, FramedUI_Window);
-	result->string = str8_pushf(arena, "Window%d", framed_ui_state->num_windows++);
-	return(result);
+	// TODO(hampus): Free all the panels and tabs in the window aswell
+	dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
+	framed_ui_window_free(window);
 }
 
 internal Void
@@ -1334,15 +1327,42 @@ framed_ui_window_set_pos(FramedUI_Window *window, Vec2F32 pos)
 }
 
 internal FramedUI_Window *
+framed_ui_window_alloc(Void)
+{
+	FramedUI_Window *result = (FramedUI_Window *) framed_ui_state->first_free_window;
+	if (result == 0)
+	{
+		result = push_struct(framed_ui_state->perm_arena, FramedUI_Window);
+	}
+	else
+	{
+		ASAN_UNPOISON_MEMORY_REGION(result, sizeof(FramedUI_Window));
+		framed_ui_state->first_free_window = framed_ui_state->first_free_window->next;
+	}
+
+	return(result);
+}
+
+internal Void
+framed_ui_window_free(FramedUI_Window *window)
+{
+	FramedUI_FreeWindow *free_window = (FramedUI_FreeWindow *) window;
+	free_window->next = framed_ui_state->first_free_window;
+	framed_ui_state->first_free_window = free_window;
+	ASAN_POISON_MEMORY_REGION(window, sizeof(FramedUI_Window));
+}
+
+internal FramedUI_Window *
 framed_ui_window_make(Arena *arena, Vec2F32 min, Vec2F32 max)
 {
-	FramedUI_Window *result = framed_ui_window_alloc(arena);
+	FramedUI_Window *result = framed_ui_window_alloc();
+	result->string = str8_pushf(arena, "Window%d", framed_ui_state->num_windows++);
 	result->root_panel = &g_nil_panel;
 	FramedUI_Panel *panel = framed_ui_panel_make();
 	panel->window = result;
 	result->rect.min = min;
 	result->rect.max = max;
-	framed_ui_window_push_to_front(result);
+	framed_ui_window_set_top_most(result);
 	result->root_panel = panel;
 	log_info("Allocated panel: %"PRISTR8, str8_expand(result->string));
 	return(result);
@@ -1508,7 +1528,7 @@ framed_ui_get_or_push_view_data_(FramedUI_TabViewInfo *view_info, U64 size)
 	return(result);
 }
 
-frame_ui_tab_view(framed_ui_tab_view_default)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_default)
 {
 	FramedUI_Tab *tab = view_info->data;
 	FramedUI_Panel *panel = tab->panel;
@@ -1607,12 +1627,9 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 	UI_Box *window_root_parent = ui_box_make(UI_BoxFlag_DrawBackground, str8_lit("RootWindow"));
 	ui_parent(window_root_parent)
 	{
-		for (FramedUI_Window *window = framed_ui_state->window_list.first; window != 0; window = window->next)
+		for (FramedUI_Window *window = framed_ui_state->open_windows.first; window != 0; window = window->next)
 		{
-			if (!(window->flags & FramedUI_WindowFlags_Closed))
-			{
-				framed_ui_update_window(window);
-			}
+			framed_ui_update_window(window);
 		}
 	}
 
@@ -1725,17 +1742,15 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 			case FramedUI_CommandKind_PanelSetActiveTab:   framed_ui_command_panel_set_active_tab(cmd->data);   break;
 			case FramedUI_CommandKind_PanelClose:          framed_ui_command_panel_close(cmd->data);            break;
 
-			case FramedUI_CommandKind_WindowRemoveFromList: framed_ui_command_window_remove_from_list(cmd->data); break;
+			case FramedUI_CommandKind_WindowClose:          framed_ui_command_window_close(cmd->data); break;
 			case FramedUI_CommandKind_WindowPushToFront:    framed_ui_command_window_push_to_front(cmd->data);    break;
 		}
 	}
 
-
 	if (framed_ui_state->next_top_most_window)
 	{
 		FramedUI_Window *window = framed_ui_state->next_top_most_window;
-		framed_ui_window_remove_from_list(window);
-		framed_ui_window_push_to_front(window);
+		framed_ui_window_set_top_most(window);
 	}
 
 	if (framed_ui_panel_is_nil(framed_ui_state->next_focused_panel))
