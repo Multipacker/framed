@@ -585,13 +585,15 @@ framed_ui_hover_panel_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, A
 					ui_box_make(
 						UI_BoxFlag_DrawBorder |
 						UI_BoxFlag_HotAnimation,
-						str8_lit("LeftLeft"));
+						str8_lit("LeftLeft")
+					);
 
 					ui_next_border_thickness(2);
 					ui_box_make(
 						UI_BoxFlag_DrawBorder |
 						UI_BoxFlag_HotAnimation,
-						str8_lit("LeftRight"));
+						str8_lit("LeftRight")
+					);
 				}
 			}
 		}
@@ -1627,7 +1629,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
-	}
+}
 #endif
 	// NOTE(hampus): Update Windows
 

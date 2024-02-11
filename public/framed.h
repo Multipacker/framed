@@ -154,6 +154,7 @@ void framed_zone_end(void);
 #ifdef FRAMED_IMPLEMENTATION
 
 #define FRAMED_BUFFER_CAPACITY (4 * 1024)
+#define FRAMED_DEFAULT_PORT (12345)
 
 #include <string.h>
 
@@ -180,12 +181,33 @@ static Framed_State global_framed_state;
 ////////////////////////////////
 // NOTE: Socket implementation
 
+internal Framed_U16
+framed_u16_reverse(U16 x)
+{
+	x = (Framed_U16) (((x >> 1) & 0x5555) | ((x & 0x5555) << 1));
+	x = (Framed_U16) (((x >> 2) & 0x3333) | ((x & 0x3333) << 2));
+	x = (Framed_U16) (((x >> 4) & 0x0F0F) | ((x & 0x0F0F) << 4));
+	x = (Framed_U16) (((x >> 8) & 0x00FF) | ((x & 0x00FF) << 8));
+	return x;
+}
+
 #if OS_WINDOWS
 
 static void
-framed__socket_init(B32 wait_for_connection)
+framed__socket_init(FramedUI_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
+	WSADATA wsa_data;
+	WSAStartup(MAKEWORD(2, 2), &wsa_data);
+	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	framed->socket.u64[0] = sock;
+	struct sockaddr_in sockaddrin = {0};
+	sockaddrin.sin_addr.S_un.S_un_b.s_b1 = 127;
+	sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
+	sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
+	sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
+	sockaddrin.sin_port = framed_u16_reverse(FRAMED_DEFAULT_PORT);
+	// connect(sock, sockaddrin.ai_addr,
 }
 
 static void
@@ -197,7 +219,7 @@ framed__socket_send(void)
 #elif OS_LINUX
 
 static void
-framed__socket_init(B32 wait_for_connection)
+framed__socket_init(FramedUI_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
 }
@@ -257,7 +279,6 @@ framed_flush(void)
 {
 	Framed_State *framed = &global_framed_state;
 	framed__socket_send();
-	framed->buffer_pos = 0;
 	framed->buffer_pos = 0;
 }
 
