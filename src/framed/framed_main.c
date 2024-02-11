@@ -144,6 +144,17 @@ os_main(Str8List arguments)
 	log_init(str8_lit("log.txt"));
 
 #if 0
+	arena_scratch(0, 0)
+	{
+		for (OS_SystemPath system_path = 0; system_path < OS_SystemPath_COUNT; ++system_path)
+		{
+			Str8 path = os_push_system_path(scratch, system_path);
+			log_info("%"PRISTR8, str8_expand(path));
+		}
+	}
+#endif
+
+#if 0
 	B32 host = false;
 
 	for (Str8Node *node = arguments.first; node != 0; node = node->next)
