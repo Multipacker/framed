@@ -4,7 +4,6 @@
 // [ ] Put all debug visualization stuff on its own toggleable window
 // [ ] Add a git readme
 // [ ] Create a panel for displaying clock values with the name as text
-// [ ] Add os_system_path() where you can get differnet path (current dir, data, temp, ...)
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"

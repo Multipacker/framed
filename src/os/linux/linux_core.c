@@ -645,6 +645,118 @@ os_file_iterator_end(OS_FileIterator *iterator)
 	}
 }
 
+internal Str8
+os_push_system_path(Arena *arena, OS_SystemPath path)
+{
+	Str8 result = { 0 };
+
+	switch (path)
+	{
+		case OS_SystemPath_CurrentDirectory:
+		{
+			arena_scratch(0, 0)
+			{
+				U64 buffer_capacity = LINUX_NAME_MAX;
+				CStr cstr_path = 0;
+				do
+				{
+					buffer_capacity *= 2;
+					CStr buffer = push_array(scratch, char, buffer_capacity);
+					cstr_path = getcwd(buffer, buffer_capacity);
+				} while (!cstr_path && errno == ERANGE);
+
+				if (!cstr_path)
+				{
+					// TODO(simon): We could not get the path for some reason.
+				}
+
+				result = str8_copy_cstr(arena, cstr_path);
+			}
+		} break;
+		case OS_SystemPath_Binary:
+		{
+			arena_scratch(&arena, 1)
+			{
+				U64 buffer_capacity = LINUX_NAME_MAX;
+				CStr cstr_path = 0;
+				ssize_t bytes_read = 0;
+				do
+				{
+					buffer_capacity *= 2;
+					cstr_path = push_array(scratch, char, buffer_capacity);
+					bytes_read = readlink("/proc/self/exe", cstr_path, buffer_capacity);
+				} while (bytes_read >= (S64) buffer_capacity);
+
+				if (bytes_read == -1)
+				{
+					// TODO(simon): We could not get the path for some reason.
+				}
+
+				Str8 binary_path = str8((U8 *) cstr_path, (U64) bytes_read);
+
+				U64 last_slash_index = 0;
+				if (str8_last_index_of(binary_path, '/', &last_slash_index))
+				{
+					binary_path = str8_prefix(binary_path, last_slash_index);
+				}
+
+				result = str8_copy(arena, binary_path);
+			}
+		} break;
+		case OS_SystemPath_UserData:
+		{
+			CStr cstr_config_path = getenv("XDG_CONFIG_HOME");
+			if (cstr_config_path && *cstr_config_path != 0)
+			{
+				result = str8_copy_cstr(arena, cstr_config_path);
+			}
+			else
+			{
+				CStr cstr_home_path = getenv("HOME");
+				if (cstr_home_path && *cstr_home_path != 0)
+				{
+					Str8List config_path_list = { 0 };
+					Str8Node nodes[2] = { 0 };
+					str8_list_push_explicit(&config_path_list, str8_cstr(cstr_home_path), &nodes[0]);
+					str8_list_push_explicit(&config_path_list, str8_lit("/.config"), &nodes[1]);
+					result = str8_join(arena, &config_path_list);
+				}
+				else
+				{
+					// TODO(simon): We could not get the home directory of the user.
+				}
+			}
+		} break;
+		case OS_SystemPath_TemporaryData:
+		{
+			CStr cstr_cache_path = getenv("XDG_CACHE_HOME");
+			if (cstr_cache_path && *cstr_cache_path != 0)
+			{
+				result = str8_copy_cstr(arena, cstr_cache_path);
+			}
+			else
+			{
+				CStr cstr_home_path = getenv("HOME");
+				if (cstr_home_path && *cstr_home_path != 0)
+				{
+					Str8List cache_path_list = { 0 };
+					Str8Node nodes[2] = { 0 };
+					str8_list_push_explicit(&cache_path_list, str8_cstr(cstr_home_path), &nodes[0]);
+					str8_list_push_explicit(&cache_path_list, str8_lit("/.cache"), &nodes[1]);
+					result = str8_join(arena, &cache_path_list);
+				}
+				else
+				{
+					// TODO(simon): We could not get the home directory of the user.
+				}
+			}
+		} break;
+		invalid_case;
+	}
+
+	return(result);
+}
+
 internal DateTime
 os_now_universal_time(Void)
 {

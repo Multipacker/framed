@@ -3,6 +3,16 @@
 
 // TODO(simon): File properties
 
+typedef enum OS_SystemPath OS_SystemPath;
+enum OS_SystemPath
+{
+	OS_SystemPath_CurrentDirectory,
+	OS_SystemPath_Binary,
+	OS_SystemPath_UserData,
+	OS_SystemPath_TemporaryData,
+	OS_SystemPath_COUNT,
+};
+
 // NOTE(simon): Determines what happens if a file already exists when trying to
 // create a new one with the same name.
 typedef enum OS_FileMode OS_FileMode;
@@ -79,6 +89,8 @@ internal B32 os_file_delete_directory(Str8 path);
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
+
+internal Str8 os_push_system_path(Arena *arena, OS_SystemPath path);
 
 internal DateTime os_now_universal_time(Void);
 internal DateTime os_now_local_time(Void);
