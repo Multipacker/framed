@@ -275,6 +275,7 @@ framed_ui_tab_alloc(Void)
 internal Void
 framed_ui_tab_free(FramedUI_Tab *tab)
 {
+	assert(!framed_ui_tab_is_nil(tab));
 	FramedUI_FreeTab *free_tab = (FramedUI_FreeTab *) tab;
 	free_tab->next = framed_ui_state->first_free_tab;
 	framed_ui_state->first_free_tab = free_tab;
@@ -485,7 +486,6 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 ////////////////////////////////
 // hampus: Panels
 
-
 internal FramedUI_Panel *
 framed_ui_panel_alloc(Void)
 {
@@ -509,10 +509,29 @@ framed_ui_panel_alloc(Void)
 internal Void
 framed_ui_panel_free(FramedUI_Panel *panel)
 {
+	assert(!framed_ui_panel_is_nil(panel));
 	FramedUI_FreePanel *free_panel = (FramedUI_FreePanel *) panel;
 	free_panel->next = framed_ui_state->first_free_panel;
 	framed_ui_state->first_free_panel = free_panel;
 	ASAN_POISON_MEMORY_REGION(panel, sizeof(FramedUI_Panel));
+}
+
+internal Void
+framed_ui_panel_free_recursively(FramedUI_Panel *root)
+{
+	if (!framed_ui_panel_is_nil(root))
+	{
+		for (Side side = (Side) 0; side < Side_COUNT; ++side)
+		{
+			FramedUI_Panel *child = root->children[side];
+			framed_ui_panel_free_recursively(child);
+		}
+		for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
+		{
+			framed_ui_tab_free(tab);
+		}
+		framed_ui_panel_free(root);
+	}
 }
 
 internal FramedUI_Panel *
@@ -1301,7 +1320,8 @@ framed_ui_window_set_top_most(FramedUI_Window *window)
 internal Void
 framed_ui_window_close(FramedUI_Window *window)
 {
-	// TODO(hampus): Free all the panels and tabs in the window aswell
+	FramedUI_Panel *root_panel = window->root_panel;
+	framed_ui_panel_free_recursively(root_panel);
 	dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, window);
 	framed_ui_window_free(window);
 }
