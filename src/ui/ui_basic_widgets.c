@@ -241,7 +241,7 @@ ui_push_scrollable_region(Str8 string)
 }
 
 internal Void
-ui_scrollabel_region_set_scroll(UI_ScrollabelRegion region, F32 offset)
+ui_scrollable_region_set_scroll(UI_ScrollabelRegion region, F32 offset)
 {
 	UI_Box *content     = region.content;
 	UI_Box *view_region = region.view_region;

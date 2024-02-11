@@ -240,7 +240,7 @@ ui_logger(LogUI_State *state)
 		// NOTE(simon): It takes one frame for us to get the correct sizes for clamping the scroll, so call it twice.
 		if (!state->freeze && state->has_new_entries)
 		{
-			ui_scrollabel_region_set_scroll(entries_list, F32_MAX);
+			ui_scrollable_region_set_scroll(entries_list, F32_MAX);
 			--state->has_new_entries;
 		}
 

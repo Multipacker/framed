@@ -35,7 +35,7 @@ internal UI_ScrollabelRegion ui_push_scrollable_region_axis(Str8 string, Axis2 a
 
 internal UI_ScrollabelRegion ui_push_scrollable_region(Str8 string);
 internal Void                ui_pop_scrollable_region(Void);
-internal Void                ui_scrollabel_region_set_scroll(UI_ScrollabelRegion region, F32 offset);
+internal Void                ui_scrollable_region_set_scroll(UI_ScrollabelRegion region, F32 offset);
 
 internal Void    ui_spacer(UI_Size size);
 
