@@ -6,7 +6,7 @@ internal Void
 net_win32_print_error_message(Void)
 {
 	int error = WSAGetLastError();
-	U8 buffer[1024] = { 0 };
+	U8 buffer[1024] = {0};
 	U64 size = FormatMessageA(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
@@ -18,7 +18,7 @@ net_win32_print_error_message(Void)
 internal struct sockaddr_in
 net_win32_sockaddr_in_from_address(Net_Address address)
 {
-	struct sockaddr_in result = { 0 };
+	struct sockaddr_in result = {0};
 	result.sin_addr.S_un.S_un_b.s_b1 = address.ip.u8[0];
 	result.sin_addr.S_un.S_un_b.s_b2 = address.ip.u8[1];
 	result.sin_addr.S_un.S_un_b.s_b3 = address.ip.u8[2];
@@ -46,7 +46,7 @@ net_win32_sockaddr_in_from_address(Net_Address address)
 internal struct Net_Address
 net_win32_address_from_sockaddr_in(struct sockaddr_in sockadd)
 {
-	Net_Address result = { 0 };
+	Net_Address result = {0};
 	result.ip.u8[0] = sockadd.sin_addr.S_un.S_un_b.s_b1;
 	result.ip.u8[1] = sockadd.sin_addr.S_un.S_un_b.s_b2;
 	result.ip.u8[2] = sockadd.sin_addr.S_un.S_un_b.s_b3;
@@ -82,7 +82,7 @@ net_socket_init(Void)
 internal Net_Socket
 net_socket_alloc(Net_Protocol protocol, Net_AddressFamily address_family)
 {
-	Net_Socket result = { 0 };
+	Net_Socket result = {0};
 	int ipproto = 0;
 	int stream = 0;
 	switch (protocol)
@@ -150,11 +150,11 @@ net_socket_connect(Net_Socket socket, Net_Address to)
 internal Net_AcceptResult
 net_socket_accept(Net_Socket socket)
 {
-	Net_AcceptResult result = { 0 };
+	Net_AcceptResult result = {0};
 	SOCKET listen_socket = (SOCKET) socket.u64[0];
 	int error = listen(listen_socket, SOMAXCONN);
 	net_win32_assert(error != SOCKET_ERROR);
-	struct sockaddr_in connected_addr = { 0 };
+	struct sockaddr_in connected_addr = {0};
 	int connected_addrlen = sizeof(connected_addr);
 	SOCKET connected_socket = accept(listen_socket, (struct sockaddr *) &connected_addr, &connected_addrlen);
 	net_win32_assert(connected_socket != INVALID_SOCKET);
@@ -183,7 +183,7 @@ net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data)
 internal Net_RecieveResult
 net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 {
-	Net_RecieveResult result = { 0 };
+	Net_RecieveResult result = {0};
 	SOCKET sock = (SOCKET) connected_socket.u64[0];
 	int bytes_recieved = recv(sock, (char *) buffer, (int) buffer_size, 0);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR);
@@ -194,7 +194,7 @@ net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 internal Net_RecieveResult
 net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
-	Net_RecieveResult result = { 0 };
+	Net_RecieveResult result = {0};
 	SOCKET sock = (SOCKET) listen_socket.u64[0];
 	struct sockaddr_in sockaddrin = {0};
 	int from_len = sizeof(sockaddrin);

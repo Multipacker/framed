@@ -145,7 +145,7 @@ typedef Framed_U16 Framed_B16;
 typedef Framed_U32 Framed_B32;
 typedef Framed_U64 Framed_B64;
 
-void framed_init(void);
+void framed_init(Framed_B32 wait_for_connection);
 void framed_flush(void);
 
 void framed_zone_begin(char *name);
@@ -181,8 +181,8 @@ static Framed_State global_framed_state;
 ////////////////////////////////
 // NOTE: Socket implementation
 
-internal Framed_U16
-framed_u16_reverse(U16 x)
+static Framed_U16
+framed_u16_reverse(Framed_U16 x)
 {
 	x = (Framed_U16) (((x >> 1) & 0x5555) | ((x & 0x5555) << 1));
 	x = (Framed_U16) (((x >> 2) & 0x3333) | ((x & 0x3333) << 2));
@@ -193,8 +193,14 @@ framed_u16_reverse(U16 x)
 
 #if OS_WINDOWS
 
+#pragma comment(lib, "Ws2_32.lib")
+
+#pragma warning(push, 0)
+#include <winsock2.h>
+#pragma warning(pop)
+
 static void
-framed__socket_init(FramedUI_B32 wait_for_connection)
+framed__socket_init(Framed_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
 	WSADATA wsa_data;
@@ -250,7 +256,7 @@ framed__rdtsc(void)
 }
 
 static void
-framed__ensure_space(U64 size)
+framed__ensure_space(Framed_U64 size)
 {
 	framed__assert(size <= FRAMED_BUFFER_CAPACITY);
 
