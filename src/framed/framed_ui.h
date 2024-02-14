@@ -105,12 +105,10 @@ struct FramedUI_Tab
 {
 	FramedUI_Tab *next;
 	FramedUI_Tab *prev;
-
 	FramedUI_Panel *panel;
-
-	Str8 string;
+	Arena *arena;
+	Str8 display_string;
 	B32 pinned;
-
 	FramedUI_TabViewInfo view_info;
 };
 
@@ -135,15 +133,10 @@ struct FramedUI_Panel
 	FramedUI_Panel *children[Side_COUNT];
 	FramedUI_Panel *sibling;
 	FramedUI_Panel *parent;
-
 	FramedUI_TabGroup tab_group;
-
 	FramedUI_Window *window;
-
 	Axis2 split_axis;
 	F32 pct_of_parent;
-
-	Str8 string;
 };
 
 typedef struct FramedUI_FreeWindow FramedUI_FreeWindow;
@@ -157,11 +150,9 @@ struct FramedUI_Window
 {
 	FramedUI_Window *next;
 	FramedUI_Window *prev;
-
 	FramedUI_Panel *root_panel;
-
+	Arena *arena;
 	RectF32 rect;
-
 	Str8 string;
 };
 

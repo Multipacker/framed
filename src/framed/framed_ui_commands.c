@@ -33,7 +33,7 @@ FRAMED_UI_COMMAND(tab_deattach)
 		};
 		framed_ui_command_panel_close(&close);
 	}
-	log_info("Executed command: tab_deattach (%"PRISTR8")", str8_expand(tab->string));
+	log_info("Executed command: tab_deattach (%"PRISTR8")", str8_expand(tab->display_string));
 }
 
 FRAMED_UI_COMMAND(tab_close)
@@ -42,7 +42,7 @@ FRAMED_UI_COMMAND(tab_close)
 	FramedUI_Tab *tab = data->tab;
 	FramedUI_Panel *panel = tab->panel;
 	framed_ui_command_tab_deattach(tab);
-	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->string));
+	log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(tab->display_string));
 	framed_ui_tab_free(tab);
 }
 
@@ -61,7 +61,7 @@ FRAMED_UI_COMMAND(tab_attach)
 	}
 	panel->tab_group.count++;
 	framed_ui_state->focused_panel = panel;
-	log_info("Executed command: tab_attach (%"PRISTR8""" -> %"PRISTR8")", str8_expand(tab->string), str8_expand(panel->string));
+	log_info("Executed command: tab_attach");
 }
 
 FRAMED_UI_COMMAND(tab_swap)

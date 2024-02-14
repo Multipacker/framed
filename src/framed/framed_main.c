@@ -233,12 +233,12 @@ os_main(Str8List arguments)
 
 	Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
 	Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
-	FramedUI_Window *master_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 0), monitor_dim);
+	FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
 
 	// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
 	// the window size, because on windows going maximized also shows the window which we don't want. So
 	// this will be a temporary solution
-	FramedUI_Window *debug_window = framed_ui_window_make(framed_ui_state->perm_arena, v2f32(0, 50), v2f32(500, 500));
+	FramedUI_Window *debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
 	{
 		{
 			// NOTE(hampus): Setup master window
@@ -247,9 +247,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena,
-					framed_ui_tab_view_theme,
-					0, str8_lit("Theme")),
+					.tab = framed_ui_tab_make(framed_ui_tab_view_theme, 0, str8_lit("Theme")),
 					.panel = split_panel_result.panels[Side_Min],
 				};
 				framed_ui_command_tab_attach(&attach);
@@ -257,7 +255,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, 0, 0, str8_lit("")),
+					.tab = framed_ui_tab_make(0, 0, str8_lit("")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				framed_ui_command_tab_attach(&attach);
@@ -272,8 +270,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_debug,
-					0, str8_lit("Debug")),
+					.tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug")),
 					.panel = debug_window->root_panel,
 				};
 				framed_ui_command_tab_attach(&attach);
@@ -281,8 +278,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_logger,
-					0,
+					.tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0,
 					str8_lit("Log")),
 					.panel = debug_window->root_panel,
 				};
@@ -291,9 +287,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(framed_ui_state->perm_arena, framed_ui_tab_view_texture_viewer,
-					&image_texture,
-					str8_lit("Texture Viewer")),
+					.tab = framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
 					.panel = debug_window->root_panel,
 				};
 				framed_ui_command_tab_attach(&attach);
