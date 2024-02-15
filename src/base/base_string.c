@@ -687,19 +687,33 @@ str8_from_str16(Arena *arena, Str16 string)
 	while (ptr < opl)
 	{
 		StringDecode decode = string_decode_utf16(ptr, (U64) (opl - ptr));
-		U64 size = string_encode_utf8(destination_ptr, decode.codepoint);
+		U64 encode_size = string_encode_utf8(destination_ptr, decode.codepoint);
+
+		destination_ptr += encode_size;
 		ptr += decode.size;
-		destination_ptr += size;
 	}
 
 	U64 string_size = (U64) (destination_ptr - memory);
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str8 result;
-	result.data = memory;
-	result.size = string_size;
-	return result;
+	Str8 result = str8(memory, string_size);
+	return(result);
+}
+
+internal Str8
+str8_from_cstr16(Arena *arena, CStr16 string)
+{
+	Str16 str16 = { 0 };
+	str16.data  = string;
+	str16.size  = 0;
+	while (str16.data[str16.size])
+	{
+		++str16.size;
+	}
+
+	Str8 result = str8_from_str16(arena, str16);
+	return(result);
 }
 
 internal CStr
@@ -727,7 +741,7 @@ cstr16_from_str8(Arena *arena, Str8 string)
 	while (ptr < opl)
 	{
 		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
-		U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
+		U64 encode_size = string_encode_utf16(destination_ptr, decode.codepoint);
 		destination_ptr += encode_size;
 		ptr += decode.size;
 	}
