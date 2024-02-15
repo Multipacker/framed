@@ -83,6 +83,15 @@ str8_copy_cstr(Arena *arena, CStr data)
 	return result;
 }
 
+internal Str16
+str16(U16 *data, U64 size)
+{
+	Str16 result;
+	result.data = data;
+	result.size = size;
+	return result;
+}
+
 internal Str8
 str8_prefix(Str8 string, U64 size)
 {
@@ -640,9 +649,7 @@ str8_from_str32(Arena *arena, Str32 string)
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str8 result;
-	result.data = memory;
-	result.size = string_size;
+	Str8 result = str8(memory, string_size);
 	return result;
 }
 
@@ -668,9 +675,7 @@ str16_from_str8(Arena *arena, Str8 string)
 	U64 unused_size = allocated_size - string_size;
 	arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str16 result;
-	result.data = memory;
-	result.size = string_size;
+	Str16 result = str16(memory, string_size);
 	return result;
 }
 
@@ -934,13 +939,4 @@ B32 is_num(U8 ch)
 {
 	B32 result = ('0' <= ch && ch <= '9');
 	return(result);
-}
-
-internal Str16
-str16(U16 *data, U64 size)
-{
-	Str16 result;
-	result.data = data;
-	result.size = size;
-	return result;
 }

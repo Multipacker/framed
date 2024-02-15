@@ -62,6 +62,8 @@ internal Str8 str8_copy(Arena *arena, Str8 string);
 internal Str8 str8_cstr(CStr data);
 internal Str8 str8_copy_cstr(Arena *arena, CStr data);
 
+internal Str16 str16(U16 *data, U64 size);
+
 internal Str8 str8_prefix(Str8 string, U64 size);
 internal Str8 str8_postfix(Str8 string, U64 size);
 internal Str8 str8_skip(Str8 string, U64 size);
@@ -112,7 +114,5 @@ internal U64 s8_from_str8(Str8 string, S8 *destination);
 internal U64 f64_from_str8(Str8 string, F64 *destination);
 
 internal B32 is_num(U8 ch);
-
-internal Str16 str16(U16 *data, U64 size);
 
 #endif // BASE_STRING_H
