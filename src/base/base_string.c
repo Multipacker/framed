@@ -147,7 +147,7 @@ str8_substring(Str8 string, U64 start, U64 size)
 internal Str8
 str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {
-	Str8 result = { 0 };
+	Str8 result = {0};
 
 	// NOTE(simon): We need to make a copy as we use args twice.
 	va_list format_args;
@@ -385,7 +385,7 @@ str8_join(Arena *arena, Str8List *list)
 internal Str8List
 str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints)
 {
-	Str8List result = { 0 };
+	Str8List result = {0};
 
 	U8 *last_split_point = string.data;
 	U8 *string_ptr       = string.data;
@@ -440,9 +440,9 @@ string_decode_utf8(U8 *string, U64 size)
 		3,                                              // 11110xxx: 3 bytes needed
 		4,                                              // 11111xxx: Invalid
 	};
-	local U8 masks[4]            = { 0x7F, 0x1F, 0x0F, 0x07, };
-	local U8 lower_boundaries[4] = { 0x80, 0x80, 0xA0, 0x90, };
-	local U8 upper_boundaries[4] = { 0xBF, 0xBF, 0x9F, 0x8F, };
+	local U8 masks[4]            = {0x7F, 0x1F, 0x0F, 0x07, };
+	local U8 lower_boundaries[4] = {0x80, 0x80, 0xA0, 0x90, };
+	local U8 upper_boundaries[4] = {0xBF, 0xBF, 0x9F, 0x8F, };
 
 	StringDecode result;
 	result.codepoint = 0xFFFD;
@@ -920,4 +920,13 @@ B32 is_num(U8 ch)
 {
 	B32 result = ('0' <= ch && ch <= '9');
 	return(result);
+}
+
+internal Str16
+str16(U16 *data, U64 size)
+{
+	Str16 result;
+	result.data = data;
+	result.size = size;
+	return result;
 }

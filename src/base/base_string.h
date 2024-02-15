@@ -112,4 +112,6 @@ internal U64 f64_from_str8(Str8 string, F64 *destination);
 
 internal B32 is_num(U8 ch);
 
+internal Str16 str16(U16 *data, U64 size);
+
 #endif // BASE_STRING_H
