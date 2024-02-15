@@ -2,6 +2,7 @@
 // hampus: Short term
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
+// [ ] @polish Dragging by a tab bar should not offset the new window at (0, 0)
 
 ////////////////////////////////
 // hampus: Medium term
@@ -1471,8 +1472,8 @@ framed_ui_update_window(FramedUI_Window *window)
 			Vec2U32 window_dim = gfx_get_window_client_area(ui_renderer()->gfx);
 			window->rect.min.v[Axis2_X] = f32_clamp(0, window->rect.min.v[Axis2_X], (F32) window_dim.x);
 			window->rect.min.v[Axis2_Y] = f32_clamp(0, window->rect.min.v[Axis2_Y], (F32) window_dim.y);
-			window->rect.max.v[Axis2_X] = f32_clamp(window->rect.min.v[Axis2_X]+ui_top_font_line_height(), window->rect.max.v[Axis2_X], (F32) window_dim.x);
-			window->rect.max.v[Axis2_Y] = f32_clamp(window->rect.min.v[Axis2_Y]+ui_top_font_line_height(), window->rect.max.v[Axis2_Y], (F32) window_dim.y);
+			// window->rect.max.v[Axis2_X] = f32_clamp(window->rect.min.v[Axis2_X]+ui_top_font_line_height(), window->rect.max.v[Axis2_X], (F32) window_dim.x);
+			// window->rect.max.v[Axis2_Y] = f32_clamp(window->rect.min.v[Axis2_Y]+ui_top_font_line_height(), window->rect.max.v[Axis2_Y], (F32) window_dim.y);
 			F32 resizer_size_in_em = 0.4f;
 			// NOTE(hampus): Take the resizers into account and offset it by their size
 			RectF32 rect = window->rect;
