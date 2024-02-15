@@ -29,7 +29,7 @@ script\build_msvc release
 ```
 
 There will now be a `build` folder in the root of the project, and it will
-contain `framed.exe`.
+contain a program named `framed.exe`.
 
 ### Linux
 
@@ -48,7 +48,7 @@ script/build_clang.sh release
 ```
 
 There will now be a `build` folder in the root of the project, and it will
-contain `framed`.
+contain a program named `framed`.
 
 ### MacOS
 
