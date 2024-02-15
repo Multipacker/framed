@@ -33,9 +33,8 @@ contain `framed.exe`.
 
 ### Linux
 
-You can either build with Clang or GCC. The project defaults to using the mold
-linker in both cases. The following dependencies need to be installed before
-building:
+You can either build with Clang or GCC. The following dependencies need to be
+installed before building:
 
 * SDL2
 

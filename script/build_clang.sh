@@ -8,7 +8,7 @@ src_files="src/framed/framed_main.c"
 out_file="build/out"
 errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides -Wno-unused-but-set-variable -Wshadow -Wsign-compare -Wsign-conversion -Wtautological-compare -Wtype-limits"
 common_flags="-Isrc -Ivendor -o $out_file -DRENDERER_OPENGL=1 -pthread"
-linker_flags="-fuse-ld=mold -lSDL2 build/freetype/freetype -lm"
+linker_flags="-lSDL2 build/freetype/freetype -lm"
 
 if [ "$mode" == "debug" ]; then
 	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
