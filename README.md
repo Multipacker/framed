@@ -90,7 +90,8 @@ The API for collecting counters consists of two functions at its core:
 `framed_zone_end()` to end it. Note that you have to call `framed_zone_end()`
 at all exit points of your function, or else the event will not be recorded.
 
-Here is a complete example:
+Here is a complete example. There are more complex ones availible in
+`src/tests`.
 
 > [!IMPORTANT]
 > This has not yet been tested because the project is not fully functional yet.
@@ -114,23 +115,21 @@ factorial(int n)
     }
 
     framed_zone_end();
-    return result;
+    return(result);
 }
 
 int
 main(int argc, char *argv[])
 {
     framed_init(true);
-
     framed_zone_begin("main");
 
     int x = factorial(10);
     printf("10! = %d\n", x);
 
     framed_zone_end();
-
     framed_flush();
-    return 0;
+    return(0);
 }
 ```
 
