@@ -24,8 +24,8 @@ VS <year>` in the start menu. Navigate to the root of the repository and run
 the following commands:
 
 ```
-> script\build_freetype_msvc
-> script\build_msvc release
+script\build_freetype_msvc
+script\build_msvc release
 ```
 
 There will now be a `build` folder in the root of the project, and it will
