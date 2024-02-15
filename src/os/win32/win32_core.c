@@ -1,10 +1,12 @@
+#pragma comment(lib, "shell32.lib")
+
 global Win32_State win32_state;
 
 internal Void
 win32_print_error_message(Void)
 {
 	DWORD error = GetLastError();
-	U8 buffer[1024] = { 0 };
+	U8 buffer[1024] = {0};
 	U64 size = FormatMessageA(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
@@ -67,7 +69,7 @@ typedef PVOID MapViewOfFile3Proc(HANDLE, HANDLE, PVOID, ULONG64, SIZE_T, ULONG, 
 internal OS_CircularBuffer
 os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
 {
-	OS_CircularBuffer result = { 0 };
+	OS_CircularBuffer result = {0};
 	Arena_Temporary scratch = get_scratch(0, 0);
 
 	SYSTEM_INFO info;
@@ -429,7 +431,7 @@ os_file_delete_directory(Str8 path)
 internal Str16
 win32_str16_from_wchar(WCHAR *wide_char)
 {
-	Str16 result = { 0 };
+	Str16 result = {0};
 	result.data = wide_char;
 	while (*wide_char++)
 	{
@@ -443,7 +445,7 @@ os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
 	assert(path.size < MAX_PATH);
 	Str8Node nodes[2];
-	Str8List list = { 0 };
+	Str8List list = {0};
 	str8_list_push_explicit(&list, path, nodes + 0);
 	str8_list_push_explicit(&list, str8_lit("\\*"), nodes + 1);
 	Arena_Temporary scratch = get_scratch(0, 0);
@@ -468,7 +470,7 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 			B32 is_dot = (file_name[0] == '.' && file_name[1] == 0);
 			B32 is_dotdot = (file_name[0] == '.' && file_name[1]  == '.' && file_name[2] == 0);
 			B32 emit = (!is_dot && !is_dotdot);
-			WIN32_FIND_DATAW data = { 0 };
+			WIN32_FIND_DATAW data = {0};
 			if (emit)
 			{
 				memory_copy_struct(&data, &win32_iter->find_data);
@@ -500,10 +502,64 @@ os_file_iterator_end(OS_FileIterator *iterator)
 	}
 }
 
+#define WIN32_MAX_UNICODE_PATH_LENGTH (32767)
+internal Str8
+os_push_system_path(Arena *arena, OS_SystemPath path)
+{
+	Arena_Temporary scratch = get_scratch(&arena, 1);
+
+	Str8 result = str8_lit("");
+	switch (path)
+	{
+		case OS_SystemPath_CurrentDirectory:
+		{
+			// NOTE(hampus): GetCurrentDirectoryA() returns a null terminator
+			DWORD path_size = GetCurrentDirectoryW(0, 0);
+			U16 *buffer = push_array(scratch.arena, U16, path_size);
+			GetCurrentDirectoryW(path_size, buffer);
+			result = str8_from_str16(arena, str16(buffer, path_size-1));
+		} break;
+		case OS_SystemPath_Binary:
+		{
+			// NOTE(hampus): GetModuleFileNameA() does not return a null terminator
+			U16 *buffer = push_array(scratch.arena, U16, WIN32_MAX_UNICODE_PATH_LENGTH);
+			DWORD path_size = GetModuleFileNameW(0, buffer, WIN32_MAX_UNICODE_PATH_LENGTH);
+			// NOTE(hampus): Remove the binary name from the path
+			U64 last_slash_index = 0;
+			Str8 buffer8 = str8_from_str16(scratch.arena, str16(buffer, path_size));
+			str8_last_index_of(buffer8, '\\', &last_slash_index);
+			result.size = last_slash_index;
+			result.data = push_array(arena, U8, result.size);
+			memory_copy_typed(result.data, buffer8.data, result.size);
+		}break;
+		case OS_SystemPath_UserData:
+		{
+			U16 *buffer = push_array(scratch.arena, U16, MAX_PATH);
+			SHGetFolderPathW(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, buffer);
+			U64 path_size = 0;
+			U16 *copy = buffer;
+			// NOTE(hampus): SHGetFolderPathW() doesn't return the string size, sigh ... 
+			for (path_size = 0; *copy; ++path_size, ++copy);
+			result = str8_from_str16(arena, str16(buffer, path_size));
+		}break;
+		case OS_SystemPath_TemporaryData:
+		{
+			U16 *buffer = push_array(scratch.arena, U16, MAX_PATH);
+			U64 path_size = GetTempPathW(MAX_PATH, buffer);
+			result = str8_from_str16(arena, str16(buffer, path_size-1)); // NOTE(hampus): Remove last '\'
+		}break;
+		invalid_case;
+	}
+
+	release_scratch(scratch);
+
+	return(result);
+}
+
 internal DateTime
 win32_date_time_from_system_time(SYSTEMTIME *system_time)
 {
-	DateTime result = { 0 };
+	DateTime result = {0};
 	result.millisecond = system_time->wMilliseconds;
 	result.second      = (U8) system_time->wSecond;
 	result.minute      = (U8) system_time->wMinute;
@@ -517,7 +573,7 @@ win32_date_time_from_system_time(SYSTEMTIME *system_time)
 internal SYSTEMTIME
 win32_system_time_from_date_time(DateTime *date_time)
 {
-	SYSTEMTIME result = { 0 };
+	SYSTEMTIME result = {0};
 	result.wMilliseconds = (WORD) date_time->millisecond;
 	result.wSecond       = (WORD) date_time->second;
 	result.wMinute       = (WORD) date_time->minute;
@@ -531,7 +587,7 @@ win32_system_time_from_date_time(DateTime *date_time)
 internal DateTime
 os_now_universal_time(Void)
 {
-	SYSTEMTIME universal_time = { 0 };
+	SYSTEMTIME universal_time = {0};
 	GetSystemTime(&universal_time);
 	DateTime result = win32_date_time_from_system_time(&universal_time);
 	return(result);
@@ -540,7 +596,7 @@ os_now_universal_time(Void)
 internal DateTime
 os_now_local_time(Void)
 {
-	SYSTEMTIME local_time = { 0 };
+	SYSTEMTIME local_time = {0};
 	GetLocalTime(&local_time);
 	DateTime result = win32_date_time_from_system_time(&local_time);
 	return(result);
@@ -594,10 +650,10 @@ os_sleep_milliseconds(U64 time)
 internal OS_Library
 os_library_open(Str8 path)
 {
-	OS_Library result = { 0 };
+	OS_Library result = {0};
 	Arena_Temporary scratch = get_scratch(0, 0);
 
-	Str8List part_list = { 0 };
+	Str8List part_list = {0};
 	Str8Node parts[2];
 	str8_list_push_explicit(&part_list, path, &parts[0]);
 	str8_list_push_explicit(&part_list, str8_lit(".dll"), &parts[1]);
@@ -712,7 +768,7 @@ os_run(Str8 program, Str8List arguments)
 
 	arena_scratch(0, 0)
 	{
-		Str8List arguments_spaces = { 0 };
+		Str8List arguments_spaces = {0};
 		for (Str8Node *node = arguments.first; node; node = node->next)
 		{
 			str8_list_push(scratch, &arguments_spaces, node->string);
@@ -723,11 +779,11 @@ os_run(Str8 program, Str8List arguments)
 		}
 		Str8 command_line = str8_join(scratch, &arguments_spaces);
 
-		STARTUPINFO startup_info = { 0 };
+		STARTUPINFO startup_info = {0};
 		startup_info.cb = sizeof(startup_info);
 		startup_info.dwFlags = 0;
 
-		PROCESS_INFORMATION process_information = { 0 };
+		PROCESS_INFORMATION process_information = {0};
 		B32 could_launch = CreateProcess(
 			0,
 			cstr16_from_str8(scratch, command_line),

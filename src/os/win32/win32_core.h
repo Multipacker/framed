@@ -5,11 +5,12 @@
 
 #pragma warning(push, 0)
 #define WIN32_LEAN_AND_MEAN
-#include <Windows.h>
+#include <windows.h>
 #include <timeapi.h>
 #include <shellscalingapi.h>
 #include <winnt.h>
 #include <processthreadsapi.h>
+#include "shlobj.h"
 #pragma warning(pop)
 
 typedef struct Win32_FileIterator Win32_FileIterator;
