@@ -17,20 +17,6 @@ Currently the only supported counter is [RDTSC], but more will be added later.
 Clone the repository to wherever you like. Then read the section below that
 corresponds with you operating system.
 
-### Windows
-
-Open a developer terminal by searching for `x64 Native Tools Command Prompt for
-VS <year>` in the start menu. Navigate to the root of the repository and run
-the following commands:
-
-```
-script\build_freetype_msvc
-script\build_msvc release
-```
-
-There will now be a `build` folder in the root of the project, and it will
-contain a program named `framed.exe`.
-
 ### Linux
 
 You can either build with Clang or GCC. The following dependencies need to be
@@ -54,6 +40,20 @@ contain a program named `framed`.
 
 Framed doesn't currently support running on MacOS. As neither of us have a
 Mac, it is unlikely that we will add support for it.
+
+### Windows
+
+Open a developer terminal by searching for `x64 Native Tools Command Prompt for
+VS <year>` in the start menu. Navigate to the root of the repository and run
+the following commands:
+
+```
+script\build_freetype_msvc
+script\build_msvc release
+```
+
+There will now be a `build` folder in the root of the project, and it will
+contain a program named `framed.exe`.
 
 
 ## Usage
