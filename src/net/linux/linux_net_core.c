@@ -1,3 +1,5 @@
+#include <fcntl.h>
+
 #include <netinet/in.h>
 
 #include <sys/socket.h>
@@ -244,4 +246,13 @@ net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64
 	}
 
 	return(result);
+}
+
+internal Void
+net_socket_set_blocking_mode(Net_Socket socket, B32 should_block)
+{
+	int linux_socket = (int) socket.u64[0];
+	int old_flags = fcntl(linux_socket, F_GETFL);
+	int flags = (old_flags & ~O_NONBLOCK) | (should_block ? 0 : O_NONBLOCK);
+	fcntl(linux_socket, F_SETFL, flags);
 }
