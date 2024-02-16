@@ -26,7 +26,7 @@ net_win32_sockaddr_in_from_address(Net_Address address)
 	result.sin_addr.S_un.S_un_b.s_b2 = address.ip.u8[1];
 	result.sin_addr.S_un.S_un_b.s_b3 = address.ip.u8[2];
 	result.sin_addr.S_un.S_un_b.s_b4 = address.ip.u8[3];
-	result.sin_port = u16_reverse(address.port);
+	result.sin_port = u16_big_to_local_endian(address.port);
 	switch (address.address_family)
 	{
 		case Net_AddressFamily_INET:
@@ -54,7 +54,7 @@ net_win32_address_from_sockaddr_in(struct sockaddr_in sockadd)
 	result.ip.u8[1] = sockadd.sin_addr.S_un.S_un_b.s_b2;
 	result.ip.u8[2] = sockadd.sin_addr.S_un.S_un_b.s_b3;
 	result.ip.u8[3] = sockadd.sin_addr.S_un.S_un_b.s_b4;
-	result.port = u16_reverse(sockadd.sin_port);
+	result.port = u16_big_to_local_endian(sockadd.sin_port);
 	switch (sockadd.sin_family)
 	{
 		case AF_INET:

@@ -185,13 +185,27 @@ static Framed_State global_framed_state;
 // NOTE: Socket implementation
 
 static Framed_U16
-framed_u16_reverse(Framed_U16 x)
+framed_u16_big_to_local_endian(Framed_U16 x)
 {
-	x = (Framed_U16) (((x >> 1) & 0x5555) | ((x & 0x5555) << 1));
-	x = (Framed_U16) (((x >> 2) & 0x3333) | ((x & 0x3333) << 2));
-	x = (Framed_U16) (((x >> 4) & 0x0F0F) | ((x & 0x0F0F) << 4));
-	x = (Framed_U16) (((x >> 8) & 0x00FF) | ((x & 0x00FF) << 8));
-	return x;
+#if COMPILER_CL
+	return _byteswap_ushort(x);
+#elif COMPILER_CLANG || COMPILER_GCC
+	return __builtin_bswap16(x);
+#else
+# error Your compiler does not have an implementation of framed_u16_big_to_local_endian.
+#endif
+}
+
+static Framed_U32
+framed_u32_big_to_local_endian(Framed_U32 x)
+{
+#if COMPILER_CL
+	return _byteswap_ulong(x);
+#elif COMPILER_CLANG || COMPILER_GCC
+	return __builtin_bswap32(x);
+#else
+# error Your compiler does not have an implementation of framed_u32_big_to_local_endian.
+#endif
 }
 
 #if OS_WINDOWS
@@ -215,9 +229,9 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
 	sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
 	sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
-	sockaddrin.sin_port = framed_u16_reverse(FRAMED_DEFAULT_PORT);
+	sockaddrin.sin_port = framed_u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
 	sockaddrin.sin_family = AF_INET;
-	// TODO(hampus): Make use of `wait_for_connectipn`. It is always 
+	// TODO(hampus): Make use of `wait_for_connection`. It is always
 	// waiting for now. 
 	int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
 	if (error == SOCKET_ERROR)
