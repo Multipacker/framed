@@ -15,7 +15,7 @@ Currently the only supported counter is [RDTSC], but more will be added later.
 ## Installation
 
 Clone the repository to wherever you like. Then read the section below that
-corresponds with you operating system.
+corresponds with your operating system.
 
 ### Linux
 
@@ -38,7 +38,7 @@ contain a program named `framed`.
 
 ### MacOS
 
-Framed doesn't currently support running on MacOS. As neither of us have a
+Framed currently does not support running on MacOS. As neither of us have a
 Mac, it is unlikely that we will add support for it.
 
 ### Windows
@@ -89,12 +89,12 @@ The API for collecting counters consists of two functions at its core:
 `framed_zone_end()` to end it. Note that you have to call `framed_zone_end()`
 at all exit points of your function, or else the event will not be recorded.
 
-Here is a complete example. There are more complex ones availible in
+Here is a complete example. There are more complex ones available in
 the [tests](/src/tests) folder.
 
 > [!IMPORTANT]
 > This has not yet been tested because the project is not fully functional yet.
-> Test it before opening up the project.
+> Test it before opening the project.
 
 ```c
 #include <stdio.h>
