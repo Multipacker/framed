@@ -6,13 +6,16 @@ internal Void
 net_win32_print_error_message(Void)
 {
 	int error = WSAGetLastError();
-	U8 buffer[1024] = {0};
-	U64 size = FormatMessageA(
-		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-		0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
-	);
-	log_error((CStr) buffer);
-	assert(false);
+	if (error != WSAEWOULDBLOCK)
+	{
+		U8 buffer[1024] = {0};
+		U64 size = FormatMessageA(
+			FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+			0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
+		);
+		log_error((CStr) buffer);
+		assert(false);
+	}
 }
 
 internal struct sockaddr_in
@@ -187,6 +190,10 @@ net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 	SOCKET sock = (SOCKET) connected_socket.u64[0];
 	int bytes_recieved = recv(sock, (char *) buffer, (int) buffer_size, 0);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR);
+	if (bytes_recieved < 0)
+	{
+		bytes_recieved = 0;
+	}
 	result.bytes_recieved = bytes_recieved;
 	return(result);
 }
@@ -199,8 +206,16 @@ net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buff
 	struct sockaddr_in sockaddrin = {0};
 	int from_len = sizeof(sockaddrin);
 	int bytes_recieved = recvfrom(sock, (char *) buffer, (int) buffer_size, 0, (struct sockaddr *) &sockaddrin, &from_len);
-	net_win32_assert(bytes_recieved != SOCKET_ERROR);
+	net_win32_assert(bytes_recieved != SOCKET_ERROR || bytes_recieved == WSAEWOULDBLOCK);
 	result.bytes_recieved = bytes_recieved;
 	*address = net_win32_address_from_sockaddr_in(sockaddrin);
 	return(result);
+}
+
+internal Void
+net_socket_set_blocking_mode(Net_Socket socket, B32 should_block)
+{
+	u_long mode = should_block ? 0 : 1;
+	SOCKET sock = (SOCKET) socket.u64[0];
+	ioctlsocket(sock, FIONBIO, &mode);
 }
