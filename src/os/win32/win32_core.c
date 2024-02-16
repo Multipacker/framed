@@ -515,7 +515,7 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
 		{
 			// NOTE(hampus): GetCurrentDirectoryA() returns a null terminator
 			DWORD path_size = GetCurrentDirectoryW(0, 0);
-			U16 *buffer = push_array(scratch.arena, U16, path_size);
+			CStr16 buffer = push_array(scratch.arena, U16, path_size);
 			GetCurrentDirectoryW(path_size, buffer);
 			result = str8_from_str16(arena, str16(buffer, path_size-1));
 		} break;
@@ -538,13 +538,11 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
 			SHGetFolderPathW(0, CSIDL_APPDATA, 0, SHGFP_TYPE_CURRENT, buffer);
 			U64 path_size = 0;
 			U16 *copy = buffer;
-			// NOTE(hampus): SHGetFolderPathW() doesn't return the string size, sigh ... 
-			for (path_size = 0; *copy; ++path_size, ++copy);
-			result = str8_from_str16(arena, str16(buffer, path_size));
+			result = str8_from_cstr16(arena, buffer);
 		}break;
 		case OS_SystemPath_TemporaryData:
 		{
-			U16 *buffer = push_array(scratch.arena, U16, MAX_PATH);
+			CStr16 buffer = push_array(scratch.arena, U16, MAX_PATH);
 			U64 path_size = GetTempPathW(MAX_PATH, buffer);
 			result = str8_from_str16(arena, str16(buffer, path_size-1)); // NOTE(hampus): Remove last '\'
 		}break;

@@ -91,7 +91,7 @@ The API for collecting counters consists of two functions at its core:
 at all exit points of your function, or else the event will not be recorded.
 
 Here is a complete example. There are more complex ones available in the
-[tests] folder.
+[examples] folder.
 
 > [!IMPORTANT]
 > This has not yet been tested because the project is not fully functional yet.
@@ -145,4 +145,4 @@ Framed is released under the [MIT License].
 [MIT License]: /LICENSE
 [RDTSC]:       https://en.wikipedia.org/wiki/Time_Stamp_Counter
 [stb]:         https://github.com/nothings/stb
-[tests]:       /src/tests
+[examples]:    /src/examples

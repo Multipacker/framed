@@ -153,14 +153,17 @@ void framed_zone_end(void);
 
 #ifdef FRAMED_IMPLEMENTATION
 
-#define FRAMED_BUFFER_CAPACITY (4 * 1024)
-#define FRAMED_DEFAULT_PORT (12345)
-
 #include <string.h>
+#include <stdlib.h>
 
 #if COMPILER_CL
 # include <intrin.h>
 #endif
+
+#define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
+
+#define FRAMED_BUFFER_CAPACITY (4 * 1024)
+#define FRAMED_DEFAULT_PORT (1234)
 
 typedef struct Framed_Socket Framed_Socket;
 struct Framed_Socket
@@ -213,13 +216,26 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
 	sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
 	sockaddrin.sin_port = framed_u16_reverse(FRAMED_DEFAULT_PORT);
-	// connect(sock, sockaddrin.ai_addr,
+	sockaddrin.sin_family = AF_INET;
+	// TODO(hampus): Make use of `wait_for_connectipn`. It is always 
+	// waiting for now. 
+	int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
+	if (error == SOCKET_ERROR)
+	{
+		printf("error");
+	}
 }
 
 static void
 framed__socket_send(void)
 {
 	Framed_State *framed = &global_framed_state;
+	SOCKET sock = (SOCKET) framed->socket.u64[0];
+	int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
+	if (error == SOCKET_ERROR)
+	{
+		printf("error");
+	}
 }
 
 #elif OS_LINUX
@@ -307,7 +323,7 @@ framed_zone_begin(char *name)
 
 	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
 	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
-	(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
+	framed_memory_copy(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
 
 	framed->buffer_pos += entry_size;
 }
@@ -324,6 +340,7 @@ framed_zone_end(void)
 
 	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
 	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
+
 	framed->buffer_pos += entry_size;
 }
 

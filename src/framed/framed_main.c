@@ -143,29 +143,6 @@ os_main(Str8List arguments)
 	debug_init();
 	log_init(str8_lit("log.txt"));
 
-#if 0
-	arena_scratch(0, 0)
-	{
-		for (OS_SystemPath system_path = 0; system_path < OS_SystemPath_COUNT; ++system_path)
-		{
-			Str8 path = os_push_system_path(scratch, system_path);
-			log_info("%"PRISTR8, str8_expand(path));
-		}
-	}
-#endif
-
-#if 0
-	B32 host = false;
-
-	for (Str8Node *node = arguments.first; node != 0; node = node->next)
-	{
-		if (str8_equal(node->string, str8_lit("-host")))
-		{
-			host = true;
-			break;
-		}
-	}
-
 	net_socket_init();
 	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
 	Net_Address address =
@@ -176,21 +153,9 @@ os_main(Str8List arguments)
 		.ip.u8[3] = 1,
 		.port = 1234,
 	};
-	if (host)
-	{
-		net_socket_bind(socket, address);
-		Net_AcceptResult accept_result = net_socket_accept(socket);
-		U8 buffer[256] = {0};
-		net_socket_recieve_from(accept_result.socket, accept_result.address, buffer, array_count(buffer));
-		log_info((CStr) buffer);
-	}
-	else
-	{
-		net_socket_connect(socket, address);
-		Str8 buffer = str8_lit("Hello socket!");
-		net_socket_send_to(socket, address, buffer);
-	}
-#endif
+	net_socket_bind(socket, address);
+	Net_AcceptResult accept_result = net_socket_accept(socket);
+	net_socket_set_blocking_mode(accept_result.socket, false);
 
 	Arena *perm_arena = arena_create("MainPerm");
 
@@ -328,6 +293,27 @@ os_main(Str8List arguments)
 			}
 		}
 
+		U8 buffer[256] = {0};
+		Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, array_count(buffer));
+		if (recieve_result.bytes_recieved)
+		{
+			// U64 : rdtsc
+			// U64 : name_length, if 0 then this closes the last zone
+			// U8 * name_length : name
+
+			U8 *buffer_pointer = buffer;
+			while (*buffer_pointer)
+			{
+				U64 rdtsc = *(U64 *) buffer_pointer;
+				buffer_pointer += sizeof(U64);
+				U64 name_length = *(U64 *) buffer_pointer;
+				buffer_pointer += sizeof(U64);
+				Str8 name = str8(buffer_pointer, name_length);
+				buffer_pointer += name_length;
+				log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(name), rdtsc);
+			}
+		}
+
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
@@ -383,7 +369,6 @@ os_main(Str8List arguments)
 			ui_row()
 		{
 			UI_Comm comm = ui_button(str8_lit("File"));
-
 			if (comm.hovering)
 			{
 				B32 ctx_menu_is_open = ui_key_match(ui_ctx_menu_key(), my_ctx_menu);
@@ -396,9 +381,7 @@ os_main(Str8List arguments)
 			{
 				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
 			}
-
 			UI_Comm comm2 = ui_button(str8_lit("Edit"));
-
 			if (comm2.hovering)
 			{
 				B32 ctx_menu2_is_open = ui_key_match(ui_ctx_menu_key(), my_ctx_menu2);

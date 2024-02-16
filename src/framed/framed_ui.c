@@ -1636,7 +1636,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
-}
+	}
 #endif
 	// NOTE(hampus): Update Windows
 

@@ -1,15 +1,20 @@
 #include <stdio.h>
-#include <stdlib.h>
 
 #define FRAMED_IMPLEMENTATION
 #include "public/framed.h"
 
-int
-main(int argc, char **argv)
+#define false 0
+#define true 1
+
+int main(int argc, char **argv)
 {
-	framed_init(1);
+	framed_init(true);
 	framed_zone_begin("Test");
 	framed_zone_end();
 	framed_flush();
-	return(0);
+	while (true)
+	{
+
+	}
+	return 0;
 }
