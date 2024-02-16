@@ -264,6 +264,7 @@ os_main(Str8List arguments)
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
 	B32 running = true;
+	B32 found_connection = false;
 	while (running)
 	{
 		Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
@@ -331,16 +332,15 @@ os_main(Str8List arguments)
 			}
 		}
 
-		B32 found_connection = accept_result.socket.u64[0] != 0;
-
 		if (!found_connection)
 		{
 			accept_result = net_socket_accept(socket);
-			if (accept_result.socket.u64[0])
+			found_connection = accept_result.succeeded;
+			if (found_connection)
 			{
 				log_info("Connection accepted");
+				net_socket_set_blocking_mode(accept_result.socket, false);
 			}
-			net_socket_set_blocking_mode(accept_result.socket, false);
 		}
 
 		// NOTE(hampus): Very simple profiling, does not take into account nested blocks or recursion

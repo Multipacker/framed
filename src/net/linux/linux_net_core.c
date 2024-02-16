@@ -185,6 +185,7 @@ net_socket_accept(Net_Socket socket)
 		socklen_t       client_address_length = sizeof(struct sockaddr_in);
 		struct sockaddr *client_address       = (struct sockaddr *) arena_push(scratch, client_address_length);
 		int client_socket = accept(linux_socket, client_address, &client_address_length);
+		result.succeeded = client_socket != -1;
 
 		result.address = net_linux_address_from_sockaddr(client_address, client_address_length);
 		result.socket.u64[0] = (U64) client_socket;

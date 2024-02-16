@@ -160,6 +160,7 @@ net_socket_accept(Net_Socket socket)
 	struct sockaddr_in connected_addr = {0};
 	int connected_addrlen = sizeof(connected_addr);
 	SOCKET connected_socket = accept(listen_socket, (struct sockaddr *) &connected_addr, &connected_addrlen);
+	result.succeeded = connected_socket != INVALID_SOCKET;
 	net_win32_assert(connected_socket != INVALID_SOCKET);
 	if (connected_socket != INVALID_SOCKET)
 	{

@@ -49,6 +49,7 @@ struct Net_AcceptResult
 {
 	Net_Socket socket;
 	Net_Address address;
+	B32 succeeded;
 };
 
 internal Void              net_socket_init(Void);
