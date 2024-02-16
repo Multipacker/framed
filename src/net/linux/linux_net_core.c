@@ -220,7 +220,10 @@ net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
 	int linux_socket = (int) socket.u64[0];
 
 	ssize_t bytes_recieved = recv(linux_socket, buffer, (size_t) buffer_size, 0);
-	assert(bytes_recieved != -1);
+	if (bytes_recieved == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+	{
+		bytes_recieved = 0;
+	}
 
 	Net_RecieveResult result = { 0 };
 	result.bytes_recieved = (U64) bytes_recieved;
@@ -240,7 +243,10 @@ net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64
 		socklen_t socket_length = sizeof(struct sockaddr_in);
 		struct sockaddr *socket_address = (struct sockaddr *) arena_push(scratch, socket_length);
 		ssize_t bytes_recieved = recvfrom(linux_socket, buffer, (size_t) buffer_size, 0, socket_address, &socket_length);
-		assert(bytes_recieved != -1);
+		if (bytes_recieved == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
+		{
+			bytes_recieved = 0;
+		}
 
 		*address = net_linux_address_from_sockaddr(socket_address, socket_length);
 		result.bytes_recieved = (U64) bytes_recieved;
