@@ -145,4 +145,4 @@ Framed is released under the [MIT License].
 [MIT License]: /LICENSE
 [RDTSC]:       https://en.wikipedia.org/wiki/Time_Stamp_Counter
 [stb]:         https://github.com/nothings/stb
-[test]:        /src/tests
+[tests]:       /src/tests
