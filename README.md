@@ -103,8 +103,7 @@ Here is a complete example. There are more complex ones available in the
 #define FRAMED_IMPLEMENTATION
 #include "framed.h"
 
-int
-factorial(int n)
+int factorial(int n)
 {
     framed_zone_begin("factorial");
 
@@ -115,11 +114,10 @@ factorial(int n)
     }
 
     framed_zone_end();
-    return(result);
+    return result;
 }
 
-int
-main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     framed_init(true);
     framed_zone_begin("main");
@@ -129,7 +127,7 @@ main(int argc, char *argv[])
 
     framed_zone_end();
     framed_flush();
-    return(0);
+    return 0;
 }
 ```
 
