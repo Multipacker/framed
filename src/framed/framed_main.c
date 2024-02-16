@@ -134,6 +134,33 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_theme)
 	}
 }
 
+typedef struct ZoneBlock ZoneBlock;
+struct ZoneBlock
+{
+	ZoneBlock *parent;
+
+	Str8 name;
+	U64 start_rdtsc;
+	U64 end_rdtsc;
+	U64 total_rdtsc;
+};
+
+// NOTE(hampus): First zone block is a null block
+ZoneBlock zone_blocks[4096] = {0};
+ZoneBlock *current_zone_block = zone_blocks;
+
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
+{
+	for (U64 i = 0; i < array_count(zone_blocks); ++i)
+	{
+		ZoneBlock *zone_block = zone_blocks + i;
+		if (zone_block->total_rdtsc)
+		{
+			ui_textf("%"PRISTR8": %"PRIU64, str8_expand(zone_block->name), zone_block->total_rdtsc);
+		}
+	}
+}
+
 ////////////////////////////////
 // hampus: Main
 
@@ -199,10 +226,6 @@ os_main(Str8List arguments)
 	Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
 	FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
 
-	// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
-	// the window size, because on windows going maximized also shows the window which we don't want. So
-	// this will be a temporary solution
-	FramedUI_Window *debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
 	{
 		{
 			// NOTE(hampus): Setup master window
@@ -219,7 +242,7 @@ os_main(Str8List arguments)
 			{
 				FramedUI_TabAttach attach =
 				{
-					.tab = framed_ui_tab_make(0, 0, str8_lit("")),
+					.tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters")),
 					.panel = split_panel_result.panels[Side_Max],
 				};
 				framed_ui_command_tab_attach(&attach);
@@ -228,51 +251,12 @@ os_main(Str8List arguments)
 			framed_ui_state->master_window = master_window;
 			framed_ui_state->next_focused_panel = first_panel;
 		}
-
-		{
-			// NOTE(hampus): Setup debug window
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug")),
-					.panel = debug_window->root_panel,
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0,
-					str8_lit("Log")),
-					.panel = debug_window->root_panel,
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
-					.panel = debug_window->root_panel,
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			// debug_window->flags |= FramedUI_WindowFlags_Closed;
-		}
 	}
 
 	Net_AcceptResult accept_result = {0};
 
-	typedef struct ZoneBlock ZoneBlock;
-	struct ZoneBlock
-	{
-		Str8 name;
-		U64 start_rdtsc;
-		U64 end_rdtsc;
-	};
-
-	// NOTE(hampus): First zone block is a null block
-	ZoneBlock zone_blocks[4096] = {0};
-	ZoneBlock *current_zone_block = zone_blocks;
+	B32 debug_window_enabled = false;
+	FramedUI_Window *debug_window = 0;
 
 	framed_ui_state->frame_index = 1;
 	gfx_set_window_maximized(&gfx);
@@ -301,7 +285,46 @@ os_main(Str8List arguments)
 				}
 				else if (event->key == Gfx_Key_F1)
 				{
-					// debug_window->flags ^= FramedUI_WindowFlags_Closed;
+					if (debug_window_enabled)
+					{
+						framed_ui_window_close(debug_window);
+					}
+					else
+					{
+						debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
+						{
+							// NOTE(hampus): Setup debug window
+							{
+								FramedUI_TabAttach attach =
+								{
+									.tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug")),
+									.panel = debug_window->root_panel,
+								};
+								framed_ui_command_tab_attach(&attach);
+							}
+							{
+								FramedUI_TabAttach attach =
+								{
+									.tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0,
+									str8_lit("Log")),
+									.panel = debug_window->root_panel,
+								};
+								framed_ui_command_tab_attach(&attach);
+							}
+							{
+								FramedUI_TabAttach attach =
+								{
+									.tab = framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
+									.panel = debug_window->root_panel,
+								};
+								framed_ui_command_tab_attach(&attach);
+							}
+						}
+					}
+					debug_window_enabled ^= 1;
+					// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
+					// the window size, because on windows going maximized also shows the window which we don't want. So
+					// this will be a temporary solution
 				}
 			}
 		}
@@ -311,9 +334,14 @@ os_main(Str8List arguments)
 		if (!found_connection)
 		{
 			accept_result = net_socket_accept(socket);
+			if (accept_result.socket.u64[0])
+			{
+				log_info("Connection accepted");
+			}
 			net_socket_set_blocking_mode(accept_result.socket, false);
 		}
 
+		// NOTE(hampus): Very simple profiling, does not take into account nested blocks or recursion
 		if (found_connection)
 		{
 			U8 buffer[256] = {0};
@@ -331,22 +359,32 @@ os_main(Str8List arguments)
 				buffer_pointer += sizeof(U64);
 				Str8 name = str8(buffer_pointer, name_length);
 				buffer_pointer += name_length;
-				if (name_length)
+				B32 opening_block = name_length != 0;
+				if (opening_block)
 				{
-					// NOTE(hampus): This is an opening block
+					U64 hash = hash_str8(name);
+					U64 slot_index = hash % array_count(zone_blocks);
+					ZoneBlock *zone_block = zone_blocks + slot_index;
+					if (!zone_block->name.data)
+					{
+						// TODO(hampus): Comparison of the names, may not be the same
+						zone_block->name = str8_copy(perm_arena, name);
+					}
+					zone_block->start_rdtsc = rdtsc;
+					zone_block->parent = current_zone_block;
 
-					current_zone_block++;
-					current_zone_block->name = str8_copy(perm_arena, name);
-					current_zone_block->start_rdtsc = rdtsc;
+					current_zone_block = zone_block;
 				}
 				else
 				{
-					// NOTE(hampus): This is a closing block
+					ZoneBlock *zone_block = current_zone_block;
 
-					current_zone_block->end_rdtsc = rdtsc;
-					U64 total_rdtsc = current_zone_block->end_rdtsc - current_zone_block->start_rdtsc;
-					log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(current_zone_block->name), total_rdtsc);
-					current_zone_block--;
+					zone_block->end_rdtsc = rdtsc;
+
+					// TODO(hampus): This overrides the previous value.
+					zone_block->total_rdtsc = zone_block->end_rdtsc - zone_block->start_rdtsc;
+
+					current_zone_block = zone_block->parent;
 				}
 			}
 		}

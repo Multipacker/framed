@@ -14,7 +14,6 @@ int main(int argc, char **argv)
 	framed_flush();
 	while (true)
 	{
-
 	}
 	return 0;
 }
