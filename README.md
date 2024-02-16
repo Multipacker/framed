@@ -30,7 +30,6 @@ commands to compile using Clang. Equivalent scripts exist for
 compiling with GCC.
 
 ```
-script/build_freetype_clang.sh 
 script/build_clang.sh release
 ```
 

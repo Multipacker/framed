@@ -2,6 +2,10 @@
 
 mode=${1:-debug}
 
+if [ ! -f build/freetype/freetype ]; then
+	source "script/build_freetype_gcc.sh"
+fi
+
 mkdir -p build
 
 src_files="src/framed/framed_main.c"
