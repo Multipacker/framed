@@ -153,9 +153,8 @@ os_main(Str8List arguments)
 		.ip.u8[3] = 1,
 		.port = 1234,
 	};
-	net_socket_bind(socket, address);
-	Net_AcceptResult accept_result = net_socket_accept(socket);
-	net_socket_set_blocking_mode(accept_result.socket, false);
+	net_socket_bind(socket, address);;
+	net_socket_set_blocking_mode(socket, false);
 
 	Arena *perm_arena = arena_create("MainPerm");
 
@@ -261,6 +260,8 @@ os_main(Str8List arguments)
 		}
 	}
 
+	Net_AcceptResult accept_result = {0};
+
 	framed_ui_state->frame_index = 1;
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
@@ -293,24 +294,35 @@ os_main(Str8List arguments)
 			}
 		}
 
-		U8 buffer[256] = {0};
-		Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, array_count(buffer));
-		if (recieve_result.bytes_recieved)
-		{
-			// U64 : rdtsc
-			// U64 : name_length, if 0 then this closes the last zone
-			// U8 * name_length : name
+		B32 found_connection = accept_result.socket.u64[0] != 0;
 
-			U8 *buffer_pointer = buffer;
-			while (*buffer_pointer)
+		if (!found_connection)
+		{
+			accept_result = net_socket_accept(socket);
+			net_socket_set_blocking_mode(accept_result.socket, false);
+		}
+
+		if (found_connection)
+		{
+			U8 buffer[256] = {0};
+			Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, array_count(buffer));
+			if (recieve_result.bytes_recieved)
 			{
-				U64 rdtsc = *(U64 *) buffer_pointer;
-				buffer_pointer += sizeof(U64);
-				U64 name_length = *(U64 *) buffer_pointer;
-				buffer_pointer += sizeof(U64);
-				Str8 name = str8(buffer_pointer, name_length);
-				buffer_pointer += name_length;
-				log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(name), rdtsc);
+				// U64 : rdtsc
+				// U64 : name_length, if 0 then this closes the last zone
+				// U8 * name_length : name
+
+				U8 *buffer_pointer = buffer;
+				while (*buffer_pointer)
+				{
+					U64 rdtsc = *(U64 *) buffer_pointer;
+					buffer_pointer += sizeof(U64);
+					U64 name_length = *(U64 *) buffer_pointer;
+					buffer_pointer += sizeof(U64);
+					Str8 name = str8(buffer_pointer, name_length);
+					buffer_pointer += name_length;
+					log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(name), rdtsc);
+				}
 			}
 		}
 

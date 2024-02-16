@@ -161,8 +161,11 @@ net_socket_accept(Net_Socket socket)
 	int connected_addrlen = sizeof(connected_addr);
 	SOCKET connected_socket = accept(listen_socket, (struct sockaddr *) &connected_addr, &connected_addrlen);
 	net_win32_assert(connected_socket != INVALID_SOCKET);
-	result.address = net_win32_address_from_sockaddr_in(connected_addr);
-	result.socket.u64[0] = (U64) connected_socket;
+	if (connected_socket != INVALID_SOCKET)
+	{
+		result.address = net_win32_address_from_sockaddr_in(connected_addr);
+		result.socket.u64[0] = (U64) connected_socket;
+	}
 	return(result);
 }
 
