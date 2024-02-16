@@ -1,9 +1,10 @@
 # Framed
 
 The Framed profiler is a hobby project that measures various counters across
-sections of your code and displays them visually. It currently only has direct support for C and C++. 
-It consists of two parts: a small [stb](https://github.com/nothings/stb)-style single header file library for capturing counters, and a
-graphical visualizer for displaying the counters.
+sections of your code and displays them visually. It currently only has direct
+support for C and C++.  It consists of two parts: a small [stb]-style single
+header file library for capturing counters, and a graphical visualizer for
+displaying the counters.
 
 Gathering of counters happens by manually adding a minimal amount of markup to
 your code. This takes care of collecting counters and sending them over to the
@@ -44,10 +45,10 @@ Mac, it is unlikely that we will add support for it.
 ### Windows
 
 Building on Windows requires a command line with the ability to call MSVC.
-This can be achieved by either running `x64 Native Tools Command Prompt for
-VS <year>` in the start menu or by running `vcvarsall.bat x64` provided by Microsoft's C/C++ build tools. 
-Navigate to the root of the repository and run
-the following commands:
+This can be achieved by either running `x64 Native Tools Command Prompt for VS
+<year>` in the start menu or by running `vcvarsall.bat x64` provided by
+Microsoft's C/C++ build tools.  Navigate to the root of the repository and run
+the following command:
 
 ```
 script\build_msvc release
@@ -55,6 +56,7 @@ script\build_msvc release
 
 There will now be a `build` folder in the root of the project, and it will
 contain a program named `framed.exe`.
+
 
 ## Usage
 
@@ -89,8 +91,8 @@ The API for collecting counters consists of two functions at its core:
 `framed_zone_end()` to end it. Note that you have to call `framed_zone_end()`
 at all exit points of your function, or else the event will not be recorded.
 
-Here is a complete example. There are more complex ones available in
-the [tests](/src/tests) folder.
+Here is a complete example. There are more complex ones available in the
+[tests] folder.
 
 > [!IMPORTANT]
 > This has not yet been tested because the project is not fully functional yet.
@@ -135,10 +137,13 @@ main(int argc, char *argv[])
 
 ## Roadmap
 
+
 ## License
 
 Framed is released under the [MIT License].
 
 
-[MIT License]: https://mit-license.org/
-[RDTSC]: https://en.wikipedia.org/wiki/Time_Stamp_Counter 
+[MIT License]: /LICENSE
+[RDTSC]:       https://en.wikipedia.org/wiki/Time_Stamp_Counter
+[stb]:         https://github.com/nothings/stb
+[test]:        /src/tests
