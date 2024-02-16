@@ -254,16 +254,38 @@ framed__socket_send(void)
 
 #elif OS_LINUX
 
+#include <errno.h>
+#include <sys/socket.h>
+#include <netinet/ip.h>
+
 static void
-framed__socket_init(FramedUI_B32 wait_for_connection)
+framed__socket_init(Framed_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
+	int linux_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	framed->socket.u64[0] = (Framed_U64) linux_socket;
+	struct sockaddr_in socket_address = { 0 };
+	socket_address.sin_family      = AF_INET;
+	socket_address.sin_port        = framed_u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+	socket_address.sin_addr.s_addr = framed_u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
+	// TODO(simon): Use `wait_for_connection`
+	int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
+	if (error == -1)
+	{
+		// TODO(simon): Report better errors to the user.
+		perror("Framed connect");
+	}
 }
 
 static void
 framed__socket_send(void)
 {
 	Framed_State *framed = &global_framed_state;
+	int linux_socket = (int) framed->socket.u64[0];
+	int error = 0;
+	do {
+		error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
+	} while (error == -1 && (errno == EAGAIN || errno == EWOULDBLOCK));
 }
 
 #endif
