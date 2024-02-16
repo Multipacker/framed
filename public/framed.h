@@ -259,14 +259,20 @@ framed__socket_send(void)
 
 #define framed__assert(expr)
 
+#if COMPILER_GCC
+#	include <x86intrin.h>
+#endif
+
 static Framed_U64
 framed__rdtsc(void)
 {
 	Framed_U64 result = 0;
 #if COMPILER_CL
 	result = __rdtsc();
-#else
-#	error Implement framed_rdtsc for your platform!
+#elif COMPILER_CLANG
+	result = __rdtsc();
+#elif COMPILER_GCC
+	result = __rdtsc();
 #endif
 	return(result);
 }
