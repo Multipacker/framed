@@ -3,6 +3,8 @@
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @polish Dragging by a tab bar should not offset the new window at (0, 0)
+// [ ] @polish Memory leak when closing/opening a window due to new view data is 
+//             is pushed every time the window opens again
 
 ////////////////////////////////
 // hampus: Medium term

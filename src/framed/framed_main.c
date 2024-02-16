@@ -140,9 +140,10 @@ struct ZoneBlock
 	ZoneBlock *parent;
 
 	Str8 name;
-	U64 start_rdtsc;
-	U64 end_rdtsc;
-	U64 total_rdtsc;
+	U64 tsc_start;
+	U64 tsc_end;
+	U64 tsc_elapsed;
+	U64 tsc_elapsed_children;
 };
 
 // NOTE(hampus): First zone block is a null block
@@ -154,9 +155,11 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 	for (U64 i = 0; i < array_count(zone_blocks); ++i)
 	{
 		ZoneBlock *zone_block = zone_blocks + i;
-		if (zone_block->total_rdtsc)
+		if (zone_block->tsc_elapsed)
 		{
-			ui_textf("%"PRISTR8": %"PRIU64, str8_expand(zone_block->name), zone_block->total_rdtsc);
+			// TODO(hampus): Don't print out the children value if it doesn't have any child
+			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
+			ui_textf("%"PRISTR8": %"PRIU64" (%"PRIU64" w/ children)", str8_expand(zone_block->name), tsc_without_children, zone_block->tsc_elapsed);
 		}
 	}
 }
@@ -255,7 +258,6 @@ os_main(Str8List arguments)
 
 	Net_AcceptResult accept_result = {0};
 
-	B32 debug_window_enabled = false;
 	FramedUI_Window *debug_window = 0;
 
 	framed_ui_state->frame_index = 1;
@@ -285,9 +287,10 @@ os_main(Str8List arguments)
 				}
 				else if (event->key == Gfx_Key_F1)
 				{
-					if (debug_window_enabled)
+					if (debug_window)
 					{
 						framed_ui_window_close(debug_window);
+						debug_window = 0;
 					}
 					else
 					{
@@ -321,7 +324,6 @@ os_main(Str8List arguments)
 							}
 						}
 					}
-					debug_window_enabled ^= 1;
 					// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
 					// the window size, because on windows going maximized also shows the window which we don't want. So
 					// this will be a temporary solution
@@ -370,7 +372,7 @@ os_main(Str8List arguments)
 						// TODO(hampus): Comparison of the names, may not be the same
 						zone_block->name = str8_copy(perm_arena, name);
 					}
-					zone_block->start_rdtsc = rdtsc;
+					zone_block->tsc_start = rdtsc;
 					zone_block->parent = current_zone_block;
 
 					current_zone_block = zone_block;
@@ -378,13 +380,15 @@ os_main(Str8List arguments)
 				else
 				{
 					ZoneBlock *zone_block = current_zone_block;
+					ZoneBlock *parent_zone_block = current_zone_block->parent;
 
-					zone_block->end_rdtsc = rdtsc;
+					U64 tsc_elapsed = rdtsc - zone_block->tsc_start;
 
-					// TODO(hampus): This overrides the previous value.
-					zone_block->total_rdtsc = zone_block->end_rdtsc - zone_block->start_rdtsc;
+					zone_block->tsc_end = rdtsc;
+					zone_block->tsc_elapsed += tsc_elapsed;
+					parent_zone_block->tsc_elapsed_children += tsc_elapsed;
 
-					current_zone_block = zone_block->parent;
+					current_zone_block = parent_zone_block;
 				}
 			}
 		}
