@@ -262,6 +262,18 @@ os_main(Str8List arguments)
 
 	Net_AcceptResult accept_result = {0};
 
+	typedef struct ZoneBlock ZoneBlock;
+	struct ZoneBlock
+	{
+		Str8 name;
+		U64 start_rdtsc;
+		U64 end_rdtsc;
+	};
+
+	// NOTE(hampus): First zone block is a null block
+	ZoneBlock zone_blocks[4096] = {0};
+	ZoneBlock *current_zone_block = zone_blocks;
+
 	framed_ui_state->frame_index = 1;
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
@@ -306,22 +318,35 @@ os_main(Str8List arguments)
 		{
 			U8 buffer[256] = {0};
 			Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, array_count(buffer));
-			if (recieve_result.bytes_recieved)
+			U8 *buffer_pointer = buffer;
+			while (*buffer_pointer)
 			{
 				// U64 : rdtsc
 				// U64 : name_length, if 0 then this closes the last zone
 				// U8 * name_length : name
 
-				U8 *buffer_pointer = buffer;
-				while (*buffer_pointer)
+				U64 rdtsc = *(U64 *) buffer_pointer;
+				buffer_pointer += sizeof(U64);
+				U64 name_length = *(U64 *) buffer_pointer;
+				buffer_pointer += sizeof(U64);
+				Str8 name = str8(buffer_pointer, name_length);
+				buffer_pointer += name_length;
+				if (name_length)
 				{
-					U64 rdtsc = *(U64 *) buffer_pointer;
-					buffer_pointer += sizeof(U64);
-					U64 name_length = *(U64 *) buffer_pointer;
-					buffer_pointer += sizeof(U64);
-					Str8 name = str8(buffer_pointer, name_length);
-					buffer_pointer += name_length;
-					log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(name), rdtsc);
+					// NOTE(hampus): This is an opening block
+
+					current_zone_block++;
+					current_zone_block->name = str8_copy(perm_arena, name);
+					current_zone_block->start_rdtsc = rdtsc;
+				}
+				else
+				{
+					// NOTE(hampus): This is a closing block
+
+					current_zone_block->end_rdtsc = rdtsc;
+					U64 total_rdtsc = current_zone_block->end_rdtsc - current_zone_block->start_rdtsc;
+					log_info("Name: %"PRISTR8", value: %"PRIU64, str8_expand(current_zone_block->name), total_rdtsc);
+					current_zone_block--;
 				}
 			}
 		}
