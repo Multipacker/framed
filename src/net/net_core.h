@@ -1,10 +1,11 @@
 #ifndef NET_CORE_H
 #define NET_CORE_H
 
-typedef struct Net_Socket Net_Socket;
-struct Net_Socket
+typedef union Net_Socket Net_Socket;
+union Net_Socket
 {
 	U64 u64[1];
+	U32 u32[2];
 };
 
 typedef enum Net_Protocol Net_Protocol;

@@ -125,7 +125,8 @@ net_socket_alloc(Net_Protocol protocol, Net_AddressFamily address_family)
 	assert(linux_socket != -1);
 
 	Net_Socket result = { 0 };
-	result.u64[0] = (U64) linux_socket;
+	result.u32[0] = (U32) linux_socket;
+	result.u32[1] = true;
 
 	return(result);
 }
@@ -133,14 +134,14 @@ net_socket_alloc(Net_Protocol protocol, Net_AddressFamily address_family)
 internal Void
 net_socket_free(Net_Socket socket)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 	close(linux_socket);
 }
 
 internal Void
 net_socket_bind(Net_Socket socket, Net_Address address)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	arena_scratch(0, 0)
 	{
@@ -157,7 +158,7 @@ net_socket_bind(Net_Socket socket, Net_Address address)
 internal Void
 net_socket_connect(Net_Socket socket, Net_Address to)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	arena_scratch(0, 0)
 	{
@@ -174,7 +175,7 @@ net_socket_accept(Net_Socket socket)
 {
 	Net_AcceptResult result = { 0 };
 
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	// TODO(simon): What should the backlog value be?
 	listen(linux_socket, 128);
@@ -188,7 +189,8 @@ net_socket_accept(Net_Socket socket)
 		result.succeeded = client_socket != -1;
 
 		result.address = net_linux_address_from_sockaddr(client_address, client_address_length);
-		result.socket.u64[0] = (U64) client_socket;
+		result.socket.u32[0] = (U32) client_socket;
+		result.socket.u32[1] = true;
 	}
 
 	return(result);
@@ -197,14 +199,14 @@ net_socket_accept(Net_Socket socket)
 internal Void
 net_socket_send(Net_Socket socket, Str8 data)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 	send(linux_socket, data.data, (size_t) data.size, 0);
 }
 
 internal Void
 net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	arena_scratch(0, 0)
 	{
@@ -217,7 +219,7 @@ net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data)
 internal Net_RecieveResult
 net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	ssize_t bytes_recieved = recv(linux_socket, buffer, (size_t) buffer_size, 0);
 	if (bytes_recieved == -1 && (errno == EAGAIN || errno == EWOULDBLOCK))
@@ -235,7 +237,7 @@ net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64
 {
 	Net_RecieveResult result = { 0 };
 
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 
 	arena_scratch(0, 0)
 	{
@@ -258,8 +260,35 @@ net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64
 internal Void
 net_socket_set_blocking_mode(Net_Socket socket, B32 should_block)
 {
-	int linux_socket = (int) socket.u64[0];
+	int linux_socket = (int) socket.u32[0];
 	int old_flags = fcntl(linux_socket, F_GETFL);
 	int flags = (old_flags & ~O_NONBLOCK) | (should_block ? 0 : O_NONBLOCK);
 	fcntl(linux_socket, F_SETFL, flags);
+}
+
+internal B32
+net_socket_connection_is_alive(Net_Socket socket)
+{
+	B32 result = true;
+	int linux_socket = (int) socket.u32[0];
+	B32 is_initialied = socket.u32[1];
+
+	if (is_initialied)
+	{
+		if (linux_socket != -1)
+		{
+			ssize_t bytes_peeked = recv(linux_socket, 0, 0, MSG_PEEK);
+			result = bytes_peeked == 0;
+		}
+		else
+		{
+			result = false;
+		}
+	}
+	else
+	{
+		result = false;
+	}
+
+	return(result);
 }
