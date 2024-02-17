@@ -138,10 +138,8 @@ typedef struct ZoneBlock ZoneBlock;
 struct ZoneBlock
 {
 	ZoneBlock *parent;
-
 	Str8 name;
 	U64 tsc_start;
-	U64 tsc_end;
 	U64 tsc_elapsed;
 	U64 tsc_elapsed_children;
 	U64 hit_count;
@@ -198,6 +196,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		if (zone_block->tsc_elapsed)
 		{
 			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
+			// assert(zone_block->tsc_elapsed > zone_block->tsc_elapsed_children);
 			Str8List string_list = {0};
 			Str8 tsc_children = {0};
 			if (zone_block->tsc_elapsed_children)
@@ -422,7 +421,7 @@ os_main(Str8List arguments)
 			}
 		}
 
-		// NOTE(hampus): Very simple profiling, does not take into account nested blocks or recursion
+		// NOTE(hampus): Very simple profiling, does not take recursion into account
 		if (found_connection)
 		{
 			Arena_Temporary scratch = get_scratch(0, 0);
@@ -433,30 +432,31 @@ os_main(Str8List arguments)
 			U64 bytes_processed = 0;
 			while (bytes_processed < recieve_result.bytes_recieved)
 			{
-				// U64 : rdtsc
-				// U64 : name_length, if 0 then this closes the last zone
-				// U8 * name_length : name
+				typedef struct ZoneBlockPacket ZoneBlockPacket;
+				struct ZoneBlockPacket
+				{
+					U64 tsc;
+					U64 name_length;
+					U8 name[256];
+				};
+				ZoneBlockPacket *packet = (ZoneBlockPacket *) buffer_pointer;
 
-				U64 rdtsc = *(U64 *) buffer_pointer;
-				buffer_pointer += sizeof(U64);
-				U64 name_length = *(U64 *) buffer_pointer;
-				buffer_pointer += sizeof(U64);
-				B32 opening_block = name_length != 0;
-
+				B32 opening_block = packet->name_length != 0;
 				if (opening_block)
 				{
-					Str8 name = str8(buffer_pointer, name_length);
+					Str8 name = str8(packet->name, packet->name_length);
 
 					U64 hash = hash_str8(name);
 					U64 slot_index = hash % array_count(zone_blocks);
+					assert(slot_index != 0);
 					ZoneBlock *zone_block = zone_blocks + slot_index;
 					if (!zone_block->name.data)
 					{
 						// TODO(hampus): Comparison of the names, may not be the same
 						zone_block->name = str8_copy(perm_arena, name);
 					}
-					// assert(str8_equal(zone_block->name, name));
-					zone_block->tsc_start = rdtsc;
+
+					zone_block->tsc_start = packet->tsc;
 					zone_block->parent = current_zone_block;
 					zone_block->hit_count++;
 					current_zone_block = zone_block;
@@ -466,17 +466,16 @@ os_main(Str8List arguments)
 					ZoneBlock *zone_block = current_zone_block;
 					ZoneBlock *parent_zone_block = current_zone_block->parent;
 
-					U64 tsc_elapsed = rdtsc - zone_block->tsc_start;
+					U64 tsc_elapsed = packet->tsc - zone_block->tsc_start;
 
-					zone_block->tsc_end = rdtsc;
 					zone_block->tsc_elapsed += tsc_elapsed;
 					parent_zone_block->tsc_elapsed_children += tsc_elapsed;
 
 					current_zone_block = parent_zone_block;
 				}
 
-				buffer_pointer += name_length;
-				bytes_processed += name_length + sizeof(U64)*2;
+				buffer_pointer += packet->name_length + sizeof(U64)*2;
+				bytes_processed += packet->name_length + sizeof(U64)*2;
 			}
 			release_scratch(scratch);
 		}
