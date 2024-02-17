@@ -1,6 +1,19 @@
 mkdir -p build/freetype
 
-src_files="../../vendor/freetype/src/base/ftsystem.c ../../vendor/freetype/src/base/ftinit.c ../../vendor/freetype/src/base/ftdebug.c ../../vendor/freetype/src/base/ftbase.c ../../vendor/freetype/src/base/ftbitmap.c ../../vendor/freetype/src/base/ftbbox.c ../../vendor/freetype/src/base/ftglyph.c ../../vendor/freetype/src/base/ftmm.c ../../vendor/freetype/src/truetype/truetype.c ../../vendor/freetype/src/sfnt/sfnt.c ../../vendor/freetype/src/raster/raster.c ../../vendor/freetype/src/psnames/psnames.c ../../vendor/freetype/src/gzip/ftgzip.c ../../vendor/freetype/src/smooth/smooth.c"
+src_files="../../vendor/freetype/src/base/ftsystem.c"
+src_files+=" ../../vendor/freetype/src/base/ftinit.c"
+src_files+=" ../../vendor/freetype/src/base/ftdebug.c"
+src_files+=" ../../vendor/freetype/src/base/ftbase.c"
+src_files+=" ../../vendor/freetype/src/base/ftbitmap.c"
+src_files+=" ../../vendor/freetype/src/base/ftbbox.c"
+src_files+=" ../../vendor/freetype/src/base/ftglyph.c"
+src_files+=" ../../vendor/freetype/src/base/ftmm.c"
+src_files+=" ../../vendor/freetype/src/truetype/truetype.c"
+src_files+=" ../../vendor/freetype/src/sfnt/sfnt.c"
+src_files+=" ../../vendor/freetype/src/raster/raster.c"
+src_files+=" ../../vendor/freetype/src/psnames/psnames.c"
+src_files+=" ../../vendor/freetype/src/gzip/ftgzip.c"
+src_files+=" ../../vendor/freetype/src/smooth/smooth.c"
 
 pushd build/freetype
 
