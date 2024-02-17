@@ -157,12 +157,12 @@ struct ZoneStack
 	U64 tsc_elapsed_children;
 };
 
-global ZoneBlock zone_blocks[4096] = { 0 };
+global ZoneBlock zone_blocks[4096] = {0};
 global ZoneBlock *current_zone_block = zone_blocks;
 
 // NOTE(simon): Don't nest more than 1024 blocks, please
-global ZoneStack zone_stack[1024] = { 0 };
-global U32 zone_stack_size = 0;
+global ZoneStack zone_stack[1024] = {0};
+global U32 zone_stack_size = 1;
 
 internal ZoneBlock *
 framed_get_zone_block(Arena *arena, Str8 name)
@@ -453,7 +453,6 @@ os_main(Str8List arguments)
 			}
 		}
 
-		// NOTE(hampus): Very simple profiling, does not take recursion into account
 		if (net_socket_connection_is_alive(accept_result.socket))
 		{
 			Arena_Temporary scratch = get_scratch(0, 0);
@@ -491,7 +490,7 @@ os_main(Str8List arguments)
 					opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
 				}
 				// NOTE(simon): If we haven't opened any zones, skip closing events
-				else if (zone_stack_size > 0)
+				else
 				{
 					ZoneStack *opening = &zone_stack[--zone_stack_size];
 					ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
@@ -500,13 +499,9 @@ os_main(Str8List arguments)
 
 					zone->tsc_elapsed += tsc_elapsed;
 					zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
-					zone->tsc_elapsed_children = opening->tsc_elapsed_children;
+					zone->tsc_elapsed_children += opening->tsc_elapsed_children;
 					++zone->hit_count;
-
-					if (zone_stack_size > 0)
-					{
-						zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
-					}
+					zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
 				}
 			}
 			release_scratch(scratch);
