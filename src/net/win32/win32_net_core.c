@@ -1,6 +1,7 @@
 #pragma comment(lib, "Ws2_32.lib")
 
-#define net_win32_assert(expr) if (!(expr)) { net_win32_print_error_message(); }
+// #define net_win32_assert(expr) if (!(expr)) { net_win32_print_error_message(); }
+#define net_win32_assert(expr)
 
 internal Void
 net_win32_print_error_message(Void)
@@ -211,6 +212,10 @@ net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buff
 	int from_len = sizeof(sockaddrin);
 	int bytes_recieved = recvfrom(sock, (char *) buffer, (int) buffer_size, 0, (struct sockaddr *) &sockaddrin, &from_len);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR || bytes_recieved == WSAEWOULDBLOCK);
+	if (bytes_recieved == SOCKET_ERROR)
+	{
+		bytes_recieved = 0;
+	}
 	result.bytes_recieved = bytes_recieved;
 	*address = net_win32_address_from_sockaddr_in(sockaddrin);
 	return(result);
@@ -222,4 +227,24 @@ net_socket_set_blocking_mode(Net_Socket socket, B32 should_block)
 	u_long mode = should_block ? 0 : 1;
 	SOCKET sock = (SOCKET) socket.u64[0];
 	ioctlsocket(sock, FIONBIO, &mode);
+}
+
+internal B32
+net_socket_connection_is_alive(Net_Socket socket)
+{
+	// TODO(hampus): This might not be the best way to check for
+	// connection, recv() may not catch all errors. But it works for now.
+	B32 result = true;
+	SOCKET sock = (SOCKET) socket.u64[0];
+	char buffer;
+	int error = recv(sock, &buffer, 1, MSG_PEEK);
+	if (error == SOCKET_ERROR)
+	{
+		int error_code = WSAGetLastError();
+		if (error_code != WSAEWOULDBLOCK)
+		{
+			result = false;
+		}
+	}
+	return(result);
 }

@@ -410,7 +410,7 @@ os_main(Str8List arguments)
 			}
 		}
 
-		if (!found_connection)
+		if (!net_socket_connection_is_alive(accept_result.socket))
 		{
 			accept_result = net_socket_accept(socket);
 			found_connection = accept_result.succeeded;
@@ -418,11 +418,12 @@ os_main(Str8List arguments)
 			{
 				log_info("Connection accepted");
 				net_socket_set_blocking_mode(accept_result.socket, false);
+				memory_zero_array(zone_blocks);
 			}
 		}
 
 		// NOTE(hampus): Very simple profiling, does not take recursion into account
-		if (found_connection)
+		if (net_socket_connection_is_alive(accept_result.socket))
 		{
 			Arena_Temporary scratch = get_scratch(0, 0);
 			U64 buffer_size = 4096*4096;

@@ -232,19 +232,6 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	// TODO(hampus): Make use of `wait_for_connection`. It is always
 	// waiting for now. 
 	int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
-	if (error == SOCKET_ERROR)
-	{
-		printf("error");
-	}
-	
-	int flag = 1;
-	setsockopt(
-		sock,
-		IPPROTO_TCP,
-		TCP_NODELAY,
-		(char *) &flag,
-		sizeof(int)
-	);
 }
 
 static void
@@ -253,10 +240,6 @@ framed__socket_send(void)
 	Framed_State *framed = &global_framed_state;
 	SOCKET sock = (SOCKET) framed->socket.u64[0];
 	int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
-	if (error == SOCKET_ERROR)
-	{
-		printf("error");
-	}
 }
 
 #elif OS_LINUX
