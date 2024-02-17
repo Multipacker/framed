@@ -141,17 +141,53 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_theme)
 typedef struct ZoneBlock ZoneBlock;
 struct ZoneBlock
 {
-	ZoneBlock *parent;
 	Str8 name;
-	U64 tsc_start;
 	U64 tsc_elapsed;
+	U64 tsc_elapsed_root;
 	U64 tsc_elapsed_children;
 	U64 hit_count;
 };
 
-// NOTE(hampus): First zone block is a null block
-ZoneBlock zone_blocks[4096] = {0};
-ZoneBlock *current_zone_block = zone_blocks;
+typedef struct ZoneStack ZoneStack;
+struct ZoneStack
+{
+	Str8 name;
+	U64 tsc_start;
+	U64 old_tsc_elapsed_root;
+	U64 tsc_elapsed_children;
+};
+
+global ZoneBlock zone_blocks[4096] = { 0 };
+global ZoneBlock *current_zone_block = zone_blocks;
+
+// NOTE(simon): Don't nest more than 1024 blocks, please
+global ZoneStack zone_stack[1024] = { 0 };
+global U32 zone_stack_size = 0;
+
+internal ZoneBlock *
+framed_get_zone_block(Arena *arena, Str8 name)
+{
+	U64 hash = hash_str8(name);
+	U64 slot_index = hash % array_count(zone_blocks);
+	while (zone_blocks[slot_index].name.data)
+	{
+		if (str8_equal(zone_blocks[slot_index].name, name))
+		{
+			break;
+		}
+
+		slot_index = (slot_index + 1) % array_count(zone_blocks);
+	}
+
+	ZoneBlock *result = &zone_blocks[slot_index];
+
+	if (!result->name.data)
+	{
+		result->name = str8_copy(arena, name);
+	}
+
+	return(result);
+}
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
@@ -200,16 +236,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		if (zone_block->tsc_elapsed)
 		{
 			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-			// assert(zone_block->tsc_elapsed > zone_block->tsc_elapsed_children);
-			Str8List string_list = {0};
-			Str8 tsc_children = {0};
-			if (zone_block->tsc_elapsed_children)
-			{
-				tsc_children = str8_pushf(scratch.arena, "%"PRIU64, zone_block->tsc_elapsed);
-			}
-			Str8 name = str8_pushf(scratch.arena, "%"PRISTR8, str8_expand(zone_block->name));
-			Str8 tsc  = str8_pushf(scratch.arena, "%"PRIU64, tsc_without_children);
-			Str8 hit_count  = str8_pushf(scratch.arena, "%"PRIU64, zone_block->hit_count);
+
 			ui_row()
 			{
 				ui_next_width(ui_em(name_column_width_em, 1));
@@ -217,30 +244,28 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 				{
 					ui_next_width(ui_fill());
 					ui_next_text_align(UI_TextAlign_Left);
-					ui_text(name);
+					ui_text(zone_block->name);
 				}
 				ui_next_width(ui_em(cycles_column_width_em, 1));
 				ui_row()
 				{
 					ui_next_width(ui_fill());
 					ui_next_text_align(UI_TextAlign_Right);
-					ui_text(tsc);
+					ui_textf("%"PRIU64, tsc_without_children);
 				}
 				ui_next_width(ui_em(cycles_children_column_width_em, 1));
 				ui_row()
 				{
 					ui_next_width(ui_fill());
 					ui_next_text_align(UI_TextAlign_Right);
-					ui_spacer(ui_fill());
-					ui_text(tsc_children);
+					ui_textf("%"PRIU64, zone_block->tsc_elapsed_root);
 				}
 				ui_next_width(ui_em(hit_count_column_width_em, 1));
 				ui_row()
 				{
 					ui_next_width(ui_fill());
 					ui_next_text_align(UI_TextAlign_Right);
-					ui_spacer(ui_fill());
-					ui_text(hit_count);
+					ui_textf("%"PRIU64, zone_block->hit_count);
 				}
 			}
 		}
@@ -407,9 +432,11 @@ os_main(Str8List arguments)
 							}
 						}
 					}
-					// TODO(hampus): Make debug window size dependent on window size. We can't go maxiximized and then query
-					// the window size, because on windows going maximized also shows the window which we don't want. So
-					// this will be a temporary solution
+					// TODO(hampus): Make debug window size dependent on window
+					// size. We can't go maximized and then query the window
+					// size, because on windows going maximized also shows the
+					// window which we don't want. So this will be a temporary
+					// solution
 				}
 			}
 		}
@@ -434,8 +461,8 @@ os_main(Str8List arguments)
 			U8 *buffer = push_array(scratch.arena, U8, buffer_size);
 			Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, buffer_size);
 			U8 *buffer_pointer = buffer;
-			U64 bytes_processed = 0;
-			while (bytes_processed < recieve_result.bytes_recieved)
+			U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
+			while (buffer_pointer < buffer_opl)
 			{
 				typedef struct ZoneBlockPacket ZoneBlockPacket;
 				struct ZoneBlockPacket
@@ -444,43 +471,43 @@ os_main(Str8List arguments)
 					U64 name_length;
 					U8 name[256];
 				};
+				// TODO(simon): Make sure we don't try to read past the end of the buffer.
 				ZoneBlockPacket *packet = (ZoneBlockPacket *) buffer_pointer;
+				buffer_pointer += packet->name_length + sizeof(U64)*2;
 
 				B32 opening_block = packet->name_length != 0;
 				if (opening_block)
 				{
 					Str8 name = str8(packet->name, packet->name_length);
 
-					U64 hash = hash_str8(name);
-					U64 slot_index = hash % array_count(zone_blocks);
-					assert(slot_index != 0);
-					ZoneBlock *zone_block = zone_blocks + slot_index;
-					if (!zone_block->name.data)
-					{
-						// TODO(hampus): Comparison of the names, may not be the same
-						zone_block->name = str8_copy(perm_arena, name);
-					}
+					assert(zone_stack_size < array_count(zone_stack));
+					ZoneStack *opening = &zone_stack[zone_stack_size++];
+					memory_zero_struct(opening);
 
-					zone_block->tsc_start = packet->tsc;
-					zone_block->parent = current_zone_block;
-					zone_block->hit_count++;
-					current_zone_block = zone_block;
+					ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
+
+					opening->name = zone->name;
+					opening->tsc_start = packet->tsc;
+					opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
 				}
-				else
+				// NOTE(simon): If we haven't opened any zones, skip closing events
+				else if (zone_stack_size > 0)
 				{
-					ZoneBlock *zone_block = current_zone_block;
-					ZoneBlock *parent_zone_block = current_zone_block->parent;
+					ZoneStack *opening = &zone_stack[--zone_stack_size];
+					ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
 
-					U64 tsc_elapsed = packet->tsc - zone_block->tsc_start;
+					U64 tsc_elapsed = packet->tsc - opening->tsc_start;
 
-					zone_block->tsc_elapsed += tsc_elapsed;
-					parent_zone_block->tsc_elapsed_children += tsc_elapsed;
+					zone->tsc_elapsed += tsc_elapsed;
+					zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
+					zone->tsc_elapsed_children = opening->tsc_elapsed_children;
+					++zone->hit_count;
 
-					current_zone_block = parent_zone_block;
+					if (zone_stack_size > 0)
+					{
+						zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+					}
 				}
-
-				buffer_pointer += packet->name_length + sizeof(U64)*2;
-				bytes_processed += packet->name_length + sizeof(U64)*2;
 			}
 			release_scratch(scratch);
 		}
