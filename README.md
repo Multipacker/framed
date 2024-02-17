@@ -139,9 +139,11 @@ int main(int argc, char *argv[])
 
 Framed is released under the [MIT License].
 
-Portions of this software are licensed under the [FreeType Project LICENSE] and
-are copyright © 2024 The FreeType Project ([www.freetype.org]). All rights
-reserved.
+This software uses FreeType which is licensed under the [FreeType Project
+LICENSE] and is copyright © 2024 The FreeType Project ([www.freetype.org]). All
+rights reserved.
+
+This software uses SDL 2 which is licensed under the [zlib license].
 
 
 [FreeType Project LICENSE]: https://github.com/freetype/freetype/blob/master/docs/FTL.TXT
@@ -150,3 +152,4 @@ reserved.
 [examples]:                 /src/examples
 [stb]:                      https://github.com/nothings/stb
 [www.freetype.org]:         https://www.freetype.org
+[zlib license]:             https://www.zlib.net/zlib_license.html
