@@ -155,7 +155,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
 	ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 	Arena_Temporary scratch = get_scratch(0, 0);
-	
+
 	F32 name_column_width_em = 15;
 	F32 cycles_column_width_em = 8;
 	F32 cycles_children_column_width_em = 12;
@@ -165,26 +165,30 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		ui_next_width(ui_em(name_column_width_em, 1));
 		ui_row()
 		{
+			ui_next_width(ui_fill());
+			ui_next_text_align(UI_TextAlign_Left);
 			ui_text(str8_lit("Name"));
-			ui_spacer(ui_fill());
 		}
 		ui_next_width(ui_em(cycles_column_width_em, 1));
 		ui_row()
 		{
+			ui_next_width(ui_fill());
+			ui_next_text_align(UI_TextAlign_Left);
 			ui_text(str8_lit("Cycles"));
-			ui_spacer(ui_fill());
 		}
 		ui_next_width(ui_em(cycles_children_column_width_em, 1));
 		ui_row()
 		{
+			ui_next_width(ui_fill());
+			ui_next_text_align(UI_TextAlign_Left);
 			ui_text(str8_lit("Cycles w/ children"));
-			ui_spacer(ui_fill());
 		}
 		ui_next_width(ui_em(hit_count_column_width_em, 1));
 		ui_row()
 		{
+			ui_next_width(ui_fill());
+			ui_next_text_align(UI_TextAlign_Left);
 			ui_text(str8_lit("Hit count"));
-			ui_spacer(ui_fill());
 		}
 	}
 	ui_spacer(ui_em(0.3f, 1));
@@ -208,24 +212,30 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 				ui_next_width(ui_em(name_column_width_em, 1));
 				ui_row()
 				{
+					ui_next_width(ui_fill());
+					ui_next_text_align(UI_TextAlign_Left);
 					ui_text(name);
-					ui_spacer(ui_fill());
 				}
 				ui_next_width(ui_em(cycles_column_width_em, 1));
 				ui_row()
 				{
-					ui_spacer(ui_fill());
+					ui_next_width(ui_fill());
+					ui_next_text_align(UI_TextAlign_Right);
 					ui_text(tsc);
 				}
 				ui_next_width(ui_em(cycles_children_column_width_em, 1));
 				ui_row()
 				{
+					ui_next_width(ui_fill());
+					ui_next_text_align(UI_TextAlign_Right);
 					ui_spacer(ui_fill());
 					ui_text(tsc_children);
 				}
 				ui_next_width(ui_em(hit_count_column_width_em, 1));
 				ui_row()
 				{
+					ui_next_width(ui_fill());
+					ui_next_text_align(UI_TextAlign_Right);
 					ui_spacer(ui_fill());
 					ui_text(hit_count);
 				}
