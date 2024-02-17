@@ -15,7 +15,7 @@
 :: -- Common flags --
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710
-set additional_includes=-I../vendor/ -I../src/
+set additional_includes=-I../vendor/ -I../vendor/freetype/include -I../src/
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:main
 set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
