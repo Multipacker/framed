@@ -5,6 +5,7 @@
 // [ ] @polish Dragging by a tab bar should not offset the new window at (0, 0)
 // [ ] @polish Memory leak when closing/opening a window due to new view data is 
 //             is pushed every time the window opens again
+// [ ] @polish Simplify memory management of panels, tabs & windows
 
 ////////////////////////////////
 // hampus: Medium term
@@ -1640,7 +1641,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_state->swap_tab1->tab_container->rel_pos.x = 0;
 		framed_ui_state->swap_tab0 = &g_nil_tab;
 		framed_ui_state->swap_tab1 = &g_nil_tab;
-	}
+}
 #endif
 	// NOTE(hampus): Update Windows
 

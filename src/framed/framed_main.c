@@ -152,16 +152,26 @@ ZoneBlock *current_zone_block = zone_blocks;
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
+	Arena_Temporary scratch = get_scratch(0, 0);
 	for (U64 i = 0; i < array_count(zone_blocks); ++i)
 	{
 		ZoneBlock *zone_block = zone_blocks + i;
 		if (zone_block->tsc_elapsed)
 		{
-			// TODO(hampus): Don't print out the children value if it doesn't have any child
 			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-			ui_textf("%"PRISTR8": %"PRIU64" (%"PRIU64" w/ children)", str8_expand(zone_block->name), tsc_without_children, zone_block->tsc_elapsed);
+			Str8List string_list = {0};
+			str8_list_pushf(scratch.arena, &string_list, "%"PRISTR8": %"PRIU64, str8_expand(zone_block->name), tsc_without_children);
+			if (zone_block->tsc_elapsed_children)
+			{
+				str8_list_pushf(scratch.arena, &string_list, " (%"PRIU64" w/ children)", zone_block->tsc_elapsed);
+			}
+			// str8_list_pushf(scratch.arena, &string_list, "%d", 5);
+			Str8 text = str8_join(scratch.arena, &string_list);
+			ui_text(text);
+
 		}
 	}
+	release_scratch(scratch);
 }
 
 ////////////////////////////////
@@ -230,41 +240,38 @@ os_main(Str8List arguments)
 	FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
 
 	{
+		// NOTE(hampus): Setup master window
+		FramedUI_Panel *first_panel = master_window->root_panel;
+		FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
 		{
-			// NOTE(hampus): Setup master window
-			FramedUI_Panel *first_panel = master_window->root_panel;
-			FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
+			FramedUI_TabAttach attach =
 			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_tab_view_theme, 0, str8_lit("Theme")),
-					.panel = split_panel_result.panels[Side_Min],
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-			{
-				FramedUI_TabAttach attach =
-				{
-					.tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters")),
-					.panel = split_panel_result.panels[Side_Max],
-				};
-				framed_ui_command_tab_attach(&attach);
-			}
-
-			framed_ui_state->master_window = master_window;
-			framed_ui_state->next_focused_panel = first_panel;
+				.tab = framed_ui_tab_make(framed_ui_tab_view_theme, 0, str8_lit("Theme")),
+				.panel = split_panel_result.panels[Side_Min],
+			};
+			framed_ui_command_tab_attach(&attach);
 		}
+		{
+			FramedUI_TabAttach attach =
+			{
+				.tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters")),
+				.panel = split_panel_result.panels[Side_Max],
+			};
+			framed_ui_command_tab_attach(&attach);
+		}
+
+		framed_ui_state->master_window = master_window;
+		framed_ui_state->next_focused_panel = first_panel;
 	}
 
-	Net_AcceptResult accept_result = {0};
-
-	FramedUI_Window *debug_window = 0;
-
-	framed_ui_state->frame_index = 1;
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
+
 	B32 running = true;
 	B32 found_connection = false;
+	Net_AcceptResult accept_result = {0};
+	FramedUI_Window *debug_window = 0;
+	framed_ui_state->frame_index = 1;
 	while (running)
 	{
 		Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);

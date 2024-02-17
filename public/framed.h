@@ -156,9 +156,7 @@ void framed_zone_end(void);
 #include <string.h>
 #include <stdlib.h>
 
-#if COMPILER_CL
-# include <intrin.h>
-#endif
+#define framed__assert(expr)
 
 #define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
 
@@ -264,7 +262,7 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	Framed_State *framed = &global_framed_state;
 	int linux_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	framed->socket.u64[0] = (Framed_U64) linux_socket;
-	struct sockaddr_in socket_address = { 0 };
+	struct sockaddr_in socket_address = {0};
 	socket_address.sin_family      = AF_INET;
 	socket_address.sin_port        = framed_u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
 	socket_address.sin_addr.s_addr = framed_u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
@@ -283,7 +281,8 @@ framed__socket_send(void)
 	Framed_State *framed = &global_framed_state;
 	int linux_socket = (int) framed->socket.u64[0];
 	int error = 0;
-	do {
+	do
+	{
 		error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
 	} while (error == -1 && (errno == EAGAIN || errno == EWOULDBLOCK));
 }
@@ -293,9 +292,9 @@ framed__socket_send(void)
 ////////////////////////////////
 // NOTE: Internal functions
 
-#define framed__assert(expr)
-
-#if COMPILER_GCC
+#if COMPILER_CL
+# include <intrin.h>
+#elif COMPILER_GCC
 #	include <x86intrin.h>
 #endif
 
