@@ -532,8 +532,10 @@ framed_ui_panel_free_recursively(FramedUI_Panel *root)
 			FramedUI_Panel *child = root->children[side];
 			framed_ui_panel_free_recursively(child);
 		}
-		for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
+		FramedUI_Tab *next_tab = &g_nil_tab; // NOTE(hampus): Needed because framed_ui_tab_free will poison the tab
+		for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = next_tab)
 		{
+			next_tab = tab->next;
 			framed_ui_tab_free(tab);
 		}
 		framed_ui_panel_free(root);
