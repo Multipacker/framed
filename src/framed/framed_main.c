@@ -1,9 +1,13 @@
 ////////////////////////////////
 // Stuff to get done before going public
 // 
-// [ ] Put all debug visualization stuff on its own toggleable window
-// [ ] Add a git readme
-// [ ] Create a panel for displaying clock values with the name as text
+// [ ] Status bar
+// [ ] Settings tab for font size, ...
+// [ ] Finish basic zone profiling
+//	 	 [ ] Add a concept of frames
+//     [ ] Macro for turning on/off profiling
+// [ ] Macro for making functions static
+// [ ] Move log file to temporary folder
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
