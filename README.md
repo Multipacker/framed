@@ -15,8 +15,8 @@ Currently the only supported counter is [RDTSC], but more will be added later.
 
 ## Installation
 
-Clone the repository to wherever you like. Then read the section below that
-corresponds with your operating system.
+Clone the repository and its submodules to wherever you like. Then read the
+section below that corresponds with your operating system.
 
 ### Linux
 
@@ -139,8 +139,14 @@ int main(int argc, char *argv[])
 
 Framed is released under the [MIT License].
 
+Portions of this software are licensed under the [FreeType Project LICENSE] and
+are copyright © 2024 The FreeType Project ([www.freetype.org]). All rights
+reserved.
 
-[MIT License]: /LICENSE
-[RDTSC]:       https://en.wikipedia.org/wiki/Time_Stamp_Counter
-[stb]:         https://github.com/nothings/stb
-[examples]:    /src/examples
+
+[FreeType Project LICENSE]: /vendor/freetype/docs/FLT.TXT
+[MIT License]:              /LICENSE
+[RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
+[examples]:                 /src/examples
+[stb]:                      https://github.com/nothings/stb
+[www.freetype.org]:         https://www.freetype.org
