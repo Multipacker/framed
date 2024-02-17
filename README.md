@@ -144,7 +144,7 @@ are copyright © 2024 The FreeType Project ([www.freetype.org]). All rights
 reserved.
 
 
-[FreeType Project LICENSE]: /vendor/freetype/docs/FLT.TXT
+[FreeType Project LICENSE]: https://github.com/freetype/freetype/blob/master/docs/FTL.TXT
 [MIT License]:              /LICENSE
 [RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
 [examples]:                 /src/examples
