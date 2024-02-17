@@ -144,6 +144,7 @@ struct ZoneBlock
 	U64 tsc_end;
 	U64 tsc_elapsed;
 	U64 tsc_elapsed_children;
+	U64 hit_count;
 };
 
 // NOTE(hampus): First zone block is a null block
@@ -152,7 +153,41 @@ ZoneBlock *current_zone_block = zone_blocks;
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
+	ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 	Arena_Temporary scratch = get_scratch(0, 0);
+	
+	F32 name_column_width_em = 15;
+	F32 cycles_column_width_em = 8;
+	F32 cycles_children_column_width_em = 12;
+	F32 hit_count_column_width_em = 8;
+	ui_row()
+	{
+		ui_next_width(ui_em(name_column_width_em, 1));
+		ui_row()
+		{
+			ui_text(str8_lit("Name"));
+			ui_spacer(ui_fill());
+		}
+		ui_next_width(ui_em(cycles_column_width_em, 1));
+		ui_row()
+		{
+			ui_text(str8_lit("Cycles"));
+			ui_spacer(ui_fill());
+		}
+		ui_next_width(ui_em(cycles_children_column_width_em, 1));
+		ui_row()
+		{
+			ui_text(str8_lit("Cycles w/ children"));
+			ui_spacer(ui_fill());
+		}
+		ui_next_width(ui_em(hit_count_column_width_em, 1));
+		ui_row()
+		{
+			ui_text(str8_lit("Hit count"));
+			ui_spacer(ui_fill());
+		}
+	}
+	ui_spacer(ui_em(0.3f, 1));
 	for (U64 i = 0; i < array_count(zone_blocks); ++i)
 	{
 		ZoneBlock *zone_block = zone_blocks + i;
@@ -160,18 +195,45 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		{
 			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
 			Str8List string_list = {0};
-			str8_list_pushf(scratch.arena, &string_list, "%"PRISTR8": %"PRIU64, str8_expand(zone_block->name), tsc_without_children);
+			Str8 tsc_children = {0};
 			if (zone_block->tsc_elapsed_children)
 			{
-				str8_list_pushf(scratch.arena, &string_list, " (%"PRIU64" w/ children)", zone_block->tsc_elapsed);
+				tsc_children = str8_pushf(scratch.arena, "%"PRIU64, zone_block->tsc_elapsed);
 			}
-			// str8_list_pushf(scratch.arena, &string_list, "%d", 5);
-			Str8 text = str8_join(scratch.arena, &string_list);
-			ui_text(text);
-
+			Str8 name = str8_pushf(scratch.arena, "%"PRISTR8, str8_expand(zone_block->name));
+			Str8 tsc  = str8_pushf(scratch.arena, "%"PRIU64, tsc_without_children);
+			Str8 hit_count  = str8_pushf(scratch.arena, "%"PRIU64, zone_block->hit_count);
+			ui_row()
+			{
+				ui_next_width(ui_em(name_column_width_em, 1));
+				ui_row()
+				{
+					ui_text(name);
+					ui_spacer(ui_fill());
+				}
+				ui_next_width(ui_em(cycles_column_width_em, 1));
+				ui_row()
+				{
+					ui_spacer(ui_fill());
+					ui_text(tsc);
+				}
+				ui_next_width(ui_em(cycles_children_column_width_em, 1));
+				ui_row()
+				{
+					ui_spacer(ui_fill());
+					ui_text(tsc_children);
+				}
+				ui_next_width(ui_em(hit_count_column_width_em, 1));
+				ui_row()
+				{
+					ui_spacer(ui_fill());
+					ui_text(hit_count);
+				}
+			}
 		}
 	}
 	release_scratch(scratch);
+	ui_pop_font();
 }
 
 ////////////////////////////////
@@ -353,10 +415,13 @@ os_main(Str8List arguments)
 		// NOTE(hampus): Very simple profiling, does not take into account nested blocks or recursion
 		if (found_connection)
 		{
-			U8 buffer[256] = {0};
-			Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, array_count(buffer));
+			Arena_Temporary scratch = get_scratch(0, 0);
+			U64 buffer_size = 4096*4096;
+			U8 *buffer = push_array(scratch.arena, U8, buffer_size);
+			Net_RecieveResult recieve_result = net_socket_recieve(accept_result.socket, buffer, buffer_size);
 			U8 *buffer_pointer = buffer;
-			while (*buffer_pointer)
+			U64 bytes_processed = 0;
+			while (bytes_processed < recieve_result.bytes_recieved)
 			{
 				// U64 : rdtsc
 				// U64 : name_length, if 0 then this closes the last zone
@@ -366,11 +431,12 @@ os_main(Str8List arguments)
 				buffer_pointer += sizeof(U64);
 				U64 name_length = *(U64 *) buffer_pointer;
 				buffer_pointer += sizeof(U64);
-				Str8 name = str8(buffer_pointer, name_length);
-				buffer_pointer += name_length;
 				B32 opening_block = name_length != 0;
+
 				if (opening_block)
 				{
+					Str8 name = str8(buffer_pointer, name_length);
+
 					U64 hash = hash_str8(name);
 					U64 slot_index = hash % array_count(zone_blocks);
 					ZoneBlock *zone_block = zone_blocks + slot_index;
@@ -379,9 +445,10 @@ os_main(Str8List arguments)
 						// TODO(hampus): Comparison of the names, may not be the same
 						zone_block->name = str8_copy(perm_arena, name);
 					}
+					// assert(str8_equal(zone_block->name, name));
 					zone_block->tsc_start = rdtsc;
 					zone_block->parent = current_zone_block;
-
+					zone_block->hit_count++;
 					current_zone_block = zone_block;
 				}
 				else
@@ -397,7 +464,11 @@ os_main(Str8List arguments)
 
 					current_zone_block = parent_zone_block;
 				}
+
+				buffer_pointer += name_length;
+				bytes_processed += name_length + sizeof(U64)*2;
 			}
+			release_scratch(scratch);
 		}
 
 		render_begin(renderer);

@@ -160,7 +160,7 @@ void framed_zone_end(void);
 
 #define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
 
-#define FRAMED_BUFFER_CAPACITY (4 * 1024)
+#define FRAMED_BUFFER_CAPACITY (512)
 #define FRAMED_DEFAULT_PORT (1234)
 
 typedef struct Framed_Socket Framed_Socket;
@@ -236,6 +236,15 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	{
 		printf("error");
 	}
+	
+	int flag = 1;
+	setsockopt(
+		sock,
+		IPPROTO_TCP,
+		TCP_NODELAY,
+		(char *) &flag,
+		sizeof(int)
+	);
 }
 
 static void

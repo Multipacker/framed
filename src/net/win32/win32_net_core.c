@@ -194,7 +194,7 @@ net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 	SOCKET sock = (SOCKET) connected_socket.u64[0];
 	int bytes_recieved = recv(sock, (char *) buffer, (int) buffer_size, 0);
 	net_win32_assert(bytes_recieved != SOCKET_ERROR);
-	if (bytes_recieved < 0)
+	if (bytes_recieved == SOCKET_ERROR)
 	{
 		bytes_recieved = 0;
 	}
