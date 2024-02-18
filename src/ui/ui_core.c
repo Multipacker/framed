@@ -347,7 +347,6 @@ ui_text_action_from_event(Gfx_Event *event)
 		if (event->character >= ' ' && event->character <= '~')
 		{
 			result.character = (U8) event->character;
-			result.delta = 1;
 		}
 	}
 
@@ -375,25 +374,11 @@ internal UI_TextOp
 ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *state, UI_TextAction *action)
 {
 	UI_TextOp result = { 0 };
+
 	result.new_cursor = state->cursor;
-	result.new_mark = state->mark;
+	result.new_mark   = state->mark;
 
 	S64 delta = action->delta;
-
-	if (action->character)
-	{
-		// NOTE(simon): Allocate enough space for encoding the longest Unicode codepoint in UTF-8.
-		result.replace_string.data = push_array(arena, U8, 4);
-		result.replace_string.size = string_encode_utf8(result.replace_string.data, action->character);
-
-		result.range.min = result.new_mark;
-		result.range.max = result.new_cursor;
-
-		if (state->cursor > state->mark)
-		{
-			delta -= state->cursor - state->mark;
-		}
-	}
 
 	if ((action->flags & UI_TextActionFlag_ZeroDeltaWithSelection) && (state->mark != state->cursor))
 	{
@@ -479,13 +464,30 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		}
 	}
 
+	if (action->character)
+	{
+		// NOTE(simon): Allocate enough space for encoding the longest Unicode codepoint in UTF-8.
+		result.replace_string.data = push_array(arena, U8, 4);
+		result.replace_string.size = string_encode_utf8(result.replace_string.data, action->character);
+		result.range = v2s64(result.new_cursor, result.new_mark);
+		if (state->cursor > state->mark)
+		{
+			result.new_cursor = result.new_mark + (S64) result.replace_string.size;
+		}
+		else
+		{
+			result.new_cursor += (S64) result.replace_string.size;
+		}
+		result.new_mark = result.new_cursor;
+	}
+
 	if (action->flags & UI_TextActionFlag_Paste)
 	{
 		result.replace_string = os_push_clipboard(arena);
 		result.range = v2s64(result.new_cursor, result.new_mark);
 		if (result.new_cursor > result.new_mark)
 		{
-			result.new_cursor += (S64) result.replace_string.size - (result.new_cursor - result.new_mark);
+			result.new_cursor = result.new_mark + (S64) result.replace_string.size;
 		}
 		else
 		{
