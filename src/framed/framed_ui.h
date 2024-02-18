@@ -92,6 +92,7 @@ struct FramedUI_TabViewInfo
 {
 	FramedUI_TabViewProc *function;
 	Void *data;
+	Arena *arena;
 };
 
 typedef struct FramedUI_DragData FramedUI_DragData;

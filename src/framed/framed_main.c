@@ -1,7 +1,6 @@
 ////////////////////////////////
 // Stuff to get done before going public
 //
-// [ ] Settings tab for font size, ...
 // [ ] Finish basic zone profiling
 //	 	 [ ] Add a concept of frames
 //     [ ] Macro for turning on/off profiling
@@ -34,8 +33,42 @@ global U64 framed_frame_counter;
 #include "framed/framed_ui.h"
 #include "framed/framed_ui.c"
 
+typedef struct ZoneBlock ZoneBlock;
+struct ZoneBlock
+{
+	Str8 name;
+	U64 tsc_elapsed;
+	U64 tsc_elapsed_root;
+	U64 tsc_elapsed_children;
+	U64 hit_count;
+};
+
+typedef struct ZoneStack ZoneStack;
+struct ZoneStack
+{
+	Str8 name;
+	U64 tsc_start;
+	U64 old_tsc_elapsed_root;
+	U64 tsc_elapsed_children;
+};
+
+typedef struct ZoneBlockPacket ZoneBlockPacket;
+struct ZoneBlockPacket
+{
+	U64 tsc;
+	U64 name_length;
+	U8 name[256];
+};
+
+global ZoneBlock zone_blocks[4096] = {0};
+global ZoneBlock *current_zone_block = zone_blocks;
+
+// NOTE(simon): Don't nest more than 1024 blocks, please
+global ZoneStack zone_stack[1024] = {0};
+global U32 zone_stack_size = 1;
+
 ////////////////////////////////
-// hampus: Tab views
+//~ hampus: Tab views
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_logger)
 {
@@ -67,11 +100,77 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_debug)
 	ui_debug(color_picker_data);
 }
 
-FRAME_UI_TAB_VIEW(framed_ui_tab_view_theme)
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
 {
-	B32 view_info_data_initialized = view_info->data != 0;
+	B32 data_initialized = view_info->data != 0;
 
-	UI_ColorPickerData *color_picker_data = framed_ui_get_view_data(view_info, UI_ColorPickerData);
+	typedef struct TabViewData TabViewData;
+	struct TabViewData
+	{
+		UI_ColorPickerData color_picker_data;
+
+		UI_TextEditState font_size_text_edit_state;
+		U8 *font_size_text_buffer;
+		U64 font_size_text_buffer_size;
+		U64 font_size_string_length;
+	};
+
+	TabViewData *data = framed_ui_get_view_data(view_info, TabViewData);
+
+	if (!data_initialized)
+	{
+		data->font_size_text_buffer_size = 3;
+		data->font_size_text_buffer = push_array(view_info->arena, U8, data->font_size_text_buffer_size);
+		arena_scratch(0, 0)
+		{
+			Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
+				U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->font_size_text_buffer_size);
+				memory_copy_typed(data->font_size_text_buffer, text_buffer_initial_string.data, initial_string_length);
+				data->font_size_string_length = initial_string_length;
+		}
+		}
+
+		//- hampus: General settings
+
+		ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+		ui_text(str8_lit("General"));
+		ui_spacer(ui_em(0.5f, 1));
+	ui_row()
+	{
+		ui_column()
+		{
+			ui_row()
+			{
+				ui_text(str8_lit("Font size:" ));
+				ui_next_width(ui_em(3, 1));
+				UI_Comm comm = ui_line_edit(&data->font_size_text_edit_state, data->font_size_text_buffer, data->font_size_text_buffer_size, &data->font_size_string_length, str8_lit("FontSizeLineEdit"));
+				if (!ui_box_is_focused(comm.box))
+				{
+					U32 u32 = 0;
+					u32_from_str8(str8(data->font_size_text_buffer, data->font_size_string_length), &u32);
+					framed_ui_state->settings.font_size = u32;
+					arena_scratch(0, 0)
+					{
+						Str8 text_buffer_str8 = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
+						data->font_size_string_length = u64_min(text_buffer_str8.size, data->font_size_text_buffer_size);
+						memory_copy_typed(data->font_size_text_buffer, text_buffer_str8.data, data->font_size_string_length);
+					}
+				}
+				else
+				{
+				}
+			}
+		}
+	}
+
+	ui_spacer(ui_em(0.5f, 1));
+	//- hampus: Appearance
+
+	ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+	ui_text(str8_lit("Appearance"));
+	ui_spacer(ui_em(0.5f, 1));
+
+	UI_ColorPickerData *color_picker_data = &data->color_picker_data;
 
 	UI_Key theme_color_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("ThemeColorCtxMenu"));
 
@@ -139,39 +238,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_theme)
 	}
 }
 
-typedef struct ZoneBlock ZoneBlock;
-struct ZoneBlock
-{
-	Str8 name;
-	U64 tsc_elapsed;
-	U64 tsc_elapsed_root;
-	U64 tsc_elapsed_children;
-	U64 hit_count;
-};
-typedef struct ZoneStack ZoneStack;
-struct ZoneStack
-{
-	Str8 name;
-	U64 tsc_start;
-	U64 old_tsc_elapsed_root;
-	U64 tsc_elapsed_children;
-};
-
-typedef struct ZoneBlockPacket ZoneBlockPacket;
-struct ZoneBlockPacket
-{
-	U64 tsc;
-	U64 name_length;
-	U8 name[256];
-};
-
-global ZoneBlock zone_blocks[4096] = {0};
-global ZoneBlock *current_zone_block = zone_blocks;
-
-// NOTE(simon): Don't nest more than 1024 blocks, please
-global ZoneStack zone_stack[1024] = {0};
-global U32 zone_stack_size = 1;
-
 internal ZoneBlock *
 framed_get_zone_block(Arena *arena, Str8 name)
 {
@@ -201,6 +267,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
 	ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 	Arena_Temporary scratch = get_scratch(0, 0);
+
+	//- hampus: Labels
 
 	F32 name_column_width_em = 15;
 	F32 cycles_column_width_em = 8;
@@ -237,6 +305,9 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 			ui_text(str8_lit("Hit count"));
 		}
 	}
+
+	//- hampus: Counter values
+
 	ui_spacer(ui_em(0.3f, 1));
 	for (U64 i = 0; i < array_count(zone_blocks); ++i)
 	{
@@ -283,7 +354,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 }
 
 ////////////////////////////////
-// hampus: Main
+//~ hampus: Main
 
 internal S32
 os_main(Str8List arguments)
@@ -325,12 +396,11 @@ os_main(Str8List arguments)
 		image_texture = render_create_texture_slice(renderer, str8_lit("data/16.png"));
 	}
 
+
+	////////////////////////////////
+	//- hampus: Initialize UI
+
 	UI_Context *ui = ui_init();
-
-	U64 start_counter = os_now_nanoseconds();
-	F64 dt = 0;
-
-	// NOTE(hampus): Build startup UI
 
 	framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
 	framed_ui_set_color(FramedUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
@@ -354,7 +424,7 @@ os_main(Str8List arguments)
 		{
 			FramedUI_TabAttach attach =
 			{
-				.tab = framed_ui_tab_make(framed_ui_tab_view_theme, 0, str8_lit("Theme")),
+				.tab = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings")),
 				.panel = split_panel_result.panels[Side_Min],
 			};
 			framed_ui_command_tab_attach(&attach);
@@ -372,9 +442,19 @@ os_main(Str8List arguments)
 		framed_ui_state->next_focused_panel = first_panel;
 	}
 
+	//- hampus: Initialize UI settings
+
+	framed_ui_state->settings.font_size = 12;
+
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
 
+
+	////////////////////////////////
+	//- hampus: Main loop
+
+	U64 start_counter = os_now_nanoseconds();
+	F64 dt = 0;
 	B32 running = true;
 	B32 found_connection = false;
 	Net_AcceptResult accept_result = {0};
@@ -387,7 +467,7 @@ os_main(Str8List arguments)
 
 		framed_ui_state->frame_arena = current_arena;
 
-		// NOTE(hampus): Gather events
+		//- hampus: Gather events
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first; event != 0; event = event->next)
@@ -413,7 +493,6 @@ os_main(Str8List arguments)
 					{
 						debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
 						{
-							// NOTE(hampus): Setup debug window
 							{
 								FramedUI_TabAttach attach =
 								{
@@ -450,7 +529,10 @@ os_main(Str8List arguments)
 			}
 		}
 
-		// NOTE(hampus): Check for connection
+		////////////////////////////////
+		//- hampus: Zone pass
+
+		//- hampus: Check connection state
 
 		if (!net_socket_connection_is_alive(accept_result.socket))
 		{
@@ -470,7 +552,7 @@ os_main(Str8List arguments)
 			}
 		}
 
-		// NOTE(hampus): Gather zone data from client
+		//- hampus: Gather zone data from client
 
 		if (net_socket_connection_is_alive(accept_result.socket))
 		{
@@ -519,7 +601,8 @@ os_main(Str8List arguments)
 			release_scratch(scratch);
 		}
 
-		// NOTE(hampus): UI pass
+		////////////////////////////////
+		//- hampus: UI pass
 
 		render_begin(renderer);
 
@@ -527,7 +610,7 @@ os_main(Str8List arguments)
 		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
 		ui_push_font_size(framed_ui_state->settings.font_size);
 
-		// NOTE(hampus): Menu bar
+		//- hampus: Menu bar
 
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
 		ui_next_width(ui_fill());
@@ -542,11 +625,11 @@ os_main(Str8List arguments)
 			ui_button(str8_lit("Help"));
 		}
 
-		// NOTE(hampus): Update panels
+		//- hampus: Update panels
 
 		framed_ui_update(renderer, &events);
 
-		// NOTE(hampus): Status bar
+		//- hampus: Status bar
 
 		Str8 status_text = str8_lit("Not connected");
 		if (net_socket_connection_is_alive(accept_result.socket))
@@ -558,11 +641,15 @@ os_main(Str8List arguments)
 		{
 			ui_next_color(v4f32(1, 0.5f, 0, 1));
 		}
+		ui_next_corner_radius(0);
 		ui_next_width(ui_pct(1, 1));
 		ui_next_height(ui_em(1, 1));
 		ui_next_text_align(UI_TextAlign_Left);
 		UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
 		ui_box_equip_display_string(status_bar_box, status_text);
+
+		////////////////////////////////
+		//- hampus: Frame end
 
 		ui_end();
 

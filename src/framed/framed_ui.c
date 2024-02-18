@@ -308,6 +308,7 @@ framed_ui_tab_alloc(Void)
 internal Void
 framed_ui_tab_free(FramedUI_Tab *tab)
 {
+		arena_destroy(tab->view_info.arena);
 	arena_destroy(tab->arena);
 	assert(!framed_ui_tab_is_nil(tab));
 	FramedUI_FreeTab *free_tab = (FramedUI_FreeTab *) tab;
@@ -319,7 +320,9 @@ framed_ui_tab_free(FramedUI_Tab *tab)
 internal Void
 framed_ui_tab_equip_view_info(FramedUI_Tab *tab, FramedUI_TabViewInfo view_info)
 {
-	tab->view_info = view_info;
+	tab->view_info.function = view_info.function;
+	tab->view_info.data = view_info.data;
+	arena_pop_to(tab->view_info.arena, 0);
 }
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_default);
@@ -329,6 +332,15 @@ framed_ui_tab_make(FramedUI_TabViewProc *function, Void *data, Str8 display_stri
 {
 	FramedUI_Tab *result = framed_ui_tab_alloc();
 	result->arena = arena_create("%"PRISTR8, str8_expand(display_string));
+		arena_scratch(0, 0)
+		{
+			Str8List string_list = {0};
+			str8_list_push(scratch, &string_list, display_string);
+			str8_list_push(scratch, &string_list, str8_lit("ViewInfo"));
+			Str8 view_info_arena_string = str8_join(result->arena, &string_list);
+			result->view_info.arena = arena_create("%"PRISTR8, str8_expand(view_info_arena_string));
+		}
+
 	if (!display_string.size)
 	{
 		// NOTE(hampus): We probably won't do this in the future because
@@ -339,6 +351,7 @@ framed_ui_tab_make(FramedUI_TabViewProc *function, Void *data, Str8 display_stri
 	{
 		result->display_string = str8_copy(result->arena, display_string);
 	}
+
 	// TODO(hampus): Check for name collision with other tabs
 	FramedUI_TabViewInfo view_info = {function, data};
 	framed_ui_tab_equip_view_info(result, view_info);
@@ -1573,7 +1586,7 @@ framed_ui_get_or_push_view_data_(FramedUI_TabViewInfo *view_info, U64 size)
 {
 	if (view_info->data == 0)
 	{
-		view_info->data = push_array(framed_ui_state->perm_arena, U8, size);
+		view_info->data = push_array(view_info->arena, U8, size);
 	}
 	Void *result = view_info->data;
 	return(result);
