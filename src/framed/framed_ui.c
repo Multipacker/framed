@@ -74,7 +74,7 @@ framed_ui_font_size_from_scale(FramedUI_FontScale scale)
 	{
 		case FramedUI_FontScale_Smaller:
 		{
-			result = (U32)f32_round(framed_ui_state->settings.font_size * 0.75f);
+			result = (U32) f32_round((F32) framed_ui_state->settings.font_size * 0.75f);
 		} break;
 		case FramedUI_FontScale_Normal:
 		{
@@ -82,7 +82,7 @@ framed_ui_font_size_from_scale(FramedUI_FontScale scale)
 		} break;
 		case FramedUI_FontScale_Larger:
 		{
-			result = (U32)f32_round(framed_ui_state->settings.font_size * 1.25f);
+			result = (U32) f32_round((F32) framed_ui_state->settings.font_size * 1.25f);
 		} break;
 		invalid_case;
 	}
