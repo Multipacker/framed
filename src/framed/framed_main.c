@@ -524,9 +524,8 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
-		U32 font_size = 15;
 		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
-		ui_push_font_size(font_size);
+		ui_push_font_size(framed_ui_state->settings.font_size);
 
 		// NOTE(hampus): Menu bar
 

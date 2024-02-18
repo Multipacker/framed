@@ -67,6 +67,14 @@ enum FramedUI_Color
 	FramedUI_Color_COUNT,
 };
 
+typedef enum FramedUI_FontScale FramedUI_FontScale;
+enum FramedUI_FontScale
+{
+	FramedUI_FontScale_Smaller,
+	FramedUI_FontScale_Normal,
+	FramedUI_FontScale_Larger,
+};
+
 typedef struct FramedUI_Theme FramedUI_Theme;
 struct FramedUI_Theme
 {
@@ -186,6 +194,12 @@ struct FramedUI_CommandList
 	FramedUI_CommandNode *last;
 };
 
+typedef struct FramedUI_Settings FramedUI_Settings;
+struct FramedUI_Settings
+{
+	U32 font_size;
+};
+
 typedef struct FramedUI_State FramedUI_State;
 struct FramedUI_State
 {
@@ -212,6 +226,8 @@ struct FramedUI_State
 
 	FramedUI_DragStatus drag_status;
 	FramedUI_DragData   drag_data;
+
+	FramedUI_Settings settings;
 
 	FramedUI_Theme theme;
 };
