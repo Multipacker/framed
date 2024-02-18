@@ -429,67 +429,33 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		// This is just to get it started.
 		if (delta < 0)
 		{
-			U64 first_whitespace_index = 0;
-			Str8 string_before_cursor = str8_prefix(edit_str, (U64) result.new_cursor+1);
-			B32 found_next_word = false;
-			for (S64 i = (S64) string_before_cursor.size-1; i > 0; --i)
+			S64 after_word_cursor = 0;
+			for (S64 i = result.new_cursor; i > 0; --i)
 			{
-				U8 next_character = next_character = string_before_cursor.data[i-1];
-				U8 character = string_before_cursor.data[i];
+				U8 character      = edit_str.data[i];
+				U8 next_character = edit_str.data[i - 1];
 				if (character != ' ' && next_character == ' ')
 				{
-					result.new_cursor = (S64) i;
-					found_next_word = true;
+					after_word_cursor = i;
 					break;
 				}
 			}
-			if (!found_next_word)
-			{
-				S64 new_cursor = state->cursor;
-				for (U64 i = 0; i < string_before_cursor.size; ++i)
-				{
-					U8 character = string_before_cursor.data[i];
-					if (character != ' ')
-					{
-						new_cursor = (S64) i;
-						break;
-					}
-				}
-				result.new_cursor = new_cursor;
-			}
+			result.new_cursor = after_word_cursor;
 		}
 		else if (action->delta > 0)
 		{
-			U64 first_whitespace_index = 0;
-			Str8 string_after_cursor = str8_skip(edit_str, (U64) result.new_cursor-1);
-			B32 found_next_word = false;
-			S64 end = (S64) (string_after_cursor.size);
-			for (S64 i = 0; i < end; ++i)
+			S64 after_word_cursor = (S64) edit_str.size;
+			for (S64 i = result.new_cursor; i < (S64) edit_str.size - 1; ++i)
 			{
-				U8 next_character = string_after_cursor.data[i+1];
-				U8 character = string_after_cursor.data[i];
+				U8 character      = edit_str.data[i];
+				U8 next_character = edit_str.data[i + 1];
 				if (character != ' ' && next_character == ' ')
 				{
-					result.new_cursor = state->cursor + (S64) i + 1;
-					found_next_word = true;
+					after_word_cursor = i + 1;
 					break;
 				}
 			}
-
-			if (!found_next_word)
-			{
-				S64 new_cursor = state->cursor;
-				for (S64 i = (end-1); i >= 0; --i)
-				{
-					U8 character = string_after_cursor.data[i];
-					if (character != ' ')
-					{
-						new_cursor = state->cursor + (S64) i + 2;
-						break;
-					}
-				}
-				result.new_cursor = new_cursor;
-			}
+			result.new_cursor = after_word_cursor;
 		}
 	}
 
