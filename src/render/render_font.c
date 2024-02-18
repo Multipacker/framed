@@ -454,7 +454,7 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 
 			if (render_font_is_loaded(font))
 			{
-				slot_is_cold = font->last_frame_index_used < (current_frame_index-1);
+				slot_is_cold = font->last_frame_index_used <= (current_frame_index-1);
 			}
 			else if (render_font_is_unloaded(font))
 			{
