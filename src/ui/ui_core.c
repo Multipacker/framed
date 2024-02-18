@@ -374,7 +374,7 @@ ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
 internal UI_TextOp
 ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *state, UI_TextAction *action)
 {
-	UI_TextOp result = {0};
+	UI_TextOp result = { 0 };
 	result.new_cursor = state->cursor;
 	result.new_mark = state->mark;
 
@@ -400,37 +400,31 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		delta = 0;
 	}
 
-	delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor+1);
-	result.new_cursor += delta;
-
 	if (
 		action->flags & UI_TextActionFlag_DeltaPicksSelectionSide &&
-		!(action->flags & UI_TextActionFlag_KeepMark))
+		!(action->flags & UI_TextActionFlag_KeepMark) &&
+		state->cursor != state->mark)
 	{
-		if (state->cursor != state->mark)
+		if (action->delta < 0)
 		{
-			if (action->delta < 0)
-			{
-				result.new_cursor = s64_min(state->cursor, state->mark);
-			}
-			else if (action->delta > 0)
-			{
-				result.new_cursor = s64_max(state->cursor, state->mark);
-			}
+			result.new_cursor = s64_min(state->cursor, state->mark);
+		}
+		else if (action->delta > 0)
+		{
+			result.new_cursor = s64_max(state->cursor, state->mark);
 		}
 	}
-
-	// TODO(simon): Implement Unicode algorithm for finding word boundaries.
-	// (https://www.unicode.org/reports/tr29/#Word_Boundaries) This should
-	// probably end up in `base_string`.
-	if (action->flags & UI_TextActionFlag_WordScan)
+	else if (action->flags & UI_TextActionFlag_WordScan)
 	{
+		// TODO(simon): Implement Unicode algorithm for finding word boundaries.
+		// (https://www.unicode.org/reports/tr29/#Word_Boundaries) This should
+		// probably end up in `base_string`.
 		// TODO(hampus): Collapse these two ifs and make it more robust.
 		// This is just to get it started.
-		if (delta < 0)
+		if (action->delta < 0)
 		{
 			S64 after_word_cursor = 0;
-			for (S64 i = result.new_cursor; i > 0; --i)
+			for (S64 i = result.new_cursor - 1; i > 0; --i)
 			{
 				U8 character      = edit_str.data[i];
 				U8 next_character = edit_str.data[i - 1];
@@ -457,6 +451,11 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			}
 			result.new_cursor = after_word_cursor;
 		}
+	}
+	else
+	{
+		delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor + 1);
+		result.new_cursor += delta;
 	}
 
 	if (action->flags & UI_TextActionFlag_Copy)
