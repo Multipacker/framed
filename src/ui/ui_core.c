@@ -390,11 +390,11 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		!(action->flags & UI_TextActionFlag_KeepMark) &&
 		state->cursor != state->mark)
 	{
-		if (action->delta < 0)
+		if (delta < 0)
 		{
 			result.new_cursor = s64_min(state->cursor, state->mark);
 		}
-		else if (action->delta > 0)
+		else if (delta > 0)
 		{
 			result.new_cursor = s64_max(state->cursor, state->mark);
 		}
@@ -406,7 +406,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 		// probably end up in `base_string`.
 		// TODO(hampus): Collapse these two ifs and make it more robust.
 		// This is just to get it started.
-		if (action->delta < 0)
+		if (delta < 0)
 		{
 			S64 after_word_cursor = 0;
 			for (S64 i = result.new_cursor - 1; i > 0; --i)
@@ -421,7 +421,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 			}
 			result.new_cursor = after_word_cursor;
 		}
-		else if (action->delta > 0)
+		else if (delta > 0)
 		{
 			S64 after_word_cursor = (S64) edit_str.size;
 			for (S64 i = result.new_cursor; i < (S64) edit_str.size - 1; ++i)
@@ -458,7 +458,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
 	if (!(action->flags & UI_TextActionFlag_KeepMark))
 	{
-		if (action->delta != 0 || (action->flags & UI_TextActionFlag_Delete))
+		if (delta != 0 || (action->flags & UI_TextActionFlag_Delete))
 		{
 			result.new_mark = result.new_cursor;
 		}
