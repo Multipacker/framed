@@ -439,6 +439,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 	}
 	else
 	{
+		// TODO(simon): Move by codepoints.
 		delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor + 1);
 		result.new_cursor += delta;
 	}
