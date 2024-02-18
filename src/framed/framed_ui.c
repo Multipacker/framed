@@ -3,7 +3,7 @@
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
 // [ ] @polish Dragging by a tab bar should not offset the new window at (0, 0)
-// [ ] @polish Memory leak when closing/opening a window due to new view data is 
+// [ ] @polish Memory leak when closing/opening a window due to new view data is
 //             is pushed every time the window opens again
 // [ ] @polish Simplify memory management of panels, tabs & windows
 
@@ -1755,7 +1755,6 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 		framed_ui_window_close(window);
 	}
 #endif
-	ui_end();
 
 	for (FramedUI_CommandNode *node = framed_ui_state->cmd_list.first; node; node = node->next)
 	{

@@ -1,7 +1,6 @@
 ////////////////////////////////
 // Stuff to get done before going public
-// 
-// [ ] Status bar
+//
 // [ ] Settings tab for font size, ...
 // [ ] Finish basic zone profiling
 //	 	 [ ] Add a concept of frames
@@ -29,8 +28,10 @@
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
 
-#include "framed/framed_ui.h"
+// NOTE(hampus): A global frame counter that everyone can read from
+global U64 framed_frame_counter;
 
+#include "framed/framed_ui.h"
 #include "framed/framed_ui.c"
 
 ////////////////////////////////
@@ -147,7 +148,6 @@ struct ZoneBlock
 	U64 tsc_elapsed_children;
 	U64 hit_count;
 };
-
 typedef struct ZoneStack ZoneStack;
 struct ZoneStack
 {
@@ -155,6 +155,14 @@ struct ZoneStack
 	U64 tsc_start;
 	U64 old_tsc_elapsed_root;
 	U64 tsc_elapsed_children;
+};
+
+typedef struct ZoneBlockPacket ZoneBlockPacket;
+struct ZoneBlockPacket
+{
+	U64 tsc;
+	U64 name_length;
+	U8 name[256];
 };
 
 global ZoneBlock zone_blocks[4096] = {0};
@@ -371,7 +379,6 @@ os_main(Str8List arguments)
 	B32 found_connection = false;
 	Net_AcceptResult accept_result = {0};
 	FramedUI_Window *debug_window = 0;
-	framed_ui_state->frame_index = 1;
 	while (running)
 	{
 		Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
@@ -379,6 +386,8 @@ os_main(Str8List arguments)
 		Arena *previous_arena = frame_arenas[1];
 
 		framed_ui_state->frame_arena = current_arena;
+
+		// NOTE(hampus): Gather events
 
 		Gfx_EventList events = gfx_get_events(current_arena, &gfx);
 		for (Gfx_Event *event = events.first; event != 0; event = event->next)
@@ -441,17 +450,27 @@ os_main(Str8List arguments)
 			}
 		}
 
+		// NOTE(hampus): Check for connection
+
 		if (!net_socket_connection_is_alive(accept_result.socket))
 		{
+			if (found_connection)
+			{
+				// NOTE(hampus): The client disconnected
+				log_info("Disconnected from client");
+				found_connection = false;
+			}
 			accept_result = net_socket_accept(socket);
 			found_connection = accept_result.succeeded;
 			if (found_connection)
 			{
-				log_info("Connection accepted");
+				log_info("Connected to client");
 				net_socket_set_blocking_mode(accept_result.socket, false);
 				memory_zero_array(zone_blocks);
 			}
 		}
+
+		// NOTE(hampus): Gather zone data from client
 
 		if (net_socket_connection_is_alive(accept_result.socket))
 		{
@@ -463,13 +482,6 @@ os_main(Str8List arguments)
 			U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
 			while (buffer_pointer < buffer_opl)
 			{
-				typedef struct ZoneBlockPacket ZoneBlockPacket;
-				struct ZoneBlockPacket
-				{
-					U64 tsc;
-					U64 name_length;
-					U8 name[256];
-				};
 				// TODO(simon): Make sure we don't try to read past the end of the buffer.
 				ZoneBlockPacket *packet = (ZoneBlockPacket *) buffer_pointer;
 				buffer_pointer += packet->name_length + sizeof(U64)*2;
@@ -507,6 +519,8 @@ os_main(Str8List arguments)
 			release_scratch(scratch);
 		}
 
+		// NOTE(hampus): UI pass
+
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
@@ -514,46 +528,7 @@ os_main(Str8List arguments)
 		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
 		ui_push_font_size(font_size);
 
-		UI_Key my_ctx_menu = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu"));
-
-		ui_ctx_menu(my_ctx_menu)
-			ui_width(ui_em(4, 1))
-		{
-			if (ui_button(str8_lit("Test")).pressed)
-			{
-			}
-
-			if (ui_button(str8_lit("Test2")).pressed)
-			{
-			}
-
-			if (ui_button(str8_lit("Test3")).pressed)
-			{
-			}
-		}
-
-		UI_Key my_ctx_menu2 = ui_key_from_string(ui_key_null(), str8_lit("MyContextMenu2"));
-
-		ui_ctx_menu(my_ctx_menu2)
-			ui_width(ui_em(4, 1))
-		{
-			if (ui_button(str8_lit("Test5")).pressed)
-			{
-			}
-
-			ui_row()
-			{
-				if (ui_button(str8_lit("Test52")).pressed)
-				{
-				}
-				if (ui_button(str8_lit("Test5251")).pressed)
-				{
-				}
-			}
-			if (ui_button(str8_lit("Test53")).pressed)
-			{
-			}
-		}
+		// NOTE(hampus): Menu bar
 
 		ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
 		ui_next_width(ui_fill());
@@ -561,42 +536,40 @@ os_main(Str8List arguments)
 			ui_softness(0)
 			ui_row()
 		{
-			UI_Comm comm = ui_button(str8_lit("File"));
-			if (comm.hovering)
-			{
-				B32 ctx_menu_is_open = ui_key_match(ui_ctx_menu_key(), my_ctx_menu);
-				if (ctx_menu_is_open)
-				{
-					ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
-				}
-			}
-			if (comm.pressed)
-			{
-				ui_ctx_menu_open(comm.box->key, v2f32(0, 0), my_ctx_menu);
-			}
-			UI_Comm comm2 = ui_button(str8_lit("Edit"));
-			if (comm2.hovering)
-			{
-				B32 ctx_menu2_is_open = ui_key_match(ui_ctx_menu_key(), my_ctx_menu2);
-				if (ctx_menu2_is_open)
-				{
-					ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
-				}
-			}
-			if (comm2.pressed)
-			{
-				ui_ctx_menu_open(comm2.box->key, v2f32(0, 0), my_ctx_menu2);
-			}
+			ui_button(str8_lit("File"));
+			ui_button(str8_lit("Edit"));
 			ui_button(str8_lit("View"));
 			ui_button(str8_lit("Options"));
 			ui_button(str8_lit("Help"));
 		}
 
+		// NOTE(hampus): Update panels
+
 		framed_ui_update(renderer, &events);
+
+		// NOTE(hampus): Status bar
+
+		Str8 status_text = str8_lit("Not connected");
+		if (net_socket_connection_is_alive(accept_result.socket))
+		{
+			ui_next_color(v4f32(0, 0.5f, 0, 1));
+			status_text = str8_lit("Connected");
+		}
+		else
+		{
+			ui_next_color(v4f32(1, 0.5f, 0, 1));
+		}
+		ui_next_width(ui_pct(1, 1));
+		ui_next_height(ui_em(1, 1));
+		ui_next_text_align(UI_TextAlign_Left);
+		UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
+		ui_box_equip_display_string(status_bar_box, status_text);
+
+		ui_end();
 
 		render_end(renderer);
 
-		ui_debug_keep_alive((U32) framed_ui_state->frame_index);
+		ui_debug_keep_alive((U32) framed_frame_counter);
 
 		arena_pop_to(previous_arena, 0);
 		swap(frame_arenas[0], frame_arenas[1], Arena *);
@@ -605,7 +578,7 @@ os_main(Str8List arguments)
 		dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 
 		start_counter = end_counter;
-		framed_ui_state->frame_index++;
+		framed_frame_counter++;
 	}
 
 	return(0);

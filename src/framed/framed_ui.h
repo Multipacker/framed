@@ -214,9 +214,6 @@ struct FramedUI_State
 	FramedUI_DragData   drag_data;
 
 	FramedUI_Theme theme;
-
-	// NOTE(hampus): Debug purposes
-	U64 frame_index;
 };
 
 typedef struct FramedUI_TabDelete FramedUI_TabDelete;
