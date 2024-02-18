@@ -124,24 +124,25 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
 		arena_scratch(0, 0)
 		{
 			Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
-				U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->font_size_text_buffer_size);
-				memory_copy_typed(data->font_size_text_buffer, text_buffer_initial_string.data, initial_string_length);
-				data->font_size_string_length = initial_string_length;
+			U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->font_size_text_buffer_size);
+			memory_copy_typed(data->font_size_text_buffer, text_buffer_initial_string.data, initial_string_length);
+			data->font_size_string_length = initial_string_length;
 		}
-		}
+	}
 
-		//- hampus: General settings
+	//- hampus: General settings
 
-		ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
-		ui_text(str8_lit("General"));
-		ui_spacer(ui_em(0.5f, 1));
+	ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+	ui_text(str8_lit("General"));
+	ui_spacer(ui_em(0.5f, 1));
+
 	ui_row()
 	{
 		ui_column()
 		{
 			ui_row()
 			{
-				ui_text(str8_lit("Font size:" ));
+				ui_text(str8_lit("Font size:"));
 				ui_next_width(ui_em(3, 1));
 				UI_Comm comm = ui_line_edit(&data->font_size_text_edit_state, data->font_size_text_buffer, data->font_size_text_buffer_size, &data->font_size_string_length, str8_lit("FontSizeLineEdit"));
 				if (!ui_box_is_focused(comm.box))
