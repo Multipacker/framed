@@ -140,16 +140,24 @@ typedef uint64_t Framed_U64;
 
 #endif
 
+#if !defined(FRAMED_DEF)
+#    if defined(FRAMED_STATIC)
+#        define FRAMED_DEF static
+#    else
+#        define FRAMED_DEF extern
+#    endif
+#endif
+
 typedef Framed_U8  Framed_B8;
 typedef Framed_U16 Framed_B16;
 typedef Framed_U32 Framed_B32;
 typedef Framed_U64 Framed_B64;
 
-void framed_init(Framed_B32 wait_for_connection);
-void framed_flush(void);
+FRAMED_DEF void framed_init(Framed_B32 wait_for_connection);
+FRAMED_DEF void framed_flush(void);
 
-void framed_zone_begin(char *name);
-void framed_zone_end(void);
+FRAMED_DEF void framed_zone_begin(char *name);
+FRAMED_DEF void framed_zone_end(void);
 
 #ifdef FRAMED_IMPLEMENTATION
 
@@ -183,7 +191,7 @@ static Framed_State global_framed_state;
 // NOTE: Socket implementation
 
 static Framed_U16
-framed_u16_big_to_local_endian(Framed_U16 x)
+framed__u16_big_to_local_endian(Framed_U16 x)
 {
 #if COMPILER_CL
 	return _byteswap_ushort(x);
@@ -195,7 +203,7 @@ framed_u16_big_to_local_endian(Framed_U16 x)
 }
 
 static Framed_U32
-framed_u32_big_to_local_endian(Framed_U32 x)
+framed__u32_big_to_local_endian(Framed_U32 x)
 {
 #if COMPILER_CL
 	return _byteswap_ulong(x);
@@ -227,10 +235,10 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
 	sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
 	sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
-	sockaddrin.sin_port = framed_u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+	sockaddrin.sin_port = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
 	sockaddrin.sin_family = AF_INET;
 	// TODO(hampus): Make use of `wait_for_connection`. It is always
-	// waiting for now. 
+	// waiting for now.
 	int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
 }
 
@@ -256,8 +264,8 @@ framed__socket_init(Framed_B32 wait_for_connection)
 	framed->socket.u64[0] = (Framed_U64) linux_socket;
 	struct sockaddr_in socket_address = {0};
 	socket_address.sin_family      = AF_INET;
-	socket_address.sin_port        = framed_u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
-	socket_address.sin_addr.s_addr = framed_u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
+	socket_address.sin_port        = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+	socket_address.sin_addr.s_addr = framed__u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
 	// TODO(simon): Use `wait_for_connection`
 	int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
 	if (error == -1)
@@ -285,7 +293,7 @@ framed__socket_send(void)
 // NOTE: Internal functions
 
 #if COMPILER_CL
-# include <intrin.h>
+#    include <intrin.h>
 #elif COMPILER_GCC
 #	include <x86intrin.h>
 #endif
@@ -319,7 +327,7 @@ framed__ensure_space(Framed_U64 size)
 ////////////////////////////////
 // NOTE: Public functions
 
-void
+FRAMED_DEF void
 framed_init(Framed_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
@@ -329,7 +337,7 @@ framed_init(Framed_B32 wait_for_connection)
 	framed->buffer_pos = 0;
 }
 
-void
+FRAMED_DEF void
 framed_flush(void)
 {
 	Framed_State *framed = &global_framed_state;
@@ -341,7 +349,7 @@ framed_flush(void)
 // U64 : name_length, if 0 then this closes the last zone
 // U8 * name_length : name
 
-void
+FRAMED_DEF void
 framed_zone_begin(char *name)
 {
 	Framed_State *framed = &global_framed_state;
@@ -361,7 +369,7 @@ framed_zone_begin(char *name)
 	framed->buffer_pos += entry_size;
 }
 
-void
+FRAMED_DEF void
 framed_zone_end(void)
 {
 	Framed_State *framed = &global_framed_state;
