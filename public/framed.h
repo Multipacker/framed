@@ -2,117 +2,117 @@
 #define FRAMED_H
 
 #if defined(__clang__)
-#	define COMPILER_CLANG 1
+#	define FRAMED_COMPILER_CLANG 1
 
 #	if defined(_WIN32)
-#		define OS_WINDOWS 1
+#		define FRAMED_OS_WINDOWS 1
 #	elif defined(__gnu_linux__)
-#		define OS_LINUX 1
+#		define FRAMED_OS_LINUX 1
 #	elif defined(__APPLE__) && defined(__MACH__)
-#		define OS_MAC 1
+#		define FRAMED_OS_MAC 1
 #	else
 #		error missing OS detection
 #	endif
 
 # 	if defined(__amd64__)
-#		define ARCH_X64 1
+#		define FRAMED_ARCH_X64 1
 #	elif defined(__i386__)
-#		define ARCH_X86 1
+#		define FRAMED_ARCH_X86 1
 #	elif defined(__arm__)
-#		define ARCH_ARM
+#		define FRAMED_ARCH_ARM
 #	elif defined(__aarch64__)
-#		define ARCH_ARM64
+#		define FRAMED_ARCH_ARM64
 #	else
 #		error missing ARCH detection
 #	endif
 
 #elif defined(_MSC_VER)
-#	define COMPILER_CL 1
+#	define FRAMED_COMPILER_CL 1
 
 #	if defined(_WIN32)
-#		define OS_WINDOWS 1
+#		define FRAMED_OS_WINDOWS 1
 #	else
 #		error missing OS detection
 #	endif
 
 #	if defined(_M_AMD64)
-#		define ARCH_X64 1
+#		define FRAMED_ARCH_X64 1
 #	elif defined(_M_IX86)
-#		define ARCH_X86 1
+#		define FRAMED_ARCH_X86 1
 #	elif defined(_M_ARM)
-#		define ARCH_ARM
+#		define FRAMED_ARCH_ARM
 #	else
 #		error missing ARCH detection
 #	endif
 
 #elif defined(__GNUC__)
-#	define COMPILER_GCC 1
+#	define FRAMED_COMPILER_GCC 1
 
 #	if defined(_WIN32)
-#		define OS_WINDOWS 1
+#		define FRAMED_OS_WINDOWS 1
 #	elif defined(__gnu_linux__)
-#		define OS_LINUX 1
+#		define FRAMED_OS_LINUX 1
 #	elif defined(__APPLE__) && defined(__MACH__)
-#		define OS_MAC 1
+#		define FRAMED_OS_MAC 1
 #	else
 #		error missing OS detection
 #	endif
 
 #	if defined(__amd64__)
-#		define ARCH_X64 1
+#		define FRAMED_ARCH_X64 1
 #	elif defined(__i386__)
-#		define ARCH_X86 1
+#		define FRAMED_ARCH_X86 1
 #	elif defined(__arm__)
-#		define ARCH_ARM
+#		define FRAMED_ARCH_ARM
 #	elif defined(__aarch64__)
-#		define ARCH_ARM64
+#		define FRAMED_ARCH_ARM64
 #	else
 #		error missing ARCH detection
 #endif
 
 #endif
 
-#if !defined(COMPILER_CL)
-#	define COMPILER_CL 0
+#if !defined(FRAMED_COMPILER_CL)
+#	define FRAMED_COMPILER_CL 0
 #endif
 
-#if !defined(COMPILER_CLANG)
-#	define COMPILER_CLANG 0
+#if !defined(FRAMED_COMPILER_CLANG)
+#	define FRAMED_COMPILER_CLANG 0
 #endif
 
-#if !defined(COMPILER_GCC)
-#	define COMPILER_GCC 0
+#if !defined(FRAMED_COMPILER_GCC)
+#	define FRAMED_COMPILER_GCC 0
 #endif
 
-#if !defined(OS_WINDOWS)
-#	define OS_WINDOWS 0
+#if !defined(FRAMED_OS_WINDOWS)
+#	define FRAMED_OS_WINDOWS 0
 #endif
 
-#if !defined(OS_LINUX)
-#	define OS_LINUX 0
+#if !defined(FRAMED_OS_LINUX)
+#	define FRAMED_OS_LINUX 0
 #endif
 
-#if !defined(OS_MAC)
+#if !defined(FRAMED_OS_MAC)
 #	define OS_MAC 0
 #endif
 
-#if !defined(ARCH_X64)
-#	define ARCH_X64 0
+#if !defined(FRAMED_ARCH_X64)
+#	define FRAMED_ARCH_X64 0
 #endif
 
-#if !defined(ARCH_X86)
-#	define ARCH_X86 0
+#if !defined(FRAMED_ARCH_X86)
+#	define FRAMED_ARCH_X86 0
 #endif
 
-#if !defined(ARCH_ARM)
-#	define ARCH_ARM 0
+#if !defined(FRAMED_ARCH_ARM)
+#	define FRAMED_ARCH_ARM 0
 #endif
 
-#if !defined(ARCH_ARM64)
-#	define ARCH_ARM64 0
+#if !defined(FRAMED_ARCH_ARM64)
+#	define FRAMED_ARCH_ARM64 0
 #endif
 
-#if COMPILER_CL
+#if FRAMED_COMPILER_CL
 
 typedef signed char          Framed_S8;
 typedef signed short         Framed_S16;
@@ -205,9 +205,9 @@ static Framed_State global_framed_state;
 static Framed_U16
 framed__u16_big_to_local_endian(Framed_U16 x)
 {
-#if COMPILER_CL
+#if FRAMED_COMPILER_CL
 	return _byteswap_ushort(x);
-#elif COMPILER_CLANG || COMPILER_GCC
+#elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
 	return __builtin_bswap16(x);
 #else
 # error Your compiler does not have an implementation of framed_u16_big_to_local_endian.
@@ -217,16 +217,16 @@ framed__u16_big_to_local_endian(Framed_U16 x)
 static Framed_U32
 framed__u32_big_to_local_endian(Framed_U32 x)
 {
-#if COMPILER_CL
+#if FRAMED_COMPILER_CL
 	return _byteswap_ulong(x);
-#elif COMPILER_CLANG || COMPILER_GCC
+#elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
 	return __builtin_bswap32(x);
 #else
 # error Your compiler does not have an implementation of framed_u32_big_to_local_endian.
 #endif
 }
 
-#if OS_WINDOWS
+#if FRAMED_OS_WINDOWS
 
 #pragma comment(lib, "Ws2_32.lib")
 
@@ -262,7 +262,7 @@ framed__socket_send(void)
 	int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
 }
 
-#elif OS_LINUX
+#elif FRAMED_OS_LINUX
 
 #include <errno.h>
 #include <sys/socket.h>
@@ -304,9 +304,9 @@ framed__socket_send(void)
 ////////////////////////////////
 // NOTE: Internal functions
 
-#if COMPILER_CL
+#if FRAMED_COMPILER_CL
 #    include <intrin.h>
-#elif COMPILER_GCC
+#elif FRAMED_COMPILER_GCC
 #	include <x86intrin.h>
 #endif
 
@@ -314,11 +314,11 @@ static Framed_U64
 framed__rdtsc(void)
 {
 	Framed_U64 result = 0;
-#if COMPILER_CL
+#if FRAMED_COMPILER_CL
 	result = __rdtsc();
-#elif COMPILER_CLANG
+#elif FRAMED_COMPILER_CLANG
 	result = __rdtsc();
-#elif COMPILER_GCC
+#elif FRAMED_COMPILER_GCC
 	result = __rdtsc();
 #endif
 	return(result);
