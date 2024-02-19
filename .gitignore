@@ -6,7 +6,6 @@
 /log.txt
 /theme_dump.txt
 /theme_dump
-/.vscode
 /framed.raddbg_profile
 /framed.raddbg_user
 /script/start_raddbg.bat

@@ -156,17 +156,42 @@ typedef Framed_U64 Framed_B64;
 #if defined(FRAMED_DISABLE)
 #    define framed_init(wait)
 #    define framed_flush()
+#    define framed_mark_frame_start()
 #    define framed_zone_begin(name)
 #    define framed_zone_end()
 #else
-#    define framed_init(wait)       framed_init_(wait)
-#    define framed_flush()          framed_flush_()
-#    define framed_zone_begin(name) framed_zone_begin_(name)
-#    define framed_zone_end()       framed_zone_end_()
+#    define framed_init(wait)         framed_init_(wait)
+#    define framed_flush()            framed_flush_()
+#    define framed_mark_frame_start() framed_mark_frame_start_()
+#    define framed_zone_begin(name)   framed_zone_begin_(name)
+#    define framed_zone_end()         framed_zone_end_()
 #endif
+
+#if FRAMED_COMPILER_GCC || FRAMED_COMPILER_CLANG
+#    define framed_packed(decl) decl __attribute__((packed))
+#elif FRAMED_COMPILER_CL
+#    define framed_packed(decl) __pragma(pack(push, 1)) decl __pragma(pack(pop))
+#endif
+
+typedef Framed_U8 Framed_PacketKind;
+enum
+{
+    Framed_PacketKind_FrameStart = (1 << 0),
+    Framed_PacketKind_ZoneBegin  = (1 << 1),
+    Framed_PacketKind_ZoneEnd    = (1 << 2),
+};
+
+framed_packed(typedef struct PacketHeader PacketHeader);
+framed_packed(struct PacketHeader
+              {
+                  Framed_PacketKind kind;
+                  Framed_U64 tsc;
+              });
 
 FRAMED_DEF void framed_init_(Framed_B32 wait_for_connection);
 FRAMED_DEF void framed_flush_(void);
+
+FRAMED_DEF void framed_mark_frame_start_(void);
 
 FRAMED_DEF void framed_zone_begin_(char *name);
 FRAMED_DEF void framed_zone_end_(void);
@@ -231,7 +256,7 @@ framed__u32_big_to_local_endian(Framed_U32 x)
 #pragma comment(lib, "Ws2_32.lib")
 
 #pragma warning(push, 0)
-#include <winsock2.h>
+#    include <winsock2.h>
 #pragma warning(pop)
 
 static void
@@ -357,26 +382,51 @@ framed_flush_(void)
     framed->buffer_pos = 0;
 }
 
-// U64 : rdtsc
-// U64 : name_length, if 0 then this closes the last zone
-// U8 * name_length : name
+FRAMED_DEF void
+framed_mark_frame_start_(void)
+{
+    Framed_State *framed = &global_framed_state;
+
+    typedef struct Packet Packet;
+    struct Packet
+    {
+        PacketHeader header;
+    };
+
+    Framed_U64 entry_size = sizeof(Packet);
+    framed__ensure_space(entry_size);
+
+    Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
+    packet->header.kind = Framed_PacketKind_FrameStart;
+    packet->header.tsc= framed__rdtsc();
+
+    framed->buffer_pos += entry_size;
+}
 
 FRAMED_DEF void
 framed_zone_begin_(char *name)
 {
     Framed_State *framed = &global_framed_state;
 
+    typedef struct Packet Packet;
+    struct Packet
+    {
+        PacketHeader header;
+        Framed_U64 name_length;
+        Framed_U8 name[];
+    };
+
     Framed_U64 length  = strlen(name);
     framed__assert(length != 0);
 
-    Framed_U64 entry_size = 2 * sizeof(Framed_U64) + length;
+    Framed_U64 entry_size = sizeof(Packet) + length;
     framed__ensure_space(entry_size);
 
-    Framed_U64 counter = framed__rdtsc();
-
-    *(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
-    *(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
-    framed_memory_copy(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
+    Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
+    packet->header.kind = Framed_PacketKind_ZoneBegin;
+    packet->header.tsc = framed__rdtsc();
+    packet->name_length = length;
+    framed_memory_copy(packet->name, name, length);
 
     framed->buffer_pos += entry_size;
 }
@@ -386,13 +436,18 @@ framed_zone_end_(void)
 {
     Framed_State *framed = &global_framed_state;
 
-    Framed_U64 counter = framed__rdtsc();
+    typedef struct Packet Packet;
+    struct Packet
+    {
+        PacketHeader header;
+    };
 
-    Framed_U64 entry_size = 2 * sizeof(Framed_U64);
+    Framed_U64 entry_size = sizeof(Packet);
     framed__ensure_space(entry_size);
 
-    *(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
-    *(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
+    Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
+    packet->header.kind = Framed_PacketKind_ZoneEnd;
+    packet->header.tsc= framed__rdtsc();
 
     framed->buffer_pos += entry_size;
 }
