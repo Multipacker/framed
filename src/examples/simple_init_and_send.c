@@ -13,8 +13,5 @@ int main(int argc, char **argv)
 	framed_zone_begin("Test");
 	framed_zone_end();
 	framed_flush();
-	while (true)
-	{
-	}
 	return 0;
 }
