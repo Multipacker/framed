@@ -304,7 +304,7 @@ struct UI_TextAction
 {
     UI_TextActionFlag flags;
     S64 delta;
-    U8 character;
+    U32 codepoint;
 };
 
 typedef struct UI_TextActionNode UI_TextActionNode;

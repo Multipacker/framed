@@ -695,6 +695,7 @@ ui_alpha_picker(Vec3F32 hsv, F32 *out_alpha, Str8 string)
     }
 }
 
+// TODO(simon): Don't just cut of the string at the byte, it might cut a codepoint in half.
 internal Str8
 ui_push_replace_string(Arena *arena, Str8 edit_str, Vec2S64 range, U8 *buffer, U64 buffer_size, Str8 replace_str)
 {
