@@ -140,6 +140,11 @@ typedef uint64_t Framed_U64;
 
 #endif
 
+typedef Framed_U8  Framed_B8;
+typedef Framed_U16 Framed_B16;
+typedef Framed_U32 Framed_B32;
+typedef Framed_U64 Framed_B64;
+
 #if !defined(FRAMED_DEF)
 #    if defined(FRAMED_STATIC)
 #        define FRAMED_DEF static
@@ -148,18 +153,25 @@ typedef uint64_t Framed_U64;
 #    endif
 #endif
 
-typedef Framed_U8  Framed_B8;
-typedef Framed_U16 Framed_B16;
-typedef Framed_U32 Framed_B32;
-typedef Framed_U64 Framed_B64;
+#if defined(FRAMED_DISABLE)
+#    define framed_init(wait)
+#    define framed_flush()
+#    define framed_zone_begin(name)
+#    define framed_zone_end()
+#else
+#    define framed_init(wait)       framed_init_(wait)
+#    define framed_flush()          framed_flush_()
+#    define framed_zone_begin(name) framed_zone_begin_(name)
+#    define framed_zone_end()       framed_zone_end_()
+#endif
 
-FRAMED_DEF void framed_init(Framed_B32 wait_for_connection);
-FRAMED_DEF void framed_flush(void);
+FRAMED_DEF void framed_init_(Framed_B32 wait_for_connection);
+FRAMED_DEF void framed_flush_(void);
 
-FRAMED_DEF void framed_zone_begin(char *name);
-FRAMED_DEF void framed_zone_end(void);
+FRAMED_DEF void framed_zone_begin_(char *name);
+FRAMED_DEF void framed_zone_end_(void);
 
-#ifdef FRAMED_IMPLEMENTATION
+#if defined(FRAMED_IMPLEMENTATION) && !defined(FRAMED_DISABLE)
 
 #include <string.h>
 #include <stdlib.h>
@@ -320,7 +332,7 @@ framed__ensure_space(Framed_U64 size)
 	Framed_State *framed = &global_framed_state;
 	if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
 	{
-		framed_flush();
+		framed_flush_();
 	}
 }
 
@@ -328,7 +340,7 @@ framed__ensure_space(Framed_U64 size)
 // NOTE: Public functions
 
 FRAMED_DEF void
-framed_init(Framed_B32 wait_for_connection)
+framed_init_(Framed_B32 wait_for_connection)
 {
 	Framed_State *framed = &global_framed_state;
 
@@ -338,7 +350,7 @@ framed_init(Framed_B32 wait_for_connection)
 }
 
 FRAMED_DEF void
-framed_flush(void)
+framed_flush_(void)
 {
 	Framed_State *framed = &global_framed_state;
 	framed__socket_send();
@@ -350,7 +362,7 @@ framed_flush(void)
 // U8 * name_length : name
 
 FRAMED_DEF void
-framed_zone_begin(char *name)
+framed_zone_begin_(char *name)
 {
 	Framed_State *framed = &global_framed_state;
 
@@ -370,7 +382,7 @@ framed_zone_begin(char *name)
 }
 
 FRAMED_DEF void
-framed_zone_end(void)
+framed_zone_end_(void)
 {
 	Framed_State *framed = &global_framed_state;
 
