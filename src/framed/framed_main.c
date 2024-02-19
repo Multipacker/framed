@@ -272,6 +272,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 	F32 cycles_column_width_em = 8;
 	F32 cycles_children_column_width_em = 12;
 	F32 hit_count_column_width_em = 8;
+
+		#if 0
 	ui_row()
 	{
 		ui_next_width(ui_em(name_column_width_em, 1));
@@ -281,6 +283,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 			ui_next_text_align(UI_TextAlign_Left);
 			ui_text(str8_lit("Name"));
 		}
+
 		ui_next_width(ui_em(cycles_column_width_em, 1));
 		ui_row()
 		{
@@ -347,6 +350,162 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 			}
 		}
 	}
+#else
+
+	// TODO(hampus): Test performance with the method done in debug UI
+	// vs this one.
+
+	typedef struct CounterValues CounterValues;
+	struct CounterValues
+	{
+		Str8 name[4096];
+		U64 tsc_elapsed_without_children[4096];
+		U64 tsc_elapsed_with_children[4096];
+		U64 hit_count[4096];
+	};
+
+	U64 counter_values_count = 0;
+	CounterValues *counter_values = push_struct(scratch.arena, CounterValues);
+
+	for (U64 i = 0; i < array_count(zone_blocks); ++i)
+	{
+		ZoneBlock *zone_block = zone_blocks + i;
+		if (zone_block->tsc_elapsed)
+		{
+			U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
+			U64 tsc_with_children = zone_block->tsc_elapsed_root;
+			counter_values->name[counter_values_count] = zone_block->name;
+			counter_values->tsc_elapsed_without_children[counter_values_count] = tsc_without_children;
+			counter_values->tsc_elapsed_with_children[counter_values_count] = tsc_with_children;
+			counter_values->hit_count[counter_values_count] = zone_block->hit_count;
+			counter_values_count++;
+		}
+	}
+
+	ui_row()
+	{
+		//- hampus: Name
+
+		ui_next_width(ui_em(name_column_width_em, 1));
+		ui_column()
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_row()
+			{
+				ui_next_width(ui_fill());
+				ui_next_text_align(UI_TextAlign_Left);
+				ui_text(str8_lit("Name"));
+			}
+
+			ui_spacer(ui_em(0.3f, 1));
+
+			for (U64 i = 0; i < counter_values_count; ++i)
+			{
+				ui_text(counter_values->name[i]);
+			}
+		}
+
+		ui_next_width(ui_pixels(1, 1));
+		ui_next_height(ui_em(60, 1));
+		ui_next_corner_radius(0);
+		ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+		//- hampus: Cycles without children
+
+		ui_next_width(ui_em(cycles_column_width_em, 1));
+		ui_column()
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_row()
+			{
+				ui_next_width(ui_fill());
+				ui_next_text_align(UI_TextAlign_Left);
+				ui_text(str8_lit("Cycles"));
+			}
+
+			ui_spacer(ui_em(0.3f, 1));
+			ui_text_align(UI_TextAlign_Right)
+				ui_width(ui_pct(1, 1))
+			{
+			for (U64 i = 0; i < counter_values_count; ++i)
+			{
+				ui_textf("%"PRIU64, counter_values->tsc_elapsed_without_children[i]);
+			}
+			}
+		}
+
+		ui_next_width(ui_pixels(1, 1));
+		ui_next_height(ui_em(60, 1));
+		ui_next_corner_radius(0);
+		ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+		//- hampus: Cycles with children
+
+		ui_next_width(ui_em(cycles_children_column_width_em, 1));
+		ui_column()
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_row()
+			{
+				ui_next_width(ui_fill());
+				ui_next_text_align(UI_TextAlign_Left);
+				ui_text(str8_lit("Cycles w/ children"));
+			}
+
+			ui_spacer(ui_em(0.3f, 1));
+
+			ui_text_align(UI_TextAlign_Right)
+				ui_width(ui_pct(1, 1))
+			{
+				for (U64 i = 0; i < counter_values_count; ++i)
+				{
+					ui_textf("%"PRIU64, counter_values->tsc_elapsed_with_children[i]);
+				}
+			}
+		}
+
+		ui_next_width(ui_pixels(1, 1));
+		ui_next_height(ui_em(60, 1));
+		ui_next_corner_radius(0);
+		ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+		//- hampus: Hit count
+
+		ui_next_width(ui_em(hit_count_column_width_em, 1));
+		ui_column()
+		{
+			ui_next_width(ui_pct(1, 1));
+			ui_row()
+			{
+				ui_next_width(ui_fill());
+				ui_next_text_align(UI_TextAlign_Left);
+				ui_text(str8_lit("Hit count"));
+			}
+
+			ui_spacer(ui_em(0.3f, 1));
+
+			ui_text_align(UI_TextAlign_Right)
+				ui_width(ui_pct(1, 1))
+			{
+			for (U64 i = 0; i < counter_values_count; ++i)
+			{
+				ui_textf("%"PRIU64, counter_values->hit_count[i]);
+			}
+			}
+		}
+
+		ui_next_width(ui_pixels(1, 1));
+		ui_next_height(ui_em(60, 1));
+		ui_next_corner_radius(0);
+		ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+		ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+	}
+
+	#endif
 	release_scratch(scratch);
 }
 
@@ -358,19 +517,6 @@ os_main(Str8List arguments)
 {
 	debug_init();
 	log_init(str8_lit("log.txt"));
-
-	net_socket_init();
-	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
-	Net_Address address =
-	{
-		.ip.u8[0] = 127,
-		.ip.u8[1] = 0,
-		.ip.u8[2] = 0,
-		.ip.u8[3] = 1,
-		.port = 1234,
-	};
-	net_socket_bind(socket, address);;
-	net_socket_set_blocking_mode(socket, false);
 
 	Arena *perm_arena = arena_create("MainPerm");
 
@@ -443,9 +589,24 @@ os_main(Str8List arguments)
 
 	framed_ui_state->settings.font_size = 12;
 
+	////////////////////////////////
+	//- hampus: Initialize listen socket
+
+	net_socket_init();
+	Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
+	Net_Address address =
+	{
+		.ip.u8[0] = 127,
+		.ip.u8[1] = 0,
+		.ip.u8[2] = 0,
+		.ip.u8[3] = 1,
+		.port = 1234,
+	};
+	net_socket_bind(socket, address);;
+	net_socket_set_blocking_mode(socket, false);
+
 	gfx_set_window_maximized(&gfx);
 	gfx_show_window(&gfx);
-
 
 	////////////////////////////////
 	//- hampus: Main loop
@@ -488,6 +649,11 @@ os_main(Str8List arguments)
 					}
 					else
 					{
+						// TODO(hampus): Make debug window size dependent on window
+						// size. We can't go maximized and then query the window
+						// size, because on windows going maximized also shows the
+						// window which we don't want. So this will be a temporary
+						// solution
 						debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
 						{
 							{
@@ -517,11 +683,6 @@ os_main(Str8List arguments)
 							}
 						}
 					}
-					// TODO(hampus): Make debug window size dependent on window
-					// size. We can't go maximized and then query the window
-					// size, because on windows going maximized also shows the
-					// window which we don't want. So this will be a temporary
-					// solution
 				}
 			}
 		}
@@ -631,16 +792,16 @@ os_main(Str8List arguments)
 		Str8 status_text = str8_lit("Not connected");
 		if (net_socket_connection_is_alive(accept_result.socket))
 		{
-			ui_next_color(v4f32(0, 0.5f, 0, 1));
+			ui_next_color(v4f32(0, 0.3f, 0, 1));
 			status_text = str8_lit("Connected");
 		}
 		else
 		{
-			ui_next_color(v4f32(1, 0.5f, 0, 1));
+			ui_next_color(v4f32(0.8f, 0.3f, 0, 1));
 		}
 		ui_next_corner_radius(0);
 		ui_next_width(ui_pct(1, 1));
-		ui_next_height(ui_em(1, 1));
+		ui_next_height(ui_em(1.2f, 1));
 		ui_next_text_align(UI_TextAlign_Left);
 		UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
 		ui_box_equip_display_string(status_bar_box, status_text);
