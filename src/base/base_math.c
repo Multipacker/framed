@@ -707,6 +707,13 @@ u32_big_to_local_endian(U32 x)
 #endif
 }
 
+internal U32
+u32_clamp(U32 min, U32 val, U32 max)
+{
+	U32 result = u32_max(u32_min(val, max), min);
+	return(result);
+}
+
 internal U64
 u64_min(U64 a, U64 b)
 {

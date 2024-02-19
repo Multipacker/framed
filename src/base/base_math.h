@@ -380,6 +380,7 @@ internal U32 u32_rotate_left(U32 x, U32 amount);
 internal U32 u32_ceil_to_power_of_2(U32 x);
 internal U32 u32_reverse(U32 x);
 internal U32 u32_big_to_local_endian(U32 x);
+internal U32 u32_clamp(U32 min, U32 val, U32 max);
 
 internal U64 u64_min(U64 a, U64 b);
 internal U64 u64_max(U64 a, U64 b);
