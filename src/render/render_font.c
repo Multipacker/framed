@@ -362,7 +362,7 @@ render_font_stream_thread(Void *data)
 					renderer,
 					renderer->font_atlas->texture,
 					renderer->font_atlas->memory,
-					renderer->font_atlas->dim.width,
+					 renderer->font_atlas->dim.width,
 					renderer->font_atlas->dim.height,
 					0
 				);
@@ -454,7 +454,7 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 
 			if (render_font_is_loaded(font))
 			{
-				slot_is_cold = font->last_frame_index_used <= (current_frame_index-1);
+				slot_is_cold = font->last_frame_index_used < (current_frame_index-1);
 			}
 			else if (render_font_is_unloaded(font))
 			{

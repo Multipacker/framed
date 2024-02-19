@@ -3,8 +3,6 @@
 //
 // [ ] Finish basic zone profiling
 //	 	 [ ] Add a concept of frames
-//     [ ] Macro for turning on/off profiling
-// [ ] Macro for making functions static
 // [ ] Move log file to temporary folder
 
 #include "base/base_inc.h"
@@ -149,7 +147,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
 				{
 					U32 u32 = 0;
 					u32_from_str8(str8(data->font_size_text_buffer, data->font_size_string_length), &u32);
-					framed_ui_state->settings.font_size = u32;
+					framed_ui_state->settings.font_size = u32_clamp(1, u32, 30);
 					arena_scratch(0, 0)
 					{
 						Str8 text_buffer_str8 = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
@@ -266,7 +264,6 @@ framed_get_zone_block(Arena *arena, Str8 name)
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
-	ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 	Arena_Temporary scratch = get_scratch(0, 0);
 
 	//- hampus: Labels
@@ -351,7 +348,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		}
 	}
 	release_scratch(scratch);
-	ui_pop_font();
 }
 
 ////////////////////////////////
@@ -608,7 +604,7 @@ os_main(Str8List arguments)
 		render_begin(renderer);
 
 		ui_begin(ui, &events, renderer, dt);
-		ui_push_font(str8_lit("data/fonts/Inter-Regular.ttf"));
+		ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
 		ui_push_font_size(framed_ui_state->settings.font_size);
 
 		//- hampus: Menu bar
