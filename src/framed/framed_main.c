@@ -78,6 +78,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_logger)
     {
         log_ui->perm_arena = arena_create("LogUIPerm");
     }
+
     ui_logger(log_ui);
 }
 
@@ -163,6 +164,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
     }
 
     ui_spacer(ui_em(0.5f, 1));
+
     //- hampus: Appearance
 
     ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));

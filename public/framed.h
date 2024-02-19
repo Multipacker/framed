@@ -2,114 +2,114 @@
 #define FRAMED_H
 
 #if defined(__clang__)
-#	define FRAMED_COMPILER_CLANG 1
+#    define FRAMED_COMPILER_CLANG 1
 
-#	if defined(_WIN32)
-#		define FRAMED_OS_WINDOWS 1
-#	elif defined(__gnu_linux__)
-#		define FRAMED_OS_LINUX 1
-#	elif defined(__APPLE__) && defined(__MACH__)
-#		define FRAMED_OS_MAC 1
-#	else
-#		error missing OS detection
-#	endif
+#    if defined(_WIN32)
+#        define FRAMED_OS_WINDOWS 1
+#    elif defined(__gnu_linux__)
+#        define FRAMED_OS_LINUX 1
+#    elif defined(__APPLE__) && defined(__MACH__)
+#        define FRAMED_OS_MAC 1
+#    else
+#        error missing OS detection
+#    endif
 
-# 	if defined(__amd64__)
-#		define FRAMED_ARCH_X64 1
-#	elif defined(__i386__)
-#		define FRAMED_ARCH_X86 1
-#	elif defined(__arm__)
-#		define FRAMED_ARCH_ARM
-#	elif defined(__aarch64__)
-#		define FRAMED_ARCH_ARM64
-#	else
-#		error missing ARCH detection
-#	endif
+#    if defined(__amd64__)
+#       define FRAMED_ARCH_X64 1
+#    elif defined(__i386__)
+#       define FRAMED_ARCH_X86 1
+#    elif defined(__arm__)
+#       define FRAMED_ARCH_ARM
+#    elif defined(__aarch64__)
+#       define FRAMED_ARCH_ARM64
+#    else
+#       error missing ARCH detection
+#    endif
 
 #elif defined(_MSC_VER)
-#	define FRAMED_COMPILER_CL 1
+#    define FRAMED_COMPILER_CL 1
 
-#	if defined(_WIN32)
-#		define FRAMED_OS_WINDOWS 1
-#	else
-#		error missing OS detection
-#	endif
+#    if defined(_WIN32)
+#       define FRAMED_OS_WINDOWS 1
+#    else
+#       error missing OS detection
+#    endif
 
-#	if defined(_M_AMD64)
-#		define FRAMED_ARCH_X64 1
-#	elif defined(_M_IX86)
-#		define FRAMED_ARCH_X86 1
-#	elif defined(_M_ARM)
-#		define FRAMED_ARCH_ARM
-#	else
-#		error missing ARCH detection
-#	endif
+#    if defined(_M_AMD64)
+#       define FRAMED_ARCH_X64 1
+#    elif defined(_M_IX86)
+#       define FRAMED_ARCH_X86 1
+#    elif defined(_M_ARM)
+#       define FRAMED_ARCH_ARM
+#    else
+#       error missing ARCH detection
+#    endif
 
 #elif defined(__GNUC__)
-#	define FRAMED_COMPILER_GCC 1
+#    define FRAMED_COMPILER_GCC 1
 
-#	if defined(_WIN32)
-#		define FRAMED_OS_WINDOWS 1
-#	elif defined(__gnu_linux__)
-#		define FRAMED_OS_LINUX 1
-#	elif defined(__APPLE__) && defined(__MACH__)
-#		define FRAMED_OS_MAC 1
-#	else
-#		error missing OS detection
-#	endif
+#    if defined(_WIN32)
+#       define FRAMED_OS_WINDOWS 1
+#    elif defined(__gnu_linux__)
+#       define FRAMED_OS_LINUX 1
+#    elif defined(__APPLE__) && defined(__MACH__)
+#       define FRAMED_OS_MAC 1
+#    else
+#       error missing OS detection
+#    endif
 
-#	if defined(__amd64__)
-#		define FRAMED_ARCH_X64 1
-#	elif defined(__i386__)
-#		define FRAMED_ARCH_X86 1
-#	elif defined(__arm__)
-#		define FRAMED_ARCH_ARM
-#	elif defined(__aarch64__)
-#		define FRAMED_ARCH_ARM64
-#	else
-#		error missing ARCH detection
+#    if defined(__amd64__)
+#       define FRAMED_ARCH_X64 1
+#    elif defined(__i386__)
+#       define FRAMED_ARCH_X86 1
+#    elif defined(__arm__)
+#       define FRAMED_ARCH_ARM
+#    elif defined(__aarch64__)
+#       define FRAMED_ARCH_ARM64
+#    else
+#       error missing ARCH detection
 #endif
 
 #endif
 
 #if !defined(FRAMED_COMPILER_CL)
-#	define FRAMED_COMPILER_CL 0
+#    define FRAMED_COMPILER_CL 0
 #endif
 
 #if !defined(FRAMED_COMPILER_CLANG)
-#	define FRAMED_COMPILER_CLANG 0
+#    define FRAMED_COMPILER_CLANG 0
 #endif
 
 #if !defined(FRAMED_COMPILER_GCC)
-#	define FRAMED_COMPILER_GCC 0
+#    define FRAMED_COMPILER_GCC 0
 #endif
 
 #if !defined(FRAMED_OS_WINDOWS)
-#	define FRAMED_OS_WINDOWS 0
+#    define FRAMED_OS_WINDOWS 0
 #endif
 
 #if !defined(FRAMED_OS_LINUX)
-#	define FRAMED_OS_LINUX 0
+#    define FRAMED_OS_LINUX 0
 #endif
 
 #if !defined(FRAMED_OS_MAC)
-#	define OS_MAC 0
+#    define FRAMED_OS_MAC 0
 #endif
 
 #if !defined(FRAMED_ARCH_X64)
-#	define FRAMED_ARCH_X64 0
+#    define FRAMED_ARCH_X64 0
 #endif
 
 #if !defined(FRAMED_ARCH_X86)
-#	define FRAMED_ARCH_X86 0
+#    define FRAMED_ARCH_X86 0
 #endif
 
 #if !defined(FRAMED_ARCH_ARM)
-#	define FRAMED_ARCH_ARM 0
+#    define FRAMED_ARCH_ARM 0
 #endif
 
 #if !defined(FRAMED_ARCH_ARM64)
-#	define FRAMED_ARCH_ARM64 0
+#    define FRAMED_ARCH_ARM64 0
 #endif
 
 #if FRAMED_COMPILER_CL
@@ -210,7 +210,7 @@ framed__u16_big_to_local_endian(Framed_U16 x)
 #elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
     return __builtin_bswap16(x);
 #else
-# error Your compiler does not have an implementation of framed_u16_big_to_local_endian.
+#    error Your compiler does not have an implementation of framed_u16_big_to_local_endian.
 #endif
 }
 
@@ -222,7 +222,7 @@ framed__u32_big_to_local_endian(Framed_U32 x)
 #elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
     return __builtin_bswap32(x);
 #else
-# error Your compiler does not have an implementation of framed_u32_big_to_local_endian.
+#    error Your compiler does not have an implementation of framed_u32_big_to_local_endian.
 #endif
 }
 
@@ -305,9 +305,9 @@ framed__socket_send(void)
 // NOTE: Internal functions
 
 #if FRAMED_COMPILER_CL
-#    include <intrin.h>
+#   include <intrin.h>
 #elif FRAMED_COMPILER_GCC
-#	include <x86intrin.h>
+#    include <x86intrin.h>
 #endif
 
 static Framed_U64
