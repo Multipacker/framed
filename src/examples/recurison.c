@@ -8,66 +8,67 @@
 typedef struct TreeNode TreeNode;
 struct TreeNode
 {
-	TreeNode *left;
-	TreeNode *right;
-	int value;
+    TreeNode *left;
+    TreeNode *right;
+    int value;
 };
 
 void tree_print(TreeNode *node)
 {
-	framed_zone_begin("tree_print");
+    framed_zone_begin("tree_print");
 
-	if (node->left)
-	{
-		tree_print(node->left);
-	}
+    if (node->left)
+    {
+        tree_print(node->left);
+    }
 
-	printf("%d ", node->value);
+    printf("%d ", node->value);
 
-	if (node->right)
-	{
-		tree_print(node->right);
-	}
+    if (node->right)
+    {
+        tree_print(node->right);
+    }
 
-	framed_zone_end();
+    framed_zone_end();
 }
 
 TreeNode *tree_insert(TreeNode *tree, int value)
 {
-	framed_zone_begin("tree_insert");
+    framed_zone_begin("tree_insert");
 
-	if (!tree)
-	{
-		tree = calloc(1, sizeof(TreeNode));
-		tree->value = value;
-	}
-	else if (value < tree->value)
-	{
-		tree->left = tree_insert(tree->left, value);
-	}
-	else
-	{
-		tree->right = tree_insert(tree->right, value);
-	}
+    if (!tree)
+    {
+        tree = calloc(1, sizeof(TreeNode));
+        tree->value = value;
+    }
+    else if (value < tree->value)
+    {
+        tree->left = tree_insert(tree->left, value);
+    }
+    else
+    {
+        tree->right = tree_insert(tree->right, value);
+    }
 
-	framed_zone_end();
-	return tree;
+    framed_zone_end();
+    return tree;
 }
 
 int main(int argc, char **argv)
 {
-	framed_init(true);
+    framed_init(true);
 
-	framed_zone_begin("main");
+    framed_zone_begin("main");
 
-	TreeNode *tree = 0;
-	for (int i = 0; i < 100; ++i) {
-		tree = tree_insert(tree, rand());
-	}
+    TreeNode *tree = 0;
+    for (int i = 0; i < 100; ++i)
+    {
+        tree = tree_insert(tree, rand());
+    }
 
-	tree_print(tree);
+    tree_print(tree);
 
-	framed_zone_end();
+    framed_zone_end();
 
-	framed_flush();
+    framed_flush();
 }

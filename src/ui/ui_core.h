@@ -14,162 +14,162 @@
 typedef struct UI_Config UI_Config;
 struct UI_Config
 {
-	B32 animations;
-	F32 animation_speed;
-	Render_FontKey icon_font;
+    B32 animations;
+    F32 animation_speed;
+    Render_FontKey icon_font;
 };
 
 typedef enum UI_BoxFlags UI_BoxFlags;
 enum UI_BoxFlags
 {
-	// NOTE(hampus): This allows the box to
-	// consume key press events which is the only
-	// way right now to become active.
-	UI_BoxFlag_Clickable       = (1 << 0),
+    // NOTE(hampus): This allows the box to
+    // consume key press events which is the only
+    // way right now to become active.
+    UI_BoxFlag_Clickable       = (1 << 0),
 
-	UI_BoxFlag_DrawText        = (1 << 1),
-	UI_BoxFlag_DrawBorder      = (1 << 2),
-	UI_BoxFlag_DrawBackground  = (1 << 3),
-	UI_BoxFlag_DrawDropShadow  = (1 << 4),
-	UI_BoxFlag_HotAnimation    = (1 << 5),
-	UI_BoxFlag_ActiveAnimation = (1 << 6),
-	UI_BoxFlag_FocusAnimation  = (1 << 7),
+    UI_BoxFlag_DrawText        = (1 << 1),
+    UI_BoxFlag_DrawBorder      = (1 << 2),
+    UI_BoxFlag_DrawBackground  = (1 << 3),
+    UI_BoxFlag_DrawDropShadow  = (1 << 4),
+    UI_BoxFlag_HotAnimation    = (1 << 5),
+    UI_BoxFlag_ActiveAnimation = (1 << 6),
+    UI_BoxFlag_FocusAnimation  = (1 << 7),
 
-	// NOTE(hampus): This decides if the box
-	// should apply a scroll value to its children
-	UI_BoxFlag_ViewScroll      = (1 << 8),
+    // NOTE(hampus): This decides if the box
+    // should apply a scroll value to its children
+    UI_BoxFlag_ViewScroll      = (1 << 8),
 
-	// NOTE(hampus): This decides if the children
-	// of the box are allowed to go outside of
-	// the parent region
-	UI_BoxFlag_AllowOverflowX       = (1 << 9),
-	UI_BoxFlag_AllowOverflowY       = (1 << 10),
+    // NOTE(hampus): This decides if the children
+    // of the box are allowed to go outside of
+    // the parent region
+    UI_BoxFlag_AllowOverflowX       = (1 << 9),
+    UI_BoxFlag_AllowOverflowY       = (1 << 10),
 
-	// NOTE(hampus): This decides if the box's rect should be pushed as a clip
-	// rect when it is rendered and for input.
-	UI_BoxFlag_Clip            = (1 << 11),
+    // NOTE(hampus): This decides if the box's rect should be pushed as a clip
+    // rect when it is rendered and for input.
+    UI_BoxFlag_Clip            = (1 << 11),
 
-	// NOTE(hampus): These makes the ui auto-layouting
-	// algorithm skip this box. Useful if you want
-	// the box to have an absolute position.
-	//
-	// Set the position with ui_push/next_relative_pos
-	// It will be relative to the parent.
-	UI_BoxFlag_FixedX       = (1 << 12),
-	UI_BoxFlag_FixedY       = (1 << 13),
+    // NOTE(hampus): These makes the ui auto-layouting
+    // algorithm skip this box. Useful if you want
+    // the box to have an absolute position.
+    //
+    // Set the position with ui_push/next_relative_pos
+    // It will be relative to the parent.
+    UI_BoxFlag_FixedX       = (1 << 12),
+    UI_BoxFlag_FixedY       = (1 << 13),
 
-	UI_BoxFlag_FixedRect = (1 << 14),
+    UI_BoxFlag_FixedRect = (1 << 14),
 
-	UI_BoxFlag_AnimateX = (1 << 15),
-	UI_BoxFlag_AnimateY = (1 << 16),
+    UI_BoxFlag_AnimateX = (1 << 15),
+    UI_BoxFlag_AnimateY = (1 << 16),
 
-	UI_BoxFlag_AnimateWidth  = (1 << 17),
-	UI_BoxFlag_AnimateHeight = (1 << 18),
+    UI_BoxFlag_AnimateWidth  = (1 << 17),
+    UI_BoxFlag_AnimateHeight = (1 << 18),
 
-	UI_BoxFlag_AnimateScrollX = (1 << 19),
-	UI_BoxFlag_AnimateScrollY = (1 << 20),
+    UI_BoxFlag_AnimateScrollX = (1 << 19),
+    UI_BoxFlag_AnimateScrollY = (1 << 20),
 
-	UI_BoxFlag_AnimateScroll = UI_BoxFlag_AnimateScrollX | UI_BoxFlag_AnimateScrollY,
-	UI_BoxFlag_FixedPos      = UI_BoxFlag_FixedX | UI_BoxFlag_FixedY,
-	UI_BoxFlag_AnimatePos    = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
-	UI_BoxFlag_AnimateDim    = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
+    UI_BoxFlag_AnimateScroll = UI_BoxFlag_AnimateScrollX | UI_BoxFlag_AnimateScrollY,
+    UI_BoxFlag_FixedPos      = UI_BoxFlag_FixedX | UI_BoxFlag_FixedY,
+    UI_BoxFlag_AnimatePos    = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,
+    UI_BoxFlag_AnimateDim    = UI_BoxFlag_AnimateWidth | UI_BoxFlag_AnimateHeight,
 };
 
 typedef enum UI_SizeKind UI_SizeKind;
 enum UI_SizeKind
 {
-	UI_SizeKind_Null,
-	UI_SizeKind_Pixels,
-	UI_SizeKind_TextContent,
-	UI_SizeKind_Pct,
-	UI_SizeKind_ChildrenSum,
+    UI_SizeKind_Null,
+    UI_SizeKind_Pixels,
+    UI_SizeKind_TextContent,
+    UI_SizeKind_Pct,
+    UI_SizeKind_ChildrenSum,
 };
 
 typedef struct UI_Size UI_Size;
 struct UI_Size
 {
-	UI_SizeKind kind;
-	F32 value;
-	F32 strictness;
+    UI_SizeKind kind;
+    F32 value;
+    F32 strictness;
 };
 
 typedef struct UI_Key UI_Key;
 struct UI_Key
 {
-	U64 value;
+    U64 value;
 };
 
 typedef enum UI_TextAlign UI_TextAlign;
 enum UI_TextAlign
 {
-	UI_TextAlign_Center,
-	UI_TextAlign_Left,
-	UI_TextAlign_Right,
+    UI_TextAlign_Center,
+    UI_TextAlign_Left,
+    UI_TextAlign_Right,
 
-	UI_TextAlign_COUNT,
+    UI_TextAlign_COUNT,
 };
 
 typedef struct UI_RectStyle UI_RectStyle;
 struct UI_RectStyle
 {
-	UI_RectStyle *stack_next;
+    UI_RectStyle *stack_next;
 
-	Vec4F32    color[4];
-	Vec4F32    border_color;
-	F32        border_thickness;
-	Vec4F32    radies;
-	F32        softness;
-	Gfx_Cursor hover_cursor;
-	Render_TextureSlice  slice;
-	Render_TextureFilter texture_filter;
+    Vec4F32    color[4];
+    Vec4F32    border_color;
+    F32        border_thickness;
+    Vec4F32    radies;
+    F32        softness;
+    Gfx_Cursor hover_cursor;
+    Render_TextureSlice  slice;
+    Render_TextureFilter texture_filter;
 };
 
 typedef struct UI_TextStyle UI_TextStyle;
 struct UI_TextStyle
 {
-	UI_TextStyle *stack_next;
+    UI_TextStyle *stack_next;
 
-	Vec4F32      color;
-	UI_TextAlign align;
-	Vec2F32      padding;
-	U32          icon;
-	U32          font_size;
-	Str8         font;
+    Vec4F32      color;
+    UI_TextAlign align;
+    Vec2F32      padding;
+    U32          icon;
+    U32          font_size;
+    Str8         font;
 };
 
 typedef struct UI_LayoutStyle UI_LayoutStyle;
 struct UI_LayoutStyle
 {
-	UI_LayoutStyle *stack_next;
+    UI_LayoutStyle *stack_next;
 
-	UI_Size     size[Axis2_COUNT];
-	Vec2F32     relative_pos;
-	Axis2       child_layout_axis;
-	UI_BoxFlags box_flags;
+    UI_Size     size[Axis2_COUNT];
+    Vec2F32     relative_pos;
+    Axis2       child_layout_axis;
+    UI_BoxFlags box_flags;
 
-	// TODO(hampus): This will make each UI_Box have a double fixed_rect
-	RectF32     fixed_rect;
+    // TODO(hampus): This will make each UI_Box have a double fixed_rect
+    RectF32     fixed_rect;
 };
 
 typedef struct UI_RectStyleStack UI_RectStyleStack;
 struct UI_RectStyleStack
 {
-	UI_RectStyle *first;
-	B32 auto_pop;
+    UI_RectStyle *first;
+    B32 auto_pop;
 };
 
 typedef struct UI_TextStyleStack UI_TextStyleStack;
 struct UI_TextStyleStack
 {
-	UI_TextStyle *first;
-	B32 auto_pop;
+    UI_TextStyle *first;
+    B32 auto_pop;
 };
 
 typedef struct UI_LayoutStyleStack UI_LayoutStyleStack;
 struct UI_LayoutStyleStack
 {
-	UI_LayoutStyle *first;
-	B32 auto_pop;
+    UI_LayoutStyle *first;
+    B32 auto_pop;
 };
 
 typedef struct UI_Box UI_Box;
@@ -180,217 +180,217 @@ typedef UI_CUSTOM_DRAW_PROC(UI_CustomDrawProc);
 typedef struct UI_Box UI_Box;
 struct UI_Box
 {
-	UI_Box *first;
-	UI_Box *last;
-	UI_Box *next;
-	UI_Box *prev;
-	UI_Box *parent;
+    UI_Box *first;
+    UI_Box *last;
+    UI_Box *next;
+    UI_Box *prev;
+    UI_Box *parent;
 
-	UI_Box *hash_next;
-	UI_Box *hash_prev;
+    UI_Box *hash_next;
+    UI_Box *hash_prev;
 
-	UI_Key key;
-	U64    first_frame_touched_index;
-	U64    last_frame_touched_index;
+    UI_Key key;
+    U64    first_frame_touched_index;
+    U64    last_frame_touched_index;
 
-	Vec2F32 rel_pos_animated;
-	Vec2F32 rel_pos;
+    Vec2F32 rel_pos_animated;
+    Vec2F32 rel_pos;
 
-	Vec2F32 fixed_size_animated;
-	Vec2F32 fixed_size;
+    Vec2F32 fixed_size_animated;
+    Vec2F32 fixed_size;
 
-	Vec2F32 scroll_animated;
-	Vec2F32 scroll;
+    Vec2F32 scroll_animated;
+    Vec2F32 scroll;
 
-	RectF32 fixed_rect;
+    RectF32 fixed_rect;
 
-	UI_BoxFlags flags;
-	Str8        string;
-	Str8        debug_string;
+    UI_BoxFlags flags;
+    Str8        string;
+    Str8        debug_string;
 
-	UI_RectStyle   rect_style;
-	UI_TextStyle   text_style;
-	UI_LayoutStyle layout_style;
+    UI_RectStyle   rect_style;
+    UI_TextStyle   text_style;
+    UI_LayoutStyle layout_style;
 
-	UI_CustomDrawProc *custom_draw;
+    UI_CustomDrawProc *custom_draw;
 
-	F32 hot_t;
-	F32 active_t;
+    F32 hot_t;
+    F32 active_t;
 };
 
 typedef struct UI_Comm UI_Comm;
 struct UI_Comm
 {
-	UI_Box *box;
-	// NOTE(hampus): Relative to upper-left
-	// corner of the box
-	Vec2F32 rel_mouse;
-	Vec2F32 drag_delta;
-	Vec2F32 scroll;
-	B8 clicked        : 1;
-	B8 pressed        : 1;
-	B8 released       : 1;
-	B8 double_clicked : 1;
-	B8 right_pressed  : 1;
-	B8 right_released : 1;
-	B8 dragging       : 1;
-	B8 hovering       : 1;
+    UI_Box *box;
+    // NOTE(hampus): Relative to upper-left
+    // corner of the box
+    Vec2F32 rel_mouse;
+    Vec2F32 drag_delta;
+    Vec2F32 scroll;
+    B8 clicked        : 1;
+    B8 pressed        : 1;
+    B8 released       : 1;
+    B8 double_clicked : 1;
+    B8 right_pressed  : 1;
+    B8 right_released : 1;
+    B8 dragging       : 1;
+    B8 hovering       : 1;
 };
 
 typedef struct UI_FreeBox UI_FreeBox;
 struct UI_FreeBox
 {
-	UI_FreeBox *next;
+    UI_FreeBox *next;
 };
 
 typedef struct UI_BoxStorage UI_BoxStorage;
 struct UI_BoxStorage
 {
-	UI_FreeBox *first_free_box;
-	UI_Box *boxes;
-	U64 storage_count;
-	U64 num_free_boxes;
+    UI_FreeBox *first_free_box;
+    UI_Box *boxes;
+    U64 storage_count;
+    U64 num_free_boxes;
 };
 
 typedef struct UI_ParentStackNode UI_ParentStackNode;
 struct UI_ParentStackNode
 {
-	UI_ParentStackNode *next;
-	UI_Box *box;
+    UI_ParentStackNode *next;
+    UI_Box *box;
 };
 
 typedef struct UI_ParentStack UI_ParentStack;
 struct UI_ParentStack
 {
-	UI_ParentStackNode *first;
+    UI_ParentStackNode *first;
 };
 
 typedef struct UI_KeyStackNode UI_KeyStackNode;
 struct UI_KeyStackNode
 {
-	UI_KeyStackNode *next;
-	UI_Key key;
+    UI_KeyStackNode *next;
+    UI_Key key;
 };
 
 typedef struct UI_Stats UI_Stats;
 struct UI_Stats
 {
-	U64 rect_style_push_count;
-	U64 text_style_push_count;
-	U64 layout_style_push_count;
-	U64 parent_push_count;
-	U64 seed_push_count;
-	U64 box_chain_count;
-	U64 max_box_chain_count;
-	U64 num_hashed_boxes;
-	U64 num_transient_boxes;
+    U64 rect_style_push_count;
+    U64 text_style_push_count;
+    U64 layout_style_push_count;
+    U64 parent_push_count;
+    U64 seed_push_count;
+    U64 box_chain_count;
+    U64 max_box_chain_count;
+    U64 num_hashed_boxes;
+    U64 num_transient_boxes;
 };
 
 typedef enum UI_TextActionFlag UI_TextActionFlag;
 enum UI_TextActionFlag
 {
-	UI_TextActionFlag_WordScan                = (1 << 0),
-	UI_TextActionFlag_KeepMark                = (1 << 1),
-	UI_TextActionFlag_Delete                  = (1 << 2),
-	UI_TextActionFlag_Copy                    = (1 << 3),
-	UI_TextActionFlag_Paste                   = (1 << 4),
-	UI_TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
-	UI_TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
-	UI_TextActionFlag_SelectAll               = (1 << 7),
+    UI_TextActionFlag_WordScan                = (1 << 0),
+    UI_TextActionFlag_KeepMark                = (1 << 1),
+    UI_TextActionFlag_Delete                  = (1 << 2),
+    UI_TextActionFlag_Copy                    = (1 << 3),
+    UI_TextActionFlag_Paste                   = (1 << 4),
+    UI_TextActionFlag_ZeroDeltaWithSelection  = (1 << 5),
+    UI_TextActionFlag_DeltaPicksSelectionSide = (1 << 6),
+    UI_TextActionFlag_SelectAll               = (1 << 7),
 };
 
 typedef struct UI_TextAction UI_TextAction;
 struct UI_TextAction
 {
-	UI_TextActionFlag flags;
-	S64 delta;
-	U8 character;
+    UI_TextActionFlag flags;
+    S64 delta;
+    U8 character;
 };
 
 typedef struct UI_TextActionNode UI_TextActionNode;
 struct UI_TextActionNode
 {
-	UI_TextActionNode *next;
-	UI_TextActionNode *prev;
-	UI_TextAction action;
+    UI_TextActionNode *next;
+    UI_TextActionNode *prev;
+    UI_TextAction action;
 };
 
 typedef struct UI_TextActionList UI_TextActionList;
 struct UI_TextActionList
 {
-	UI_TextActionNode *first;
-	UI_TextActionNode *last;
+    UI_TextActionNode *first;
+    UI_TextActionNode *last;
 };
 
 typedef struct UI_TextOp UI_TextOp;
 struct UI_TextOp
 {
-	S64 new_cursor;
-	S64 new_mark;
-	Vec2S64 range;
-	Str8 replace_string;
-	Str8 copy_string;
+    S64 new_cursor;
+    S64 new_mark;
+    Vec2S64 range;
+    Str8 replace_string;
+    Str8 copy_string;
 };
 
 typedef struct UI_TextEditState UI_TextEditState;
 struct UI_TextEditState
 {
-	S64 cursor;
-	S64 mark;
+    S64 cursor;
+    S64 mark;
 };
 
 typedef struct UI_Context UI_Context;
 struct UI_Context
 {
-	Arena *permanent_arena;
-	Arena *frame_arena;
+    Arena *permanent_arena;
+    Arena *frame_arena;
 
-	UI_BoxStorage box_storage;
-	UI_Box      **box_hash_map;
-	U64           box_hash_map_count;
+    UI_BoxStorage box_storage;
+    UI_Box      **box_hash_map;
+    U64           box_hash_map_count;
 
-	UI_ParentStackNode *parent_stack;
-	UI_KeyStackNode    *seed_stack;
+    UI_ParentStackNode *parent_stack;
+    UI_KeyStackNode    *seed_stack;
 
-	UI_RectStyleStack   rect_style_stack;
-	UI_TextStyleStack   text_style_stack;
-	UI_LayoutStyleStack layout_style_stack;
+    UI_RectStyleStack   rect_style_stack;
+    UI_TextStyleStack   text_style_stack;
+    UI_LayoutStyleStack layout_style_stack;
 
-	UI_Box *root;
-	UI_Box *normal_root;
-	UI_Box *tooltip_root;
-	UI_Box *ctx_menu_root;
+    UI_Box *root;
+    UI_Box *normal_root;
+    UI_Box *tooltip_root;
+    UI_Box *ctx_menu_root;
 
-	UI_Key ctx_menu_key;
-	UI_Key ctx_menu_anchor_key;
-	Vec2F32 anchor_offset;
+    UI_Key ctx_menu_key;
+    UI_Key ctx_menu_anchor_key;
+    Vec2F32 anchor_offset;
 
-	UI_Key  next_ctx_menu_key;
-	UI_Key  next_ctx_menu_anchor_key;
-	Vec2F32 next_anchor_offset;
+    UI_Key  next_ctx_menu_key;
+    UI_Key  next_ctx_menu_anchor_key;
+    Vec2F32 next_anchor_offset;
 
-	UI_Key active_key;
-	UI_Key hot_key;
-	UI_Key focus_key;
+    UI_Key active_key;
+    UI_Key hot_key;
+    UI_Key focus_key;
 
-	// NOTE(hampus): We only have this to for the
-	// "clicked" member in UI_Comm
-	UI_Key prev_active_key;
+    // NOTE(hampus): We only have this to for the
+    // "clicked" member in UI_Comm
+    UI_Key prev_active_key;
 
-	Gfx_EventList *event_list;
-	Render_Context *renderer;
+    Gfx_EventList *event_list;
+    Render_Context *renderer;
 
-	UI_Config config;
+    UI_Config config;
 
-	UI_Stats stats[2];
+    UI_Stats stats[2];
 
-	Vec2F32 mouse_pos;
-	Vec2F32 prev_mouse_pos;
+    Vec2F32 mouse_pos;
+    Vec2F32 prev_mouse_pos;
 
-	B32 show_debug_lines;
+    B32 show_debug_lines;
 
-	F64 dt;
-	U64 frame_index;
+    F64 dt;
+    U64 frame_index;
 };
 
 ////////////////////////////////

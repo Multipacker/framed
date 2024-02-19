@@ -8,39 +8,39 @@ typedef struct Arena Arena;
 typedef struct Str8 Str8;
 struct Str8
 {
-	U8 *data;
-	U64 size;
+    U8 *data;
+    U64 size;
 };
 
 typedef struct Str16 Str16;
 struct Str16
 {
-	U16 *data;
-	U64  size;
+    U16 *data;
+    U64  size;
 };
 
 typedef struct Str32 Str32;
 struct Str32
 {
-	U32 *data;
-	U64  size;
+    U32 *data;
+    U64  size;
 };
 
 typedef struct Str8Node Str8Node;
 struct Str8Node
 {
-	Str8Node *next;
-	Str8Node *prev;
-	Str8 string;
+    Str8Node *next;
+    Str8Node *prev;
+    Str8 string;
 };
 
 typedef struct Str8List Str8List;
 struct Str8List
 {
-	Str8Node *first;
-	Str8Node *last;
-	U64 node_count;
-	U64 total_size;
+    Str8Node *first;
+    Str8Node *last;
+    U64 node_count;
+    U64 total_size;
 };
 
 typedef char *CStr;
@@ -52,8 +52,8 @@ typedef U16  *CStr16;
 typedef struct StringDecode StringDecode;
 struct StringDecode
 {
-	U32 codepoint;
-	U64 size;
+    U32 codepoint;
+    U64 size;
 };
 
 internal Str8 str8(U8 *data, U64 size);

@@ -4,53 +4,53 @@
 typedef union Net_Socket Net_Socket;
 union Net_Socket
 {
-	U64 u64[1];
-	U32 u32[2];
+    U64 u64[1];
+    U32 u32[2];
 };
 
 typedef enum Net_Protocol Net_Protocol;
 enum Net_Protocol
 {
-	Net_Protocol_TCP,
-	Net_Protocol_UDP,
+    Net_Protocol_TCP,
+    Net_Protocol_UDP,
 
-	Net_Protocol_COUNT,
+    Net_Protocol_COUNT,
 };
 
 typedef enum Net_AddressFamily Net_AddressFamily;
 enum Net_AddressFamily
 {
-	Net_AddressFamily_INET,
-	Net_AddressFamily_INET6,
-	Net_AddressFamily_UNIX,
+    Net_AddressFamily_INET,
+    Net_AddressFamily_INET6,
+    Net_AddressFamily_UNIX,
 
-	Net_AddressFamily_COUNT,
+    Net_AddressFamily_COUNT,
 };
 
 typedef struct Net_Address Net_Address;
 struct Net_Address
 {
-	U16 port;
-	union
-	{
-		U32 u32[1];
-		U8 u8[4];
-	} ip;
-	Net_AddressFamily address_family;
+    U16 port;
+    union
+    {
+        U32 u32[1];
+        U8 u8[4];
+    } ip;
+    Net_AddressFamily address_family;
 };
 
 typedef struct Net_RecieveResult Net_RecieveResult;
 struct Net_RecieveResult
 {
-	U64 bytes_recieved;
+    U64 bytes_recieved;
 };
 
 typedef struct Net_AcceptResult Net_AcceptResult;
 struct Net_AcceptResult
 {
-	Net_Socket socket;
-	Net_Address address;
-	B32 succeeded;
+    Net_Socket socket;
+    Net_Address address;
+    B32 succeeded;
 };
 
 internal Void              net_socket_init(Void);

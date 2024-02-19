@@ -9,9 +9,9 @@
 
 int main(int argc, char **argv)
 {
-	framed_init(true);
-	framed_zone_begin("Test");
-	framed_zone_end();
-	framed_flush();
-	return 0;
+    framed_init(true);
+    framed_zone_begin("Test");
+    framed_zone_end();
+    framed_flush();
+    return 0;
 }

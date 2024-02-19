@@ -4,226 +4,226 @@
 typedef union Vec2F32 Vec2F32;
 union Vec2F32
 {
-	struct
-	{
-		F32 x, y;
-	};
-	struct
-	{
-		F32 width, height;
-	};
-	struct
-	{
-		F32 min, max;
-	};
-	F32 v[2];
+    struct
+    {
+        F32 x, y;
+    };
+    struct
+    {
+        F32 width, height;
+    };
+    struct
+    {
+        F32 min, max;
+    };
+    F32 v[2];
 };
 
 typedef union Vec3F32 Vec3F32;
 union Vec3F32
 {
-	struct
-	{
-		F32 x, y, z;
-	};
+    struct
+    {
+        F32 x, y, z;
+    };
 
-	struct
-	{
-		F32 r, g, b;
-	};
-	F32 v[3];
+    struct
+    {
+        F32 r, g, b;
+    };
+    F32 v[3];
 };
 
 typedef union Vec4F32 Vec4F32;
 union Vec4F32
 {
-	struct
-	{
-		F32 x, y, z, w;
-	};
+    struct
+    {
+        F32 x, y, z, w;
+    };
 
-	struct
-	{
-		F32 r, g, b, a;
-	};
+    struct
+    {
+        F32 r, g, b, a;
+    };
 
-	struct
-	{
-		Vec3F32 rgb;
-	};
+    struct
+    {
+        Vec3F32 rgb;
+    };
 
-	F32 v[4];
+    F32 v[4];
 };
 
 typedef union Vec2S32 Vec2S32;
 union Vec2S32
 {
-	struct
-	{
-		S32 x, y;
-	};
+    struct
+    {
+        S32 x, y;
+    };
 
-	struct
-	{
-		S32 width, height;
-	};
-	S32 v[2];
+    struct
+    {
+        S32 width, height;
+    };
+    S32 v[2];
 };
 
 typedef union Vec2S64 Vec2S64;
 union Vec2S64
 {
-	struct
-	{
-		S64 x, y;
-	};
+    struct
+    {
+        S64 x, y;
+    };
 
-	struct
-	{
-		S64 width, height;
-	};
+    struct
+    {
+        S64 width, height;
+    };
 
-	struct
-	{
-		S64 min, max;
-	};
-	S64 v[2];
+    struct
+    {
+        S64 min, max;
+    };
+    S64 v[2];
 };
 
 typedef union Vec3S32 Vec3S32;
 union Vec3S32
 {
-	struct
-	{
-		S32 x, y, z;
-	};
+    struct
+    {
+        S32 x, y, z;
+    };
 
-	struct
-	{
-		S32 r, g, b;
-	};
-	S32 v[3];
+    struct
+    {
+        S32 r, g, b;
+    };
+    S32 v[3];
 };
 
 typedef union Vec4S32 Vec4S32;
 union Vec4S32
 {
-	struct
-	{
-		S32 x, y, z, w;
-	};
+    struct
+    {
+        S32 x, y, z, w;
+    };
 
-	struct
-	{
-		S32 r, g, b, a;
-	};
+    struct
+    {
+        S32 r, g, b, a;
+    };
 
-	S32 v[4];
+    S32 v[4];
 };
 
 typedef union Vec2U32 Vec2U32;
 union Vec2U32
 {
-	struct
-	{
-		U32 x, y;
-	};
+    struct
+    {
+        U32 x, y;
+    };
 
-	struct
-	{
-		U32 width, height;
-	};
+    struct
+    {
+        U32 width, height;
+    };
 
-	U32 v[2];
+    U32 v[2];
 };
 
 typedef union Vec3U32 Vec3U32;
 union Vec3U32
 {
-	struct
-	{
-		U32 x, y, z;
-	};
+    struct
+    {
+        U32 x, y, z;
+    };
 
-	struct
-	{
-		U32 r, g, b;
-	};
+    struct
+    {
+        U32 r, g, b;
+    };
 
-	U32 v[3];
+    U32 v[3];
 };
 
 typedef union Vec4U32 Vec4U32;
 union Vec4U32
 {
-	struct
-	{
-		U32 x, y, z, w;
-	};
+    struct
+    {
+        U32 x, y, z, w;
+    };
 
-	struct
-	{
-		U32 r, g, b, a;
-	};
+    struct
+    {
+        U32 r, g, b, a;
+    };
 
-	U32 v[4];
+    U32 v[4];
 };
 
 typedef struct Mat4F32 Mat4F32;
 struct Mat4F32
 {
-	F32 m[4][4];
+    F32 m[4][4];
 };
 
 typedef union RectF32 RectF32;
 union RectF32
 {
-	struct
-	{
-		Vec2F32 min, max;
-	};
+    struct
+    {
+        Vec2F32 min, max;
+    };
 
-	struct
-	{
-		F32 x0, y0;
-		F32 x1, y1;
-	};
+    struct
+    {
+        F32 x0, y0;
+        F32 x1, y1;
+    };
 
-	Vec2F32 s[2];
+    Vec2F32 s[2];
 };
 
 typedef union RectS32 RectS32;
 union RectS32
 {
-	struct
-	{
-		Vec2S32 min, max;
-	};
+    struct
+    {
+        Vec2S32 min, max;
+    };
 
-	struct
-	{
-		S32 x0, y0;
-		S32 x1, y1;
-	};
+    struct
+    {
+        S32 x0, y0;
+        S32 x1, y1;
+    };
 
-	Vec2S32 v[2];
+    Vec2S32 v[2];
 };
 
 typedef union RectU32 RectU32;
 union RectU32
 {
-	struct
-	{
-		Vec2U32 min, max;
-	};
+    struct
+    {
+        Vec2U32 min, max;
+    };
 
-	struct
-	{
-		U32 x0, y0;
-		U32 x1, y1;
-	};
+    struct
+    {
+        U32 x0, y0;
+        U32 x1, y1;
+    };
 
-	Vec2U32 v[2];
+    Vec2U32 v[2];
 };
 
 // F32

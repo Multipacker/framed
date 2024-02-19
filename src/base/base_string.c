@@ -19,924 +19,924 @@
 internal Str8
 str8(U8 *data, U64 size)
 {
-	Str8 result;
-	result.data = data;
-	result.size = size;
+    Str8 result;
+    result.data = data;
+    result.size = size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_range(U8 *start, U8 *opl)
 {
-	Str8 result;
-	result.data = start;
-	result.size = (U64) (opl - start);
+    Str8 result;
+    result.data = start;
+    result.size = (U64) (opl - start);
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_copy(Arena *arena, Str8 string)
 {
-	U8 *data = push_array(arena, U8, string.size);
-	memory_copy(data, string.data, string.size);
+    U8 *data = push_array(arena, U8, string.size);
+    memory_copy(data, string.data, string.size);
 
-	Str8 result;
-	result.data = data;
-	result.size = string.size;
-	return result;
+    Str8 result;
+    result.data = data;
+    result.size = string.size;
+    return result;
 }
 
 internal Str8
 str8_cstr(CStr data)
 {
-	Str8 result;
-	result.data = (U8 *) data;
-	result.size = 0;
+    Str8 result;
+    result.data = (U8 *) data;
+    result.size = 0;
 
-	if (result.data)
-	{
-		while (result.data[result.size])
-		{
-			++result.size;
-		}
-	}
+    if (result.data)
+    {
+        while (result.data[result.size])
+        {
+            ++result.size;
+        }
+    }
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_copy_cstr(Arena *arena, CStr data)
 {
-	Str8 result;
-	result.size = 0;
+    Str8 result;
+    result.size = 0;
 
-	while (data[result.size])
-	{
-		++result.size;
-	}
+    while (data[result.size])
+    {
+        ++result.size;
+    }
 
-	result.data = push_array(arena, U8, result.size);
-	memory_copy(result.data, data, result.size);
+    result.data = push_array(arena, U8, result.size);
+    memory_copy(result.data, data, result.size);
 
-	return result;
+    return result;
 }
 
 internal Str16
 str16(U16 *data, U64 size)
 {
-	Str16 result;
-	result.data = data;
-	result.size = size;
-	return result;
+    Str16 result;
+    result.data = data;
+    result.size = size;
+    return result;
 }
 
 internal Str8
 str8_prefix(Str8 string, U64 size)
 {
-	U64 clamped_size = u64_min(size, string.size);
+    U64 clamped_size = u64_min(size, string.size);
 
-	Str8 result;
-	result.data = string.data;
-	result.size = clamped_size;
+    Str8 result;
+    result.data = string.data;
+    result.size = clamped_size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_postfix(Str8 string, U64 size)
 {
-	U64 clamped_size = u64_min(size, string.size);
+    U64 clamped_size = u64_min(size, string.size);
 
-	Str8 result;
-	result.data = string.data + string.size - clamped_size;
-	result.size = clamped_size;
+    Str8 result;
+    result.data = string.data + string.size - clamped_size;
+    result.size = clamped_size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_skip(Str8 string, U64 size)
 {
-	U64 clamped_size = u64_min(size, string.size);
+    U64 clamped_size = u64_min(size, string.size);
 
-	Str8 result;
-	result.data = string.data + clamped_size;
-	result.size = string.size - clamped_size;
+    Str8 result;
+    result.data = string.data + clamped_size;
+    result.size = string.size - clamped_size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_chop(Str8 string, U64 size)
 {
-	U64 clamped_size = u64_min(size, string.size);
+    U64 clamped_size = u64_min(size, string.size);
 
-	Str8 result;
-	result.data = string.data;
-	result.size = string.size - clamped_size;
+    Str8 result;
+    result.data = string.data;
+    result.size = string.size - clamped_size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_substring(Str8 string, U64 start, U64 size)
 {
-	U64 clamped_start = u64_min(start, string.size);
-	U64 clamped_size  = u64_min(size, string.size - clamped_start);
+    U64 clamped_start = u64_min(start, string.size);
+    U64 clamped_size  = u64_min(size, string.size - clamped_start);
 
-	Str8 result;
-	result.data = string.data + clamped_start;
-	result.size = clamped_size;
+    Str8 result;
+    result.data = string.data + clamped_start;
+    result.size = clamped_size;
 
-	return result;
+    return result;
 }
 
 internal Str8
 str8_pushfv(Arena *arena, CStr cstr, va_list args)
 {
-	Str8 result = {0};
+    Str8 result = {0};
 
-	// NOTE(simon): We need to make a copy as we use args twice.
-	va_list format_args;
-	va_copy(format_args, args);
+    // NOTE(simon): We need to make a copy as we use args twice.
+    va_list format_args;
+    va_copy(format_args, args);
 
 #if SANITIZER_ENABLED
-	// NOTE(hampus): The sanitizer does not like stbsp_vsnprintf
+    // NOTE(hampus): The sanitizer does not like stbsp_vsnprintf
 #define vsnprintf(data, size, cstring, args) vsnprintf(data, (size_t) (size), cstring, args);
 #else
 #define vsnprintf(data, size, cstring, args) stbsp_vsnprintf(data, (int) (size), cstring, args);
 #endif
 
-	U64 needed_size = (U64) vsnprintf(0, 0, cstr, args);
+    U64 needed_size = (U64) vsnprintf(0, 0, cstr, args);
 
-	result.data = push_array(arena, U8, needed_size + 1);
-	result.size = needed_size;
+    result.data = push_array(arena, U8, needed_size + 1);
+    result.size = needed_size;
 
-	vsnprintf((CStr) result.data, needed_size + 1, cstr, format_args);
+    vsnprintf((CStr) result.data, needed_size + 1, cstr, format_args);
 
-	va_end(format_args);
-	return(result);
+    va_end(format_args);
+    return(result);
 }
 
 internal Str8
 str8_pushf(Arena *arena, CStr cstr, ...)
 {
-	va_list args;
-	va_start(args, cstr);
-	Str8 result = str8_pushfv(arena, cstr, args);
-	va_end(args);
-	return(result);
+    va_list args;
+    va_start(args, cstr);
+    Str8 result = str8_pushfv(arena, cstr, args);
+    va_end(args);
+    return(result);
 }
 
 // TODO: Unicode implementation
 internal B32
 str8_equal(Str8 a, Str8 b)
 {
-	if (a.size != b.size)
-	{
-		return(false);
-	}
+    if (a.size != b.size)
+    {
+        return(false);
+    }
 
-	if (a.data == b.data)
-	{
-		return(true);
-	}
+    if (a.data == b.data)
+    {
+        return(true);
+    }
 
-	U8 *a_ptr = a.data;
-	U8 *b_ptr = b.data;
-	U8 *a_opl = a.data + a.size;
-	U8 *b_opl = b.data + b.size;
-	while (a_ptr < a_opl && b_ptr < b_opl)
-	{
-		StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
-		StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
-		a_ptr += a_decode.size;
-		b_ptr += b_decode.size;
+    U8 *a_ptr = a.data;
+    U8 *b_ptr = b.data;
+    U8 *a_opl = a.data + a.size;
+    U8 *b_opl = b.data + b.size;
+    while (a_ptr < a_opl && b_ptr < b_opl)
+    {
+        StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
+        StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
+        a_ptr += a_decode.size;
+        b_ptr += b_decode.size;
 
-		if (a_decode.codepoint != b_decode.codepoint)
-		{
-			return false;
-		}
-	}
+        if (a_decode.codepoint != b_decode.codepoint)
+        {
+            return false;
+        }
+    }
 
-	return true;
+    return true;
 }
 
 // TODO(simon): Proper unicode lexiographical ordering.
 internal B32
 str8_are_codepoints_earliear(Str8 a, Str8 b)
 {
-	U8 *a_ptr = a.data;
-	U8 *b_ptr = b.data;
-	U8 *a_opl = a.data + a.size;
-	U8 *b_opl = b.data + b.size;
-	while (a_ptr < a_opl && b_ptr < b_opl)
-	{
-		StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
-		StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
-		a_ptr += a_decode.size;
-		b_ptr += b_decode.size;
+    U8 *a_ptr = a.data;
+    U8 *b_ptr = b.data;
+    U8 *a_opl = a.data + a.size;
+    U8 *b_opl = b.data + b.size;
+    while (a_ptr < a_opl && b_ptr < b_opl)
+    {
+        StringDecode a_decode = string_decode_utf8(a_ptr, (U64) (a_opl - a_ptr));
+        StringDecode b_decode = string_decode_utf8(b_ptr, (U64) (b_opl - b_ptr));
+        a_ptr += a_decode.size;
+        b_ptr += b_decode.size;
 
-		if (a_decode.codepoint != b_decode.codepoint)
-		{
-			B32 a_is_earlier = a_decode.codepoint < b_decode.codepoint;
-			return(a_is_earlier);
-		}
-	}
+        if (a_decode.codepoint != b_decode.codepoint)
+        {
+            B32 a_is_earlier = a_decode.codepoint < b_decode.codepoint;
+            return(a_is_earlier);
+        }
+    }
 
-	B32 a_has_more = (a_ptr < a_opl);
-	B32 b_has_more = (b_ptr < b_opl);
-	B32 a_is_earlier = !a_has_more && b_has_more;
-	return(a_is_earlier);
+    B32 a_has_more = (a_ptr < a_opl);
+    B32 b_has_more = (b_ptr < b_opl);
+    B32 a_is_earlier = !a_has_more && b_has_more;
+    return(a_is_earlier);
 }
 
 internal B32
 str8_first_index_of(Str8 string, U32 codepoint, U64 *result_index)
 {
-	B32 found  = false;
+    B32 found  = false;
 
-	U8 *ptr = string.data;
-	U8 *opl = string.data + string.size;
+    U8 *ptr = string.data;
+    U8 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
-		if (decode.codepoint == codepoint)
-		{
-			found = true;
-			*result_index = (U64) (ptr - string.data);
-			break;
-		}
-		ptr += decode.size;
-	}
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
+        if (decode.codepoint == codepoint)
+        {
+            found = true;
+            *result_index = (U64) (ptr - string.data);
+            break;
+        }
+        ptr += decode.size;
+    }
 
-	return found;
+    return found;
 }
 
 internal B32
 str8_last_index_of(Str8 string, U32 codepoint, U64 *result_index)
 {
-	B32 found  = false;
-	U64 last_index = 0;
+    B32 found  = false;
+    U64 last_index = 0;
 
-	U8 *ptr = string.data;
-	U8 *opl = string.data + string.size;
+    U8 *ptr = string.data;
+    U8 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
-		if (decode.codepoint == codepoint)
-		{
-			found = true;
-			last_index = (U64) (ptr - string.data);
-		}
-		ptr += decode.size;
-	}
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf8(ptr, (U64) (ptr - opl));
+        if (decode.codepoint == codepoint)
+        {
+            found = true;
+            last_index = (U64) (ptr - string.data);
+        }
+        ptr += decode.size;
+    }
 
-	if (found)
-	{
-		*result_index = last_index;
-	}
+    if (found)
+    {
+        *result_index = last_index;
+    }
 
-	return found;
+    return found;
 }
 
 internal B32
 str8_find_substr8(Str8 string, Str8 substring, U64 *result_index)
 {
-	B32 result = true;
-	S64 first = -1;
+    B32 result = true;
+    S64 first = -1;
 
-	for (U64 i = 0; i < string.size; ++i)
-	{
-		if (substring.size <= (string.size - i))
-		{
-			for (U64 j = 0; j < substring.size; ++j)
-			{
-				if (string.data[i+j] != substring.data[j])
-				{
-					first = -1;
-					break;
-				}
-				else
-				{
-					if (first == -1)
-					{
-						first = (S64) i;
-					}
-				}
-			}
-			if (first != -1)
-			{
-				break;
-			}
-		}
-		else
-		{
-			result = false;
-			break;
-		}
-	}
+    for (U64 i = 0; i < string.size; ++i)
+    {
+        if (substring.size <= (string.size - i))
+        {
+            for (U64 j = 0; j < substring.size; ++j)
+            {
+                if (string.data[i+j] != substring.data[j])
+                {
+                    first = -1;
+                    break;
+                }
+                else
+                {
+                    if (first == -1)
+                    {
+                        first = (S64) i;
+                    }
+                }
+            }
+            if (first != -1)
+            {
+                break;
+            }
+        }
+        else
+        {
+            result = false;
+            break;
+        }
+    }
 
-	if (first != -1)
-	{
-		*result_index = (U64) first;
-	}
+    if (first != -1)
+    {
+        *result_index = (U64) first;
+    }
 
-	return(result);
+    return(result);
 }
 
 internal Void
 str8_list_push_explicit(Str8List *list, Str8 string, Str8Node *node)
 {
-	node->string = string;
-	dll_push_back(list->first, list->last, node);
-	++list->node_count;
-	list->total_size += string.size;
+    node->string = string;
+    dll_push_back(list->first, list->last, node);
+    ++list->node_count;
+    list->total_size += string.size;
 }
 
 internal Void
 str8_list_push(Arena *arena, Str8List *list, Str8 string)
 {
-	Str8Node *node = push_struct(arena, Str8Node);
-	str8_list_push_explicit(list, string, node);
+    Str8Node *node = push_struct(arena, Str8Node);
+    str8_list_push_explicit(list, string, node);
 }
 
 internal Void
 str8_list_pushf(Arena *arena, Str8List *list, CStr fmt, ...)
 {
-	Str8Node *node = push_struct(arena, Str8Node);
-	va_list args;
-	va_start(args, fmt);
-	Str8 string = str8_pushfv(arena, fmt, args);
-	va_end(args);
-	str8_list_push_explicit(list, string, node);
+    Str8Node *node = push_struct(arena, Str8Node);
+    va_list args;
+    va_start(args, fmt);
+    Str8 string = str8_pushfv(arena, fmt, args);
+    va_end(args);
+    str8_list_push_explicit(list, string, node);
 }
 
 internal Str8
 str8_join(Arena *arena, Str8List *list)
 {
-	U64 size = list->total_size;
-	U8 *data = push_array(arena, U8, size);
+    U64 size = list->total_size;
+    U8 *data = push_array(arena, U8, size);
 
-	U8 *ptr = data;
-	for (Str8Node *node = list->first; node; node = node->next)
-	{
-		memory_copy(ptr, node->string.data, node->string.size);
-		ptr += node->string.size;
-	}
+    U8 *ptr = data;
+    for (Str8Node *node = list->first; node; node = node->next)
+    {
+        memory_copy(ptr, node->string.data, node->string.size);
+        ptr += node->string.size;
+    }
 
-	return str8(data, size);
+    return str8(data, size);
 }
 
 internal Str8List
 str8_split_by_codepoints(Arena *arena, Str8 string, Str8 codepoints)
 {
-	Str8List result = {0};
+    Str8List result = {0};
 
-	U8 *last_split_point = string.data;
-	U8 *string_ptr       = string.data;
-	U8 *string_opl       = string.data + string.size;
+    U8 *last_split_point = string.data;
+    U8 *string_ptr       = string.data;
+    U8 *string_opl       = string.data + string.size;
 
-	while (string_ptr < string_opl)
-	{
-		StringDecode string_decode = string_decode_utf8(string_ptr, (U64) (string_ptr - string_opl));
+    while (string_ptr < string_opl)
+    {
+        StringDecode string_decode = string_decode_utf8(string_ptr, (U64) (string_ptr - string_opl));
 
-		U8 *codepoint_ptr       = codepoints.data;
-		U8 *codepoint_opl       = codepoints.data + codepoints.size;
-		while (codepoint_ptr < codepoint_opl)
-		{
-			StringDecode codepoint_decode = string_decode_utf8(codepoint_ptr, (U64) (codepoint_opl - codepoint_ptr));
+        U8 *codepoint_ptr       = codepoints.data;
+        U8 *codepoint_opl       = codepoints.data + codepoints.size;
+        while (codepoint_ptr < codepoint_opl)
+        {
+            StringDecode codepoint_decode = string_decode_utf8(codepoint_ptr, (U64) (codepoint_opl - codepoint_ptr));
 
-			if (string_decode.codepoint == codepoint_decode.codepoint)
-			{
-				str8_list_push(arena, &result, str8_range(last_split_point, string_ptr));
-				last_split_point = string_ptr + string_decode.size;
-				break;
-			}
+            if (string_decode.codepoint == codepoint_decode.codepoint)
+            {
+                str8_list_push(arena, &result, str8_range(last_split_point, string_ptr));
+                last_split_point = string_ptr + string_decode.size;
+                break;
+            }
 
-			codepoint_ptr += codepoint_decode.size;
-		}
+            codepoint_ptr += codepoint_decode.size;
+        }
 
-		string_ptr += string_decode.size;
-	}
+        string_ptr += string_decode.size;
+    }
 
-	if (last_split_point < string_opl)
-	{
-		str8_list_push(arena, &result, str8_range(last_split_point, string_opl));
-	}
+    if (last_split_point < string_opl)
+    {
+        str8_list_push(arena, &result, str8_range(last_split_point, string_opl));
+    }
 
-	return result;
+    return result;
 }
 
 internal StringDecode
 string_decode_utf8(U8 *string, U64 size)
 {
-	// 0:  // 0 bytes needed
-	// 4:  // Invalid
-	// 1:  // 1 byte needed
-	// 2:  // 2 bytes needed
-	// 3:  // 3 bytes needed
-	// 4:  // Invalid
-	local U8 lengths[32] =
-	{
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xxxxxxx: 0 bytes needed
-		4, 4, 4, 4, 4, 4, 4, 4,                         // 10xxxxxx: Invalid
-		1, 1, 1, 1,                                     // 110xxxxx: 1 byte needed
-		2, 2,                                           // 1110xxxx: 2 bytes needed
-		3,                                              // 11110xxx: 3 bytes needed
-		4,                                              // 11111xxx: Invalid
-	};
-	local U8 masks[4]            = {0x7F, 0x1F, 0x0F, 0x07, };
-	local U8 lower_boundaries[4] = {0x80, 0x80, 0xA0, 0x90, };
-	local U8 upper_boundaries[4] = {0xBF, 0xBF, 0x9F, 0x8F, };
+    // 0:  // 0 bytes needed
+    // 4:  // Invalid
+    // 1:  // 1 byte needed
+    // 2:  // 2 bytes needed
+    // 3:  // 3 bytes needed
+    // 4:  // Invalid
+    local U8 lengths[32] =
+    {
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, // 0xxxxxxx: 0 bytes needed
+        4, 4, 4, 4, 4, 4, 4, 4,                         // 10xxxxxx: Invalid
+        1, 1, 1, 1,                                     // 110xxxxx: 1 byte needed
+        2, 2,                                           // 1110xxxx: 2 bytes needed
+        3,                                              // 11110xxx: 3 bytes needed
+        4,                                              // 11111xxx: Invalid
+    };
+    local U8 masks[4]            = {0x7F, 0x1F, 0x0F, 0x07, };
+    local U8 lower_boundaries[4] = {0x80, 0x80, 0xA0, 0x90, };
+    local U8 upper_boundaries[4] = {0xBF, 0xBF, 0x9F, 0x8F, };
 
-	StringDecode result;
-	result.codepoint = 0xFFFD;
-	result.size      = 0;
+    StringDecode result;
+    result.codepoint = 0xFFFD;
+    result.size      = 0;
 
-	if (size == 0)
-	{
-		return result;
-	}
+    if (size == 0)
+    {
+        return result;
+    }
 
-	U8 byte = *string++;
-	++result.size;
+    U8 byte = *string++;
+    ++result.size;
 
-	U8 bytes_needed = lengths[byte >> 3];
-	if (bytes_needed == 4)
-	{
-		return result;
-	}
+    U8 bytes_needed = lengths[byte >> 3];
+    if (bytes_needed == 4)
+    {
+        return result;
+    }
 
-	U8  lower_boundary = lower_boundaries[bytes_needed];
-	U8  upper_boundary = upper_boundaries[bytes_needed];
-	U32 codepoint      = byte & masks[bytes_needed];
+    U8  lower_boundary = lower_boundaries[bytes_needed];
+    U8  upper_boundary = upper_boundaries[bytes_needed];
+    U32 codepoint      = byte & masks[bytes_needed];
 
-	if (size < result.size + bytes_needed)
-	{
-		result.size = size;
-		return result;
-	}
+    if (size < result.size + bytes_needed)
+    {
+        result.size = size;
+        return result;
+    }
 
-	while (bytes_needed != 0)
-	{
-		byte = *string++;
+    while (bytes_needed != 0)
+    {
+        byte = *string++;
 
-		if (!(lower_boundary <= byte && byte <= upper_boundary))
-		{
-			return result;
-		}
-		else
-		{
-			lower_boundary = 0x80;
-			upper_boundary = 0xBF;
-			codepoint = (codepoint << 6) | (byte & 0x3F);
-			--bytes_needed;
-			++result.size;
-		}
-	}
+        if (!(lower_boundary <= byte && byte <= upper_boundary))
+        {
+            return result;
+        }
+        else
+        {
+            lower_boundary = 0x80;
+            upper_boundary = 0xBF;
+            codepoint = (codepoint << 6) | (byte & 0x3F);
+            --bytes_needed;
+            ++result.size;
+        }
+    }
 
-	result.codepoint = codepoint;
-	return result;
+    result.codepoint = codepoint;
+    return result;
 }
 
 internal U64
 string_encode_utf8(U8 *destination, U32 codepoint)
 {
-	U64 size = 0;
+    U64 size = 0;
 
-	if (codepoint <= 0x7F)
-	{
-		destination[0] = (U8) codepoint;
-		size = 1;
-	}
-	else if (codepoint <= 0x07FF)
-	{
-		destination[0] = (U8) (0xC0 | (codepoint >> 6));
-		destination[1] = 0x80 | (codepoint & 0x3F);
-		size = 2;
-	}
-	else if (codepoint <= 0xFFFF)
-	{
-		destination[0] = (U8) (0xC0 | (codepoint >> 12));
-		destination[1] = 0x80 | ((codepoint >> 6) & 0x3F);
-		destination[2] = 0x80 | (codepoint & 0x3F);
-		size = 3;
-	}
-	else if (codepoint <= 0x10FFFF)
-	{
-		destination[0] = (U8) (0xC0 | (codepoint >> 18));
-		destination[1] = 0x80 | ((codepoint >> 12) & 0x3F);
-		destination[2] = 0x80 | ((codepoint >> 6) & 0x3F);
-		destination[3] = 0x80 | (codepoint & 0x3F);
-		size = 4;
-	}
-	else
-	{
-		U32 missing_codepoint = 0xFFFD;
-		destination[0] = (U8) (0xC0 | (missing_codepoint >> 12));
-		destination[1] = 0x80 | ((missing_codepoint >> 6) & 0x3F);
-		destination[2] = 0x80 | (missing_codepoint & 0x3F);
-		size = 3;
-	}
+    if (codepoint <= 0x7F)
+    {
+        destination[0] = (U8) codepoint;
+        size = 1;
+    }
+    else if (codepoint <= 0x07FF)
+    {
+        destination[0] = (U8) (0xC0 | (codepoint >> 6));
+        destination[1] = 0x80 | (codepoint & 0x3F);
+        size = 2;
+    }
+    else if (codepoint <= 0xFFFF)
+    {
+        destination[0] = (U8) (0xC0 | (codepoint >> 12));
+        destination[1] = 0x80 | ((codepoint >> 6) & 0x3F);
+        destination[2] = 0x80 | (codepoint & 0x3F);
+        size = 3;
+    }
+    else if (codepoint <= 0x10FFFF)
+    {
+        destination[0] = (U8) (0xC0 | (codepoint >> 18));
+        destination[1] = 0x80 | ((codepoint >> 12) & 0x3F);
+        destination[2] = 0x80 | ((codepoint >> 6) & 0x3F);
+        destination[3] = 0x80 | (codepoint & 0x3F);
+        size = 4;
+    }
+    else
+    {
+        U32 missing_codepoint = 0xFFFD;
+        destination[0] = (U8) (0xC0 | (missing_codepoint >> 12));
+        destination[1] = 0x80 | ((missing_codepoint >> 6) & 0x3F);
+        destination[2] = 0x80 | (missing_codepoint & 0x3F);
+        size = 3;
+    }
 
-	return size;
+    return size;
 }
 
 internal StringDecode
 string_decode_utf16(U16 *string, U64 size)
 {
-	StringDecode result;
-	result.codepoint = 0xFFFD;
-	result.size = 0;
+    StringDecode result;
+    result.codepoint = 0xFFFD;
+    result.size = 0;
 
-	if (size == 0)
-	{
-		return result;
-	}
+    if (size == 0)
+    {
+        return result;
+    }
 
-	U16 code_unit = *string++;
-	++result.size;
+    U16 code_unit = *string++;
+    ++result.size;
 
-	if (code_unit < 0xD800 || 0xDFFF < code_unit)
-	{
-		result.codepoint = code_unit;
-	}
-	else if (size >= 2)
-	{
-		U16 lead_surrogate = code_unit;
-		code_unit = *string++;
+    if (code_unit < 0xD800 || 0xDFFF < code_unit)
+    {
+        result.codepoint = code_unit;
+    }
+    else if (size >= 2)
+    {
+        U16 lead_surrogate = code_unit;
+        code_unit = *string++;
 
-		if (0xD800 <= lead_surrogate && lead_surrogate <= 0xDBFF && 0xDC00 <= code_unit && code_unit <= 0xDFFF)
-		{
-			result.codepoint = (U32) (0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
-			++result.size;
-		}
-	}
+        if (0xD800 <= lead_surrogate && lead_surrogate <= 0xDBFF && 0xDC00 <= code_unit && code_unit <= 0xDFFF)
+        {
+            result.codepoint = (U32) (0x10000 + ((lead_surrogate - 0xD800) << 10) + (code_unit - 0xDC00));
+            ++result.size;
+        }
+    }
 
-	return result;
+    return result;
 }
 
 internal U64
 string_encode_utf16(U16 *destination, U32 codepoint)
 {
-	U64 size = 0;
+    U64 size = 0;
 
-	if (codepoint < 0x10000)
-	{
-		destination[0] = (U16) codepoint;
-		size = 1;
-	}
-	else
-	{
-		U32 adjusted_codepoint = codepoint - 0x10000;
-		destination[0] = (U16) (0xD800 + (adjusted_codepoint >> 10));
-		destination[1] = 0xDC00 + (adjusted_codepoint & 0x03FF);
-		size = 2;
-	}
+    if (codepoint < 0x10000)
+    {
+        destination[0] = (U16) codepoint;
+        size = 1;
+    }
+    else
+    {
+        U32 adjusted_codepoint = codepoint - 0x10000;
+        destination[0] = (U16) (0xD800 + (adjusted_codepoint >> 10));
+        destination[1] = 0xDC00 + (adjusted_codepoint & 0x03FF);
+        size = 2;
+    }
 
-	return size;
+    return size;
 }
 
 internal Str32
 str32_from_str8(Arena *arena, Str8 string)
 {
-	U64 allocated_size = string.size;
-	U32 *memory = push_array(arena, U32, allocated_size);
+    U64 allocated_size = string.size;
+    U32 *memory = push_array(arena, U32, allocated_size);
 
-	U32 *destination_ptr = memory;
-	U8 *ptr = string.data;
-	U8 *opl = string.data + string.size;
+    U32 *destination_ptr = memory;
+    U8 *ptr = string.data;
+    U8 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
-		*destination_ptr++ = decode.codepoint;
-		ptr += decode.size;
-	}
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+        *destination_ptr++ = decode.codepoint;
+        ptr += decode.size;
+    }
 
-	U64 string_size = (U64) (destination_ptr - memory);
-	U64 unused_size = allocated_size - string_size;
-	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    U64 string_size = (U64) (destination_ptr - memory);
+    U64 unused_size = allocated_size - string_size;
+    arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str32 result;
-	result.data = memory;
-	result.size = string_size;
-	return result;
+    Str32 result;
+    result.data = memory;
+    result.size = string_size;
+    return result;
 }
 
 internal Str8
 str8_from_str32(Arena *arena, Str32 string)
 {
-	U64 allocated_size = 4 * string.size;
-	U8 *memory = push_array(arena, U8, allocated_size);
+    U64 allocated_size = 4 * string.size;
+    U8 *memory = push_array(arena, U8, allocated_size);
 
-	U8 *destination_ptr = memory;
-	U32 *ptr = string.data;
-	U32 *opl = string.data + string.size;
+    U8 *destination_ptr = memory;
+    U32 *ptr = string.data;
+    U32 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		U32 codepoint = *ptr++;
-		U64 size = string_encode_utf8(destination_ptr, codepoint);
-		destination_ptr += size;
-	}
+    while (ptr < opl)
+    {
+        U32 codepoint = *ptr++;
+        U64 size = string_encode_utf8(destination_ptr, codepoint);
+        destination_ptr += size;
+    }
 
-	U64 string_size = (U64) (destination_ptr - memory);
-	U64 unused_size = allocated_size - string_size;
-	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    U64 string_size = (U64) (destination_ptr - memory);
+    U64 unused_size = allocated_size - string_size;
+    arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str8 result = str8(memory, string_size);
-	return result;
+    Str8 result = str8(memory, string_size);
+    return result;
 }
 
 internal Str16
 str16_from_str8(Arena *arena, Str8 string)
 {
-	U64 allocated_size = string.size;
-	U16 *memory = push_array(arena, U16, allocated_size);
+    U64 allocated_size = string.size;
+    U16 *memory = push_array(arena, U16, allocated_size);
 
-	U16 *destination_ptr = memory;
-	U8 *ptr = string.data;
-	U8 *opl = string.data + string.size;
+    U16 *destination_ptr = memory;
+    U8 *ptr = string.data;
+    U8 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
-		U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
-		destination_ptr += encode_size;
-		ptr += decode.size;
-	}
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+        U32 encode_size = (U32) string_encode_utf16(destination_ptr, decode.codepoint);
+        destination_ptr += encode_size;
+        ptr += decode.size;
+    }
 
-	U64 string_size = (U64) (destination_ptr - memory);
-	U64 unused_size = allocated_size - string_size;
-	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    U64 string_size = (U64) (destination_ptr - memory);
+    U64 unused_size = allocated_size - string_size;
+    arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str16 result = str16(memory, string_size);
-	return result;
+    Str16 result = str16(memory, string_size);
+    return result;
 }
 
 internal Str8
 str8_from_str16(Arena *arena, Str16 string)
 {
-	U64 allocated_size = 3 * string.size;
-	U8 *memory = push_array(arena, U8, allocated_size);
+    U64 allocated_size = 3 * string.size;
+    U8 *memory = push_array(arena, U8, allocated_size);
 
-	U8 *destination_ptr = memory;
-	U16 *ptr = string.data;
-	U16 *opl = string.data + string.size;
+    U8 *destination_ptr = memory;
+    U16 *ptr = string.data;
+    U16 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf16(ptr, (U64) (opl - ptr));
-		U64 encode_size = string_encode_utf8(destination_ptr, decode.codepoint);
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf16(ptr, (U64) (opl - ptr));
+        U64 encode_size = string_encode_utf8(destination_ptr, decode.codepoint);
 
-		destination_ptr += encode_size;
-		ptr += decode.size;
-	}
+        destination_ptr += encode_size;
+        ptr += decode.size;
+    }
 
-	U64 string_size = (U64) (destination_ptr - memory);
-	U64 unused_size = allocated_size - string_size;
-	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    U64 string_size = (U64) (destination_ptr - memory);
+    U64 unused_size = allocated_size - string_size;
+    arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	Str8 result = str8(memory, string_size);
-	return(result);
+    Str8 result = str8(memory, string_size);
+    return(result);
 }
 
 internal Str8
 str8_from_cstr16(Arena *arena, CStr16 string)
 {
-	Str16 str16 = { 0 };
-	str16.data  = string;
-	str16.size  = 0;
-	while (str16.data[str16.size])
-	{
-		++str16.size;
-	}
+    Str16 str16 = {0};
+    str16.data  = string;
+    str16.size  = 0;
+    while (str16.data[str16.size])
+    {
+        ++str16.size;
+    }
 
-	Str8 result = str8_from_str16(arena, str16);
-	return(result);
+    Str8 result = str8_from_str16(arena, str16);
+    return(result);
 }
 
 internal CStr
 cstr_from_str8(Arena *arena, Str8 string)
 {
-	U64 allocated_size = string.size + 1;
-	U8 *memory = push_array(arena, U8, allocated_size);
+    U64 allocated_size = string.size + 1;
+    U8 *memory = push_array(arena, U8, allocated_size);
 
-	memory_copy(memory, string.data, string.size);
-	memory[string.size] = 0;
+    memory_copy(memory, string.data, string.size);
+    memory[string.size] = 0;
 
-	return (CStr) memory;
+    return (CStr) memory;
 }
 
 internal CStr16
 cstr16_from_str8(Arena *arena, Str8 string)
 {
-	U64 allocated_size = string.size + 1;
-	U16 *memory = push_array(arena, U16, allocated_size);
+    U64 allocated_size = string.size + 1;
+    U16 *memory = push_array(arena, U16, allocated_size);
 
-	U16 *destination_ptr = memory;
-	U8 *ptr = string.data;
-	U8 *opl = string.data + string.size;
+    U16 *destination_ptr = memory;
+    U8 *ptr = string.data;
+    U8 *opl = string.data + string.size;
 
-	while (ptr < opl)
-	{
-		StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
-		U64 encode_size = string_encode_utf16(destination_ptr, decode.codepoint);
-		destination_ptr += encode_size;
-		ptr += decode.size;
-	}
+    while (ptr < opl)
+    {
+        StringDecode decode = string_decode_utf8(ptr, (U64) (opl - ptr));
+        U64 encode_size = string_encode_utf16(destination_ptr, decode.codepoint);
+        destination_ptr += encode_size;
+        ptr += decode.size;
+    }
 
-	*destination_ptr = 0;
+    *destination_ptr = 0;
 
-	U64 string_size = (U64) (destination_ptr - memory);
-	U64 unused_size = allocated_size - string_size - 1;
-	arena_pop_amount(arena, unused_size * sizeof(*memory));
+    U64 string_size = (U64) (destination_ptr - memory);
+    U64 unused_size = allocated_size - string_size - 1;
+    arena_pop_amount(arena, unused_size * sizeof(*memory));
 
-	return memory;
+    return memory;
 }
 
 internal U64
 u64_from_str8(Str8 string, U64 *destination)
 {
-	U64 i;
-	for (i = 0; i < string.size; ++i)
-	{
-		U8 ch = string.data[i];
-		if (!is_num(ch))
-		{
-			break;
-		}
-		*destination = (*destination) * 10 + ch - '0';
-	}
+    U64 i;
+    for (i = 0; i < string.size; ++i)
+    {
+        U8 ch = string.data[i];
+        if (!is_num(ch))
+        {
+            break;
+        }
+        *destination = (*destination) * 10 + ch - '0';
+    }
 
-	return(i);
+    return(i);
 }
 
 internal U64
 u32_from_str8(Str8 string, U32 *destination)
 {
-	U64 result = 0;
-	U64 temp = 0;
-	result = u64_from_str8(string, &temp);
-	assert(temp <= U32_MAX);
-	*destination = (U32) temp;
+    U64 result = 0;
+    U64 temp = 0;
+    result = u64_from_str8(string, &temp);
+    assert(temp <= U32_MAX);
+    *destination = (U32) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 u16_from_str8(Str8 string, U16 *destination)
 {
-	U64 result = 0;
-	U64 temp = 0;
-	result = u64_from_str8(string, &temp);
-	assert(temp <= U16_MAX);
-	*destination = (U16) temp;
+    U64 result = 0;
+    U64 temp = 0;
+    result = u64_from_str8(string, &temp);
+    assert(temp <= U16_MAX);
+    *destination = (U16) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 u8_from_str8(Str8 string, U8 *destination)
 {
-	U64 result = 0;
-	U64 temp = 0;
-	result = u64_from_str8(string, &temp);
-	assert(temp <= U8_MAX);
-	*destination = (U8) temp;
+    U64 result = 0;
+    U64 temp = 0;
+    result = u64_from_str8(string, &temp);
+    assert(temp <= U8_MAX);
+    *destination = (U8) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 s64_from_str8(Str8 string, S64 *destination)
 {
-	U64 i = 0;
-	B32 negative = false;
-	if (string.size > 0)
-	{
-		if (string.data[0] == '-')
-		{
-			negative = true;
-			i += 1;
-		}
-	}
-	for (; i < string.size; ++i)
-	{
-		U8 ch = string.data[i];
-		if (!is_num(ch))
-		{
-			break;
-		}
-		*destination = (*destination) * 10 + ch - '0';
-	}
+    U64 i = 0;
+    B32 negative = false;
+    if (string.size > 0)
+    {
+        if (string.data[0] == '-')
+        {
+            negative = true;
+            i += 1;
+        }
+    }
+    for (; i < string.size; ++i)
+    {
+        U8 ch = string.data[i];
+        if (!is_num(ch))
+        {
+            break;
+        }
+        *destination = (*destination) * 10 + ch - '0';
+    }
 
-	if (negative)
-	{
-		*destination = -(*destination);
-	}
+    if (negative)
+    {
+        *destination = -(*destination);
+    }
 
-	return(i);
+    return(i);
 }
 
 internal U64
 s32_from_str8(Str8 string, S32 *destination)
 {
-	U64 result = 0;
-	S64 temp = 0;
-	result = s64_from_str8(string, &temp);
-	assert(temp <= S32_MAX);
-	assert(temp >= S32_MIN);
-	*destination = (S32) temp;
+    U64 result = 0;
+    S64 temp = 0;
+    result = s64_from_str8(string, &temp);
+    assert(temp <= S32_MAX);
+    assert(temp >= S32_MIN);
+    *destination = (S32) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 s16_from_str8(Str8 string, S16 *destination)
 {
-	U64 result = 0;
-	S64 temp = 0;
-	result = s64_from_str8(string, &temp);
-	assert(temp <= S16_MAX);
-	assert(temp >= S16_MIN);
-	*destination = (S16) temp;
+    U64 result = 0;
+    S64 temp = 0;
+    result = s64_from_str8(string, &temp);
+    assert(temp <= S16_MAX);
+    assert(temp >= S16_MIN);
+    *destination = (S16) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 s8_from_str8(Str8 string, S8 *destination)
 {
-	U64 result = 0;
-	S64 temp = 0;
-	result = s64_from_str8(string, &temp);
-	assert(temp <= S8_MAX);
-	assert(temp >= S8_MIN);
-	*destination = (S8) temp;
+    U64 result = 0;
+    S64 temp = 0;
+    result = s64_from_str8(string, &temp);
+    assert(temp <= S8_MAX);
+    assert(temp >= S8_MIN);
+    *destination = (S8) temp;
 
-	return(result);
+    return(result);
 }
 
 internal U64
 f64_from_str8(Str8 string, F64 *destination)
 {
-	U64 bytes_read = 0;
-	B32 found_sign = false;
-	B32 found_dot = false;
-	for (; bytes_read < string.size; ++bytes_read)
-	{
-		U8 ch = string.data[bytes_read];
-		if (ch == '-' || ch == '+')
-		{
-			if (!found_sign)
-			{
-				found_sign = true;
-			}
-			else
-			{
-				break;
-			}
-		}
-		else if (ch == '.')
-		{
-			if (!found_dot)
-			{
-				found_dot = true;
-			}
-			else
-			{
-				break;
-			}
-		}
-		else if (ch == 'f')
-		{
-			bytes_read++;
-			break;
-		}
-		else if (!is_num(ch))
-		{
-			break;
-		}
-	}
+    U64 bytes_read = 0;
+    B32 found_sign = false;
+    B32 found_dot = false;
+    for (; bytes_read < string.size; ++bytes_read)
+    {
+        U8 ch = string.data[bytes_read];
+        if (ch == '-' || ch == '+')
+        {
+            if (!found_sign)
+            {
+                found_sign = true;
+            }
+            else
+            {
+                break;
+            }
+        }
+        else if (ch == '.')
+        {
+            if (!found_dot)
+            {
+                found_dot = true;
+            }
+            else
+            {
+                break;
+            }
+        }
+        else if (ch == 'f')
+        {
+            bytes_read++;
+            break;
+        }
+        else if (!is_num(ch))
+        {
+            break;
+        }
+    }
 
-	arena_scratch(0, 0)
-	{
-		CStr cstr = cstr_from_str8(scratch, str8_prefix(string, bytes_read));
-		*destination = atof(cstr);
-	}
+    arena_scratch(0, 0)
+    {
+        CStr cstr = cstr_from_str8(scratch, str8_prefix(string, bytes_read));
+        *destination = atof(cstr);
+    }
 
-	return(bytes_read);
+    return(bytes_read);
 }
 
 internal
 B32 is_num(U8 ch)
 {
-	B32 result = ('0' <= ch && ch <= '9');
-	return(result);
+    B32 result = ('0' <= ch && ch <= '9');
+    return(result);
 }

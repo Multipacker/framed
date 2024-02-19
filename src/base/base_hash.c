@@ -5,13 +5,13 @@
 internal U64
 hash_str8(Str8 string)
 {
-	U64 result = FNV_OFFSET_BASIS_U64;
+    U64 result = FNV_OFFSET_BASIS_U64;
 
-	for (U64 i = 0; i < string.size; ++i)
-	{
-		result *= FNV_PRIME_U64;
-		result ^= string.data[i];
-	}
+    for (U64 i = 0; i < string.size; ++i)
+    {
+        result *= FNV_PRIME_U64;
+        result ^= string.data[i];
+    }
 
-	return(result);
+    return(result);
 }

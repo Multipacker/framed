@@ -310,137 +310,137 @@ b = temp##__LINE__; \
 typedef enum Axis2 Axis2;
 enum Axis2
 {
-	Axis2_X,
-	Axis2_Y,
+    Axis2_X,
+    Axis2_Y,
 
-	Axis2_COUNT,
+    Axis2_COUNT,
 };
 
 typedef enum Axis3 Axis3;
 enum Axis3
 {
-	Axis3_X,
-	Axis3_Y,
-	Axis3_Z,
+    Axis3_X,
+    Axis3_Y,
+    Axis3_Z,
 
-	Axis3_COUNT,
+    Axis3_COUNT,
 };
 
 typedef enum Axis4 Axis4;
 enum Axis4
 {
-	Axis4_X,
-	Axis4_Y,
-	Axis4_Z,
-	Axis4_W,
+    Axis4_X,
+    Axis4_Y,
+    Axis4_Z,
+    Axis4_W,
 
-	Axis4_COUNT,
+    Axis4_COUNT,
 };
 
 #define side_flip(side) (!(side))
 typedef enum Side Side;
 enum Side
 {
-	Side_Min,
-	Side_Max,
+    Side_Min,
+    Side_Max,
 
-	Side_COUNT,
+    Side_COUNT,
 };
 
 typedef enum Corner Corner;
 enum Corner
 {
-	Corner_TopLeft,
-	Corner_TopRight,
-	Corner_BottomLeft,
-	Corner_BottomRight,
+    Corner_TopLeft,
+    Corner_TopRight,
+    Corner_BottomLeft,
+    Corner_BottomRight,
 
-	Corner_COUNT,
+    Corner_COUNT,
 };
 
 typedef enum OperatingSystem OperatingSystem;
 enum OperatingSystem
 {
-	OperatingSystem_Null,
-	OperatingSystem_Windows,
-	OperatingSystem_Linux,
-	OperatingSystem_Mac,
+    OperatingSystem_Null,
+    OperatingSystem_Windows,
+    OperatingSystem_Linux,
+    OperatingSystem_Mac,
 
-	OperatingSystem_COUNT,
+    OperatingSystem_COUNT,
 };
 
 typedef enum Architecture Architecture;
 enum Architecture
 {
-	Architecture_Null,
-	Architecture_X64,
-	Architecture_X86,
-	Architecture_ARM,
-	Architecture_ARM64,
+    Architecture_Null,
+    Architecture_X64,
+    Architecture_X86,
+    Architecture_ARM,
+    Architecture_ARM64,
 
-	Architecture_COUNT,
+    Architecture_COUNT,
 };
 
 typedef enum BuildMode BuildMode;
 enum BuildMode
 {
-	BuildMode_Null,
-	BuildMode_Debug,
-	BuildMode_Optimized,
-	BuildMode_Release,
+    BuildMode_Null,
+    BuildMode_Debug,
+    BuildMode_Optimized,
+    BuildMode_Release,
 
-	BuildMode_COUNT
+    BuildMode_COUNT
 };
 
 typedef enum Month Month;
 enum Month
 {
-	Month_Jan,
-	Month_Feb,
-	Month_Mar,
-	Month_Apr,
-	Month_May,
-	Month_Jun,
-	Month_Jul,
-	Month_Aug,
-	Month_Sep,
-	Month_Oct,
-	Month_Nov,
-	Month_Dec,
+    Month_Jan,
+    Month_Feb,
+    Month_Mar,
+    Month_Apr,
+    Month_May,
+    Month_Jun,
+    Month_Jul,
+    Month_Aug,
+    Month_Sep,
+    Month_Oct,
+    Month_Nov,
+    Month_Dec,
 
-	Month_COUNT
+    Month_COUNT
 };
 
 typedef enum DayOfWeek DayOfWeek;
 enum DayOfWeek
 {
-	DayOfWeek_Monday,
-	DayOfWeek_Tuesday,
-	DayOfWeek_Wednesday,
-	DayOfWeek_Thursday,
-	DayOfWeek_Friday,
-	DayOfWeek_Saturday,
-	DayOfWeek_Sunday,
+    DayOfWeek_Monday,
+    DayOfWeek_Tuesday,
+    DayOfWeek_Wednesday,
+    DayOfWeek_Thursday,
+    DayOfWeek_Friday,
+    DayOfWeek_Saturday,
+    DayOfWeek_Sunday,
 
-	DayOfWeek_COUNT,
+    DayOfWeek_COUNT,
 };
 
 typedef struct DenseTime DenseTime;
 struct DenseTime
 {
-	U64 time;
+    U64 time;
 };
 
 typedef struct DateTime DateTime;
 struct DateTime
 {
-	U16 millisecond; // [0, 999]
-	U8  second;      // [0, 60] 60 in the case of leap seconds
-	U8  minute;      // [0, 59]
-	U8  hour;        // [0, 23]
-	U8  day;         // [0, 30]
-	U8  month;       // [0, 11]
-	S16 year;        // 1 = 1 CE; 2020 = 2020 CE, 0 = 1 BCE; -100 = 101 BCE; etc.
+    U16 millisecond; // [0, 999]
+    U8  second;      // [0, 60] 60 in the case of leap seconds
+    U8  minute;      // [0, 59]
+    U8  hour;        // [0, 23]
+    U8  day;         // [0, 30]
+    U8  month;       // [0, 11]
+    S16 year;        // 1 = 1 CE; 2020 = 2020 CE, 0 = 1 BCE; -100 = 101 BCE; etc.
 };
 
 // TODO(hampus): Finish this implementation
@@ -448,8 +448,8 @@ struct DateTime
 typedef enum DateFormat DateFormat;
 enum DateFormat
 {
-	DateFormat_YYMMDD,   // 23-12-15
-	DateFormat_YYYYMMDD, // 2023-12-15
+    DateFormat_YYMMDD,   // 23-12-15
+    DateFormat_YYYYMMDD, // 2023-12-15
 };
 
 // TODO(hampus): Finish this implementation
@@ -457,7 +457,7 @@ enum DateFormat
 typedef enum TimeFormat TimeFormat;
 enum TimeFormat
 {
-	TimeFormat_HHMMSS,   // 12:08:30
+    TimeFormat_HHMMSS,   // 12:08:30
 };
 
 internal OperatingSystem  operating_system_from_context(Void);

@@ -4,20 +4,20 @@
 typedef struct UI_ScrollabelRegion UI_ScrollabelRegion;
 struct UI_ScrollabelRegion
 {
-	UI_Box *view_region;
-	UI_Box *content;
+    UI_Box *view_region;
+    UI_Box *content;
 };
 
 typedef struct UI_ColorPickerData UI_ColorPickerData;
 struct UI_ColorPickerData
 {
-	Vec4F32 *rgba;
+    Vec4F32 *rgba;
 
-	// NOTE(hampus): Stuff for the line edit
-	UI_TextEditState text_edit_state[4];
-	U8 *text_buffer[4];
-	U64 text_buffer_size[4];
-	U64 string_length[4];
+    // NOTE(hampus): Stuff for the line edit
+    UI_TextEditState text_edit_state[4];
+    U8 *text_buffer[4];
+    U64 text_buffer_size[4];
+    U64 string_length[4];
 };
 
 internal Void    ui_text(Str8 string);
@@ -61,7 +61,7 @@ internal Void ui_color_picker(UI_ColorPickerData *data);
 typedef struct UI_ComboBoxParams UI_ComboBoxParams;
 struct UI_ComboBoxParams
 {
-	UI_Size item_size;
+    UI_Size item_size;
 };
 
 internal B32 ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item_count, UI_ComboBoxParams *params);

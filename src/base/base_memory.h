@@ -6,19 +6,19 @@ typedef char *CStr;
 typedef struct Arena Arena;
 struct Arena
 {
-	U8 *memory;
-	U64 cap;
-	U64 pos;
-	U64 commit_pos;
-	Str8 name;
-	U64 min_pos;
+    U8 *memory;
+    U64 cap;
+    U64 pos;
+    U64 commit_pos;
+    Str8 name;
+    U64 min_pos;
 };
 
 typedef struct Arena_Temporary Arena_Temporary;
 struct Arena_Temporary
 {
-	Arena *arena;
-	U64 pos;
+    Arena *arena;
+    U64 pos;
 };
 
 #define ARENA_DEFAULT_RESERVE_SIZE gigabytes(1)

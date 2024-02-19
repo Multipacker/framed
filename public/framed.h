@@ -186,15 +186,15 @@ FRAMED_DEF void framed_zone_end_(void);
 typedef struct Framed_Socket Framed_Socket;
 struct Framed_Socket
 {
-	Framed_U64 u64[1];
+    Framed_U64 u64[1];
 };
 
 typedef struct Framed_State Framed_State;
 struct Framed_State
 {
-	Framed_Socket socket;
-	Framed_U8 *buffer;
-	Framed_U64 buffer_pos;
+    Framed_Socket socket;
+    Framed_U8 *buffer;
+    Framed_U64 buffer_pos;
 };
 
 static Framed_State global_framed_state;
@@ -206,9 +206,9 @@ static Framed_U16
 framed__u16_big_to_local_endian(Framed_U16 x)
 {
 #if FRAMED_COMPILER_CL
-	return _byteswap_ushort(x);
+    return _byteswap_ushort(x);
 #elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
-	return __builtin_bswap16(x);
+    return __builtin_bswap16(x);
 #else
 # error Your compiler does not have an implementation of framed_u16_big_to_local_endian.
 #endif
@@ -218,9 +218,9 @@ static Framed_U32
 framed__u32_big_to_local_endian(Framed_U32 x)
 {
 #if FRAMED_COMPILER_CL
-	return _byteswap_ulong(x);
+    return _byteswap_ulong(x);
 #elif FRAMED_COMPILER_CLANG || FRAMED_COMPILER_GCC
-	return __builtin_bswap32(x);
+    return __builtin_bswap32(x);
 #else
 # error Your compiler does not have an implementation of framed_u32_big_to_local_endian.
 #endif
@@ -237,29 +237,29 @@ framed__u32_big_to_local_endian(Framed_U32 x)
 static void
 framed__socket_init(Framed_B32 wait_for_connection)
 {
-	Framed_State *framed = &global_framed_state;
-	WSADATA wsa_data;
-	WSAStartup(MAKEWORD(2, 2), &wsa_data);
-	SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	framed->socket.u64[0] = sock;
-	struct sockaddr_in sockaddrin = {0};
-	sockaddrin.sin_addr.S_un.S_un_b.s_b1 = 127;
-	sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
-	sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
-	sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
-	sockaddrin.sin_port = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
-	sockaddrin.sin_family = AF_INET;
-	// TODO(hampus): Make use of `wait_for_connection`. It is always
-	// waiting for now.
-	int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
+    Framed_State *framed = &global_framed_state;
+    WSADATA wsa_data;
+    WSAStartup(MAKEWORD(2, 2), &wsa_data);
+    SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    framed->socket.u64[0] = sock;
+    struct sockaddr_in sockaddrin = {0};
+    sockaddrin.sin_addr.S_un.S_un_b.s_b1 = 127;
+    sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
+    sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
+    sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
+    sockaddrin.sin_port = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+    sockaddrin.sin_family = AF_INET;
+    // TODO(hampus): Make use of `wait_for_connection`. It is always
+    // waiting for now.
+    int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
 }
 
 static void
 framed__socket_send(void)
 {
-	Framed_State *framed = &global_framed_state;
-	SOCKET sock = (SOCKET) framed->socket.u64[0];
-	int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
+    Framed_State *framed = &global_framed_state;
+    SOCKET sock = (SOCKET) framed->socket.u64[0];
+    int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
 }
 
 #elif FRAMED_OS_LINUX
@@ -271,32 +271,32 @@ framed__socket_send(void)
 static void
 framed__socket_init(Framed_B32 wait_for_connection)
 {
-	Framed_State *framed = &global_framed_state;
-	int linux_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	framed->socket.u64[0] = (Framed_U64) linux_socket;
-	struct sockaddr_in socket_address = {0};
-	socket_address.sin_family      = AF_INET;
-	socket_address.sin_port        = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
-	socket_address.sin_addr.s_addr = framed__u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
-	// TODO(simon): Use `wait_for_connection`
-	int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
-	if (error == -1)
-	{
-		// TODO(simon): Report better errors to the user.
-		perror("Framed connect");
-	}
+    Framed_State *framed = &global_framed_state;
+    int linux_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    framed->socket.u64[0] = (Framed_U64) linux_socket;
+    struct sockaddr_in socket_address = {0};
+    socket_address.sin_family      = AF_INET;
+    socket_address.sin_port        = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+    socket_address.sin_addr.s_addr = framed__u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
+    // TODO(simon): Use `wait_for_connection`
+    int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
+    if (error == -1)
+    {
+        // TODO(simon): Report better errors to the user.
+        perror("Framed connect");
+    }
 }
 
 static void
 framed__socket_send(void)
 {
-	Framed_State *framed = &global_framed_state;
-	int linux_socket = (int) framed->socket.u64[0];
-	int error = 0;
-	do
-	{
-		error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
-	} while (error == -1 && (errno == EAGAIN || errno == EWOULDBLOCK));
+    Framed_State *framed = &global_framed_state;
+    int linux_socket = (int) framed->socket.u64[0];
+    int error = 0;
+    do
+    {
+        error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
+    } while (error == -1 && (errno == EAGAIN || errno == EWOULDBLOCK));
 }
 
 #endif
@@ -313,27 +313,27 @@ framed__socket_send(void)
 static Framed_U64
 framed__rdtsc(void)
 {
-	Framed_U64 result = 0;
+    Framed_U64 result = 0;
 #if FRAMED_COMPILER_CL
-	result = __rdtsc();
+    result = __rdtsc();
 #elif FRAMED_COMPILER_CLANG
-	result = __rdtsc();
+    result = __rdtsc();
 #elif FRAMED_COMPILER_GCC
-	result = __rdtsc();
+    result = __rdtsc();
 #endif
-	return(result);
+    return(result);
 }
 
 static void
 framed__ensure_space(Framed_U64 size)
 {
-	framed__assert(size <= FRAMED_BUFFER_CAPACITY);
+    framed__assert(size <= FRAMED_BUFFER_CAPACITY);
 
-	Framed_State *framed = &global_framed_state;
-	if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
-	{
-		framed_flush_();
-	}
+    Framed_State *framed = &global_framed_state;
+    if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
+    {
+        framed_flush_();
+    }
 }
 
 ////////////////////////////////
@@ -342,19 +342,19 @@ framed__ensure_space(Framed_U64 size)
 FRAMED_DEF void
 framed_init_(Framed_B32 wait_for_connection)
 {
-	Framed_State *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
-	framed__socket_init(wait_for_connection);
-	framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
-	framed->buffer_pos = 0;
+    framed__socket_init(wait_for_connection);
+    framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
+    framed->buffer_pos = 0;
 }
 
 FRAMED_DEF void
 framed_flush_(void)
 {
-	Framed_State *framed = &global_framed_state;
-	framed__socket_send();
-	framed->buffer_pos = 0;
+    Framed_State *framed = &global_framed_state;
+    framed__socket_send();
+    framed->buffer_pos = 0;
 }
 
 // U64 : rdtsc
@@ -364,37 +364,37 @@ framed_flush_(void)
 FRAMED_DEF void
 framed_zone_begin_(char *name)
 {
-	Framed_State *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
-	Framed_U64 length  = strlen(name);
-	framed__assert(length != 0);
+    Framed_U64 length  = strlen(name);
+    framed__assert(length != 0);
 
-	Framed_U64 entry_size = 2 * sizeof(Framed_U64) + length;
-	framed__ensure_space(entry_size);
+    Framed_U64 entry_size = 2 * sizeof(Framed_U64) + length;
+    framed__ensure_space(entry_size);
 
-	Framed_U64 counter = framed__rdtsc();
+    Framed_U64 counter = framed__rdtsc();
 
-	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
-	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
-	framed_memory_copy(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
+    *(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
+    *(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = length;
+    framed_memory_copy(&framed->buffer[framed->buffer_pos + 2 * sizeof(Framed_U64)], name, length);
 
-	framed->buffer_pos += entry_size;
+    framed->buffer_pos += entry_size;
 }
 
 FRAMED_DEF void
 framed_zone_end_(void)
 {
-	Framed_State *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
-	Framed_U64 counter = framed__rdtsc();
+    Framed_U64 counter = framed__rdtsc();
 
-	Framed_U64 entry_size = 2 * sizeof(Framed_U64);
-	framed__ensure_space(entry_size);
+    Framed_U64 entry_size = 2 * sizeof(Framed_U64);
+    framed__ensure_space(entry_size);
 
-	*(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
-	*(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
+    *(Framed_U64 *) &framed->buffer[framed->buffer_pos] = counter;
+    *(Framed_U64 *) &framed->buffer[framed->buffer_pos + sizeof(Framed_U64)] = 0;
 
-	framed->buffer_pos += entry_size;
+    framed->buffer_pos += entry_size;
 }
 
 #endif // FRAMED_IMPLEMENTATION

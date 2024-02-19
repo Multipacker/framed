@@ -15,92 +15,92 @@
 typedef struct D3D11_ClipRect D3D11_ClipRect;
 struct D3D11_ClipRect
 {
-	D3D11_ClipRect *next;
-	D3D11_ClipRect *prev;
-	RectF32 rect;
+    D3D11_ClipRect *next;
+    D3D11_ClipRect *prev;
+    RectF32 rect;
 };
 
 typedef struct D3D11_ClipRectStack D3D11_ClipRectStack;
 struct D3D11_ClipRectStack
 {
-	D3D11_ClipRect *first;
-	D3D11_ClipRect *last;
+    D3D11_ClipRect *first;
+    D3D11_ClipRect *last;
 };
 
 typedef struct D3D11_BatchParams D3D11_BatchParams;
 struct D3D11_BatchParams
 {
-	Render_Texture texture;
-	D3D11_ClipRect *clip_rect;
+    Render_Texture texture;
+    D3D11_ClipRect *clip_rect;
 };
 
 typedef struct D3D11_Batch D3D11_Batch;
 struct D3D11_Batch
 {
-	D3D11_Batch *next;
-	D3D11_Batch *prev;
-	Render_RectInstance *instances;
-	U64 instance_count;
-	D3D11_BatchParams params;
+    D3D11_Batch *next;
+    D3D11_Batch *prev;
+    Render_RectInstance *instances;
+    U64 instance_count;
+    D3D11_BatchParams params;
 };
 
 typedef struct D3D11_BatchList D3D11_BatchList;
 struct D3D11_BatchList
 {
-	D3D11_Batch *first;
-	D3D11_Batch *last;
-	U64 batch_count;
+    D3D11_Batch *first;
+    D3D11_Batch *last;
+    U64 batch_count;
 };
 
 typedef struct D3D11_TextureUpdate D3D11_TextureUpdate;
 struct D3D11_TextureUpdate
 {
-	volatile B32 is_valid;
+    volatile B32 is_valid;
 
-	ID3D11Resource *resource;
+    ID3D11Resource *resource;
 
-	U32 x;
-	U32 y;
-	U32 width;
-	U32 height;
+    U32 x;
+    U32 y;
+    U32 width;
+    U32 height;
 
-	Void *data;
+    Void *data;
 };
 
 typedef struct Render_BackendContext Render_BackendContext;
 struct Render_BackendContext
 {
-	D3D11_BatchList batch_list;
+    D3D11_BatchList batch_list;
 
-	D3D11_ClipRectStack clip_rect_stack;
+    D3D11_ClipRectStack clip_rect_stack;
 
-	Render_Texture white_texture;
+    Render_Texture white_texture;
 
-	ID3D11Device        *device;
-	ID3D11DeviceContext *context;
-	IDXGISwapChain1     *swap_chain;
+    ID3D11Device        *device;
+    ID3D11DeviceContext *context;
+    IDXGISwapChain1     *swap_chain;
 
-	ID3D11Buffer        *vertex_buffer;
-	ID3D11Buffer        *uniform_buffer;
+    ID3D11Buffer        *vertex_buffer;
+    ID3D11Buffer        *uniform_buffer;
 
-	ID3D11InputLayout  *input_layout;
-	ID3D11VertexShader *vertex_shader;
-	ID3D11PixelShader  *pixel_shader;
+    ID3D11InputLayout  *input_layout;
+    ID3D11VertexShader *vertex_shader;
+    ID3D11PixelShader  *pixel_shader;
 
-	ID3D11BlendState        *blend_state;
-	ID3D11SamplerState      *sampler;
-	ID3D11RasterizerState   *rasterizer_state;
-	ID3D11DepthStencilState *depth_state;
+    ID3D11BlendState        *blend_state;
+    ID3D11SamplerState      *sampler;
+    ID3D11RasterizerState   *rasterizer_state;
+    ID3D11DepthStencilState *depth_state;
 
-	ID3D11RenderTargetView  *render_target_view;
-	ID3D11DepthStencilView  *depth_stencil_view;
+    ID3D11RenderTargetView  *render_target_view;
+    ID3D11DepthStencilView  *depth_stencil_view;
 
-	DWORD current_width;
-	DWORD current_height;
+    DWORD current_width;
+    DWORD current_height;
 
-	D3D11_TextureUpdate *texture_update_queue;
-	U32 volatile texture_update_write_index;
-	U32 volatile texture_update_read_index;
+    D3D11_TextureUpdate *texture_update_queue;
+    U32 volatile texture_update_write_index;
+    U32 volatile texture_update_read_index;
 };
 
 internal Render_BackendContext *render_backend_init(Render_Context *renderer);

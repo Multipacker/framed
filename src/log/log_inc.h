@@ -4,32 +4,32 @@
 typedef enum Log_Level Log_Level;
 enum Log_Level
 {
-	Log_Level_Info,
-	Log_Level_Warning,
-	Log_Level_Error,
-	Log_Level_Trace,
+    Log_Level_Info,
+    Log_Level_Warning,
+    Log_Level_Error,
+    Log_Level_Trace,
 
-	Log_Level_COUNT,
+    Log_Level_COUNT,
 };
 
 // TODO(simon): Do all of these fields really need to be marked volatile?
 typedef struct Log_QueueEntry Log_QueueEntry;
 struct Log_QueueEntry
 {
-	B32       volatile is_valid;
-	DateTime  volatile time;
-	Log_Level volatile level;
-	U8        volatile thread_name[THREAD_CONTEXT_NAME_SIZE];
-	CStr      volatile file;
-	U32       volatile line;
-	U8        volatile message[256];
+    B32       volatile is_valid;
+    DateTime  volatile time;
+    Log_Level volatile level;
+    U8        volatile thread_name[THREAD_CONTEXT_NAME_SIZE];
+    CStr      volatile file;
+    U32       volatile line;
+    U8        volatile message[256];
 };
 
 typedef struct Log_EntryBuffer Log_EntryBuffer;
 struct Log_EntryBuffer
 {
-	Log_QueueEntry *buffer;
-	U32 volatile count;
+    Log_QueueEntry *buffer;
+    U32 volatile count;
 };
 
 internal Void log_init(Str8 log_file);

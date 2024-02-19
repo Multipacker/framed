@@ -6,11 +6,11 @@
 typedef enum OS_SystemPath OS_SystemPath;
 enum OS_SystemPath
 {
-	OS_SystemPath_CurrentDirectory,
-	OS_SystemPath_Binary,
-	OS_SystemPath_UserData,
-	OS_SystemPath_TemporaryData,
-	OS_SystemPath_COUNT,
+    OS_SystemPath_CurrentDirectory,
+    OS_SystemPath_Binary,
+    OS_SystemPath_UserData,
+    OS_SystemPath_TemporaryData,
+    OS_SystemPath_COUNT,
 };
 
 // NOTE(simon): Determines what happens if a file already exists when trying to
@@ -18,38 +18,38 @@ enum OS_SystemPath
 typedef enum OS_FileMode OS_FileMode;
 enum OS_FileMode
 {
-	OS_FileMode_Fail,
-	OS_FileMode_Replace,
-	OS_FileMode_Append,
+    OS_FileMode_Fail,
+    OS_FileMode_Replace,
+    OS_FileMode_Append,
 
-	OS_FileMode_COUNT,
+    OS_FileMode_COUNT,
 };
 
 typedef struct OS_File OS_File;
 struct OS_File
 {
-	U64 u64[1];
+    U64 u64[1];
 };
 
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
-	U8 data[1024];
+    U8 data[1024];
 };
 
 typedef struct OS_Library OS_Library;
 struct OS_Library
 {
-	U64 u64[1];
+    U64 u64[1];
 };
 
 typedef struct OS_CircularBuffer OS_CircularBuffer;
 struct OS_CircularBuffer
 {
-	U8 *data;
-	U64 size;
-	U64 repeat_count;
-	U64 handle;
+    U8 *data;
+    U64 size;
+    U64 repeat_count;
+    U64 handle;
 };
 
 typedef struct OS_Semaphore OS_Semaphore;
