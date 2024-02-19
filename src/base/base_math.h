@@ -318,36 +318,36 @@ internal B32     rectf32_contains_v2f32(RectF32 container, Vec2F32 tested);
 internal B32     rectf32_overlaps(RectF32 a, RectF32 b);
 internal RectF32 rectf32_intersect_rectf32(RectF32 cookie, RectF32 cutter);
 
-global S8  S8_MIN  = (S8) 0x80;
-global S16 S16_MIN = (S16) 0x8000;
-global S32 S32_MIN = (S32) 0x80000000;
-global S64 S64_MIN = (S64) 0x8000000000000000ll;
+read_only global S8  S8_MIN  = (S8) 0x80;
+read_only global S16 S16_MIN = (S16) 0x8000;
+read_only global S32 S32_MIN = (S32) 0x80000000;
+read_only global S64 S64_MIN = (S64) 0x8000000000000000ll;
 
-global S8  S8_MAX  = 0x7F;
-global S16 S16_MAX = 0x7FFF;
-global S32 S32_MAX = 0x7FFFFFFF;
-global S64 S64_MAX = 0x7FFFFFFFFFFFFFFFll;
+read_only global S8  S8_MAX  = 0x7F;
+read_only global S16 S16_MAX = 0x7FFF;
+read_only global S32 S32_MAX = 0x7FFFFFFF;
+read_only global S64 S64_MAX = 0x7FFFFFFFFFFFFFFFll;
 
-global U8  U8_MAX  = 0xFF;
-global U16 U16_MAX = 0xFFFF;
-global U32 U32_MAX = 0xFFFFFFFF;
-global U64 U64_MAX = 0xFFFFFFFFFFFFFFFFllu;
-
-// TODO(simon): Update constants to more precise values.
-global F32 F32_EPSILON = 1.1920929e-7f;
-global F32 F32_PI      = 3.14159265359f;
-global F32 F32_TAU     = 6.28318530718f;
-global F32 F32_E       = 2.71828182846f;
-global U32 F32_BIAS    = 127;
-global F32 F32_MAX     = 3.402823466e+38F;
-global F32 F32_MIN     = 1.175494351e-38F;
+read_only global U8  U8_MAX  = 0xFF;
+read_only global U16 U16_MAX = 0xFFFF;
+read_only global U32 U32_MAX = 0xFFFFFFFF;
+read_only global U64 U64_MAX = 0xFFFFFFFFFFFFFFFFllu;
 
 // TODO(simon): Update constants to more precise values.
-global F64 F64_EPSILON = 2.220446e-16;
-global F64 F64_PI      = 3.141592653589793;
-global F64 F64_TAU     = 6.28318530718;
-global F64 F64_E       = 2.71828182846;
-global U32 F64_BIAS    = 1023;
+read_only global F32 F32_EPSILON = 1.1920929e-7f;
+read_only global F32 F32_PI      = 3.14159265359f;
+read_only global F32 F32_TAU     = 6.28318530718f;
+read_only global F32 F32_E       = 2.71828182846f;
+read_only global U32 F32_BIAS    = 127;
+read_only global F32 F32_MAX     = 3.402823466e+38F;
+read_only global F32 F32_MIN     = 1.175494351e-38F;
+
+// TODO(simon): Update constants to more precise values.
+read_only global F64 F64_EPSILON = 2.220446e-16;
+read_only global F64 F64_PI      = 3.141592653589793;
+read_only global F64 F64_TAU     = 6.28318530718;
+read_only global F64 F64_E       = 2.71828182846;
+read_only global U32 F64_BIAS    = 1023;
 
 internal U8 u8_min(U8 a, U8 b);
 internal U8 u8_max(U8 a, U8 b);
