@@ -268,12 +268,13 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 	//- hampus: Labels
 
-	F32 name_column_width_em = 15;
-	F32 cycles_column_width_em = 8;
-	F32 cycles_children_column_width_em = 12;
-	F32 hit_count_column_width_em = 8;
+	F32 name_column_width_pct = 0.25f;
+	F32 cycles_column_width_pct = 0.25f;
+	F32 cycles_children_column_width_pct = 0.25f;
+	F32 hit_count_column_width_pct = 0.25f;
 
-		#if 0
+#if 0
+	ui_spacer(ui_em(0.3f, 1));
 	ui_row()
 	{
 		ui_next_width(ui_em(name_column_width_em, 1));
@@ -309,7 +310,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 	//- hampus: Counter values
 
-	ui_spacer(ui_em(0.3f, 1));
 	for (U64 i = 0; i < array_count(zone_blocks); ++i)
 	{
 		ZoneBlock *zone_block = zone_blocks + i;
@@ -382,11 +382,14 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 		}
 	}
 
+	ui_next_width(ui_fill());
+	ui_next_height(ui_fill());
 	ui_row()
 	{
 		//- hampus: Name
 
-		ui_next_width(ui_em(name_column_width_em, 1));
+		ui_next_width(ui_pct(name_column_width_pct, 0));
+		ui_next_extra_box_flags(UI_BoxFlag_Clip);
 		ui_column()
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -396,6 +399,14 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 				ui_next_text_align(UI_TextAlign_Left);
 				ui_text(str8_lit("Name"));
 			}
+
+			ui_spacer(ui_em(0.3f, 1));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pixels(1, 1));
+			ui_next_corner_radius(0);
+			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			ui_spacer(ui_em(0.3f, 1));
 
@@ -413,7 +424,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 		//- hampus: Cycles without children
 
-		ui_next_width(ui_em(cycles_column_width_em, 1));
+		ui_next_width(ui_pct(cycles_column_width_pct, 0));
+		ui_next_extra_box_flags(UI_BoxFlag_Clip);
 		ui_column()
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -425,6 +437,15 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 			}
 
 			ui_spacer(ui_em(0.3f, 1));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pixels(1, 1));
+			ui_next_corner_radius(0);
+			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+			ui_spacer(ui_em(0.3f, 1));
+
 			ui_text_align(UI_TextAlign_Right)
 				ui_width(ui_pct(1, 1))
 			{
@@ -443,7 +464,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 		//- hampus: Cycles with children
 
-		ui_next_width(ui_em(cycles_children_column_width_em, 1));
+		ui_next_width(ui_pct(cycles_children_column_width_pct, 0));
+		ui_next_extra_box_flags(UI_BoxFlag_Clip);
 		ui_column()
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -453,6 +475,14 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 				ui_next_text_align(UI_TextAlign_Left);
 				ui_text(str8_lit("Cycles w/ children"));
 			}
+
+			ui_spacer(ui_em(0.3f, 1));
+
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pixels(1, 1));
+			ui_next_corner_radius(0);
+			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
 			ui_spacer(ui_em(0.3f, 1));
 
@@ -474,7 +504,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 		//- hampus: Hit count
 
-		ui_next_width(ui_em(hit_count_column_width_em, 1));
+		ui_next_width(ui_pct(hit_count_column_width_pct, 0));
+		ui_next_extra_box_flags(UI_BoxFlag_Clip);
 		ui_column()
 		{
 			ui_next_width(ui_pct(1, 1));
@@ -487,6 +518,14 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
 			ui_spacer(ui_em(0.3f, 1));
 
+			ui_next_width(ui_pct(1, 1));
+			ui_next_height(ui_pixels(1, 1));
+			ui_next_corner_radius(0);
+			ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+			ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+			ui_spacer(ui_em(0.3f, 1));
+
 			ui_text_align(UI_TextAlign_Right)
 				ui_width(ui_pct(1, 1))
 			{
@@ -496,13 +535,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 			}
 			}
 		}
-
-		ui_next_width(ui_pixels(1, 1));
-		ui_next_height(ui_em(60, 1));
-		ui_next_corner_radius(0);
-		ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-		ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
 	}
 
 	#endif

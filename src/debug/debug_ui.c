@@ -244,7 +244,6 @@ ui_logger(LogUI_State *state)
 			--state->has_new_entries;
 		}
 
-		ui_push_font(str8_lit("data/fonts/liberation-mono.ttf"));
 		ui_push_font_size(11);
 
 		for (U32 i = 0; i < state->entry_count; ++i)
@@ -297,7 +296,6 @@ ui_logger(LogUI_State *state)
 			}
 		}
 
-		ui_pop_font();
 		ui_pop_font_size();
 		ui_pop_scrollable_region();
 	}
