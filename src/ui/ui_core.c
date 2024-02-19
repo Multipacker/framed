@@ -1153,7 +1153,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 
     UI_TextStyle *text_style = ui_push_text_style();
     text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-    text_style->font = str8_lit("data/fonts/Inter-Regular.ttf");
+    text_style->font = str8_lit("data/fonts/NotoSansMono-Medium.ttf");
     text_style->font_size = 15;
 
     text_style->padding.v[Axis2_X] = (F32) ui_top_font_line_height();
