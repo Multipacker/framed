@@ -184,6 +184,7 @@ enum
 framed_packed(typedef struct PacketHeader PacketHeader);
 framed_packed(struct PacketHeader
               {
+                  Framed_U16 packet_size;
                   Framed_PacketKind kind;
                   Framed_U64 tsc;
               });
@@ -201,7 +202,7 @@ FRAMED_DEF void framed_zone_end_(void);
 #include <string.h>
 #include <stdlib.h>
 
-#define framed__assert(expr)
+#define framed__assert(expr) if (!(expr)) { *(int *)0 = 0; }
 
 #define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
 
@@ -277,6 +278,10 @@ framed__socket_init(Framed_B32 wait_for_connection)
     // TODO(hampus): Make use of `wait_for_connection`. It is always
     // waiting for now.
     int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
+    int flag = 1;
+
+    // NOTE(hampus): Disable nagle's algorithm
+    setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
 }
 
 static void
@@ -284,6 +289,8 @@ framed__socket_send(void)
 {
     Framed_State *framed = &global_framed_state;
     SOCKET sock = (SOCKET) framed->socket.u64[0];
+    Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
+    *packet_size = (Framed_U16)framed->buffer_pos;
     int error = send(sock, (char *) framed->buffer, (int) framed->buffer_pos, 0);
 }
 
@@ -389,8 +396,8 @@ framed_mark_frame_start_(void)
 
     framed_packed(typedef struct Packet Packet);
     framed_packed(struct Packet
-    {
-        PacketHeader header;
+                  {
+                      PacketHeader header;
                   });
 
     Framed_U64 entry_size = sizeof(Packet);
@@ -398,7 +405,7 @@ framed_mark_frame_start_(void)
 
     Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
     packet->header.kind = Framed_PacketKind_FrameStart;
-    packet->header.tsc= framed__rdtsc();
+    packet->header.tsc = framed__rdtsc();
 
     framed->buffer_pos += entry_size;
 }
@@ -410,10 +417,10 @@ framed_zone_begin_(char *name)
 
     framed_packed(typedef struct Packet Packet);
     framed_packed(struct Packet
-    {
-        PacketHeader header;
-        Framed_U64 name_length;
-        Framed_U8 name[];
+                  {
+                      PacketHeader header;
+                      Framed_U64 name_length;
+                      Framed_U8 name[];
                   });
 
     Framed_U64 length  = strlen(name);
@@ -438,8 +445,8 @@ framed_zone_end_(void)
 
     framed_packed(typedef struct Packet Packet);
     framed_packed(struct Packet
-    {
-        PacketHeader header;
+                  {
+                      PacketHeader header;
                   });
 
     Framed_U64 entry_size = sizeof(Packet);
