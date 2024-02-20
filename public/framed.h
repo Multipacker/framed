@@ -320,6 +320,8 @@ framed__socket_send(void)
 {
     Framed_State *framed = &global_framed_state;
     int linux_socket = (int) framed->socket.u64[0];
+    Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
+    *packet_size = (Framed_U16)framed->buffer_pos;
     int error = 0;
     do
     {
