@@ -795,11 +795,13 @@ os_main(Str8List arguments)
                     {
                         case Framed_PacketKind_FrameStart:
                         {
-                            framed_packed(typedef struct Packet Packet);
-                            framed_packed(struct Packet
-                                          {
-                                              PacketHeader header;
-                                          });
+#pragma pack(push, 0)
+                            typedef struct Packet Packet;
+                            struct Packet
+                            {
+                                PacketHeader header;
+                            };
+#pragma pack(pop)
 
                             //- hampus: Save the last frame's data and produce a fresh captured frame
 
@@ -832,13 +834,15 @@ os_main(Str8List arguments)
                         } break;
                         case Framed_PacketKind_ZoneBegin:
                         {
-                            framed_packed(typedef struct Packet Packet);
-                            framed_packed(struct Packet
-                                          {
-                                              PacketHeader header;
-                                              Framed_U64 name_length;
-                                              Framed_U8 name[];
-                                          });
+#pragma pack(push, 0)
+                            typedef struct Packet Packet;
+                            struct Packet
+                            {
+                                PacketHeader header;
+                                Framed_U64 name_length;
+                                Framed_U8 name[];
+                            };
+#pragma pack(pop)
 
                             Packet *packet = (Packet *) header;
 
@@ -858,11 +862,13 @@ os_main(Str8List arguments)
                         } break;
                         case Framed_PacketKind_ZoneEnd:
                         {
-                            framed_packed(typedef struct Packet Packet);
-                            framed_packed(struct Packet
-                                          {
-                                              PacketHeader header;
-                                          });
+#pragma pack(push, 0)
+                            typedef struct Packet Packet;
+                            struct Packet
+                            {
+                                PacketHeader header;
+                            };
+#pragma pack(pop)
 
                             Packet *packet = (Packet *) header;
 

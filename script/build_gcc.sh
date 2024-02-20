@@ -11,7 +11,7 @@ mkdir -p build
 src_files="src/framed/framed_main.c"
 out_file="build/framed"
 errors="-Werror -Wall -Wextra -Wno-missing-braces -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable -Wconversion -Wno-comment -Wno-array-bounds -Wno-missing-field-initializers"
-common_flags="-Isrc -Ivendor -Ivendor/freetype/include -o $out_file -DRENDERER_OPENGL=1 -pthread"
+common_flags="-I. -Isrc -Ivendor -Ivendor/freetype/include -o $out_file -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-lm -lSDL2 build/freetype/freetype"
 
 if [ "$mode" == "debug" ]; then
