@@ -204,6 +204,21 @@ net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 }
 
 internal Net_RecieveResult
+net_socket_peek(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
+{
+    Net_RecieveResult result = {0};
+    SOCKET sock = (SOCKET) connected_socket.u64[0];
+    int bytes_recieved = recv(sock, (char *) buffer, (int) buffer_size, MSG_PEEK);
+    net_win32_assert(bytes_recieved != SOCKET_ERROR);
+    if (bytes_recieved == SOCKET_ERROR)
+    {
+        bytes_recieved = 0;
+    }
+    result.bytes_recieved = bytes_recieved;
+    return(result);
+}
+
+internal Net_RecieveResult
 net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
     Net_RecieveResult result = {0};
