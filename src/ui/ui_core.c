@@ -344,10 +344,7 @@ ui_text_action_from_event(Gfx_Event *event)
     }
     else if (event->kind == Gfx_EventKind_Char)
     {
-        if (event->character >= ' ' && event->character <= '~')
-        {
-            result.character = (U8) event->character;
-        }
+        result.codepoint = event->character;
     }
 
     return(result);
@@ -439,9 +436,49 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
     }
     else
     {
-        // TODO(simon): Move by codepoints.
-        delta = s64_clamp(-state->cursor, delta, (S64) edit_str.size - state->cursor + 1);
-        result.new_cursor += delta;
+        if (-delta >= (S64) edit_str.size)
+        {
+            result.new_cursor = 0;
+        }
+        else if (delta >= (S64) edit_str.size)
+        {
+            result.new_cursor = (S64) edit_str.size + 1;
+        }
+        else if (delta < 0)
+        {
+            for (S64 i = 0; i < -delta; ++i)
+            {
+                U8 *ptr = &edit_str.data[result.new_cursor];
+                if (ptr > edit_str.data)
+                {
+                    --ptr;
+                    while (ptr > edit_str.data && 0x80 <= *ptr && *ptr <= 0xBF)
+                    {
+                        --ptr;
+                    }
+                }
+
+                result.new_cursor = (S64) (ptr - edit_str.data);
+            }
+        }
+        else if (delta > 0)
+        {
+            for (S64 i = 0; i < delta; ++i)
+            {
+                U8 *ptr = &edit_str.data[result.new_cursor];
+                U8 *opl = &edit_str.data[edit_str.size];
+                if (ptr < opl)
+                {
+                    ++ptr;
+                    while (ptr < opl && 0x80 <= *ptr && *ptr <= 0xBF)
+                    {
+                        ++ptr;
+                    }
+                }
+
+                result.new_cursor = (S64) (ptr - edit_str.data);
+            }
+        }
     }
 
     if (action->flags & UI_TextActionFlag_Copy)
@@ -465,11 +502,11 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
         }
     }
 
-    if (action->character)
+    if (action->codepoint)
     {
         // NOTE(simon): Allocate enough space for encoding the longest Unicode codepoint in UTF-8.
         result.replace_string.data = push_array(arena, U8, 4);
-        result.replace_string.size = string_encode_utf8(result.replace_string.data, action->character);
+        result.replace_string.size = string_encode_utf8(result.replace_string.data, action->codepoint);
         result.range = v2s64(result.new_cursor, result.new_mark);
         if (state->cursor > state->mark)
         {
