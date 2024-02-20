@@ -228,7 +228,7 @@ static Framed_State global_framed_state;
 // NOTE: Socket implementation
 
 static Framed_U16
-framed__u16_big_to_local_endian(Framed_U16 x)
+framed__u16_byte_swap(Framed_U16 x)
 {
 #if FRAMED_COMPILER_CL
     return _byteswap_ushort(x);
@@ -240,7 +240,7 @@ framed__u16_big_to_local_endian(Framed_U16 x)
 }
 
 static Framed_U32
-framed__u32_big_to_local_endian(Framed_U32 x)
+framed__u32_byte_swap(Framed_U32 x)
 {
 #if FRAMED_COMPILER_CL
     return _byteswap_ulong(x);
@@ -272,7 +272,7 @@ framed__socket_init(Framed_B32 wait_for_connection)
     sockaddrin.sin_addr.S_un.S_un_b.s_b2 = 0;
     sockaddrin.sin_addr.S_un.S_un_b.s_b3 = 0;
     sockaddrin.sin_addr.S_un.S_un_b.s_b4 = 1;
-    sockaddrin.sin_port = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
+    sockaddrin.sin_port = framed__u16_byte_swap(FRAMED_DEFAULT_PORT);
     sockaddrin.sin_family = AF_INET;
     // TODO(hampus): Make use of `wait_for_connection`. It is always
     // waiting for now.
@@ -301,8 +301,8 @@ framed__socket_init(Framed_B32 wait_for_connection)
     framed->socket.u64[0] = (Framed_U64) linux_socket;
     struct sockaddr_in socket_address = {0};
     socket_address.sin_family      = AF_INET;
-    socket_address.sin_port        = framed__u16_big_to_local_endian(FRAMED_DEFAULT_PORT);
-    socket_address.sin_addr.s_addr = framed__u32_big_to_local_endian(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
+    socket_address.sin_port        = framed__u16_byte_swap(FRAMED_DEFAULT_PORT);
+    socket_address.sin_addr.s_addr = framed__u32_byte_swap(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
     // TODO(simon): Use `wait_for_connection`
     int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
     if (error == -1)
@@ -387,11 +387,11 @@ framed_mark_frame_start_(void)
 {
     Framed_State *framed = &global_framed_state;
 
-    typedef struct Packet Packet;
-    struct Packet
+    framed_packed(typedef struct Packet Packet);
+    framed_packed(struct Packet
     {
         PacketHeader header;
-    };
+                  });
 
     Framed_U64 entry_size = sizeof(Packet);
     framed__ensure_space(entry_size);
@@ -408,13 +408,13 @@ framed_zone_begin_(char *name)
 {
     Framed_State *framed = &global_framed_state;
 
-    typedef struct Packet Packet;
-    struct Packet
+    framed_packed(typedef struct Packet Packet);
+    framed_packed(struct Packet
     {
         PacketHeader header;
         Framed_U64 name_length;
         Framed_U8 name[];
-    };
+                  });
 
     Framed_U64 length  = strlen(name);
     framed__assert(length != 0);
@@ -436,11 +436,11 @@ framed_zone_end_(void)
 {
     Framed_State *framed = &global_framed_state;
 
-    typedef struct Packet Packet;
-    struct Packet
+    framed_packed(typedef struct Packet Packet);
+    framed_packed(struct Packet
     {
         PacketHeader header;
-    };
+                  });
 
     Framed_U64 entry_size = sizeof(Packet);
     framed__ensure_space(entry_size);

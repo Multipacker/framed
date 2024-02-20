@@ -52,12 +52,21 @@ struct ZoneStack
     U64 tsc_elapsed_children;
 };
 
-global ZoneBlock zone_blocks[4096] = {0};
-global ZoneBlock *current_zone_block = zone_blocks;
+typedef struct ProfilingState ProfilingState;
+struct ProfilingState
+{
+    U64 prev_frame_tsc;
+        ZoneBlock prev_zone_blocks[4096];
 
-// NOTE(simon): Don't nest more than 1024 blocks, please
-global ZoneStack zone_stack[1024] = {0};
-global U32 zone_stack_size = 1;
+    ZoneBlock zone_blocks[4096];
+
+    ZoneStack zone_stack[1024];
+    U32 zone_stack_size;
+    U64 frame_begin_tsc;
+    U64 frame_end_tsc;
+};
+
+global ProfilingState *profiling_state;
 
 ////////////////////////////////
 //~ hampus: Tab views
@@ -237,18 +246,18 @@ internal ZoneBlock *
 framed_get_zone_block(Arena *arena, Str8 name)
 {
     U64 hash = hash_str8(name);
-    U64 slot_index = hash % array_count(zone_blocks);
-    while (zone_blocks[slot_index].name.data)
+    U64 slot_index = hash % array_count(profiling_state->zone_blocks);
+    while (profiling_state->zone_blocks[slot_index].name.data)
     {
-        if (str8_equal(zone_blocks[slot_index].name, name))
+        if (str8_equal(profiling_state->zone_blocks[slot_index].name, name))
         {
             break;
         }
 
-        slot_index = (slot_index + 1) % array_count(zone_blocks);
+        slot_index = (slot_index + 1) % array_count(profiling_state->zone_blocks);
     }
 
-    ZoneBlock *result = &zone_blocks[slot_index];
+    ZoneBlock *result = &profiling_state->zone_blocks[slot_index];
 
     if (!result->name.data)
     {
@@ -363,10 +372,10 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     U64 counter_values_count = 0;
     CounterValues *counter_values = push_struct(scratch.arena, CounterValues);
 
-    for (U64 i = 0; i < array_count(zone_blocks); ++i)
+    for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
     {
-        ZoneBlock *zone_block = zone_blocks + i;
-        if (zone_block->tsc_elapsed)
+        ZoneBlock *zone_block = profiling_state->prev_zone_blocks + i;
+        if (zone_block->name.size)
         {
             U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
             U64 tsc_with_children = zone_block->tsc_elapsed_root;
@@ -377,6 +386,14 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             counter_values_count++;
         }
     }
+
+    U64 tsc_total = profiling_state->prev_frame_tsc;
+
+            ui_spacer(ui_em(0.3f, 1));
+
+    ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
+
+            ui_spacer(ui_em(0.3f, 1));
 
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
@@ -447,7 +464,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
             for (U64 i = 0; i < counter_values_count; ++i)
             {
-                ui_textf("%"PRIU64, counter_values->tsc_elapsed_without_children[i]);
+                    ui_textf("%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_without_children[i],  ((F32)counter_values->tsc_elapsed_without_children[i] / (F32)tsc_total) * 100.0f);
             }
             }
         }
@@ -487,7 +504,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
                 for (U64 i = 0; i < counter_values_count; ++i)
                 {
-                    ui_textf("%"PRIU64, counter_values->tsc_elapsed_with_children[i]);
+                    ui_textf("%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_with_children[i],  ((F32)counter_values->tsc_elapsed_with_children[i] / (F32)tsc_total) * 100.0f);
                 }
             }
         }
@@ -567,6 +584,26 @@ os_main(Str8List arguments)
         image_texture = render_create_texture_slice(renderer, str8_lit("data/16.png"));
     }
 
+    ////////////////////////////////
+    //- hampus: Initialize profiling state
+
+    profiling_state = push_struct(perm_arena, ProfilingState);
+    profiling_state->zone_stack_size = 1;
+
+    //- hampus: Allocate listen socket
+
+    net_socket_init();
+    Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
+    Net_Address address =
+    {
+        .ip.u8[0] = 127,
+        .ip.u8[1] = 0,
+        .ip.u8[2] = 0,
+        .ip.u8[3] = 1,
+        .port = 1234,
+    };
+    net_socket_bind(socket, address);;
+    net_socket_set_blocking_mode(socket, false);
 
     ////////////////////////////////
     //- hampus: Initialize UI
@@ -616,22 +653,6 @@ os_main(Str8List arguments)
     //- hampus: Initialize UI settings
 
     framed_ui_state->settings.font_size = 12;
-
-    ////////////////////////////////
-    //- hampus: Initialize listen socket
-
-    net_socket_init();
-    Net_Socket socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
-    Net_Address address =
-    {
-        .ip.u8[0] = 127,
-        .ip.u8[1] = 0,
-        .ip.u8[2] = 0,
-        .ip.u8[3] = 1,
-        .port = 1234,
-    };
-    net_socket_bind(socket, address);;
-    net_socket_set_blocking_mode(socket, false);
 
     gfx_set_window_maximized(&gfx);
     gfx_show_window(&gfx);
@@ -734,7 +755,7 @@ os_main(Str8List arguments)
             {
                 log_info("Connected to client");
                 net_socket_set_blocking_mode(accept_result.socket, false);
-                memory_zero_array(zone_blocks);
+                memory_zero_array(profiling_state->zone_blocks);
             }
         }
 
@@ -763,11 +784,32 @@ os_main(Str8List arguments)
                             PacketHeader header;
                         };
 
+                        //- hampus: Save the last frame's data
+
+                        profiling_state->frame_end_tsc = header->tsc;
+
+                        profiling_state->prev_frame_tsc = profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
+                        // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
+                        // But this is simple and easdy and works for now.
+                        memory_copy_array(profiling_state->prev_zone_blocks, profiling_state->zone_blocks);
+
+                        //- hampus: Zero out the new zone stats and begin a new frame
+
+                        for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
+                        {
+                            ZoneBlock *zone_block = profiling_state->zone_blocks + i;
+                            zone_block->tsc_elapsed = 0;
+                            zone_block->tsc_elapsed_root = 0;
+                            zone_block->tsc_elapsed_children = 0;
+                            zone_block->hit_count = 0;
+                        }
+
+                        profiling_state->frame_begin_tsc = header->tsc;
+
                         buffer_pointer += sizeof(Packet);
                     } break;
                     case Framed_PacketKind_ZoneBegin:
                     {
-
                         typedef struct Packet Packet;
                         struct Packet
                         {
@@ -780,8 +822,8 @@ os_main(Str8List arguments)
 
                         Str8 name = str8(packet->name, packet->name_length);
 
-                        assert(zone_stack_size < array_count(zone_stack));
-                        ZoneStack *opening = &zone_stack[zone_stack_size++];
+                        assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
+                        ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
                         memory_zero_struct(opening);
 
                         ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
@@ -794,7 +836,6 @@ os_main(Str8List arguments)
                     } break;
                     case Framed_PacketKind_ZoneEnd:
                     {
-
                         typedef struct Packet Packet;
                         struct Packet
                         {
@@ -803,7 +844,7 @@ os_main(Str8List arguments)
 
                         Packet *packet = (Packet *) header;
 
-                        ZoneStack *opening = &zone_stack[--zone_stack_size];
+                        ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
                         ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
 
                         U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
@@ -812,7 +853,7 @@ os_main(Str8List arguments)
                         zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
                         zone->tsc_elapsed_children += opening->tsc_elapsed_children;
                         ++zone->hit_count;
-                        zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+                        profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
 
                         buffer_pointer += sizeof(Packet);
                     } break;
