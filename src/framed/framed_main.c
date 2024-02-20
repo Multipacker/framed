@@ -778,11 +778,11 @@ os_main(Str8List arguments)
                 {
                     case Framed_PacketKind_FrameStart:
                     {
-                        typedef struct Packet Packet;
-                        struct Packet
+                        framed_packed(typedef struct Packet Packet);
+                        framed_packed(struct Packet
                         {
                             PacketHeader header;
-                        };
+                                                     });
 
                         //- hampus: Save the last frame's data
 
@@ -810,13 +810,13 @@ os_main(Str8List arguments)
                     } break;
                     case Framed_PacketKind_ZoneBegin:
                     {
-                        typedef struct Packet Packet;
-                        struct Packet
+                        framed_packed(typedef struct Packet Packet);
+                        framed_packed(struct Packet
                         {
                             PacketHeader header;
                             Framed_U64 name_length;
                             Framed_U8 name[];
-                        };
+                                      });
 
                         Packet *packet = (Packet *) header;
 
@@ -836,11 +836,11 @@ os_main(Str8List arguments)
                     } break;
                     case Framed_PacketKind_ZoneEnd:
                     {
-                        typedef struct Packet Packet;
-                        struct Packet
+                        framed_packed(typedef struct Packet Packet);
+                        framed_packed(struct Packet
                         {
                             PacketHeader header;
-                        };
+                                      });
 
                         Packet *packet = (Packet *) header;
 

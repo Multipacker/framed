@@ -205,7 +205,7 @@ FRAMED_DEF void framed_zone_end_(void);
 
 #define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
 
-#define FRAMED_BUFFER_CAPACITY (256)
+#define FRAMED_BUFFER_CAPACITY (512)
 #define FRAMED_DEFAULT_PORT (1234)
 
 typedef struct Framed_Socket Framed_Socket;
