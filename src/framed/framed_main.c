@@ -564,11 +564,10 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     release_scratch(scratch);
 }
 
-void
-ZoneProcessThread(void *data)
+Void
+ZoneProcessThread(Void *data)
 {
     ThreadContext *tctx = thread_ctx_init(str8_lit("ZoneProcess"));
-
     Arena *arena = arena_create("ZoneProcessArena");
 
     //- hampus: Gather & process data from client
@@ -577,6 +576,7 @@ ZoneProcessThread(void *data)
     {
         if (net_socket_connection_is_alive(profiling_state->client_socket))
         {
+            // NOTE(hampus): We currently peek and process one packet at a time.
             U16 buffer_size = 0;
             Net_RecieveResult peek_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
             while (peek_result.bytes_recieved)
@@ -601,12 +601,11 @@ ZoneProcessThread(void *data)
                                               PacketHeader header;
                                           });
 
-                            //- hampus: Save the last frame's data and make a captured frame
-
-                            CapturedFrame *frame = &profiling_state->latest_captured_frame;
+                            //- hampus: Save the last frame's data and produce a fresh captured frame
 
                             profiling_state->frame_end_tsc = header->tsc;
 
+                            CapturedFrame *frame = &profiling_state->latest_captured_frame;
                             frame->total_tsc = profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
                             // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
                             // But this is simple and easy and works for now.
@@ -617,6 +616,10 @@ ZoneProcessThread(void *data)
 
                             //- hampus: Clear the new zone stats and begin a new frame
 
+                            memory_zero_array(profiling_state->zone_blocks);
+
+                            // NOTE(hampus): Keep the name so the display gets less messy
+                            // from counters jumping everywhere
                             for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
                             {
                                 ZoneBlock *zone_block = profiling_state->zone_blocks + i;
