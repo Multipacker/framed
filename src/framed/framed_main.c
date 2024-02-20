@@ -28,6 +28,8 @@
 // NOTE(hampus): A global frame counter that everyone can read from
 global U64 framed_frame_counter;
 
+#include "public/framed.h"
+
 #include "framed/framed_ui.h"
 #include "framed/framed_ui.c"
 
@@ -48,14 +50,6 @@ struct ZoneStack
     U64 tsc_start;
     U64 old_tsc_elapsed_root;
     U64 tsc_elapsed_children;
-};
-
-typedef struct ZoneBlockPacket ZoneBlockPacket;
-struct ZoneBlockPacket
-{
-    U64 tsc;
-    U64 name_length;
-    U8 name[256];
 };
 
 global ZoneBlock zone_blocks[4096] = {0};
@@ -744,7 +738,7 @@ os_main(Str8List arguments)
             }
         }
 
-        //- hampus: Gather zone data from client
+        //- hampus: Gather data from client
 
         if (net_socket_connection_is_alive(accept_result.socket))
         {
@@ -757,37 +751,72 @@ os_main(Str8List arguments)
             while (buffer_pointer < buffer_opl)
             {
                 // TODO(simon): Make sure we don't try to read past the end of the buffer.
-                ZoneBlockPacket *packet = (ZoneBlockPacket *) buffer_pointer;
-                buffer_pointer += packet->name_length + sizeof(U64)*2;
+                PacketHeader *header = (PacketHeader *) buffer_pointer;
 
-                B32 opening_block = packet->name_length != 0;
-                if (opening_block)
+                switch (header->kind)
                 {
-                    Str8 name = str8(packet->name, packet->name_length);
+                    case Framed_PacketKind_FrameStart:
+                    {
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                        };
 
-                    assert(zone_stack_size < array_count(zone_stack));
-                    ZoneStack *opening = &zone_stack[zone_stack_size++];
-                    memory_zero_struct(opening);
+                        buffer_pointer += sizeof(Packet);
+                    } break;
+                    case Framed_PacketKind_ZoneBegin:
+                    {
 
-                    ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                            Framed_U64 name_length;
+                            Framed_U8 name[];
+                        };
 
-                    opening->name = zone->name;
-                    opening->tsc_start = packet->tsc;
-                    opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
-                }
-                // NOTE(simon): If we haven't opened any zones, skip closing events
-                else
-                {
-                    ZoneStack *opening = &zone_stack[--zone_stack_size];
-                    ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
+                        Packet *packet = (Packet *) header;
 
-                    U64 tsc_elapsed = packet->tsc - opening->tsc_start;
+                        Str8 name = str8(packet->name, packet->name_length);
 
-                    zone->tsc_elapsed += tsc_elapsed;
-                    zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
-                    zone->tsc_elapsed_children += opening->tsc_elapsed_children;
-                    ++zone->hit_count;
-                    zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+                        assert(zone_stack_size < array_count(zone_stack));
+                        ZoneStack *opening = &zone_stack[zone_stack_size++];
+                        memory_zero_struct(opening);
+
+                        ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
+
+                        opening->name = zone->name;
+                        opening->tsc_start = packet->header.tsc;
+                        opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
+
+                        buffer_pointer += sizeof(Packet) + packet->name_length;
+                    } break;
+                    case Framed_PacketKind_ZoneEnd:
+                    {
+
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                        };
+
+                        Packet *packet = (Packet *) header;
+
+                        ZoneStack *opening = &zone_stack[--zone_stack_size];
+                        ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
+
+                        U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
+
+                        zone->tsc_elapsed += tsc_elapsed;
+                        zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
+                        zone->tsc_elapsed_children += opening->tsc_elapsed_children;
+                        ++zone->hit_count;
+                        zone_stack[zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+
+                        buffer_pointer += sizeof(Packet);
+                    } break;
+                    invalid_case;
                 }
             }
             release_scratch(scratch);
