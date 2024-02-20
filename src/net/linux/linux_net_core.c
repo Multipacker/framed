@@ -233,6 +233,20 @@ net_socket_recieve(Net_Socket socket, U8 *buffer, U64 buffer_size)
 }
 
 internal Net_RecieveResult
+net_socket_peek(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
+{
+    Net_RecieveResult result = { 0 };
+    int linux_socket = (int) connected_socket.u32[0];
+    ssize_t bytes_recieved = recv(linux_socket, buffer, (size_t) buffer_size, MSG_PEEK);
+    if (bytes_recieved == -1)
+    {
+        bytes_recieved = 0;
+    }
+    result.bytes_recieved = (U64) bytes_recieved;
+    return(result);
+}
+
+internal Net_RecieveResult
 net_socket_recieve_from(Net_Socket socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
     Net_RecieveResult result = { 0 };
