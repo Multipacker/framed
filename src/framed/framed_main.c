@@ -542,16 +542,6 @@ os_main(Str8List arguments)
     frame_arenas[0] = arena_create("MainFrame0");
     frame_arenas[1] = arena_create("MainFrame1");
 
-    Render_TextureSlice image_texture = {0};
-    if (arguments.first->next)
-    {
-        image_texture = render_create_texture_slice(renderer, arguments.first->next->string);
-    }
-    else
-    {
-        image_texture = render_create_texture_slice(renderer, str8_lit("data/16.png"));
-    }
-
     ////////////////////////////////
     //- hampus: Initialize profiling state
 
