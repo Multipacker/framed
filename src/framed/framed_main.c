@@ -380,190 +380,202 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     F32 cycles_children_column_width_pct = 0.25f;
     F32 hit_count_column_width_pct = 0.25f;
 
-    if (profiling_per_frame)
-    {
-        ui_spacer(ui_em(0.3f, 1));
-        ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
-    }
-
     ui_spacer(ui_em(0.3f, 1));
 
-    ui_next_width(ui_fill());
-    ui_next_height(ui_fill());
+    ui_next_width(ui_pct(1, 1.0f));
+    ui_next_height(ui_pct(1, 1.0f));
     ui_row()
     {
-        //- hampus: Name
-
-        ui_next_width(ui_pct(name_column_width_pct, 0));
-        ui_next_extra_box_flags(UI_BoxFlag_Clip);
-        ui_column()
+        ui_next_width(ui_em(50, 0.5f));
+        ui_next_height(ui_pct(1, 1.0f));
+        ui_row()
         {
-            ui_next_width(ui_pct(1, 1));
-            ui_row()
+            //- hampus: Name
+
+            ui_next_width(ui_pct(name_column_width_pct, 0));
+            ui_next_extra_box_flags(UI_BoxFlag_Clip);
+            ui_column()
             {
-                ui_next_width(ui_fill());
-                ui_next_text_align(UI_TextAlign_Left);
-                ui_text(str8_lit("Name"));
-            }
+                ui_next_width(ui_pct(1, 1));
+                ui_row()
+                {
+                    ui_next_width(ui_fill());
+                    ui_next_text_align(UI_TextAlign_Left);
+                    ui_text(str8_lit("Name"));
+                }
 
-            ui_spacer(ui_em(0.3f, 1));
+                ui_spacer(ui_em(0.3f, 1));
 
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_pixels(1, 1));
-            ui_next_corner_radius(0);
-            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_pixels(1, 1));
+                ui_next_corner_radius(0);
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-            ui_spacer(ui_em(0.3f, 1));
+                ui_spacer(ui_em(0.3f, 1));
 
-            for (U64 i = 0; i < counter_values_count; ++i)
-            {
-                ui_text(counter_values->name[i]);
-            }
-        }
-
-        ui_next_width(ui_pixels(1, 1));
-        ui_next_height(ui_em(60, 1));
-        ui_next_corner_radius(0);
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        //- hampus: Cycles without children
-
-        ui_next_width(ui_pct(cycles_column_width_pct, 0));
-        ui_next_extra_box_flags(UI_BoxFlag_Clip);
-        ui_column()
-        {
-            ui_next_width(ui_pct(1, 1));
-            ui_row()
-            {
-                ui_next_width(ui_fill());
-                ui_next_text_align(UI_TextAlign_Left);
-                ui_text(str8_lit("Cycles"));
-            }
-
-            ui_spacer(ui_em(0.3f, 1));
-
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_pixels(1, 1));
-            ui_next_corner_radius(0);
-            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-            ui_spacer(ui_em(0.3f, 1));
-
-            ui_text_align(UI_TextAlign_Right)
-                ui_width(ui_pct(1, 1))
-            {
                 for (U64 i = 0; i < counter_values_count; ++i)
                 {
-                    Str8 string = {0};
-                    if (profiling_per_frame)
-                    {
-                        string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_without_children[i],  ((F32)counter_values->tsc_elapsed_without_children[i] / (F32)tsc_total) * 100.0f);
-                    }
-                    else
-                    {
-                        string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_without_children[i]);
-                    }
-                    ui_text(string);
+                    ui_text(counter_values->name[i]);
                 }
             }
-        }
 
-        ui_next_width(ui_pixels(1, 1));
-        ui_next_height(ui_em(60, 1));
-        ui_next_corner_radius(0);
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        //- hampus: Cycles with children
-
-        ui_next_width(ui_pct(cycles_children_column_width_pct, 0));
-        ui_next_extra_box_flags(UI_BoxFlag_Clip);
-        ui_column()
-        {
-            ui_next_width(ui_pct(1, 1));
-            ui_row()
-            {
-                ui_next_width(ui_fill());
-                ui_next_text_align(UI_TextAlign_Left);
-                ui_text(str8_lit("Cycles w/ children"));
-            }
-
-            ui_spacer(ui_em(0.3f, 1));
-
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_pixels(1, 1));
+            ui_next_width(ui_pixels(1, 1));
+            ui_next_height(ui_em(60, 1));
             ui_next_corner_radius(0);
             ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
             ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-            ui_spacer(ui_em(0.3f, 1));
+            //- hampus: Cycles without children
 
-            ui_text_align(UI_TextAlign_Right)
-                ui_width(ui_pct(1, 1))
+            ui_next_width(ui_pct(cycles_column_width_pct, 0));
+            ui_next_extra_box_flags(UI_BoxFlag_Clip);
+            ui_column()
             {
-                for (U64 i = 0; i < counter_values_count; ++i)
+                ui_next_width(ui_pct(1, 1));
+                ui_row()
                 {
-                    Str8 string = {0};
-                    if (profiling_per_frame)
+                    ui_next_width(ui_fill());
+                    ui_next_text_align(UI_TextAlign_Left);
+                    ui_text(str8_lit("Cycles"));
+                }
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_pixels(1, 1));
+                ui_next_corner_radius(0);
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_text_align(UI_TextAlign_Right)
+                    ui_width(ui_pct(1, 1))
+                {
+                    for (U64 i = 0; i < counter_values_count; ++i)
                     {
-                        string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_with_children[i],  ((F32)counter_values->tsc_elapsed_with_children[i] / (F32)tsc_total) * 100.0f);
+                        Str8 string = {0};
+                        if (profiling_per_frame)
+                        {
+                            string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_without_children[i],  ((F32)counter_values->tsc_elapsed_without_children[i] / (F32)tsc_total) * 100.0f);
+                        }
+                        else
+                        {
+                            string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_without_children[i]);
+                        }
+                        ui_text(string);
                     }
-                    else
-                    {
-                        string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_with_children[i]);
-                    }
-                    ui_text(string);
                 }
             }
-        }
 
-        ui_next_width(ui_pixels(1, 1));
-        ui_next_height(ui_em(60, 1));
-        ui_next_corner_radius(0);
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        //- hampus: Hit count
-
-        ui_next_width(ui_pct(hit_count_column_width_pct, 0));
-        ui_next_extra_box_flags(UI_BoxFlag_Clip);
-        ui_column()
-        {
-            ui_next_width(ui_pct(1, 1));
-            ui_row()
-            {
-                ui_next_width(ui_fill());
-                ui_next_text_align(UI_TextAlign_Left);
-                ui_text(str8_lit("Hit count"));
-            }
-
-            ui_spacer(ui_em(0.3f, 1));
-
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_pixels(1, 1));
+            ui_next_width(ui_pixels(1, 1));
+            ui_next_height(ui_em(60, 1));
             ui_next_corner_radius(0);
             ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
             ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
-            ui_spacer(ui_em(0.3f, 1));
+            //- hampus: Cycles with children
 
-            ui_text_align(UI_TextAlign_Right)
-                ui_width(ui_pct(1, 1))
+            ui_next_width(ui_pct(cycles_children_column_width_pct, 0));
+            ui_next_extra_box_flags(UI_BoxFlag_Clip);
+            ui_column()
             {
-                for (U64 i = 0; i < counter_values_count; ++i)
+                ui_next_width(ui_pct(1, 1));
+                ui_row()
                 {
-                    ui_textf("%"PRIU64, counter_values->hit_count[i]);
+                    ui_next_width(ui_fill());
+                    ui_next_text_align(UI_TextAlign_Left);
+                    ui_text(str8_lit("Cycles w/ children"));
+                }
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_pixels(1, 1));
+                ui_next_corner_radius(0);
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_text_align(UI_TextAlign_Right)
+                    ui_width(ui_pct(1, 1))
+                {
+                    for (U64 i = 0; i < counter_values_count; ++i)
+                    {
+                        Str8 string = {0};
+                        if (profiling_per_frame)
+                        {
+                            string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_with_children[i],  ((F32)counter_values->tsc_elapsed_with_children[i] / (F32)tsc_total) * 100.0f);
+                        }
+                        else
+                        {
+                            string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_with_children[i]);
+                        }
+                        ui_text(string);
+                    }
                 }
             }
+
+            ui_next_width(ui_pixels(1, 1));
+            ui_next_height(ui_em(60, 1));
+            ui_next_corner_radius(0);
+            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+            //- hampus: Hit count
+
+            ui_next_width(ui_pct(hit_count_column_width_pct, 0));
+            ui_next_extra_box_flags(UI_BoxFlag_Clip);
+            ui_column()
+            {
+                ui_next_width(ui_pct(1, 1));
+                ui_row()
+                {
+                    ui_next_width(ui_fill());
+                    ui_next_text_align(UI_TextAlign_Left);
+                    ui_text(str8_lit("Hit count"));
+                }
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_pixels(1, 1));
+                ui_next_corner_radius(0);
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_text_align(UI_TextAlign_Right)
+                    ui_width(ui_pct(1, 1))
+                {
+                    for (U64 i = 0; i < counter_values_count; ++i)
+                    {
+                        ui_textf("%"PRIU64, counter_values->hit_count[i]);
+                    }
+                }
+
+            }
+
+            ui_next_width(ui_pixels(1, 1));
+            ui_next_height(ui_em(60, 1));
+            ui_next_corner_radius(0);
+            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
         }
+
+        if (profiling_per_frame)
+        {
+            ui_spacer(ui_em(0.3f, 1));
+            ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
+        }
+
     }
 
     release_scratch(scratch);
 }
-
 internal Void
 framed_parse_zones(Void)
 {
