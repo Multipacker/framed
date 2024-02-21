@@ -524,7 +524,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 }
 
 internal Void
-framed_parse_zones()
+framed_parse_zones(Void)
 {
     //- hampus: Check connection state
 

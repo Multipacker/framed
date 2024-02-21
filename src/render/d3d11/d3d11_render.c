@@ -1,7 +1,6 @@
 #pragma comment (lib, "dxguid")
 #pragma comment (lib, "dxgi")
 #pragma comment (lib, "d3d11")
-#pragma comment (lib, "d3dcompiler")
 
 #define assert_hr(hr) assert(SUCCEEDED(hr))
 
@@ -163,45 +162,13 @@ render_backend_init(Render_Context *renderer)
 
         };
 
-        UINT flags = D3DCOMPILE_PACK_MATRIX_COLUMN_MAJOR | D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_WARNINGS_ARE_ERRORS;
-#if !BUILD_MODE_RELEASE
-        flags |= D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-        flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
+#include "render/d3d11/d3d11_vshader.h"
+#include "render/d3d11/d3d11_pshader.h"
 
-        Arena_Temporary scratch = get_scratch(0, 0);
+        ID3D11Device_CreateVertexShader(backend->device, d3d11_vshader, sizeof(d3d11_vshader), 0, &backend->vertex_shader);
+        ID3D11Device_CreatePixelShader(backend->device, d3d11_pshader, sizeof(d3d11_pshader), 0, &backend->pixel_shader);
+        ID3D11Device_CreateInputLayout(backend->device, desc, array_count(desc), d3d11_vshader, sizeof(d3d11_vshader), &backend->input_layout);
 
-        Str8 hlsl = { 0 };
-        B32 hlsl_file_read_result = os_file_read(scratch.arena, str8_lit("src/render/d3d11/d3d11_shader.hlsl"), &hlsl);
-        assert(hlsl_file_read_result);
-
-        ID3DBlob* error;
-        ID3DBlob* vblob;
-        hr = D3DCompile(hlsl.data, hlsl.size, 0, 0, 0, "vs", "vs_5_0", flags, 0, &vblob, &error);
-        if (FAILED(hr))
-        {
-            CStr message = ID3D10Blob_GetBufferPointer(error);
-            OutputDebugStringA(message);
-            assert(!"Failed to compile vertex shader!");
-        }
-
-        ID3DBlob* pblob;
-        hr = D3DCompile(hlsl.data, hlsl.size, 0, 0, 0, "ps", "ps_5_0", flags, 0, &pblob, &error);
-        if (FAILED(hr))
-        {
-            CStr message = ID3D10Blob_GetBufferPointer(error);
-            OutputDebugStringA(message);
-            assert(!"Failed to compile pixel shader!");
-        }
-
-        ID3D11Device_CreateVertexShader(backend->device, ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), 0, &backend->vertex_shader);
-        ID3D11Device_CreatePixelShader(backend->device, ID3D10Blob_GetBufferPointer(pblob), ID3D10Blob_GetBufferSize(pblob), 0, &backend->pixel_shader);
-        ID3D11Device_CreateInputLayout(backend->device, desc, ARRAYSIZE(desc), ID3D10Blob_GetBufferPointer(vblob), ID3D10Blob_GetBufferSize(vblob), &backend->input_layout);
-        ID3D10Blob_Release(pblob);
-        ID3D10Blob_Release(vblob);
-
-        release_scratch(scratch);
     }
 
     {

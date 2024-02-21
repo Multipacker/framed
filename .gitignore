@@ -9,3 +9,5 @@
 /framed.raddbg_profile
 /framed.raddbg_user
 /script/start_raddbg.bat
+/src/render/d3d11/d3d11_pshader.h
+/src/render/d3d11/d3d11_vshader.h

@@ -49,6 +49,11 @@ if not exist build/freetype.lib (
 	call script\build_freetype_msvc.bat release
 )
 
+:: -- Build shaders --
+
+fxc.exe /nologo /T vs_5_0 /E vs /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_vshader.h /Vn d3d11_vshader /Qstrip_reflect /Qstrip_debug /Qstrip_priv src/render/d3d11/d3d11_shader.hlsl
+fxc.exe /nologo /T ps_5_0 /E ps /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_pshader.h /Vn d3d11_pshader /Qstrip_reflect /Qstrip_debug /Qstrip_priv src/render/d3d11/d3d11_shader.hlsl
+
 if %build_mode% == "debug" (
 	echo Debug Build
 	set compiler_flags=%compiler_flags% %debug_compiler_flags%
