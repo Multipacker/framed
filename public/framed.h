@@ -112,6 +112,14 @@
 #    define FRAMED_ARCH_ARM64 0
 #endif
 
+#if !defined(FRAMED_DEF)
+#    if defined(FRAMED_STATIC)
+#        define FRAMED_DEF static
+#    else
+#        define FRAMED_DEF extern
+#    endif
+#endif
+
 #if FRAMED_COMPILER_CL
 
 typedef signed char          Framed_S8;
@@ -145,13 +153,28 @@ typedef Framed_U16 Framed_B16;
 typedef Framed_U32 Framed_B32;
 typedef Framed_U64 Framed_B64;
 
-#if !defined(FRAMED_DEF)
-#    if defined(FRAMED_STATIC)
-#        define FRAMED_DEF static
-#    else
-#        define FRAMED_DEF extern
-#    endif
-#endif
+#define framed_stringify_(s) #s
+#define framed_stringify(s)  framed_stringify_(s)
+#define framed_glue_(a, b)   a##b
+#define framed_glue(a, b)    framed_glue_(a, b)
+
+typedef Framed_U8 Framed_PacketKind;
+enum
+{
+    Framed_PacketKind_FrameStart = (1 << 0),
+    Framed_PacketKind_ZoneBegin  = (1 << 1),
+    Framed_PacketKind_ZoneEnd    = (1 << 2),
+};
+
+#pragma pack(push, 1)
+typedef struct PacketHeader PacketHeader;
+struct PacketHeader
+{
+    Framed_PacketKind kind;
+    Framed_U64 tsc;
+};
+
+#pragma pack(pop)
 
 #if defined(FRAMED_DISABLE)
 #    define framed_init(wait)
@@ -170,23 +193,6 @@ typedef Framed_U64 Framed_B64;
 #define framed_function_begin() framed_zone_begin(__func__)
 #define framed_function_end()   framed_zone_end()
 
-typedef Framed_U8 Framed_PacketKind;
-enum
-{
-    Framed_PacketKind_FrameStart = (1 << 0),
-    Framed_PacketKind_ZoneBegin  = (1 << 1),
-    Framed_PacketKind_ZoneEnd    = (1 << 2),
-};
-
-#pragma pack(push, 1)
-typedef struct PacketHeader PacketHeader;
-struct PacketHeader
-{
-    Framed_PacketKind kind;
-    Framed_U64 tsc;
-};
-#pragma pack(pop)
-
 FRAMED_DEF void framed_init_(Framed_B32 wait_for_connection);
 FRAMED_DEF void framed_flush_(void);
 
@@ -194,6 +200,19 @@ FRAMED_DEF void framed_mark_frame_start_(void);
 
 FRAMED_DEF void framed_zone_begin_(char *name);
 FRAMED_DEF void framed_zone_end_(void);
+
+#ifdef __cplusplus
+
+#define framed_zone_block(name) AutoClosingZoneBlock framed_glue(zone, __LINE__)(name)
+#define framed_function framed_zone_block(__func__)
+
+struct AutoClosingZoneBlock
+{
+    AutoClosingZoneBlock(char *name);
+    ~AutoClosingZoneBlock();
+};
+
+#endif
 
 #if defined(FRAMED_IMPLEMENTATION) && !defined(FRAMED_DISABLE)
 
@@ -222,6 +241,20 @@ struct Framed_State
 };
 
 static Framed_State global_framed_state;
+
+#ifdef __cplusplus
+
+    AutoClosingZoneBlock::AutoClosingZoneBlock(char *name)
+    {
+        framed_zone_begin(name);
+    }
+
+    AutoClosingZoneBlock::~AutoClosingZoneBlock()
+    {
+        framed_zone_end();
+    }
+
+#endif
 
 ////////////////////////////////
 // NOTE: Socket implementation
