@@ -3,8 +3,6 @@
 //
 // [ ] Pull out zone processing to its own thread
 // [ ] Make event size per packet instead of per event
-// [ ] A macro which autmatically paste the function name so you
-//     don't have to type it out explicity when marking zones
 // [ ] Change name length to 1 byte instead of 8 bytes in events
 
 #include "base/base_inc.h"
@@ -284,95 +282,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
     Arena_Temporary scratch = get_scratch(0, 0);
 
-    //- hampus: Labels
-
-    F32 name_column_width_pct = 0.25f;
-    F32 cycles_column_width_pct = 0.25f;
-    F32 cycles_children_column_width_pct = 0.25f;
-    F32 hit_count_column_width_pct = 0.25f;
-
-#if 0
-    ui_spacer(ui_em(0.3f, 1));
-    ui_row()
-    {
-        ui_next_width(ui_em(name_column_width_em, 1));
-        ui_row()
-        {
-            ui_next_width(ui_fill());
-            ui_next_text_align(UI_TextAlign_Left);
-            ui_text(str8_lit("Name"));
-        }
-
-        ui_next_width(ui_em(cycles_column_width_em, 1));
-        ui_row()
-        {
-            ui_next_width(ui_fill());
-            ui_next_text_align(UI_TextAlign_Left);
-            ui_text(str8_lit("Cycles"));
-        }
-        ui_next_width(ui_em(cycles_children_column_width_em, 1));
-        ui_row()
-        {
-            ui_next_width(ui_fill());
-            ui_next_text_align(UI_TextAlign_Left);
-            ui_text(str8_lit("Cycles w/ children"));
-        }
-        ui_next_width(ui_em(hit_count_column_width_em, 1));
-        ui_row()
-        {
-            ui_next_width(ui_fill());
-            ui_next_text_align(UI_TextAlign_Left);
-            ui_text(str8_lit("Hit count"));
-        }
-    }
-
-    //- hampus: Counter values
-
-    for (U64 i = 0; i < array_count(zone_blocks); ++i)
-    {
-        ZoneBlock *zone_block = zone_blocks + i;
-        if (zone_block->tsc_elapsed)
-        {
-            U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-
-            ui_row()
-            {
-                ui_next_width(ui_em(name_column_width_em, 1));
-                ui_row()
-                {
-                    ui_next_width(ui_fill());
-                    ui_next_text_align(UI_TextAlign_Left);
-                    ui_text(zone_block->name);
-                }
-                ui_next_width(ui_em(cycles_column_width_em, 1));
-                ui_row()
-                {
-                    ui_next_width(ui_fill());
-                    ui_next_text_align(UI_TextAlign_Right);
-                    ui_textf("%"PRIU64, tsc_without_children);
-                }
-                ui_next_width(ui_em(cycles_children_column_width_em, 1));
-                ui_row()
-                {
-                    ui_next_width(ui_fill());
-                    ui_next_text_align(UI_TextAlign_Right);
-                    ui_textf("%"PRIU64, zone_block->tsc_elapsed_root);
-                }
-                ui_next_width(ui_em(hit_count_column_width_em, 1));
-                ui_row()
-                {
-                    ui_next_width(ui_fill());
-                    ui_next_text_align(UI_TextAlign_Right);
-                    ui_textf("%"PRIU64, zone_block->hit_count);
-                }
-            }
-        }
-    }
-#else
-
-    // TODO(hampus): Test performance with the method done in debug UI
-    // vs this one.
-
     //- hampus: Gather values into a nice format
 
     typedef struct CounterValues CounterValues;
@@ -387,7 +296,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     U64 counter_values_count = 0;
     CounterValues *counter_values = push_struct(scratch.arena, CounterValues);
 
-    U64 tsc_total = 1;
+    U64 tsc_total = 0;
 
     ZoneBlock *zone_block_array = 0;
     U64 zone_block_array_count = 0;
@@ -425,6 +334,11 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     }
 
     //- hampus: Display values
+
+    F32 name_column_width_pct = 0.25f;
+    F32 cycles_column_width_pct = 0.25f;
+    F32 cycles_children_column_width_pct = 0.25f;
+    F32 hit_count_column_width_pct = 0.25f;
 
     if (profiling_per_frame)
     {
@@ -607,7 +521,6 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
         }
     }
 
-#endif
     release_scratch(scratch);
 }
 

@@ -167,6 +167,9 @@ typedef Framed_U64 Framed_B64;
 #    define framed_zone_end()         framed_zone_end_()
 #endif
 
+#define framed_function_begin() framed_zone_begin(__func__)
+#define framed_function_end()   framed_zone_end()
+
 typedef Framed_U8 Framed_PacketKind;
 enum
 {
