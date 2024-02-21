@@ -139,6 +139,9 @@ int main(int argc, char *argv[])
 
 ## Roadmap
 
+## Screenshots
+
+![alt text](/screenshots/counters.png)
 
 ## License
 
