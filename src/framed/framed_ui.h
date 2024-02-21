@@ -316,7 +316,8 @@ internal UI_Box *framed_ui_tab_button(FramedUI_Tab *tab);
 ////////////////////////////////
 //~ hampus: Panel
 
-internal Void framed_ui_panel_insert_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, B32 set_active);
+internal Void framed_ui_panel_set_active_tab(FramedUI_Panel *panel, FramedUI_Tab *tab);
+internal Void framed_ui_panel_insert_tab(FramedUI_Panel *panel, FramedUI_Tab *tab);
 internal Void framed_ui_panel_remove_tab(FramedUI_Tab *tab);
 internal Void framed_ui_panel_split(FramedUI_Panel *panel, Axis2 split_axis);
 internal Void framed_ui_panel_close(FramedUI_Panel *panel);

@@ -595,17 +595,17 @@ os_main(Str8List arguments)
     FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
     framed_ui_window_push_to_front(master_window);
 
-    {
-        framed_ui_state->tab_view_table[FramedUI_TabView_Counter] = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counter"));
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter], true);
-
-        framed_ui_state->tab_view_table[FramedUI_TabView_Settings] = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings"));
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Settings], false);
+        for (U64 i = 0; i < FramedUI_TabView_COUNT; ++i)
+        {
+            framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
+            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
+        }
 
 #if BUILD_MODE_DEBUG
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("")), false);
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("")));
 #endif
-    }
+
+        framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter]);
 
     framed_ui_state->master_window = master_window;
     framed_ui_state->next_focused_panel = master_window->root_panel;
@@ -666,13 +666,16 @@ os_main(Str8List arguments)
                         framed_ui_window_push_to_front(debug_window);
                         {
                             FramedUI_Tab *debug_tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug"));
-                            framed_ui_panel_insert_tab(debug_window->root_panel, debug_tab, true);
+                            framed_ui_panel_insert_tab(debug_window->root_panel, debug_tab);
 
                             FramedUI_Tab *log_tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0, str8_lit("Log"));
-                            framed_ui_panel_insert_tab(debug_window->root_panel, log_tab, false);
+                            framed_ui_panel_insert_tab(debug_window->root_panel, log_tab);
 
                             FramedUI_Tab *texture_viewer_tab= framed_ui_tab_make(framed_ui_tab_view_texture_viewer, 0, str8_lit("Texture Viewer"));
-                            framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab, false);
+                            framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab);
+
+                            framed_ui_panel_set_active_tab(debug_window->root_panel, debug_tab);
+
                         }
                     }
                 }
@@ -880,7 +883,7 @@ os_main(Str8List arguments)
                         else
                         {
                             framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
-                            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i], true);
+                            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
                         }
                     }
                 }

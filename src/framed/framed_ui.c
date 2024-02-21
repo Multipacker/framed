@@ -458,6 +458,12 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 ////////////////////////////////
 //~ hampus: Panel
 
+internal Void
+framed_ui_panel_set_active_tab(FramedUI_Panel *panel, FramedUI_Tab *tab)
+{
+    panel->tab_group.active_tab = tab;
+}
+
 internal B32
 framed_ui_panel_has_flag(FramedUI_Panel *panel, FramedUI_PanelFlag flag)
 {
@@ -466,11 +472,11 @@ framed_ui_panel_has_flag(FramedUI_Panel *panel, FramedUI_PanelFlag flag)
 }
 
 internal Void
-framed_ui_panel_insert_tab(FramedUI_Panel *panel, FramedUI_Tab *tab, B32 set_active)
+framed_ui_panel_insert_tab(FramedUI_Panel *panel, FramedUI_Tab *tab)
 {
     dll_push_back_npz(panel->tab_group.first, panel->tab_group.last, tab, next, prev, &g_nil_tab);
     tab->panel = panel;
-    if (set_active)
+    if (panel->tab_group.count == 0)
     {
         panel->tab_group.active_tab = tab;
     }
@@ -1809,7 +1815,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
                     FramedUI_Window *new_window = framed_ui_window_make(v2f32(0, 0), new_window_dim);
                     framed_ui_panel_remove_tab(tab);
-                    framed_ui_panel_insert_tab(new_window->root_panel, tab, true);
+                    framed_ui_panel_insert_tab(new_window->root_panel, tab);
                 }
                 else
                 {
@@ -1857,7 +1863,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
             } break;
             case FramedUI_CommandKind_InsertTab:
             {
-                framed_ui_panel_insert_tab(params->panel, params->tab, true);
+                framed_ui_panel_insert_tab(params->panel, params->tab);
                 log_info("Executed command: tab_attach");
             } break;
             case FramedUI_CommandKind_CloseTab:
@@ -1910,12 +1916,12 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 {
                     framed_ui_state->next_top_most_window = params->panel->window;
                 }
-                framed_ui_panel_insert_tab(panel, params->tab, true);
+                framed_ui_panel_insert_tab(panel, params->tab);
                 log_info("Executed command: panel_split_and_attach");
             } break;
             case FramedUI_CommandKind_SetTabActive:
             {
-                params->tab->panel->tab_group.active_tab = params->tab;
+                framed_ui_panel_set_active_tab(params->tab->panel, params->tab);
                 log_info("Executed command: panel_set_active_tab");
             }break;
             case FramedUI_CommandKind_ClosePanel:
