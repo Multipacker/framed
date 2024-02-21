@@ -24,7 +24,7 @@ set src_files=../src/framed/framed_main.c
 
 :: -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -MTd -fsanitize=address -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -MTd -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console freetype_debug.lib
 
 :: -- Optimized build flags --
@@ -62,9 +62,9 @@ if %build_mode% == "debug" (
 	set compiler_flags=%compiler_flags% %release_compiler_flags%
 	set linker_flags=%linker_flags% %release_linker_flags%
 ) else (
-	echo Debug Build
-	set compiler_flags=%compiler_flags% %debug_compiler_flags%
-	set linker_flags=%linker_flags% %debug_linker_flags%
+	echo Release Build
+	set compiler_flags=%compiler_flags% %release_compiler_flags%
+	set linker_flags=%linker_flags% %release_linker_flags%
 )
 
 if not exist build mkdir build

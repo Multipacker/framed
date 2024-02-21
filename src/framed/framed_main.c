@@ -636,27 +636,19 @@ os_main(Str8List arguments)
     Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
     Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
     FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
+    framed_ui_window_push_to_front(master_window);
 
     {
-        // NOTE(hampus): Setup master window
         FramedUI_Panel *first_panel = master_window->root_panel;
-        FramedUI_SplitPanelResult split_panel_result = framed_ui_builder_split_panel(first_panel, Axis2_X);
-        {
-            FramedUI_TabAttach attach =
-            {
-                .tab = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings")),
-                .panel = split_panel_result.panels[Side_Min],
-            };
-            framed_ui_command_tab_attach(&attach);
-        }
-        {
-            FramedUI_TabAttach attach =
-            {
-                .tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters")),
-                .panel = split_panel_result.panels[Side_Max],
-            };
-            framed_ui_command_tab_attach(&attach);
-        }
+        framed_ui_panel_split(first_panel, Axis2_X);
+
+        FramedUI_Tab *settings_tab = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings"));
+        framed_ui_panel_insert_tab(first_panel, settings_tab, true);
+
+        FramedUI_Tab *counter_tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters"));
+        framed_ui_panel_insert_tab(first_panel->sibling, counter_tab, true);
+
+        framed_ui_panel_insert_tab(first_panel->sibling, framed_ui_tab_make(0, 0, str8_lit("")), false);
 
         framed_ui_state->master_window = master_window;
         framed_ui_state->next_focused_panel = first_panel;
@@ -715,32 +707,16 @@ os_main(Str8List arguments)
                         // window which we don't want. So this will be a temporary
                         // solution
                         debug_window = framed_ui_window_make(v2f32(0, 50), v2f32(500, 500));
+                        framed_ui_window_push_to_front(debug_window);
                         {
-                            {
-                                FramedUI_TabAttach attach =
-                                {
-                                    .tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug")),
-                                    .panel = debug_window->root_panel,
-                                };
-                                framed_ui_command_tab_attach(&attach);
-                            }
-                            {
-                                FramedUI_TabAttach attach =
-                                {
-                                    .tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0,
-                                                              str8_lit("Log")),
-                                    .panel = debug_window->root_panel,
-                                };
-                                framed_ui_command_tab_attach(&attach);
-                            }
-                            {
-                                FramedUI_TabAttach attach =
-                                {
-                                    .tab = framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer")),
-                                    .panel = debug_window->root_panel,
-                                };
-                                framed_ui_command_tab_attach(&attach);
-                            }
+                            FramedUI_Tab *debug_tab = framed_ui_tab_make(framed_ui_tab_view_debug, 0, str8_lit("Debug"));
+                            framed_ui_panel_insert_tab(debug_window->root_panel, debug_tab, true);
+
+                            FramedUI_Tab *log_tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0, str8_lit("Log"));
+                            framed_ui_panel_insert_tab(debug_window->root_panel, log_tab, false);
+
+                            FramedUI_Tab *texture_viewer_tab= framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer"));
+                            framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab, false);
                         }
                     }
                 }
