@@ -1,8 +1,3 @@
-////////////////////////////////
-// Stuff to get done before going public
-//
-// [ ] Buffer up packets on another thread
-
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
@@ -708,25 +703,36 @@ os_main(Str8List arguments)
         }
 
         //- hampus: Gather & process data from client
-
         if (net_socket_connection_is_alive(profiling_state->client_socket))
         {
-            // NOTE(hampus): We currently peek and process one packet at a time.
+            B32 terminate_connection = false;
             U16 buffer_size = 0;
-            Net_RecieveResult peek_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-            while (peek_result.bytes_recieved)
+            Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+            while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
             {
                 Arena_Temporary scratch = get_scratch(0, 0);
                 U8 *buffer = push_array(scratch.arena, U8, buffer_size);
                 Net_RecieveResult recieve_result = net_socket_recieve(profiling_state->client_socket, buffer, buffer_size);
+
+                if (recieve_result.bytes_recieved != buffer_size)
+                {
+                    // TODO(simon): What do we do in this case? At the moment
+                    // the rest of the code assumes that this never happens.
+                }
+
                 // NOTE(hampus): First two bytes are the size of the packet
                 U8 *buffer_pointer = buffer + sizeof(U16);
                 U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
-                while (buffer_pointer < buffer_opl)
+                while (buffer_pointer < buffer_opl && !terminate_connection)
                 {
-                    // TODO(simon): Make sure we don't try to read past the end of the buffer.
-                    PacketHeader *header = (PacketHeader *) (buffer_pointer);
+                    if ((U64) (buffer_opl - buffer_pointer) < sizeof(PacketHeader))
+                    {
+                        log_error("Not enough data for packet header, terminating connection");
+                        terminate_connection = true;
+                        break;
+                    }
 
+                    PacketHeader *header = (PacketHeader *) buffer_pointer;
                     switch (header->kind)
                     {
                         case Framed_PacketKind_FrameStart:
@@ -738,6 +744,7 @@ os_main(Str8List arguments)
                                 PacketHeader header;
                             };
 #pragma pack(pop)
+                            // NOTE(simon): No need to ensure size, the event is only the header.
 
                             //- hampus: Save the last frame's data and produce a fresh captured frame
 
@@ -780,19 +787,32 @@ os_main(Str8List arguments)
 
                             Packet *packet = (Packet *) header;
 
-                            Str8 name = str8(packet->name, packet->name_length);
+                            if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                            {
+                                log_error("Not enough data for zone packet, terminating connection");
+                                terminate_connection = true;
+                            }
+                            else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
+                            {
+                                log_error("Not enough data for zone name, terminating connection");
+                                terminate_connection = true;
+                            }
+                            else
+                            {
+                                Str8 name = str8(packet->name, packet->name_length);
 
-                            assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
-                            ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
-                            memory_zero_struct(opening);
+                                assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
+                                ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
+                                memory_zero_struct(opening);
 
-                            ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
+                                ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
 
-                            opening->name = zone->name;
-                            opening->tsc_start = packet->header.tsc;
-                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
+                                opening->name = zone->name;
+                                opening->tsc_start = packet->header.tsc;
+                                opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
 
-                            buffer_pointer += sizeof(Packet) + packet->name_length;
+                                buffer_pointer += sizeof(Packet) + packet->name_length;
+                            }
                         } break;
                         case Framed_PacketKind_ZoneEnd:
                         {
@@ -803,6 +823,7 @@ os_main(Str8List arguments)
                                 PacketHeader header;
                             };
 #pragma pack(pop)
+                            // NOTE(simon): No need to ensure size, the event is only the header.
 
                             Packet *packet = (Packet *) header;
 
@@ -819,11 +840,20 @@ os_main(Str8List arguments)
 
                             buffer_pointer += sizeof(Packet);
                         } break;
-                        invalid_case;
+                        default:
+                        {
+                            log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
+                            terminate_connection = true;
+                        } break;
                     }
                 }
                 release_scratch(scratch);
-                peek_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+                size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+            }
+
+            if (terminate_connection)
+            {
+                net_socket_free(profiling_state->client_socket);
             }
         }
         ////////////////////////////////
