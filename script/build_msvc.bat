@@ -29,7 +29,7 @@ set debug_linker_flags=-subsystem:console freetype_debug.lib
 
 :: -- Optimized build flags --
 
-set optimized_compiler_flags=-MTd -Zi -fsanitize=address -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE_OPTIMIZED=1
+set optimized_compiler_flags=-MTd -Zi -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE_OPTIMIZED=1
 set optimized_linker_flags=-subsystem:console freetype_debug.lib
 
 :: -- Release build flags --

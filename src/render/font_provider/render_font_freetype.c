@@ -3,6 +3,9 @@
 #include "freetype/freetype.h"
 #define internal static
 
+#include "render/noto_sans_medium.h"
+#include "render/fontello.h"
+
 internal Str8
 render_get_ft_error_message(FT_Error err)
 {
@@ -81,7 +84,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
                         {
                             atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
                             *atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas,
-                                                                                                                         v2u32(bitmap_width+2, bitmap_height+2));
+                                                                           v2u32(bitmap_width+2, bitmap_height+2));
                         }
 
                         rect_region = atlas_region->region;
@@ -194,7 +197,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, FT_Face face, U32
     {
         .min = rect_region.min,
         .max = v2u32(rect_region.min.x + bitmap_width,
-        rect_region.min.y + bitmap_height),
+                     rect_region.min.y + bitmap_height),
     };
 
     RectF32 adjusted_rect_region_f32 = rectf32_from_rectu32(adjusted_rect_region);
@@ -230,6 +233,24 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
     assert(font);
     Arena_Temporary scratch = get_scratch(0, 0);
 
+    // NOTE(hampus): Super smart way to load in bundled fonts
+
+    U8 *compressed_data = 0;
+    U32 compressed_size = 0;
+    U64 last_slash = 0;
+    str8_last_index_of(params.path, '/', &last_slash);
+    Str8 font_name = str8_skip(params.path, last_slash+1);
+    if (str8_equal(font_name, str8_lit("NotoSansMono-Medium.ttf")))
+    {
+        compressed_data = (U8 *)noto_sans_medium_compressed_data;
+        compressed_size = noto_sans_medium_compressed_size;
+    }
+    else if (str8_equal(font_name, str8_lit("fontello.ttf")))
+    {
+        compressed_data = (U8 *)fontello_data;
+        compressed_size = fontello_size;
+    }
+
     FT_Library ft;
     // NOTE(hampus): 0 indicates a success in freetype, otherwise error
     Str8 error = { 0 };
@@ -240,15 +261,20 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
         FT_Library_Version(ft, &major_version, &minor_version, &patch);
 
         Str8 file_read_result = { 0 };
-        if (os_file_read(scratch.arena, params.path, &file_read_result))
+        if (compressed_data)
         {
-            FT_Open_Args open_args = { 0 };
-            open_args.flags = FT_OPEN_MEMORY;
-            open_args.memory_base = file_read_result.data;
+            file_read_result.data = compressed_data;
+            file_read_result.size = compressed_size;
+        }
+        else
+        {
+            os_file_read(scratch.arena, params.path, &file_read_result);
+        }
+        if (file_read_result.size)
+        {
             assert(file_read_result.size <= U32_MAX);
-            open_args.memory_size = (U32) file_read_result.size;
             FT_Face face;
-            FT_Error ft_open_face_error = FT_Open_Face(ft, &open_args, 0, &face);
+            FT_Error ft_open_face_error = FT_New_Memory_Face(ft, file_read_result.data, (FT_Long)file_read_result.size, 0, &face);
             if (!ft_open_face_error)
             {
                 font->load_params = params;
@@ -262,10 +288,10 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
                 U32 glyph_count     = 0;
 
                 for (
-                    U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
-                    index != 0 && glyph_count < num_glyphs_to_load;
-                    codepoint = (U32) FT_Get_Next_Char(face, codepoint, &index)
-                    )
+                     U32 index = 0, codepoint = (U32) FT_Get_First_Char(face, &index);
+                     index != 0 && glyph_count < num_glyphs_to_load;
+                     codepoint = (U32) FT_Get_Next_Char(face, codepoint, &index)
+                     )
                 {
                     glyph_indicies[glyph_count] = index;
                     codepoints[glyph_count]     = codepoint;
