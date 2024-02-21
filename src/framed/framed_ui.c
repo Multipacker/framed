@@ -322,7 +322,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 
     B32 active = framed_ui_tab_is_active(tab);
 
-    F32 height_em = 1.1f;
+    F32 height_em = 1.2f;
     F32 corner_radius = (F32) ui_top_font_line_height() * 0.2f;
 
     Vec4F32 color = active ?
@@ -1096,21 +1096,23 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                 for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
                                 {
                                     ui_next_hover_cursor(Gfx_Cursor_Hand);
-                                    ui_next_extra_box_flags(UI_BoxFlag_DrawBorder |
-                                                            UI_BoxFlag_DrawBackground |
-                                                            UI_BoxFlag_ActiveAnimation |
+                                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation |
                                                             UI_BoxFlag_HotAnimation |
                                                             UI_BoxFlag_Clickable);
+                                    ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
                                     UI_Box *row_box = ui_named_row_beginf("TabDropDownListEntry%p", tab);
-                                    ui_next_height(ui_em(1, 0.0f));
+
+                                    ui_next_height(ui_em(1, 1.0f));
                                     ui_next_width(ui_pixels(largest_dim.x, 1));
                                     // TODO(hampus): Theming
                                     UI_Box *tab_box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+
                                     ui_box_equip_display_string(tab_box, tab->display_string);
                                     ui_next_height(ui_em(1, 1));
                                     ui_next_width(ui_em(1, 1));
                                     ui_next_icon(RENDER_ICON_CROSS);
                                     ui_next_hover_cursor(Gfx_Cursor_Hand);
+                                    ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
                                     UI_Box *close_box = ui_box_makef(UI_BoxFlag_Clickable |
                                                                      UI_BoxFlag_DrawText |
                                                                      UI_BoxFlag_HotAnimation |
@@ -1134,6 +1136,10 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                         params.tab = tab;
                                         framed_ui_command_push(FramedUI_CommandKind_SetTabActive, params);
                                     }
+                                    if (row_comm.hovering)
+                                    {
+                                        row_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder;
+                                    }
                                 }
                             }
                         }
@@ -1143,11 +1149,10 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_named_column(str8_lit("TabDropDownContainer"))
                         {
                             F32 corner_radius = (F32) ui_top_font_line_height() * 0.25f;
-                            ui_spacer(ui_em(0.2f, 1));
+                            ui_spacer(ui_em(0.1f, 1));
                             ui_next_icon(RENDER_ICON_LIST);
-                            ui_next_width(ui_em(title_bar_height_em+0.1f, 1));
-                            ui_next_height(ui_em(title_bar_height_em+0.1f, 1));
-                            ui_next_font_size(12);
+                            ui_next_width(ui_em(title_bar_height_em+0.3f, 1));
+                            ui_next_height(ui_em(title_bar_height_em+0.3f, 1));
                             ui_next_hover_cursor(Gfx_Cursor_Hand);
                             ui_next_vert_corner_radius(corner_radius, 0);
                             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtons));
@@ -1213,7 +1218,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             {
                                 active_box = tab_column;
                             }
-                            ui_spacer(ui_em(0.2f, 1));
+                            ui_spacer(ui_em(0.1f, 1));
                             UI_Box *tab_box = framed_ui_tab_button(tab);
                             Task *task = push_struct(scratch.arena, Task);
                             task->tab = tab;

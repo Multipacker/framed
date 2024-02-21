@@ -987,6 +987,7 @@ ui_ctx_menu_begin(UI_Key key)
     }
 
     ui_push_seed(key);
+    ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
     ui_named_column_begin(str8_lit("CtxMenuColumn"));
 
     return(is_open);

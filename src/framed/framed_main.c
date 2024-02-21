@@ -705,6 +705,7 @@ framed_parse_zones(Void)
 }
 
 ////////////////////////////////
+
 //~ hampus: Main
 
 internal S32
@@ -781,7 +782,7 @@ os_main(Str8List arguments)
         }
 
 #if BUILD_MODE_DEBUG
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("")));
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
 #endif
 
         framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter]);
@@ -884,20 +885,22 @@ os_main(Str8List arguments)
                     Str8 string = framed_ui_state->tab_view_string_table[i];
                     B32 active = !framed_ui_tab_is_nil(framed_ui_state->tab_view_table[i]);
                     ui_next_hover_cursor(Gfx_Cursor_Hand);
-                    ui_next_extra_box_flags(UI_BoxFlag_DrawBorder |
-                                            UI_BoxFlag_DrawBackground |
-                                            UI_BoxFlag_ActiveAnimation |
+                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation |
                                             UI_BoxFlag_HotAnimation |
                                             UI_BoxFlag_Clickable);
+                    ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
                     ui_next_height(ui_em(1, 1));
                     UI_Box *row_box = ui_named_row_beginf("TabViewDropdownListEntry%"PRIU64, i);
+
                     ui_next_height(ui_em(1, 0.0f));
                     ui_next_width(ui_em(5, 1));
                     UI_Box *tab_box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+
                     ui_next_icon(RENDER_ICON_CHECK);
                     ui_next_width(ui_em(1, 1));
                     ui_next_height(ui_pct(1, 1));
                     UI_Box *check_box = ui_box_make(0, str8_lit(""));
+
                     ui_spacer(ui_em(0.2f, 1));
 
                     if (active)
@@ -922,16 +925,20 @@ os_main(Str8List arguments)
                             framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
                         }
                     }
+                    if (row_comm.hovering)
+                    {
+                        row_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder;
+                    }
                 }
             }
         }
 
         ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
         ui_next_width(ui_fill());
-        ui_corner_radius(0)
-            ui_softness(0)
+        ui_corner_radius(ui_top_font_line_height() * 0.1f)
             ui_row()
         {
+
             UI_Comm comm = ui_button(str8_lit("View"));
             if (comm.clicked)
             {
