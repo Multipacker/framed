@@ -1,8 +1,3 @@
-////////////////////////////////
-// Stuff to get done before going public
-//
-// [ ] Buffer up packets on another thread
-
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
@@ -67,7 +62,9 @@ struct ProfilingState
     U32 zone_stack_size;
     U64 frame_begin_tsc;
     U64 frame_end_tsc;
+    Arena *zone_arena;
 
+    B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;
 };
@@ -526,6 +523,187 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     release_scratch(scratch);
 }
 
+internal Void
+framed_parse_zones()
+{
+    //- hampus: Check connection state
+
+    if (!net_socket_connection_is_alive(profiling_state->client_socket))
+    {
+        Net_AcceptResult accept_result = {0};
+        if (profiling_state->found_connection)
+        {
+            // NOTE(hampus): The client disconnected
+            log_info("Disconnected from client");
+            profiling_state->found_connection = false;
+        }
+        accept_result = net_socket_accept(profiling_state->listen_socket);
+        profiling_state->found_connection = accept_result.succeeded;
+        if (profiling_state->found_connection)
+        {
+            profiling_state->client_socket = accept_result.socket;
+            log_info("Connected to client");
+            net_socket_set_blocking_mode(accept_result.socket, false);
+            memory_zero_array(profiling_state->zone_blocks);
+        }
+    }
+
+    //- hampus: Gather & process data from client
+    if (net_socket_connection_is_alive(profiling_state->client_socket))
+    {
+        B32 terminate_connection = false;
+        U16 buffer_size = 0;
+        Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+        while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
+        {
+            Arena_Temporary scratch = get_scratch(0, 0);
+            U8 *buffer = push_array(scratch.arena, U8, buffer_size);
+            Net_RecieveResult recieve_result = net_socket_recieve(profiling_state->client_socket, buffer, buffer_size);
+
+            if (recieve_result.bytes_recieved != buffer_size)
+            {
+                // TODO(simon): What do we do in this case? At the moment
+                // the rest of the code assumes that this never happens.
+            }
+
+            // NOTE(hampus): First two bytes are the size of the packet
+            U8 *buffer_pointer = buffer + sizeof(U16);
+            U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
+            while (buffer_pointer < buffer_opl && !terminate_connection)
+            {
+                if ((U64) (buffer_opl - buffer_pointer) < sizeof(PacketHeader))
+                {
+                    log_error("Not enough data for packet header, terminating connection");
+                    terminate_connection = true;
+                    break;
+                }
+
+                PacketHeader *header = (PacketHeader *) buffer_pointer;
+                switch (header->kind)
+                {
+                    case Framed_PacketKind_FrameStart:
+                    {
+#pragma pack(push, 1)
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                        };
+#pragma pack(pop)
+                        // NOTE(simon): No need to ensure size, the event is only the header.
+
+                        //- hampus: Save the last frame's data and produce a fresh captured frame
+
+                        profiling_state->frame_end_tsc = header->tsc;
+
+                        CapturedFrame *frame = &profiling_state->latest_captured_frame;
+                        frame->total_tsc = profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
+                        // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
+                        // But this is simple and easy and works for now.
+                        memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
+
+                        //- hampus: Clear the new zone stats and begin a new frame
+
+                        // NOTE(hampus): Keep the name so the display gets less messy
+                        // from counters jumping everywhere
+                        for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
+                        {
+                            ZoneBlock *zone_block = profiling_state->zone_blocks + i;
+                            zone_block->tsc_elapsed = 0;
+                            zone_block->tsc_elapsed_root = 0;
+                            zone_block->tsc_elapsed_children = 0;
+                            zone_block->hit_count = 0;
+                        }
+
+                        profiling_state->frame_begin_tsc = header->tsc;
+
+                        buffer_pointer += sizeof(Packet);
+                    } break;
+                    case Framed_PacketKind_ZoneBegin:
+                    {
+#pragma pack(push, 1)
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                            Framed_U8 name_length;
+                            Framed_U8 name[];
+                        };
+#pragma pack(pop)
+
+                        Packet *packet = (Packet *) header;
+
+                        if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                        {
+                            log_error("Not enough data for zone packet, terminating connection");
+                            terminate_connection = true;
+                        }
+                        else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
+                        {
+                            log_error("Not enough data for zone name, terminating connection");
+                            terminate_connection = true;
+                        }
+                        else
+                        {
+                            Str8 name = str8(packet->name, packet->name_length);
+
+                            assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
+                            ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
+                            memory_zero_struct(opening);
+
+                            ZoneBlock *zone = framed_get_zone_block(profiling_state->zone_arena, name);
+
+                            opening->name = zone->name;
+                            opening->tsc_start = packet->header.tsc;
+                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
+
+                            buffer_pointer += sizeof(Packet) + packet->name_length;
+                        }
+                    } break;
+                    case Framed_PacketKind_ZoneEnd:
+                    {
+#pragma pack(push, 1)
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                        };
+#pragma pack(pop)
+                        // NOTE(simon): No need to ensure size, the event is only the header.
+
+                        Packet *packet = (Packet *) header;
+
+                        ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
+                        ZoneBlock *zone = framed_get_zone_block(profiling_state->zone_arena, opening->name);
+
+                        U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
+
+                        zone->tsc_elapsed += tsc_elapsed;
+                        zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
+                        zone->tsc_elapsed_children += opening->tsc_elapsed_children;
+                        ++zone->hit_count;
+                        profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+
+                        buffer_pointer += sizeof(Packet);
+                    } break;
+                    default:
+                    {
+                        log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
+                        terminate_connection = true;
+                    } break;
+                }
+            }
+            release_scratch(scratch);
+            size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+        }
+
+        if (terminate_connection)
+        {
+            net_socket_free(profiling_state->client_socket);
+        }
+    }
+}
+
 ////////////////////////////////
 //~ hampus: Main
 
@@ -551,6 +729,7 @@ os_main(Str8List arguments)
 
     profiling_state = push_struct(perm_arena, ProfilingState);
     profiling_state->zone_stack_size = 1;
+    profiling_state->zone_arena = arena_create("ZoneArena");
 
     //- hampus: Allocate listen socket
 
@@ -623,7 +802,6 @@ os_main(Str8List arguments)
     U64 start_counter = os_now_nanoseconds();
     F64 dt = 0;
     B32 running = true;
-    B32 found_connection = false;
     FramedUI_Window *debug_window = 0;
     while (running)
     {
@@ -682,150 +860,8 @@ os_main(Str8List arguments)
             }
         }
 
-        ////////////////////////////////
-        //- hampus: Zone pass
+        framed_parse_zones();
 
-        //- hampus: Check connection state
-
-        if (!net_socket_connection_is_alive(profiling_state->client_socket))
-        {
-            Net_AcceptResult accept_result = {0};
-            if (found_connection)
-            {
-                // NOTE(hampus): The client disconnected
-                log_info("Disconnected from client");
-                found_connection = false;
-            }
-            accept_result = net_socket_accept(profiling_state->listen_socket);
-            found_connection = accept_result.succeeded;
-            if (found_connection)
-            {
-                profiling_state->client_socket = accept_result.socket;
-                log_info("Connected to client");
-                net_socket_set_blocking_mode(accept_result.socket, false);
-                memory_zero_array(profiling_state->zone_blocks);
-            }
-        }
-
-        //- hampus: Gather & process data from client
-
-        if (net_socket_connection_is_alive(profiling_state->client_socket))
-        {
-            // NOTE(hampus): We currently peek and process one packet at a time.
-            U16 buffer_size = 0;
-            Net_RecieveResult peek_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-            while (peek_result.bytes_recieved)
-            {
-                Arena_Temporary scratch = get_scratch(0, 0);
-                U8 *buffer = push_array(scratch.arena, U8, buffer_size);
-                Net_RecieveResult recieve_result = net_socket_recieve(profiling_state->client_socket, buffer, buffer_size);
-                // NOTE(hampus): First two bytes are the size of the packet
-                U8 *buffer_pointer = buffer + sizeof(U16);
-                U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
-                while (buffer_pointer < buffer_opl)
-                {
-                    // TODO(simon): Make sure we don't try to read past the end of the buffer.
-                    PacketHeader *header = (PacketHeader *) (buffer_pointer);
-
-                    switch (header->kind)
-                    {
-                        case Framed_PacketKind_FrameStart:
-                        {
-#pragma pack(push, 1)
-                            typedef struct Packet Packet;
-                            struct Packet
-                            {
-                                PacketHeader header;
-                            };
-#pragma pack(pop)
-
-                            //- hampus: Save the last frame's data and produce a fresh captured frame
-
-                            profiling_state->frame_end_tsc = header->tsc;
-
-                            CapturedFrame *frame = &profiling_state->latest_captured_frame;
-                            frame->total_tsc = profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
-                            // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
-                            // But this is simple and easy and works for now.
-                            memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
-
-                            //- hampus: Clear the new zone stats and begin a new frame
-
-                            // NOTE(hampus): Keep the name so the display gets less messy
-                            // from counters jumping everywhere
-                            for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
-                            {
-                                ZoneBlock *zone_block = profiling_state->zone_blocks + i;
-                                zone_block->tsc_elapsed = 0;
-                                zone_block->tsc_elapsed_root = 0;
-                                zone_block->tsc_elapsed_children = 0;
-                                zone_block->hit_count = 0;
-                            }
-
-                            profiling_state->frame_begin_tsc = header->tsc;
-
-                            buffer_pointer += sizeof(Packet);
-                        } break;
-                        case Framed_PacketKind_ZoneBegin:
-                        {
-#pragma pack(push, 1)
-                            typedef struct Packet Packet;
-                            struct Packet
-                            {
-                                PacketHeader header;
-                                Framed_U8 name_length;
-                                Framed_U8 name[];
-                            };
-#pragma pack(pop)
-
-                            Packet *packet = (Packet *) header;
-
-                            Str8 name = str8(packet->name, packet->name_length);
-
-                            assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
-                            ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
-                            memory_zero_struct(opening);
-
-                            ZoneBlock *zone = framed_get_zone_block(perm_arena, name);
-
-                            opening->name = zone->name;
-                            opening->tsc_start = packet->header.tsc;
-                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
-
-                            buffer_pointer += sizeof(Packet) + packet->name_length;
-                        } break;
-                        case Framed_PacketKind_ZoneEnd:
-                        {
-#pragma pack(push, 1)
-                            typedef struct Packet Packet;
-                            struct Packet
-                            {
-                                PacketHeader header;
-                            };
-#pragma pack(pop)
-
-                            Packet *packet = (Packet *) header;
-
-                            ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
-                            ZoneBlock *zone = framed_get_zone_block(perm_arena, opening->name);
-
-                            U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
-
-                            zone->tsc_elapsed += tsc_elapsed;
-                            zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
-                            zone->tsc_elapsed_children += opening->tsc_elapsed_children;
-                            ++zone->hit_count;
-                            profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
-
-                            buffer_pointer += sizeof(Packet);
-                        } break;
-                        invalid_case;
-                    }
-                }
-                release_scratch(scratch);
-                peek_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-            }
-        }
         ////////////////////////////////
         //- hampus: UI pass
 

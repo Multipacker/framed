@@ -61,7 +61,7 @@ struct Debug_MemoryBuffer
         debug_block_end(time##__LINE__), ptime##__LINE__ = 0                                     \
     )
 
-#define debug_function_begin()   debug_begin_internal(__FILE__, __LINE__, (CStr) __FUNCTION__)
+#define debug_function_begin()   debug_begin_internal(__FILE__, __LINE__, (CStr) __func__)
 #define debug_function_end(time) debug_end(time)
 #define debug_function()                                                                        \
     for (                                                                                       \
