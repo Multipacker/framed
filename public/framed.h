@@ -423,12 +423,14 @@ framed_zone_begin_(char *name)
     struct Packet
     {
         PacketHeader header;
-        Framed_U64 name_length;
+        Framed_U8 name_length;
         Framed_U8 name[];
     };
 #pragma pack(pop)
 
-    Framed_U64 length  = strlen(name);
+    // TODO(hampus): Check that strlen(name) <= 255.
+    // But please don't have a name longer than this :)
+    Framed_U8 length = (Framed_U8)strlen(name);
     framed__assert(length != 0);
 
     Framed_U64 entry_size = sizeof(Packet) + length;
@@ -461,7 +463,7 @@ framed_zone_end_(void)
 
     Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
     packet->header.kind = Framed_PacketKind_ZoneEnd;
-    packet->header.tsc= framed__rdtsc();
+    packet->header.tsc = framed__rdtsc();
 
     framed->buffer_pos += entry_size;
 }

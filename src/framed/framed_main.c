@@ -1,9 +1,7 @@
 ////////////////////////////////
 // Stuff to get done before going public
 //
-// [ ] Pull out zone processing to its own thread
 // [ ] Make event size per packet instead of per event
-// [ ] Change name length to 1 byte instead of 8 bytes in events
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -774,7 +772,7 @@ os_main(Str8List arguments)
                             struct Packet
                             {
                                 PacketHeader header;
-                                Framed_U64 name_length;
+                                Framed_U8 name_length;
                                 Framed_U8 name[];
                             };
 #pragma pack(pop)
