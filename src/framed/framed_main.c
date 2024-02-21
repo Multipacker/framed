@@ -596,7 +596,7 @@ os_main(Str8List arguments)
         framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter], true);
 
         framed_ui_state->tab_view_table[FramedUI_TabView_Settings] = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings"));
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Settings], true);
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Settings], false);
 
 #if BUILD_MODE_DEBUG
         framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("")), false);
