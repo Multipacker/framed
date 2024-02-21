@@ -1,7 +1,12 @@
 ////////////////////////////////
 // Stuff to get done before going public
 //
-// [ ] Move log file to temporary folder
+// [ ] Be able to profile without any concept of frames
+// [ ] Pull out zone processing to its own thread
+// [ ] Make event size per packet instead of per event
+// [ ] A macro which autmatically paste the function name so you
+//     don't have to type it out explicity when marking zones
+// [ ] Change name length to 1 byte instead of 8 bytes in events
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
