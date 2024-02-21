@@ -94,7 +94,11 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_texture_viewer)
 {
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
-    Render_TextureSlice texture = *(Render_TextureSlice *) view_info->data;
+    Render_TextureSlice texture = {0};
+    if (view_info->data)
+    {
+        texture = *(Render_TextureSlice *) view_info->data;
+    }
     ui_texture_view(texture);
 }
 
