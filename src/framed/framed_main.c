@@ -1,3 +1,7 @@
+// [ ] Logging paths
+// [ ] Logging in same directory as binary
+// [ ] Bundla shaders
+
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"
@@ -106,6 +110,43 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_debug)
     B32 view_info_data_initialized = view_info->data != 0;
     UI_ColorPickerData *color_picker_data = framed_ui_get_view_data(view_info, UI_ColorPickerData);
     ui_debug(color_picker_data);
+}
+
+FRAME_UI_TAB_VIEW(framed_ui_tab_view_about)
+{
+    ui_push_width(ui_pct(1, 1));
+
+    DateTime date = build_date_from_context();
+    ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+    ui_text(str8_lit("Framed"));
+    ui_text(str8_lit("Copyright (c) 2024 Hampus Johansson and Simon Renhult"));
+    ui_textf("Compiled %u/%u-%d %u:%u:%u", date.day + 1, date.month + 1, date.year, date.hour, date.minute, date.second);
+
+    ui_spacer(ui_em(1, 1));
+
+    ui_text(str8_lit("Framed is released under the MIT License, but some of the code is"));
+    ui_text(str8_lit("released under different open source licenses. All licenses are"));
+    ui_text(str8_lit("availible at (https://github.com/Multipacker/framed/tree/main/licenses)."));
+
+    ui_spacer(ui_em(1, 1));
+    ui_text(str8_lit("Portions of this software are copyright (c) 2024 The FreeType Project"));
+    ui_text(str8_lit("(www.freetype.org) and is licensed under the FreeType License"));
+    ui_text(str8_lit("All rights reserved."));
+
+    ui_spacer(ui_em(1, 1));
+    ui_text(str8_lit("This software uses SDL 2 which is licensed under the zlib license."));
+
+    ui_spacer(ui_em(1, 1));
+    ui_text(str8_lit("This software bundles Noto Sans Mono Medium which is licensed under the"));
+    ui_text(str8_lit("SIL Open Font License, Version 1.1 and is copyright (c) 2022"));
+    ui_text(str8_lit("The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)."));
+
+    ui_spacer(ui_em(1, 1));
+    ui_text(str8_lit("This software bundles Font Awesome Free download which is licensed under the"));
+    ui_text(str8_lit("SIL Open Font License, Version 1.1 and is copyright (c) 2023 Fonticons, Inc."));
+    ui_text(str8_lit("(https://fontawesome.com)."));
+
+    ui_pop_width();
 }
 
 FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
@@ -764,11 +805,13 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
-    framed_ui_state->tab_view_function_table[FramedUI_TabView_Counter] = framed_ui_tab_view_counters;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Counter]  = framed_ui_tab_view_counters;
     framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_About]    = framed_ui_tab_view_about;
 
-    framed_ui_state->tab_view_string_table[FramedUI_TabView_Counter] = str8_lit("Counter");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Counter]  = str8_lit("Counter");
     framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_About]    = str8_lit("About");
 
     Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
     Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
@@ -874,7 +917,7 @@ os_main(Str8List arguments)
 
         //- hampus: Menu bar
 
-        UI_Key view_dropdown_key = ui_key_from_string(ui_key_null(), str8_lit( "ViewDropdownMenu"));
+        UI_Key view_dropdown_key = ui_key_from_string(ui_key_null(), str8_lit("ViewDropdownMenu"));
 
         ui_ctx_menu(view_dropdown_key)
         {
@@ -938,7 +981,6 @@ os_main(Str8List arguments)
         ui_corner_radius(ui_top_font_line_height() * 0.1f)
             ui_row()
         {
-
             UI_Comm comm = ui_button(str8_lit("View"));
             if (comm.clicked)
             {

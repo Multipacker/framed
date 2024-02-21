@@ -233,6 +233,7 @@ enum FramedUI_TabView
 {
     FramedUI_TabView_Counter,
     FramedUI_TabView_Settings,
+    FramedUI_TabView_About,
     FramedUI_TabView_COUNT,
 };
 
