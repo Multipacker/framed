@@ -93,7 +93,7 @@ at all exit points of your function, or else the event will not be recorded.
 
 If you are compiling in C++, Framed also supports the use of auto-closing zones where
 you don't have to call a matching `framed_zone_end()`. See [examples/auto_closing_zones.cpp]
-for more detailed examples in this. Note that the function calls are different, `framed_zone_block(...)`
+for more detailed examples on this. Note that the function calls are different, `framed_zone_block(...)`
 instead of `framed_zone_begin(...)`, `framed_function` instead of `framed_function_begin()` and so on.
 
 Here is a complete example. There are more complex ones available in the
@@ -154,8 +154,8 @@ This software uses SDL 2 which is licensed under the [zlib license].
 [FreeType Project LICENSE]: https://github.com/freetype/freetype/blob/master/docs/FTL.TXT
 [MIT License]:              /LICENSE
 [RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
-[examples]:                 /src/examples
+[examples]:                 /examples
 [stb]:                      https://github.com/nothings/stb
 [www.freetype.org]:         https://www.freetype.org
 [zlib license]:             https://www.zlib.net/zlib_license.html
-[examples/auto_closing_zones.cpp]: /src/examples/auto_closing_zones.cpp
+[examples/auto_closing_zones.cpp]: /examples/auto_closing_zones.cpp
