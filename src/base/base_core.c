@@ -77,6 +77,9 @@ build_date_from_context(Void)
         U64 len = u8_from_str8(date, &result.day);
         date = str8_skip(date, len+1);
         len = s16_from_str8(date, &result.year);
+
+        // NOTE(hampus): Go from [1, 31] -> [0, 30]
+        result.day -= 1;
     }
 
     {

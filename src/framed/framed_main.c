@@ -126,7 +126,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_about)
 
     ui_text(str8_lit("Framed is released under the MIT License, but some of the code is"));
     ui_text(str8_lit("released under different open source licenses. All licenses are"));
-    ui_text(str8_lit("availible at (https://github.com/Multipacker/framed/tree/main/licenses)."));
+    ui_text(str8_lit("available at (https://github.com/Multipacker/framed/tree/main/licenses)."));
 
     ui_spacer(ui_em(1, 1));
     ui_text(str8_lit("Portions of this software are copyright (c) 2024 The FreeType Project"));
