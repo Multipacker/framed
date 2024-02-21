@@ -1863,6 +1863,13 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
             case FramedUI_CommandKind_CloseTab:
             {
                 log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(params->tab->display_string));
+                for (U64 i = 0; i < array_count(framed_ui_state->tab_view_table); ++i)
+                {
+                    if (params->tab == framed_ui_state->tab_view_table[i])
+                    {
+                        framed_ui_state->tab_view_table[i] = &g_nil_tab;
+                    }
+                }
                 framed_ui_panel_remove_tab(params->tab);
                 framed_ui_tab_free(params->tab);
             }; break;

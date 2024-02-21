@@ -228,6 +228,14 @@ struct FramedUI_Settings
 ////////////////////////////////
 //~ hampus: State
 
+typedef enum FramedUI_TabView FramedUI_TabView;
+enum FramedUI_TabView
+{
+    FramedUI_TabView_Counter,
+    FramedUI_TabView_Settings,
+    FramedUI_TabView_COUNT,
+};
+
 typedef struct FramedUI_State FramedUI_State;
 struct FramedUI_State
 {
@@ -256,6 +264,10 @@ struct FramedUI_State
     FramedUI_DragData drag_data;
 
     FramedUI_Settings settings;
+
+    FramedUI_Tab *tab_view_table[FramedUI_TabView_COUNT];
+    FramedUI_TabViewProc *tab_view_function_table[FramedUI_TabView_COUNT];
+    Str8 tab_view_string_table[FramedUI_TabView_COUNT];
 };
 
 ////////////////////////////////

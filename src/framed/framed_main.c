@@ -580,26 +580,31 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Counter] = framed_ui_tab_view_counters;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
+
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Counter] = str8_lit("Counter");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
+
     Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
     Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
     FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
     framed_ui_window_push_to_front(master_window);
 
     {
-        FramedUI_Panel *first_panel = master_window->root_panel;
-        framed_ui_panel_split(first_panel, Axis2_X);
+        framed_ui_state->tab_view_table[FramedUI_TabView_Counter] = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counter"));
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter], true);
 
-        FramedUI_Tab *settings_tab = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings"));
-        framed_ui_panel_insert_tab(first_panel, settings_tab, true);
+        framed_ui_state->tab_view_table[FramedUI_TabView_Settings] = framed_ui_tab_make(framed_ui_tab_view_settings, 0, str8_lit("Settings"));
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Settings], true);
 
-        FramedUI_Tab *counter_tab = framed_ui_tab_make(framed_ui_tab_view_counters, 0, str8_lit("Counters"));
-        framed_ui_panel_insert_tab(first_panel->sibling, counter_tab, true);
-
-        framed_ui_panel_insert_tab(first_panel->sibling, framed_ui_tab_make(0, 0, str8_lit("")), false);
-
-        framed_ui_state->master_window = master_window;
-        framed_ui_state->next_focused_panel = first_panel;
+#if BUILD_MODE_DEBUG
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("")), false);
+#endif
     }
+
+    framed_ui_state->master_window = master_window;
+    framed_ui_state->next_focused_panel = master_window->root_panel;
 
     //- hampus: Initialize UI settings
 
@@ -825,17 +830,70 @@ os_main(Str8List arguments)
 
         //- hampus: Menu bar
 
+        UI_Key view_dropdown_key = ui_key_from_string(ui_key_null(), str8_lit( "ViewDropdownMenu"));
+
+        ui_ctx_menu(view_dropdown_key)
+        {
+            ui_corner_radius(0)
+            {
+                for (U64 i = 0; i < array_count(framed_ui_state->tab_view_table); ++i)
+                {
+                    Str8 string = framed_ui_state->tab_view_string_table[i];
+                    B32 active = !framed_ui_tab_is_nil(framed_ui_state->tab_view_table[i]);
+                    ui_next_hover_cursor(Gfx_Cursor_Hand);
+                    ui_next_extra_box_flags(UI_BoxFlag_DrawBorder |
+                                            UI_BoxFlag_DrawBackground |
+                                            UI_BoxFlag_ActiveAnimation |
+                                            UI_BoxFlag_HotAnimation |
+                                            UI_BoxFlag_Clickable);
+                    ui_next_height(ui_em(1, 1));
+                    UI_Box *row_box = ui_named_row_beginf("TabViewDropdownListEntry%"PRIU64, i);
+                    ui_next_height(ui_em(1, 0.0f));
+                    ui_next_width(ui_em(5, 1));
+                    UI_Box *tab_box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+                    ui_next_icon(RENDER_ICON_CHECK);
+                    ui_next_width(ui_em(1, 1));
+                    ui_next_height(ui_pct(1, 1));
+                    UI_Box *check_box = ui_box_make(0, str8_lit(""));
+                    ui_spacer(ui_em(0.2f, 1));
+
+                    if (active)
+                    {
+                        check_box->flags |= UI_BoxFlag_DrawText;
+                    }
+
+                    ui_box_equip_display_string(tab_box, string);
+                    ui_named_row_end();
+                    UI_Comm row_comm = ui_comm_from_box(row_box);
+                    if (row_comm.pressed)
+                    {
+                        if (active)
+                        {
+                            FramedUI_CommandParams params = {0};
+                            params.tab = framed_ui_state->tab_view_table[i];
+                            framed_ui_command_push(FramedUI_CommandKind_CloseTab, params);
+                        }
+                        else
+                        {
+                            framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
+                            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i], true);
+                        }
+                    }
+                }
+            }
+        }
+
         ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
         ui_next_width(ui_fill());
         ui_corner_radius(0)
             ui_softness(0)
             ui_row()
         {
-            ui_button(str8_lit("File"));
-            ui_button(str8_lit("Edit"));
-            ui_button(str8_lit("View"));
-            ui_button(str8_lit("Options"));
-            ui_button(str8_lit("Help"));
+            UI_Comm comm = ui_button(str8_lit("View"));
+            if (comm.clicked)
+            {
+                ui_ctx_menu_open(comm.box->key, v2f32(0, 0), view_dropdown_key);
+            }
         }
 
         //- hampus: Update panels
