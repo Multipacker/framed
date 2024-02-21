@@ -5,7 +5,7 @@ set additional_includes=-I../
 set compiler_flags=%opts% -nologo -Zi -Od -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:simple_init_and_send
 set libs=
 set linker_flags=%libs% -incremental:no
-set src_files=../src/examples/simple_init_and_send.c
+set src_files=../src/examples/auto_closing_zones.cpp
 
 if not exist build mkdir build
 pushd build

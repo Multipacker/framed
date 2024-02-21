@@ -91,7 +91,7 @@ The API for collecting counters consists of two functions at its core:
 (except if you are compiling in C++, more in next paragraph)
 at all exit points of your function, or else the event will not be recorded.
 
-If you are compiling in C++, Framed also supports the use of auto closing zones where
+If you are compiling in C++, Framed also supports the use of auto-closing zones where
 you don't have to call a matching `framed_zone_end()`. See [examples/auto_closing_zones.cpp]
 for more detailed examples in this. Note that the function calls are different, `framed_zone_block(...)`
 instead of `framed_zone_begin(...)`, `framed_function` instead of `framed_function_begin()` and so on.
@@ -111,7 +111,7 @@ Here is a complete example. There are more complex ones available in the
 
 int factorial(int n)
 {
-    framed_function_begin(); // or just `framed_function` if you are compiling in C++
+    framed_function_begin();
 
     int result = 1;
     if (n > 1)
@@ -119,7 +119,7 @@ int factorial(int n)
         result = n * factorial(n - 1);
     }
 
-    framed_function_end(); // skip this if you are using C++ features
+    framed_function_end();
     return result;
 }
 
