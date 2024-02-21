@@ -771,7 +771,7 @@ os_main(Str8List arguments)
                     {
                         case Framed_PacketKind_FrameStart:
                         {
-#pragma pack(push, 0)
+#pragma pack(push, 1)
                             typedef struct Packet Packet;
                             struct Packet
                             {
@@ -810,7 +810,7 @@ os_main(Str8List arguments)
                         } break;
                         case Framed_PacketKind_ZoneBegin:
                         {
-#pragma pack(push, 0)
+#pragma pack(push, 1)
                             typedef struct Packet Packet;
                             struct Packet
                             {
@@ -838,7 +838,7 @@ os_main(Str8List arguments)
                         } break;
                         case Framed_PacketKind_ZoneEnd:
                         {
-#pragma pack(push, 0)
+#pragma pack(push, 1)
                             typedef struct Packet Packet;
                             struct Packet
                             {

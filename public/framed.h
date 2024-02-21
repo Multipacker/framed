@@ -175,7 +175,7 @@ enum
     Framed_PacketKind_ZoneEnd    = (1 << 2),
 };
 
-#pragma pack(push, 0)
+#pragma pack(push, 1)
 typedef struct PacketHeader PacketHeader;
 struct PacketHeader
 {
@@ -392,7 +392,7 @@ framed_mark_frame_start_(void)
 {
     Framed_State *framed = &global_framed_state;
 
-#pragma pack(push, 0)
+#pragma pack(push, 1)
     typedef struct Packet Packet;
     struct Packet
     {
@@ -415,7 +415,7 @@ framed_zone_begin_(char *name)
 {
     Framed_State *framed = &global_framed_state;
 
-#pragma pack(push, 0)
+#pragma pack(push, 1)
     typedef struct Packet Packet;
     struct Packet
     {
@@ -445,7 +445,7 @@ framed_zone_end_(void)
 {
     Framed_State *framed = &global_framed_state;
 
-#pragma pack(push, 0)
+#pragma pack(push, 1)
     typedef struct Packet Packet;
     struct Packet
     {
