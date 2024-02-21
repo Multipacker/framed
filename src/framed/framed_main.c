@@ -215,7 +215,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_settings)
                 if (comm.clicked)
                 {
                     ui_ctx_menu_open(box->key, v2f32(0, 0), theme_color_ctx_menu);
-                    color_picker_data->rgba = &framed_ui_state->theme.colors[color];
+                    color_picker_data->rgba = &framed_ui_state->settings.theme_colors[color];
                 }
             }
             ui_spacer(ui_em(0.5f, 1));
@@ -623,12 +623,12 @@ os_main(Str8List arguments)
     UI_Context *ui = ui_init();
 
     framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_InactivePanelBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_ActivePanelBorder, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_InactivePanelOverlay, v4f32(0, 0, 0, 0.3f));
+    framed_ui_set_color(FramedUI_Color_PanelBorderActive, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_PanelBorderInactive, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_PanelOverlayInactive, v4f32(0, 0, 0, 0.3f));
     framed_ui_set_color(FramedUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_ActiveTab, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_InactiveTab, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabActive, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabInactive, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));

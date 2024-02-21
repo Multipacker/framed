@@ -86,6 +86,12 @@ struct FramedUI_TabGroup
 ////////////////////////////////
 //~ hampus: Panel types
 
+typedef enum FramedUI_PanelFlag FramedUI_PanelFlag;
+enum FramedUI_PanelFlag
+{
+    FramedUI_PanelFlag_MarkedForDeletion = (1 << 0),
+};
+
 typedef struct FramedUI_FreePanel FramedUI_FreePanel;
 struct FramedUI_FreePanel
 {
@@ -100,6 +106,7 @@ struct FramedUI_Panel
     FramedUI_Panel *parent;
     FramedUI_TabGroup tab_group;
     FramedUI_Window *window;
+    FramedUI_PanelFlag flags;
     Axis2 split_axis;
     F32 pct_of_parent;
 };
@@ -189,16 +196,15 @@ typedef enum FramedUI_Color FramedUI_Color;
 enum FramedUI_Color
 {
     FramedUI_Color_Panel,
-    FramedUI_Color_InactivePanelBorder,
-    FramedUI_Color_ActivePanelBorder,
-    FramedUI_Color_InactivePanelOverlay,
+    FramedUI_Color_PanelBorderInactive,
+    FramedUI_Color_PanelBorderActive,
+    FramedUI_Color_PanelOverlayInactive,
 
     FramedUI_Color_TabBar,
-    FramedUI_Color_ActiveTab,
-    FramedUI_Color_InactiveTab,
+    FramedUI_Color_TabActive,
+    FramedUI_Color_TabInactive,
     FramedUI_Color_TabTitle,
     FramedUI_Color_TabBorder,
-
     FramedUI_Color_TabBarButtons,
 
     FramedUI_Color_COUNT,
@@ -212,16 +218,11 @@ enum FramedUI_FontScale
     FramedUI_FontScale_Larger,
 };
 
-typedef struct FramedUI_Theme FramedUI_Theme;
-struct FramedUI_Theme
-{
-    Vec4F32 colors[FramedUI_Color_COUNT];
-};
-
 typedef struct FramedUI_Settings FramedUI_Settings;
 struct FramedUI_Settings
 {
     U32 font_size;
+    Vec4F32 theme_colors[FramedUI_Color_COUNT];
 };
 
 ////////////////////////////////
@@ -255,8 +256,6 @@ struct FramedUI_State
     FramedUI_DragData drag_data;
 
     FramedUI_Settings settings;
-
-    FramedUI_Theme theme;
 };
 
 ////////////////////////////////
@@ -314,10 +313,10 @@ internal FramedUI_Panel *framed_ui_panel_alloc(Void);
 internal Void framed_ui_panel_free(FramedUI_Panel *panel);
 internal Void framed_ui_panel_free_recursively(FramedUI_Panel *root);
 internal FramedUI_Panel *framed_ui_panel_make(Void);
-internal Side framed_ui_get_panel_side(FramedUI_Panel *panel);
+internal Side framed_ui_panel_get_side(FramedUI_Panel *panel);
 internal B32 framed_ui_panel_is_leaf(FramedUI_Panel *panel);
-internal UI_Comm framed_ui_hover_panel_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, Axis2 axis, B32 center, Side side);
-internal Void framed_ui_update_panel(FramedUI_Panel *root);
+internal UI_Comm framed_ui_panel_hover_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, Axis2 axis, B32 center, Side side);
+internal Void framed_ui_panel_update(FramedUI_Panel *root);
 
 ////////////////////////////////
 //~ hampus: Window
@@ -330,7 +329,7 @@ internal Void framed_ui_window_free(FramedUI_Window *window);
 internal FramedUI_Window *framed_ui_window_make(Vec2F32 min, Vec2F32 max);
 internal UI_Comm framed_ui_window_edge_resizer(FramedUI_Window *window, Str8 string, Axis2 axis, Side side, F32 size_in_em);
 internal UI_Comm framed_ui_window_corner_resizer(FramedUI_Window *window, Str8 string, Corner corner, F32 size_in_em);
-internal Void framed_ui_update_window(FramedUI_Window *window);
+internal Void framed_ui_window_update(FramedUI_Window *window);
 
 ////////////////////////////////
 //~ hampus: Tab views
