@@ -174,8 +174,11 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 
             case WM_CHAR:
             {
-                event->kind = Gfx_EventKind_Char;
-                event->character = (char) message.wParam;
+                if (message.wParam >= ' ' && message.wParam <= '~')
+                {
+                    event->kind = Gfx_EventKind_Char;
+                    event->character = (char) message.wParam;
+                }
             } break;
 
             case WM_SIZE:
