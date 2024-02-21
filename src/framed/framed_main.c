@@ -1,7 +1,6 @@
 ////////////////////////////////
 // Stuff to get done before going public
 //
-// [ ] Be able to profile without any concept of frames
 // [ ] Pull out zone processing to its own thread
 // [ ] Make event size per packet instead of per event
 // [ ] A macro which autmatically paste the function name so you
@@ -374,6 +373,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     // TODO(hampus): Test performance with the method done in debug UI
     // vs this one.
 
+    //- hampus: Gather values into a nice format
+
     typedef struct CounterValues CounterValues;
     struct CounterValues
     {
@@ -386,11 +387,31 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
     U64 counter_values_count = 0;
     CounterValues *counter_values = push_struct(scratch.arena, CounterValues);
 
-    CapturedFrame *frame = &profiling_state->latest_captured_frame;
+    U64 tsc_total = 1;
 
-    for (U64 i = 0; i < array_count(frame->zone_blocks); ++i)
+    ZoneBlock *zone_block_array = 0;
+    U64 zone_block_array_count = 0;
+
+    B32 profiling_per_frame = profiling_state->frame_begin_tsc != 0;;
+
+    if (profiling_per_frame)
     {
-        ZoneBlock *zone_block = frame->zone_blocks + i;
+        // NOTE(hampus): We have got a full frame, take the values from there
+        CapturedFrame *frame = &profiling_state->latest_captured_frame;
+        zone_block_array = frame->zone_blocks;
+        zone_block_array_count = array_count(frame->zone_blocks);
+        tsc_total = frame->total_tsc;
+    }
+    else
+    {
+        // NOTE(hampus): If we haven't got any frame yet, just take the current values
+        zone_block_array = profiling_state->zone_blocks;
+        zone_block_array_count = array_count(profiling_state->zone_blocks);
+    }
+
+    for (U64 i = 0; i < zone_block_array_count; ++i)
+    {
+        ZoneBlock *zone_block = zone_block_array + i;
         if (zone_block->name.size)
         {
             U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
@@ -403,11 +424,13 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
         }
     }
 
-    U64 tsc_total = frame->total_tsc;
+    //- hampus: Display values
 
-    ui_spacer(ui_em(0.3f, 1));
-
-    ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
+    if (profiling_per_frame)
+    {
+        ui_spacer(ui_em(0.3f, 1));
+        ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
+    }
 
     ui_spacer(ui_em(0.3f, 1));
 
@@ -480,7 +503,16 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
                 for (U64 i = 0; i < counter_values_count; ++i)
                 {
-                    ui_textf("%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_without_children[i],  ((F32)counter_values->tsc_elapsed_without_children[i] / (F32)tsc_total) * 100.0f);
+                    Str8 string = {0};
+                    if (profiling_per_frame)
+                    {
+                        string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_without_children[i],  ((F32)counter_values->tsc_elapsed_without_children[i] / (F32)tsc_total) * 100.0f);
+                    }
+                    else
+                    {
+                        string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_without_children[i]);
+                    }
+                    ui_text(string);
                 }
             }
         }
@@ -520,7 +552,16 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
                 for (U64 i = 0; i < counter_values_count; ++i)
                 {
-                    ui_textf("%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_with_children[i],  ((F32)counter_values->tsc_elapsed_with_children[i] / (F32)tsc_total) * 100.0f);
+                    Str8 string = {0};
+                    if (profiling_per_frame)
+                    {
+                        string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", counter_values->tsc_elapsed_with_children[i],  ((F32)counter_values->tsc_elapsed_with_children[i] / (F32)tsc_total) * 100.0f);
+                    }
+                    else
+                    {
+                        string = str8_pushf(ui_frame_arena(), "%"PRIU64, counter_values->tsc_elapsed_with_children[i]);
+                    }
+                    ui_text(string);
                 }
             }
         }
