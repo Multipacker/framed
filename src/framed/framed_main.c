@@ -662,7 +662,7 @@ os_main(Str8List arguments)
                             FramedUI_Tab *log_tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0, str8_lit("Log"));
                             framed_ui_panel_insert_tab(debug_window->root_panel, log_tab, false);
 
-                            FramedUI_Tab *texture_viewer_tab= framed_ui_tab_make(framed_ui_tab_view_texture_viewer, &image_texture, str8_lit("Texture Viewer"));
+                            FramedUI_Tab *texture_viewer_tab= framed_ui_tab_make(framed_ui_tab_view_texture_viewer, 0, str8_lit("Texture Viewer"));
                             framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab, false);
                         }
                     }
@@ -738,8 +738,6 @@ os_main(Str8List arguments)
                             memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
 
                             //- hampus: Clear the new zone stats and begin a new frame
-
-                            memory_zero_array(profiling_state->zone_blocks);
 
                             // NOTE(hampus): Keep the name so the display gets less messy
                             // from counters jumping everywhere
