@@ -1,7 +1,7 @@
 ////////////////////////////////
 // Stuff to get done before going public
 //
-// [ ] Make event size per packet instead of per event
+// [ ] Buffer up packets on another thread
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -717,7 +717,8 @@ os_main(Str8List arguments)
                 Arena_Temporary scratch = get_scratch(0, 0);
                 U8 *buffer = push_array(scratch.arena, U8, buffer_size);
                 Net_RecieveResult recieve_result = net_socket_recieve(profiling_state->client_socket, buffer, buffer_size);
-                U8 *buffer_pointer = buffer;
+                // NOTE(hampus): First two bytes are the size of the packet
+                U8 *buffer_pointer = buffer + sizeof(U16);
                 U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
                 while (buffer_pointer < buffer_opl)
                 {

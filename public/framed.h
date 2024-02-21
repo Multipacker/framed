@@ -182,7 +182,6 @@ enum
 typedef struct PacketHeader PacketHeader;
 struct PacketHeader
 {
-    Framed_U16 packet_size;
     Framed_PacketKind kind;
     Framed_U64 tsc;
 };
@@ -379,7 +378,8 @@ framed_init_(Framed_B32 wait_for_connection)
 
     framed__socket_init(wait_for_connection);
     framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
-    framed->buffer_pos = 0;
+    // NOTE(hampus): First two bytes are the size of the packet
+    framed->buffer_pos = sizeof(Framed_U16);
 }
 
 FRAMED_DEF void
@@ -387,7 +387,8 @@ framed_flush_(void)
 {
     Framed_State *framed = &global_framed_state;
     framed__socket_send();
-    framed->buffer_pos = 0;
+    // NOTE(hampus): First two bytes are the size of the packet
+    framed->buffer_pos = sizeof(Framed_U16);
 }
 
 FRAMED_DEF void
