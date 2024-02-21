@@ -31,35 +31,35 @@ out flat vec2 vert_max_uv;
 uniform mat4 uniform_projection;
 
 const vec2 verticies[] = {
-	vec2(-1.0, -1.0),
-	vec2(+1.0, -1.0),
-	vec2(-1.0, +1.0),
-	vec2(+1.0, +1.0)
+    vec2(-1.0, -1.0),
+    vec2(+1.0, -1.0),
+    vec2(-1.0, +1.0),
+    vec2(+1.0, +1.0)
 };
 
 void
 main()
 {
-	vec2 center    = 0.5 * (instance_max + instance_min);
-	vec2 half_size = 0.5 * (instance_max - instance_min);
-	vec2 position  = center + (half_size + instance_softness) * verticies[gl_VertexID];
-	vec2 uv_center    = 0.5 * (instance_max_uv + instance_min_uv);
-	vec2 uv_half_size = 0.5 * (instance_max_uv - instance_min_uv);
-	vec2 uv           = uv_center + (uv_half_size * (1.0 + instance_softness / half_size)) * verticies[gl_VertexID];
+    vec2 center    = 0.5 * (instance_max + instance_min);
+    vec2 half_size = 0.5 * (instance_max - instance_min);
+    vec2 position  = center + (half_size + instance_softness) * verticies[gl_VertexID];
+    vec2 uv_center    = 0.5 * (instance_max_uv + instance_min_uv);
+    vec2 uv_half_size = 0.5 * (instance_max_uv - instance_min_uv);
+    vec2 uv           = uv_center + (uv_half_size * (1.0 + instance_softness / half_size)) * verticies[gl_VertexID];
 
-	gl_Position           = uniform_projection * vec4(position, 0.0, 1.0);
-	vert_pos              = position;
-	vert_uv               = uv;
-	vert_colors           = instance_colors;
-	vert_softness         = instance_softness;
-	vert_border_thickness = instance_border_thickness;
-	vertex_id             = gl_VertexID;
-	vert_center           = center;
-	vert_radies           = instance_radies;
-	vert_omit_texture     = instance_omit_texture;
-	vert_is_subpixel_text = instance_is_subpixel_text;
-	vert_use_nearest      = instance_use_nearest;
-	vert_half_size        = half_size;
-	vert_min_uv           = instance_min_uv;
-	vert_max_uv           = instance_max_uv;
+    gl_Position           = uniform_projection * vec4(position, 0.0, 1.0);
+    vert_pos              = position;
+    vert_uv               = uv;
+    vert_colors           = instance_colors;
+    vert_softness         = instance_softness;
+    vert_border_thickness = instance_border_thickness;
+    vertex_id             = gl_VertexID;
+    vert_center           = center;
+    vert_radies           = instance_radies;
+    vert_omit_texture     = instance_omit_texture;
+    vert_is_subpixel_text = instance_is_subpixel_text;
+    vert_use_nearest      = instance_use_nearest;
+    vert_half_size        = half_size;
+    vert_min_uv           = instance_min_uv;
+    vert_max_uv           = instance_max_uv;
 }
