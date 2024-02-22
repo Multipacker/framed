@@ -75,6 +75,8 @@ struct ProfilingState
     B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;
+
+    U64 bytes_recieved_this_frame;
 };
 
 global ProfilingState *profiling_state;
@@ -579,10 +581,18 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
                 ui_spacer(ui_em(0.3f, 1));
                 F32 ms = ((F32)tsc_total/(F32)profiling_state->tsc_frequency) * 1000.0f;
-                ui_textf("Total cycles for frame: %"PRIU64" (%.2fms)", tsc_total, ms);
+                ui_textf("Total cycles for frame: %"PRIU64" (%.2f%%ms)", tsc_total, ms);
                 ui_spacer(ui_em(0.3f, 1));
                 ui_textf("Frames captured: %"PRIU64, profiling_state->frame_index-1);
             }
+
+
+            ui_spacer(ui_em(0.5f, 1));
+            ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+            ui_text(str8_lit("Networks stats"));
+            ui_spacer(ui_em(0.5f, 1));
+            MemorySize memory_size_bytes_transferred = memory_size_from_bytes(profiling_state->bytes_recieved_this_frame);
+            ui_textf("Bytes transferred this frame: %.2f%"PRISTR8, memory_size_bytes_transferred.amount, str8_expand(memory_size_bytes_transferred.unit));
         }
     }
 
@@ -592,6 +602,8 @@ internal Void
 framed_parse_zones(Void)
 {
     Debug_Time time = debug_function_begin();
+
+    profiling_state->bytes_recieved_this_frame = 0;
 
     //- hampus: Check connection state
 
@@ -632,6 +644,7 @@ framed_parse_zones(Void)
                 // TODO(simon): What do we do in this case? At the moment
                 // the rest of the code assumes that this never happens.
             }
+            profiling_state->bytes_recieved_this_frame += buffer_size;
 
             // NOTE(hampus): First two bytes are the size of the packet
             U8 *buffer_pointer = buffer + sizeof(U16);
@@ -878,17 +891,17 @@ os_main(Str8List arguments)
     FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
     framed_ui_window_push_to_front(master_window);
 
-        for (U64 i = 0; i < FramedUI_TabView_COUNT; ++i)
-        {
-            framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
-            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
-        }
+    for (U64 i = 0; i < FramedUI_TabView_COUNT; ++i)
+    {
+        framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
+    }
 
 #if BUILD_MODE_DEBUG
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
+    framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
 #endif
 
-        framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter]);
+    framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter]);
 
     framed_ui_state->master_window = master_window;
     framed_ui_state->next_focused_panel = master_window->root_panel;
