@@ -418,6 +418,43 @@ framed__socket_send(void)
 #include <errno.h>
 #include <sys/socket.h>
 #include <netinet/ip.h>
+#include <time.h>
+
+static Framed_U64
+framed__linux_read_timer(void)
+{
+    // NOTE(simon): According to `man clock_gettime.2` this syscall should not fail.
+    struct timespec time = { 0 };
+    Framed_S32 return_code = clock_gettime(CLOCK_MONOTONIC_RAW, &time);
+    framed__assert(return_code == 0);
+
+    Framed_U64 nanoseconds = (Framed_U64) time.tv_sec * 1000000000 + (Framed_U64) time.tv_nsec;
+    return(nanoseconds);
+}
+
+static Framed_U64
+framed__guess_tsc_frequency(Framed_U64 ms_to_wait)
+{
+    Framed_U64 cpu_start = framed__rdtsc();
+    Framed_U64 os_start = framed__linux_read_timer();
+    Framed_U64 os_end = 0;
+    Framed_U64 os_elapsed = 0;
+    Framed_U64 os_wait_time = ms_to_wait * 1000000;
+    while (os_elapsed < os_wait_time)
+    {
+        os_end = framed__linux_read_timer();
+        os_elapsed = os_end - os_start;
+    }
+
+    Framed_U64 cpu_end = framed__rdtsc();
+    Framed_U64 cpu_elapsed = cpu_end - cpu_start;
+    Framed_U64 cpu_freq = 0;
+    if (os_elapsed)
+    {
+        cpu_freq = 1000000000 * cpu_elapsed / os_elapsed;
+    }
+    return(cpu_freq);
+}
 
 static void
 framed__socket_init(Framed_B32 wait_for_connection)

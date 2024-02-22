@@ -1158,7 +1158,7 @@ os_main(Str8List arguments)
 
         if (profiling_state->seconds_accumulator >= 0.5f)
         {
-            profiling_state->bandwidth_average_rate = (U64)(profiling_state->bytes_from_client / 0.5);
+            profiling_state->bandwidth_average_rate = (U64)((F64) profiling_state->bytes_from_client / 0.5);
             profiling_state->bytes_from_client = 0;
 
             profiling_state->parsed_average_rate = (U64)((F64)profiling_state->parsed_bytes / (F64)profiling_state->parsed_time_accumulator);
