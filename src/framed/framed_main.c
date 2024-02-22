@@ -68,6 +68,10 @@ struct ProfilingState
     U64 frame_end_tsc;
     Arena *zone_arena;
 
+    U64 prev_frame_index;
+    U64 frame_index;
+
+    U64 tsc_frequency;
     B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;
@@ -566,12 +570,20 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
         }
 
-        if (profiling_per_frame)
+        ui_column()
         {
             ui_spacer(ui_em(0.3f, 1));
-            ui_textf("Total cycles for frame: %"PRIU64, tsc_total);
-        }
+            ui_textf("Timestamp counter frequency: %"PRIU64" cycles/second", profiling_state->tsc_frequency);
 
+            if (profiling_per_frame)
+            {
+                ui_spacer(ui_em(0.3f, 1));
+                F32 ms = ((F32)tsc_total/(F32)profiling_state->tsc_frequency) * 1000.0f;
+                ui_textf("Total cycles for frame: %"PRIU64" (%.2fms)", tsc_total, ms);
+                ui_spacer(ui_em(0.3f, 1));
+                ui_textf("Frames caputerd: %"PRIU64, profiling_state->frame_index-1);
+            }
+        }
     }
 
     release_scratch(scratch);
@@ -634,6 +646,35 @@ framed_parse_zones(Void)
                 PacketHeader *header = (PacketHeader *) buffer_pointer;
                 switch (header->kind)
                 {
+                    case Framed_PacketKind_Init:
+                    {
+#pragma pack(push, 1)
+                        typedef struct Packet Packet;
+                        struct Packet
+                        {
+                            PacketHeader header;
+                            Framed_U64 tsc_frequency;
+                        };
+
+                        Packet *packet = (Packet *) header;
+
+                        if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                        {
+                            log_error("Not enough data for zone packet, terminating connection");
+                            terminate_connection = true;
+                        }
+                        else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                        {
+                            log_error("Not enough data for zone name, terminating connection");
+                            terminate_connection = true;
+                        }
+                        else
+                        {
+                            profiling_state->tsc_frequency = packet->tsc_frequency;
+                            buffer_pointer += sizeof(Packet);
+                        }
+#pragma pack(pop)
+                    } break;
                     case Framed_PacketKind_FrameStart:
                     {
 #pragma pack(push, 1)
@@ -646,6 +687,9 @@ framed_parse_zones(Void)
                         // NOTE(simon): No need to ensure size, the event is only the header.
 
                         //- hampus: Save the last frame's data and produce a fresh captured frame
+
+                        profiling_state->frame_index++;
+                        Packet *packet = (Packet *) header;
 
                         profiling_state->frame_end_tsc = header->tsc;
 

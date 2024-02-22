@@ -161,9 +161,10 @@ typedef Framed_U64 Framed_B64;
 typedef Framed_U8 Framed_PacketKind;
 enum
 {
-    Framed_PacketKind_FrameStart = (1 << 0),
-    Framed_PacketKind_ZoneBegin  = (1 << 1),
-    Framed_PacketKind_ZoneEnd    = (1 << 2),
+    Framed_PacketKind_Init       = (1 << 0),
+    Framed_PacketKind_FrameStart = (1 << 1),
+    Framed_PacketKind_ZoneBegin  = (1 << 2),
+    Framed_PacketKind_ZoneEnd    = (1 << 3),
 };
 
 #pragma pack(push, 1)
@@ -257,7 +258,39 @@ static Framed_State global_framed_state;
 #endif
 
 ////////////////////////////////
-// NOTE: Socket implementation
+// NOTE: Internal functions
+
+#if FRAMED_COMPILER_CL
+#   include <intrin.h>
+#elif FRAMED_COMPILER_GCC
+#    include <x86intrin.h>
+#endif
+
+static Framed_U64
+framed__rdtsc(void)
+{
+    Framed_U64 result = 0;
+#if FRAMED_COMPILER_CL
+    result = __rdtsc();
+#elif FRAMED_COMPILER_CLANG
+    result = __rdtsc();
+#elif FRAMED_COMPILER_GCC
+    result = __rdtsc();
+#endif
+    return(result);
+}
+
+static void
+framed__ensure_space(Framed_U64 size)
+{
+    framed__assert(size <= FRAMED_BUFFER_CAPACITY);
+
+    Framed_State *framed = &global_framed_state;
+    if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
+    {
+        framed_flush_();
+    }
+}
 
 static Framed_U16
 framed__u16_byte_swap(Framed_U16 x)
@@ -283,13 +316,63 @@ framed__u32_byte_swap(Framed_U32 x)
 #endif
 }
 
+////////////////////////////////
+// NOTE: OS specific implementation
+
 #if FRAMED_OS_WINDOWS
 
-#pragma comment(lib, "Ws2_32.lib")
-
+#include <windows.h>
 #pragma warning(push, 0)
 #    include <winsock2.h>
 #pragma warning(pop)
+
+#pragma comment(lib, "Ws2_32.lib")
+
+static Framed_U64
+framed__win32_read_timer_frequency(void)
+{
+    Framed_U64 result = 0;
+    LARGE_INTEGER freq;
+    QueryPerformanceFrequency(&freq);
+    result = freq.QuadPart;
+    return(result);
+}
+
+static Framed_U64
+framed__win32_read_timer(void)
+{
+    Framed_U64 result = 0;
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    result = counter.QuadPart;
+    return(result);
+}
+
+static Framed_U64
+framed__guess_tsc_frequency(Framed_U64 ms_to_wait)
+{
+    Framed_U64 os_freq = framed__win32_read_timer_frequency();
+
+    Framed_U64 cpu_start = framed__rdtsc();
+    Framed_U64 os_start = framed__win32_read_timer();
+    Framed_U64 os_end = 0;
+    Framed_U64 os_elapsed = 0;
+    Framed_U64 os_wait_time = os_freq * ms_to_wait/1000;
+    while (os_elapsed < os_wait_time)
+    {
+        os_end = framed__win32_read_timer();
+        os_elapsed = os_end - os_start;
+    }
+
+    Framed_U64 cpu_end = framed__rdtsc();
+    Framed_U64 cpu_elapsed = cpu_end - cpu_start;
+    Framed_U64 cpu_freq = 0;
+    if (os_elapsed)
+    {
+        cpu_freq = os_freq * cpu_elapsed / os_elapsed;
+    }
+    return(cpu_freq);
+}
 
 static void
 framed__socket_init(Framed_B32 wait_for_connection)
@@ -367,42 +450,7 @@ framed__socket_send(void)
 #endif
 
 ////////////////////////////////
-// NOTE: Internal functions
-
-#if FRAMED_COMPILER_CL
-#   include <intrin.h>
-#elif FRAMED_COMPILER_GCC
-#    include <x86intrin.h>
-#endif
-
-static Framed_U64
-framed__rdtsc(void)
-{
-    Framed_U64 result = 0;
-#if FRAMED_COMPILER_CL
-    result = __rdtsc();
-#elif FRAMED_COMPILER_CLANG
-    result = __rdtsc();
-#elif FRAMED_COMPILER_GCC
-    result = __rdtsc();
-#endif
-    return(result);
-}
-
-static void
-framed__ensure_space(Framed_U64 size)
-{
-    framed__assert(size <= FRAMED_BUFFER_CAPACITY);
-
-    Framed_State *framed = &global_framed_state;
-    if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
-    {
-        framed_flush_();
-    }
-}
-
-////////////////////////////////
-// NOTE: Public functions
+//~ NOTE: Public functions
 
 FRAMED_DEF void
 framed_init_(Framed_B32 wait_for_connection)
@@ -413,6 +461,32 @@ framed_init_(Framed_B32 wait_for_connection)
     framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
     // NOTE(hampus): First two bytes are the size of the packet
     framed->buffer_pos = sizeof(Framed_U16);
+
+#pragma pack(push, 1)
+    typedef struct Packet Packet;
+    struct Packet
+    {
+        PacketHeader header;
+        Framed_U64 tsc_frequency;
+    };
+#pragma pack(pop)
+
+    // NOTE(hampus): Try to guess the clients rdtsc frquency. Higher
+    // wait times may yield in better guess, but it is not really
+    // too significant to be worth it.
+
+    // TODO(hampus): We might want to do this per frame instead if
+    // the tsc frequency changes inbetween frames.
+
+    Framed_U64 entry_size = sizeof(Packet);
+
+    Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
+    packet->header.kind = Framed_PacketKind_Init;
+    packet->tsc_frequency = framed__guess_tsc_frequency(1000);
+
+    framed->buffer_pos += entry_size;
+
+    framed_flush_();
 }
 
 FRAMED_DEF void
