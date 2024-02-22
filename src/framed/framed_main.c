@@ -581,7 +581,7 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
                 F32 ms = ((F32)tsc_total/(F32)profiling_state->tsc_frequency) * 1000.0f;
                 ui_textf("Total cycles for frame: %"PRIU64" (%.2fms)", tsc_total, ms);
                 ui_spacer(ui_em(0.3f, 1));
-                ui_textf("Frames caputerd: %"PRIU64, profiling_state->frame_index-1);
+                ui_textf("Frames captured: %"PRIU64, profiling_state->frame_index-1);
             }
         }
     }
@@ -591,6 +591,8 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
 internal Void
 framed_parse_zones(Void)
 {
+    Debug_Time time = debug_function_begin();
+
     //- hampus: Check connection state
 
     if (!net_socket_connection_is_alive(profiling_state->client_socket))
@@ -799,6 +801,8 @@ framed_parse_zones(Void)
             net_socket_free(profiling_state->client_socket);
         }
     }
+
+    debug_function_end(time);
 }
 
 ////////////////////////////////
