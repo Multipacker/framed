@@ -30,7 +30,7 @@ commands to compile using Clang. Equivalent scripts exist for
 compiling with GCC.
 
 ```
-script/build_clang.sh release
+script/build_clang.sh
 ```
 
 There will now be a `build` folder in the root of the project, and it will
@@ -50,7 +50,7 @@ Microsoft's C/C++ build tools.  Navigate to the root of the repository and run
 the following command:
 
 ```
-script\build_msvc release
+script\build_msvc
 ```
 
 There will now be a `build` folder in the root of the project, and it will
@@ -99,12 +99,9 @@ instead of `framed_zone_begin(...)`, `framed_function` instead of `framed_functi
 Here is a complete example. There are more complex ones available in the
 [examples] folder.
 
-> [!IMPORTANT]
-> This has not yet been tested because the project is not fully functional yet.
-> Test it before opening the project.
-
 ```c
 #include <stdio.h>
+#include <stdbool.h>
 
 #define FRAMED_IMPLEMENTATION
 #include "framed.h"

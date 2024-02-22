@@ -1,6 +1,4 @@
 // [ ] Logging paths
-// [ ] Logging in same directory as binary
-// [ ] Bundla shaders
 
 #include "base/base_inc.h"
 #include "os/os_inc.h"
@@ -716,6 +714,7 @@ framed_parse_zones(Void)
                         {
                             PacketHeader header;
                             Framed_U64 tsc_frequency;
+                            Framed_U16 version;
                         };
 #pragma pack(pop)
 
@@ -877,7 +876,12 @@ internal S32
 os_main(Str8List arguments)
 {
     debug_init();
-    log_init(str8_lit("log.txt"));
+    arena_scratch(0, 0)
+    {
+        Str8 binary_path = os_push_system_path(scratch, OS_SystemPath_Binary);
+        Str8 log_file = str8_pushf(scratch, "%"PRISTR8"%cframed_log.txt", str8_expand(binary_path), PATH_SEPARATOR);
+        log_init(log_file);
+    }
 
     Arena *perm_arena = arena_create("MainPerm");
 
@@ -1154,7 +1158,7 @@ os_main(Str8List arguments)
 
         if (profiling_state->seconds_accumulator >= 0.5f)
         {
-            profiling_state->bandwidth_average_rate = (U64)(profiling_state->bytes_from_client / 0.5);
+            profiling_state->bandwidth_average_rate = (U64)((F64) profiling_state->bytes_from_client / 0.5);
             profiling_state->bytes_from_client = 0;
 
             profiling_state->parsed_average_rate = (U64)((F64)profiling_state->parsed_bytes / (F64)profiling_state->parsed_time_accumulator);

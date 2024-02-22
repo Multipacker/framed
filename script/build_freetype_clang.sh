@@ -1,3 +1,5 @@
+#!/bin/sh
+
 mkdir -p build/freetype
 
 src_files="../../vendor/freetype/src/base/ftsystem.c"

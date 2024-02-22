@@ -47,34 +47,34 @@ fxc.exe /nologo /T ps_5_0 /E ps /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_psh
 set build_debug_freetype=0
 
 if %build_mode% == "debug" (
-	echo Debug Build
-	set compiler_flags=%compiler_flags% %debug_compiler_flags%
-	set linker_flags=%linker_flags% %debug_linker_flags%
-	set build_debug_freetype=1
+    echo Debug Build
+    set compiler_flags=%compiler_flags% %debug_compiler_flags%
+    set linker_flags=%linker_flags% %debug_linker_flags%
+    set build_debug_freetype=1
 ) else if %build_mode% == "optimized" (
-	echo Optimized Build
-	set compiler_flags=%compiler_flags% %optimized_compiler_flags%
-	set linker_flags=%linker_flags% %optimized_linker_flags%
+    echo Optimized Build
+    set compiler_flags=%compiler_flags% %optimized_compiler_flags%
+    set linker_flags=%linker_flags% %optimized_linker_flags%
 ) else if %build_mode% == "release" (
-	echo Release Build
-	set compiler_flags=%compiler_flags% %release_compiler_flags%
-	set linker_flags=%linker_flags% %release_linker_flags%
+    echo Release Build
+    set compiler_flags=%compiler_flags% %release_compiler_flags%
+    set linker_flags=%linker_flags% %release_linker_flags%
 ) else (
-	echo Release Build
-	set compiler_flags=%compiler_flags% %release_compiler_flags%
-	set linker_flags=%linker_flags% %release_linker_flags%
+    echo Release Build
+    set compiler_flags=%compiler_flags% %release_compiler_flags%
+    set linker_flags=%linker_flags% %release_linker_flags%
 )
 
 if %build_debug_freetype% == 1 (
-	if not exist build/freetype_debug.lib (
-		echo Debug build of freetype was not found Building freetype
-		call script\build_freetype_msvc.bat debug
-	)
+    if not exist build/freetype_debug.lib (
+        echo Debug build of freetype was not found Building freetype
+        call script\build_freetype_msvc.bat debug
+    )
 ) else (
-	if not exist build/freetype.lib (
-		echo Release build of freetype was not found. Building freetype
-		call script\build_freetype_msvc.bat release
-	)
+    if not exist build/freetype.lib (
+        echo Release build of freetype was not found. Building freetype
+        call script\build_freetype_msvc.bat release
+    )
 )
 
 if not exist build mkdir build

@@ -1,9 +1,9 @@
 #!/bin/sh
 
-mode=${1:-debug}
+mode=${1:-release}
 
 if [ ! -f build/freetype/freetype ]; then
-	source "script/build_freetype_clang.sh"
+    source "script/build_freetype_clang.sh"
 fi
 
 mkdir -p build
@@ -15,18 +15,18 @@ common_flags="-I. -Isrc -Ivendor -Ivendor/freetype/include -o $out_file -DRENDER
 linker_flags="-lSDL2 build/freetype/freetype -lm"
 
 if [ "$mode" == "debug" ]; then
-	compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
+    compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"
 elif [ "$mode" == "optimized" ]; then
-	compiler_flags="-g -O3 -march=native -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_OPTIMIZED=1"
+    compiler_flags="-g -O3 -march=native -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_OPTIMIZED=1"
 elif [ "$mode" == "release" ]; then
-	compiler_flags="-O3 -s -march=native -DBUILD_MODE_RELEASE=1 -Wl,--gc-sections -fdata-sections -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -Wa,--noexecstack"
+    compiler_flags="-O3 -s -march=native -DBUILD_MODE_RELEASE=1 -Wl,--gc-sections -fdata-sections -fno-stack-protector -fno-unwind-tables -fno-asynchronous-unwind-tables -Wa,--noexecstack"
 else
-	echo "ERROR: Unknown build type."
-	exit 1
+    echo "ERROR: Unknown build type."
+    exit 1
 fi
 
 clang $src_files $errors $common_flags $compiler_flags $linker_flags
 
 if [ "$mode" == "release" ]; then
-	strip -R .comment $out_file
+    strip -R .comment $out_file
 fi
