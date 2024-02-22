@@ -225,7 +225,7 @@ struct AutoClosingZoneBlock
 #include <string.h>
 #include <stdlib.h>
 
-#define framed__assert(expr) if (!(expr)) { *(int *)0 = 0; }
+#define framed__assert(expr) if (!(expr)) { *(volatile int *)0 = 0; }
 
 #define framed_memory_copy(dst, src, size) memcpy(dst, src, size)
 
@@ -482,7 +482,7 @@ framed__socket_send(void)
     int linux_socket = (int) framed->socket.u64[0];
     Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
     *packet_size = (Framed_U16)framed->buffer_pos;
-    int error = 0;
+    ssize_t error = 0;
     do
     {
         error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
