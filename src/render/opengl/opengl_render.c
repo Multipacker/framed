@@ -1,40 +1,32 @@
+#include "shader_vert.h"
+#include "shader_frag.h"
+
 internal GLuint
-opengl_create_shader(Str8 path, GLenum shader_type)
+opengl_create_shader(Str8 source, GLenum shader_type)
 {
     GLuint shader = glCreateShader(shader_type);
     Arena_Temporary scratch = get_scratch(0, 0);
 
-    Str8 source = { 0 };
-    if (os_file_read(scratch.arena, path, &source))
+    const GLchar *source_data = (const GLchar *) source.data;
+    GLint         source_size = (GLint) source.size;
+
+    glShaderSource(shader, 1, &source_data, &source_size);
+
+    glCompileShader(shader);
+
+    GLint compile_status = 0;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
+    if (!compile_status)
     {
-        const GLchar *source_data = (const GLchar *) source.data;
-        GLint         source_size = (GLint) source.size;
+        GLint log_length = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
 
-        glShaderSource(shader, 1, &source_data, &source_size);
+        GLchar *raw_log = push_array(scratch.arena, GLchar, (U64) log_length);
+        glGetShaderInfoLog(shader, log_length, 0, raw_log);
 
-        glCompileShader(shader);
+        Str8 log = str8((U8 *) raw_log, (U64) log_length);
 
-        GLint compile_status = 0;
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &compile_status);
-        if (!compile_status)
-        {
-            GLint log_length = 0;
-            glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &log_length);
-
-            GLchar *raw_log = push_array(scratch.arena, GLchar, (U64) log_length);
-            glGetShaderInfoLog(shader, log_length, 0, raw_log);
-
-            Str8 log = str8((U8 *) raw_log, (U64) log_length);
-
-            fprintf(stderr, "ERROR: Could not compile %.*s. Shader log:\n%.*s\n", str8_expand(path), str8_expand(log));
-
-            glDeleteShader(shader);
-            shader = 0;
-        }
-    }
-    else
-    {
-        fprintf(stderr, "ERROR: Could not load file %.*s\n", str8_expand(path));
+        fprintf(stderr, "ERROR: Could not compile shader. Shader log:\n%.*s\n", str8_expand(log));
 
         glDeleteShader(shader);
         shader = 0;
@@ -128,8 +120,8 @@ render_backend_init(Render_Context *renderer)
     glVertexArrayVertexBuffer(backend->vao, 0, backend->vbo, 0, sizeof(Render_RectInstance));
 
     GLuint shaders[] = {
-        opengl_create_shader(str8_lit("src/render/opengl/shader.vert"), GL_VERTEX_SHADER),
-        opengl_create_shader(str8_lit("src/render/opengl/shader.frag"), GL_FRAGMENT_SHADER),
+        opengl_create_shader(str8_cstr(opengl_shader_vert), GL_VERTEX_SHADER),
+        opengl_create_shader(str8_cstr(opengl_shader_frag), GL_FRAGMENT_SHADER),
     };
     backend->program = opengl_create_program(shaders, array_count(shaders));
 
