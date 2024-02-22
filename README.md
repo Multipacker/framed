@@ -153,7 +153,7 @@ This software uses SDL 2 which is licensed under the [zlib license].
 [MIT License]:              /LICENSE
 [RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
 [examples]:                 /examples
-[stb]:                      https://github.com/nothings/stb
+[stb]:                      https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
 [www.freetype.org]:         https://www.freetype.org
 [zlib license]:             https://www.zlib.net/zlib_license.html
 [examples/auto_closing_zones.cpp]: /examples/auto_closing_zones.cpp
