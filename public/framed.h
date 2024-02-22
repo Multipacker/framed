@@ -191,7 +191,7 @@ struct PacketHeader
 #    define framed_zone_end()         framed_zone_end_()
 #endif
 
-#define framed_function_begin() framed_zone_begin(__func__)
+#define framed_function_begin() framed_zone_begin((char *) __func__)
 #define framed_function_end()   framed_zone_end()
 
 FRAMED_DEF void framed_init_(Framed_B32 wait_for_connection);
