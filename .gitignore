@@ -2,8 +2,7 @@
 **/*.swp
 /project.4coder
 **/*.h.gch
-/log
-/log.txt
+framed_log.txt
 /theme_dump.txt
 /theme_dump
 /framed.raddbg_profile
