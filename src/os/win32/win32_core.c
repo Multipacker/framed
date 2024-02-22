@@ -7,11 +7,28 @@ win32_print_error_message(Void)
 {
     DWORD error = GetLastError();
     U8 buffer[1024] = {0};
-    U64 size = FormatMessageA(
-        FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-        0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
-    );
-    OutputDebugStringA((LPCSTR) buffer);
+    U64 size = FormatMessageA(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                              0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0);
+    log_error((CStr)buffer);
+}
+
+internal B32
+win32_handle_is_valid(HANDLE handle)
+{
+    B32 result = !(handle == INVALID_HANDLE_VALUE || handle == 0);
+    return(result);
+}
+
+internal Str16
+win32_str16_from_wchar(WCHAR *wide_char)
+{
+    Str16 result = {0};
+    result.data = wide_char;
+    while (*wide_char++)
+    {
+        result.size++;
+    }
+    return(result);
 }
 
 internal Void *
@@ -77,16 +94,14 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
     U64 size = u64_round_up_to_power_of_2(minimum_size, info.dwAllocationGranularity);
     U64 total_repeated_size = repeat_count * size;
 
-    HANDLE file_mapping = CreateFileMapping(
-        INVALID_HANDLE_VALUE, 0,
-        PAGE_READWRITE, (DWORD) (size >> 32),
-        (DWORD) (size & 0xffffffff), 0
-    );
+    HANDLE file_mapping = CreateFileMapping(INVALID_HANDLE_VALUE, 0,
+                                            PAGE_READWRITE, (DWORD) (size >> 32),
+                                            (DWORD) (size & 0xffffffff), 0);
 
     result.handle = int_from_ptr(file_mapping);
     result.repeat_count = repeat_count;
 
-    if (file_mapping != INVALID_HANDLE_VALUE)
+    if (win32_handle_is_valid(file_mapping))
     {
         HMODULE kernel = LoadLibrary(cstr16_from_str8(scratch.arena, str8_lit("kernelbase.dll")));
         VirtualAlloc2Proc *VirtualAlloc2 = (VirtualAlloc2Proc *) GetProcAddress(kernel, "VirtualAlloc2");
@@ -143,6 +158,10 @@ os_circular_buffer_allocate(U64 minimum_size, U64 repeat_count)
             }
         }
     }
+    else
+    {
+        win32_print_error_message();
+    }
 
     if (!result.data)
     {
@@ -157,7 +176,7 @@ internal Void
 os_circular_buffer_free(OS_CircularBuffer circular_buffer)
 {
     HANDLE file_mapping_handle = ptr_from_int(circular_buffer.handle);
-    if (file_mapping_handle != INVALID_HANDLE_VALUE)
+    if (win32_handle_is_valid(file_mapping_handle))
     {
         if (circular_buffer.data)
         {
@@ -173,63 +192,63 @@ os_circular_buffer_free(OS_CircularBuffer circular_buffer)
 internal B32
 os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 {
-    assert(path.size < MAX_PATH);
-
     B32 result = false;
 
-    HANDLE file = INVALID_HANDLE_VALUE;
-    arena_scratch(&arena, 1)
+    if (path.size < MAX_PATH)
     {
-        file = CreateFile(
-            cstr16_from_str8(scratch, path),
-            GENERIC_READ,
-            FILE_SHARE_READ,
-            0,
-            OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL,
-            0
-        );
-    }
-
-    if (file != INVALID_HANDLE_VALUE)
-    {
-        LARGE_INTEGER file_size;
-        BOOL get_file_size_result = GetFileSizeEx(file, &file_size);
-        if (get_file_size_result)
+        HANDLE file = INVALID_HANDLE_VALUE;
+        arena_scratch(&arena, 1)
         {
-            assert(file_size.QuadPart <= S32_MAX);
-            U32 file_size_u32 = (U32) file_size.QuadPart;
-            U32 push_amount = file_size_u32 + 1;
-            result_out->data = push_array(arena, U8, push_amount);
-            result_out->size = file_size_u32;
-            DWORD bytes_read;
-            BOOL read_file_result = ReadFile(file, result_out->data, file_size_u32, &bytes_read, 0);
-            if (read_file_result)
+            file = CreateFile(cstr16_from_str8(scratch, path),
+                              GENERIC_READ,
+                              FILE_SHARE_READ,
+                              0,
+                              OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL,
+                              0);
+        }
+
+        if (win32_handle_is_valid(file))
+        {
+            LARGE_INTEGER file_size;
+            BOOL get_file_size_result = GetFileSizeEx(file, &file_size);
+            if (get_file_size_result)
             {
-                if (bytes_read == file_size_u32)
+                assert(file_size.QuadPart <= S32_MAX);
+                U32 file_size_u32 = (U32) file_size.QuadPart;
+                U32 push_amount = file_size_u32 + 1;
+                result_out->data = push_array(arena, U8, push_amount);
+                result_out->size = file_size_u32;
+                DWORD bytes_read;
+                BOOL read_file_result = ReadFile(file, result_out->data, file_size_u32, &bytes_read, 0);
+                if (read_file_result)
                 {
-                    result = true;
+                    if (bytes_read == file_size_u32)
+                    {
+                        result = true;
+                    }
+                    else
+                    {
+                        assert(false);
+                    }
                 }
                 else
                 {
-                    assert(false);
+                    arena_pop_amount(arena, push_amount);
+                    win32_print_error_message();
                 }
             }
             else
             {
-                arena_pop_amount(arena, push_amount);
                 win32_print_error_message();
             }
+            CloseHandle(file);
         }
         else
         {
             win32_print_error_message();
         }
-        CloseHandle(file);
-    }
-    else
-    {
-        win32_print_error_message();
+
     }
 
     return(result);
@@ -239,49 +258,47 @@ os_file_read(Arena *arena, Str8 path, Str8 *result_out)
 internal B32
 os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 {
-    assert(path.size < MAX_PATH);
-
     B32 result = false;
-
-    Arena_Temporary scratch = get_scratch(0, 0);
-
-    // NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
-    DWORD create_file_flags = OPEN_ALWAYS;
-    if (mode == OS_FileMode_Replace)
+    if (path.size < MAX_PATH)
     {
-        create_file_flags = CREATE_ALWAYS;
-    }
+        Arena_Temporary scratch = get_scratch(0, 0);
 
-    HANDLE file = CreateFile(
-        cstr16_from_str8(scratch.arena, path),
-        GENERIC_READ | GENERIC_WRITE,
-        0,
-        0,
-        create_file_flags,
-        FILE_ATTRIBUTE_NORMAL,
-        0
-    );
-
-    if (file != INVALID_HANDLE_VALUE)
-    {
-        assert(data.size <= U32_MAX);
-        BOOL write_file_result = WriteFile(file, data.data, (S32) data.size, 0, 0);
-        if (write_file_result)
+        // NOTE(hampus): OPEN_ALWAYS create a new file if it does not exist.
+        DWORD create_file_flags = OPEN_ALWAYS;
+        if (mode == OS_FileMode_Replace)
         {
-            result = true;
+            create_file_flags = CREATE_ALWAYS;
+        }
+
+        HANDLE file = CreateFile(cstr16_from_str8(scratch.arena, path),
+                                 GENERIC_READ | GENERIC_WRITE,
+                                 0,
+                                 0,
+                                 create_file_flags,
+                                 FILE_ATTRIBUTE_NORMAL,
+                                 0);
+
+        if (win32_handle_is_valid(file))
+        {
+            assert(data.size <= U32_MAX);
+            BOOL write_file_result = WriteFile(file, data.data, (S32) data.size, 0, 0);
+            if (write_file_result)
+            {
+                result = true;
+            }
+            else
+            {
+                win32_print_error_message();
+            }
+            CloseHandle(file);
         }
         else
         {
             win32_print_error_message();
         }
-        CloseHandle(file);
-    }
-    else
-    {
-        win32_print_error_message();
-    }
 
-    release_scratch(scratch);
+        release_scratch(scratch);
+    }
     return(result);
 }
 
@@ -289,65 +306,62 @@ os_file_write(Str8 path, Str8 data, OS_FileMode mode)
 internal B32
 os_file_stream_open(Str8 path, OS_FileMode mode, OS_File *result)
 {
-    assert(path.size < MAX_PATH);
-    B32 success = true;
-    Arena_Temporary scratch = get_scratch(0, 0);
-
-    DWORD creation_flags = 0;
-    switch (mode)
+    B32 success = false;
+    if (path.size < MAX_PATH)
     {
-        case OS_FileMode_Fail:    creation_flags = CREATE_NEW; break;
-        case OS_FileMode_Replace: creation_flags = CREATE_ALWAYS; break;
-        case OS_FileMode_Append:  creation_flags = OPEN_ALWAYS; break;
-            invalid_case;
-    }
+        Arena_Temporary scratch = get_scratch(0, 0);
 
-    CStr16 path16 = cstr16_from_str8(scratch.arena, path);
-
-    HANDLE file_handle = CreateFile(
-        (LPCWSTR) path16, GENERIC_WRITE | GENERIC_READ,
-        0, 0, creation_flags, 0, 0
-    );
-
-    if (file_handle != INVALID_HANDLE_VALUE)
-    {
-        if (mode & OS_FileMode_Append)
+        DWORD creation_flags = 0;
+        switch (mode)
         {
-            // NOTE(hampus): Set the cursor position to the end of
-            // the file.
-            SetFilePointer(file_handle, 0, 0, FILE_END);
+            case OS_FileMode_Fail:    creation_flags = CREATE_NEW; break;
+            case OS_FileMode_Replace: creation_flags = CREATE_ALWAYS; break;
+            case OS_FileMode_Append:  creation_flags = OPEN_ALWAYS; break;
+            invalid_case;
         }
 
-        result->u64[0] = int_from_ptr(file_handle);
-    }
-    else
-    {
-        success = false;
-    }
+        CStr16 path16 = cstr16_from_str8(scratch.arena, path);
 
-    release_scratch(scratch);
+        HANDLE file_handle = CreateFile((LPCWSTR) path16, GENERIC_WRITE | GENERIC_READ,
+                                        0, 0, creation_flags, 0, 0);
+
+        if (win32_handle_is_valid(file_handle))
+        {
+            if (mode & OS_FileMode_Append)
+            {
+                // NOTE(hampus): Set the cursor position to the end of
+                // the file.
+                SetFilePointer(file_handle, 0, 0, FILE_END);
+            }
+
+            result->u64[0] = int_from_ptr(file_handle);
+            success = true;
+        }
+
+        release_scratch(scratch);
+    }
     return(success);
 }
 
 internal B32
 os_file_stream_write(OS_File file, Str8 data)
 {
-    B32 success = true;
+    B32 success = false;
     HANDLE file_handle = ptr_from_int(file.u64[0]);
-    if (file_handle != INVALID_HANDLE_VALUE && file_handle != 0)
+    if (win32_handle_is_valid(file_handle))
     {
         DWORD bytes_written = 0;
         assert(data.size <= U32_MAX);
         // TODO(hampus): Does this actually write it all at once?
         BOOL write_file_result = WriteFile(file_handle, data.data, (DWORD) data.size, &bytes_written, 0);
-        if (bytes_written != data.size)
+        if (bytes_written == data.size)
         {
-            success = false;
+            success = true;
         }
-    }
-    else
-    {
-        success = false;
+        else
+        {
+            win32_print_error_message();
+        }
     }
     return(success);
 }
@@ -355,15 +369,12 @@ os_file_stream_write(OS_File file, Str8 data)
 internal B32
 os_file_stream_close(OS_File file)
 {
-    B32 success = true;
+    B32 success = false;
     HANDLE file_handle = ptr_from_int(file.u64[0]);
-    if (file_handle != INVALID_HANDLE_VALUE && file_handle != 0)
+    if (win32_handle_is_valid(file_handle))
     {
         CloseHandle(file_handle);
-    }
-    else
-    {
-        success = false;
+        success = true;
     }
     return(success);
 }
@@ -371,39 +382,55 @@ os_file_stream_close(OS_File file)
 internal B32
 os_file_delete(Str8 path)
 {
-    assert(path.size < MAX_PATH);
-    Arena_Temporary scratch = get_scratch(0, 0);
-    B32 result = DeleteFile(cstr16_from_str8(scratch.arena, path));
-    release_scratch(scratch);
+    B32 result = false;
+    if (path.size < MAX_PATH)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        result = DeleteFile(cstr16_from_str8(scratch.arena, path));
+        if (!result)
+        {
+            win32_print_error_message();
+        }
+        release_scratch(scratch);
+    }
     return(result);
 }
 
 internal B32
 os_file_copy(Str8 old_path, Str8 new_path, B32 overwrite_existing)
 {
-    assert(old_path.size < MAX_PATH);
-    assert(new_path.size < MAX_PATH);
-
-    Arena_Temporary scratch = get_scratch(0, 0);
-    CStr16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
-    CStr16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
-    B32 result = CopyFile(old_path16, new_path16, overwrite_existing);
-    release_scratch(scratch);
-
+    B32 result = false;
+    if (old_path.size < MAX_PATH && new_path.size < MAX_PATH)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        CStr16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
+        CStr16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
+        result = CopyFile(old_path16, new_path16, overwrite_existing);
+        if (!result)
+        {
+            win32_print_error_message();
+        }
+        release_scratch(scratch);
+    }
     return(result);
 }
 
 internal B32
 os_file_rename(Str8 old_path, Str8 new_path)
 {
-    assert(old_path.size < MAX_PATH);
-    assert(new_path.size < MAX_PATH);
-
-    Arena_Temporary scratch = get_scratch(0, 0);
-    CStr16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
-    CStr16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
-    B32 result = MoveFile(old_path16, new_path16);
-    release_scratch(scratch);
+    B32 result = false;
+    if (old_path.size < MAX_PATH && new_path.size < MAX_PATH)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        CStr16 old_path16 = cstr16_from_str8(scratch.arena, old_path);
+        CStr16 new_path16 = cstr16_from_str8(scratch.arena, new_path);
+        result = MoveFile(old_path16, new_path16);
+        if (!result)
+        {
+            win32_print_error_message();
+        }
+        release_scratch(scratch);
+    }
 
     return(result);
 }
@@ -414,6 +441,10 @@ os_file_create_directory(Str8 path)
     assert(path.size < MAX_PATH);
     Arena_Temporary scratch = get_scratch(0, 0);
     B32 result = CreateDirectory(cstr16_from_str8(scratch.arena, path), 0);
+    if (!result)
+    {
+        win32_print_error_message();
+    }
     release_scratch(scratch);
     return(result);
 }
@@ -421,21 +452,16 @@ os_file_create_directory(Str8 path)
 internal B32
 os_file_delete_directory(Str8 path)
 {
-    assert(path.size < MAX_PATH);
-    Arena_Temporary scratch = get_scratch(0, 0);
-    B32 result = RemoveDirectory(cstr16_from_str8(scratch.arena, path));
-    release_scratch(scratch);
-    return(result);
-}
-
-internal Str16
-win32_str16_from_wchar(WCHAR *wide_char)
-{
-    Str16 result = {0};
-    result.data = wide_char;
-    while (*wide_char++)
+    B32 result = false;
+    if (path.size < MAX_PATH)
     {
-        result.size++;
+        Arena_Temporary scratch = get_scratch(0, 0);
+        result = RemoveDirectory(cstr16_from_str8(scratch.arena, path));
+        if (!result)
+        {
+            win32_print_error_message();
+        }
+        release_scratch(scratch);
     }
     return(result);
 }
@@ -443,18 +469,24 @@ win32_str16_from_wchar(WCHAR *wide_char)
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
-    assert(path.size < MAX_PATH);
-    Str8Node nodes[2];
-    Str8List list = {0};
-    str8_list_push_explicit(&list, path, nodes + 0);
-    str8_list_push_explicit(&list, str8_lit("\\*"), nodes + 1);
-    Arena_Temporary scratch = get_scratch(0, 0);
-    Str8 path_star = str8_join(scratch.arena, &list);
-    CStr16 path16 = cstr16_from_str8(scratch.arena, path_star);
-    memory_zero_struct(iterator);
-    Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
-    win32_iter->handle = FindFirstFile(path16, &win32_iter->find_data);
-    release_scratch(scratch);
+    if (path.size < MAX_PATH)
+    {
+        Str8Node nodes[2];
+        Str8List list = {0};
+        str8_list_push_explicit(&list, path, nodes + 0);
+        str8_list_push_explicit(&list, str8_lit("\\*"), nodes + 1);
+        Arena_Temporary scratch = get_scratch(0, 0);
+        Str8 path_star = str8_join(scratch.arena, &list);
+        CStr16 path16 = cstr16_from_str8(scratch.arena, path_star);
+        memory_zero_struct(iterator);
+        Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
+        win32_iter->handle = FindFirstFile(path16, &win32_iter->find_data);
+        if (!win32_handle_is_valid(win32_iter->handle))
+        {
+            win32_print_error_message();
+        }
+        release_scratch(scratch);
+    }
 }
 
 internal B32
@@ -462,7 +494,7 @@ os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name
 {
     B32 result = false;
     Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
-    if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
+    if (win32_handle_is_valid(win32_iter->handle))
     {
         for (;!win32_iter->done;)
         {
@@ -496,7 +528,7 @@ internal Void
 os_file_iterator_end(OS_FileIterator *iterator)
 {
     Win32_FileIterator *win32_iter = (Win32_FileIterator *) iterator;
-    if (win32_iter->handle != 0 && win32_iter->handle != INVALID_HANDLE_VALUE)
+    if (win32_handle_is_valid(win32_iter->handle))
     {
         FindClose(win32_iter->handle);
     }
@@ -507,7 +539,6 @@ internal Str8
 os_push_system_path(Arena *arena, OS_SystemPath path)
 {
     Arena_Temporary scratch = get_scratch(&arena, 1);
-
     Str8 result = str8_lit("");
     switch (path)
     {
@@ -516,7 +547,11 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
             // NOTE(hampus): GetCurrentDirectoryA() returns a null terminator
             DWORD path_size = GetCurrentDirectoryW(0, 0);
             CStr16 buffer = push_array(scratch.arena, U16, path_size);
-            GetCurrentDirectoryW(path_size, buffer);
+            DWORD success = GetCurrentDirectoryW(path_size, buffer);
+            if (!success)
+            {
+                win32_print_error_message();
+            }
             result = str8_from_str16(arena, str16(buffer, path_size-1));
         } break;
         case OS_SystemPath_Binary:
@@ -524,6 +559,10 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
             // NOTE(hampus): GetModuleFileNameA() does not return a null terminator
             U16 *buffer = push_array(scratch.arena, U16, WIN32_MAX_UNICODE_PATH_LENGTH);
             DWORD path_size = GetModuleFileNameW(0, buffer, WIN32_MAX_UNICODE_PATH_LENGTH);
+            if (path_size == 0)
+            {
+                win32_print_error_message();
+            }
             // NOTE(hampus): Remove the binary name from the path
             U64 last_slash_index = 0;
             Str8 buffer8 = str8_from_str16(scratch.arena, str16(buffer, path_size));
@@ -544,13 +583,15 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
         {
             CStr16 buffer = push_array(scratch.arena, U16, MAX_PATH);
             U64 path_size = GetTempPathW(MAX_PATH, buffer);
+            if (path_size == 0)
+            {
+                win32_print_error_message();
+            }
             result = str8_from_str16(arena, str16(buffer, path_size-1)); // NOTE(hampus): Remove last '\'
         }break;
         invalid_case;
     }
-
     release_scratch(scratch);
-
     return(result);
 }
 
@@ -641,7 +682,6 @@ os_now_nanoseconds(Void)
 internal Void
 os_sleep_milliseconds(U64 time)
 {
-    assert(time < (U64) U32_MAX);
     Sleep((DWORD) time);
 }
 
@@ -663,6 +703,10 @@ os_library_open(Str8 path)
     if (lib)
     {
         result.u64[0] = int_from_ptr(lib);
+    }
+    else
+    {
+        win32_print_error_message();
     }
     return(result);
 }
@@ -686,6 +730,10 @@ os_library_load_function(OS_Library library, Str8 name)
         HMODULE lib = ptr_from_int(library.u64[0]);
         Arena_Temporary scratch = get_scratch(0, 0);
         result = (VoidFunction *) GetProcAddress(lib, cstr_from_str8(scratch.arena, name));
+        if (!result)
+        {
+            win32_print_error_message();
+        }
         release_scratch(scratch);
     }
     return(result);
@@ -694,34 +742,52 @@ os_library_load_function(OS_Library library, Str8 name)
 internal Void
 os_semaphore_create(OS_Semaphore *handle, U32 initial_value)
 {
-    assert(handle);
-    LPCWSTR name = 0;
-    handle->handle = CreateSemaphore(0, initial_value, S32_MAX, name);
+    if (handle)
+    {
+        LPCWSTR name = 0;
+        handle->handle = CreateSemaphore(0, initial_value, S32_MAX, name);
+        if (!win32_handle_is_valid(handle->handle))
+        {
+            win32_print_error_message();
+        }
+    }
 }
 
 internal Void
 os_semaphore_destroy(OS_Semaphore *handle)
 {
-    assert(handle);
-    assert(handle->handle != INVALID_HANDLE_VALUE);
-    CloseHandle(handle->handle);
+    if (handle)
+    {
+        if (win32_handle_is_valid(handle->handle))
+        {
+            CloseHandle(handle->handle);
+        }
+    }
 }
 
 internal Void
 os_semaphore_signal(OS_Semaphore *handle)
 {
-    assert(handle);
-    assert(handle->handle != INVALID_HANDLE_VALUE);
-    LONG previous_count = 0;
-    ReleaseSemaphore(handle->handle, 1, &previous_count);
+    if (handle)
+    {
+        if (win32_handle_is_valid(handle->handle))
+        {
+            LONG previous_count = 0;
+            ReleaseSemaphore(handle->handle, 1, &previous_count);
+        }
+    }
 }
 
 internal Void
 os_semaphore_wait(OS_Semaphore *handle)
 {
-    assert(handle);
-    assert(handle->handle != INVALID_HANDLE_VALUE);
-    WaitForSingleObject(handle->handle, INFINITE);
+    if (handle)
+    {
+        if (win32_handle_is_valid(handle->handle))
+        {
+            WaitForSingleObject(handle->handle, INFINITE);
+        }
+    }
 }
 
 DWORD
@@ -729,34 +795,46 @@ win32_thread_proc(Void *raw_arguments)
 {
     Win32_ThreadArguments arguments = *(Win32_ThreadArguments *) raw_arguments;
     os_memory_release(raw_arguments, sizeof(Win32_ThreadArguments));
-
     arguments.proc(arguments.data);
-
     return(0);
 }
 
 internal Void
 os_mutex_create(OS_Mutex *mutex)
 {
-    assert(mutex);
-    BOOL obtain_ownership = FALSE;
-    mutex->handle = CreateMutex(0, obtain_ownership, 0);
+    if (mutex)
+    {
+        BOOL obtain_ownership = FALSE;
+        mutex->handle = CreateMutex(0, obtain_ownership, 0);
+        if (!win32_handle_is_valid(mutex->handle))
+        {
+            win32_print_error_message();
+        }
+    }
 }
 
 internal Void
 os_mutex_take(OS_Mutex *mutex)
 {
-    assert(mutex);
-    assert(mutex->handle != INVALID_HANDLE_VALUE);
-    WaitForSingleObject(mutex->handle, INFINITE);
+    if (mutex)
+    {
+        if (win32_handle_is_valid(mutex->handle))
+        {
+            WaitForSingleObject(mutex->handle, INFINITE);
+        }
+    }
 }
 
 internal Void
 os_mutex_release(OS_Mutex *mutex)
 {
-    assert(mutex);
-    assert(mutex->handle != INVALID_HANDLE_VALUE);
-    ReleaseMutex(mutex->handle);
+    if (mutex)
+    {
+        if (win32_handle_is_valid(mutex->handle))
+        {
+            ReleaseMutex(mutex->handle);
+        }
+    }
 }
 
 internal B32
@@ -782,18 +860,16 @@ os_run(Str8 program, Str8List arguments)
         startup_info.dwFlags = 0;
 
         PROCESS_INFORMATION process_information = {0};
-        B32 could_launch = CreateProcess(
-            0,
-            cstr16_from_str8(scratch, command_line),
-            0,
-            0,
-            false,
-            0,
-            0,
-            0,
-            &startup_info,
-            &process_information
-        );
+        B32 could_launch = CreateProcess(0,
+                                         cstr16_from_str8(scratch, command_line),
+                                         0,
+                                         0,
+                                         false,
+                                         0,
+                                         0,
+                                         0,
+                                         &startup_info,
+                                         &process_information);
 
         success = could_launch;
 
@@ -817,10 +893,8 @@ os_thread_create(ThreadProc *proc, Void *data)
     os_memory_commit(arguments, sizeof(Win32_ThreadArguments));
     arguments->proc = proc;
     arguments->data = data;
-
     DWORD thread_id;
     HANDLE handle = CreateThread(0, 0, win32_thread_proc, arguments, 0, &thread_id);
-    // TODO(hampus): SetThreadDescription()
 }
 
 internal Void
