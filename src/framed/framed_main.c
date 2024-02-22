@@ -714,6 +714,7 @@ framed_parse_zones(Void)
                         {
                             PacketHeader header;
                             Framed_U64 tsc_frequency;
+                            Framed_U16 version;
                         };
 #pragma pack(pop)
 
