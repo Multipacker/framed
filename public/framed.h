@@ -510,6 +510,7 @@ framed_init_(Framed_B32 wait_for_connection)
     {
         PacketHeader header;
         Framed_U64 tsc_frequency;
+        Framed_U16 version;
     };
 #pragma pack(pop)
 
@@ -525,6 +526,7 @@ framed_init_(Framed_B32 wait_for_connection)
     Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
     packet->header.kind = Framed_PacketKind_Init;
     packet->tsc_frequency = framed__guess_tsc_frequency(1000);
+    packet->version = 0;
 
     framed->buffer_pos += entry_size;
 
