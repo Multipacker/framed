@@ -204,8 +204,13 @@ FRAMED_DEF void framed_zone_end_(void);
 
 #ifdef __cplusplus
 
-#define framed_zone_block(name) AutoClosingZoneBlock framed_glue(zone, __LINE__)(name)
-#define framed_function framed_zone_block(__func__)
+#if defined(FRAMED_DISABLE)
+#    define framed_zone_block(name)
+#    define framed_function
+#else
+#    define framed_zone_block(name) AutoClosingZoneBlock framed_glue(zone, __LINE__)(name)
+#    define framed_function framed_zone_block(__func__)
+#endif
 
 struct AutoClosingZoneBlock
 {
