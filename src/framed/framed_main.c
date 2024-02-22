@@ -67,16 +67,24 @@ struct ProfilingState
     U64 frame_begin_tsc;
     U64 frame_end_tsc;
     Arena *zone_arena;
-
-    U64 prev_frame_index;
+    U64 tsc_frequency;
     U64 frame_index;
 
-    U64 tsc_frequency;
     B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;
 
-    U64 bytes_recieved_this_frame;
+    F64 seconds_accumulator;
+
+    // NOTE(hampus): These are per time unit, which is set at the
+    // end of the frame where these values are calculated
+    U64 parsed_average_rate;
+    U64 bandwidth_average_rate;
+
+    U64 parsed_bytes;
+    F64 parsed_time_accumulator;
+
+    U64 bytes_from_client;
 };
 
 global ProfilingState *profiling_state;
@@ -577,22 +585,58 @@ FRAME_UI_TAB_VIEW(framed_ui_tab_view_counters)
             ui_spacer(ui_em(0.3f, 1));
             ui_textf("Timestamp counter frequency: %"PRIU64" cycles/second", profiling_state->tsc_frequency);
 
+            // TODO(hampus): What to do if we are not profiling per frame
             if (profiling_per_frame)
             {
                 ui_spacer(ui_em(0.3f, 1));
                 F32 ms = ((F32)tsc_total/(F32)profiling_state->tsc_frequency) * 1000.0f;
-                ui_textf("Total cycles for frame: %"PRIU64" (%.2f%%ms)", tsc_total, ms);
+                ui_textf("Total cycles for frame: %"PRIU64" (%.2fms)", tsc_total, ms);
                 ui_spacer(ui_em(0.3f, 1));
                 ui_textf("Frames captured: %"PRIU64, profiling_state->frame_index-1);
             }
 
+            ui_spacer(ui_em(0.5f, 1));
+
+            ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
+            ui_text(str8_lit("Zone gathering stats"));
+
+            ui_next_height(ui_pixels(1, 1));
+            ui_next_width(ui_em(15, 1));
+            ui_next_corner_radius(0);
+            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
 
             ui_spacer(ui_em(0.5f, 1));
-            ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
-            ui_text(str8_lit("Networks stats"));
-            ui_spacer(ui_em(0.5f, 1));
-            MemorySize memory_size_bytes_transferred = memory_size_from_bytes(profiling_state->bytes_recieved_this_frame);
-            ui_textf("Bytes transferred this frame: %.2f%"PRISTR8, memory_size_bytes_transferred.amount, str8_expand(memory_size_bytes_transferred.unit));
+
+            B32 critical = profiling_state->bandwidth_average_rate > profiling_state->parsed_average_rate;
+
+
+            Vec4F32 text_color = ui_top_text_style()->color;
+            if (critical)
+            {
+                text_color = v4f32(0.9f, 0, 0, 1.0f);
+            }
+
+
+            ui_next_width(ui_em(20, 1));
+            ui_row()
+            {
+                MemorySize avg_parsing_rate = memory_size_from_bytes(profiling_state->parsed_average_rate);
+                ui_text(str8_lit("Zone parsing rate:"));
+                ui_spacer(ui_fill());
+                ui_textf("%.2f%2"PRISTR8"/s", avg_parsing_rate.amount, str8_expand(avg_parsing_rate.unit));
+            }
+
+            ui_next_width(ui_em(20, 1));
+            ui_row()
+                ui_text_color(text_color)
+            {
+                MemorySize avg_bandwidth_rate = memory_size_from_bytes(profiling_state->bandwidth_average_rate);
+                ui_text(str8_lit("Bandwidth rate:"));
+                ui_spacer(ui_fill());
+                ui_textf("%.2f%2"PRISTR8"/s", avg_bandwidth_rate.amount, str8_expand(avg_bandwidth_rate.unit));
+            }
+
         }
     }
 
@@ -602,8 +646,6 @@ internal Void
 framed_parse_zones(Void)
 {
     Debug_Time time = debug_function_begin();
-
-    profiling_state->bytes_recieved_this_frame = 0;
 
     //- hampus: Check connection state
 
@@ -627,6 +669,8 @@ framed_parse_zones(Void)
         }
     }
 
+    U64 parse_start_time_ns = os_now_nanoseconds();
+
     //- hampus: Gather & process data from client
     if (net_socket_connection_is_alive(profiling_state->client_socket))
     {
@@ -644,7 +688,9 @@ framed_parse_zones(Void)
                 // TODO(simon): What do we do in this case? At the moment
                 // the rest of the code assumes that this never happens.
             }
-            profiling_state->bytes_recieved_this_frame += buffer_size;
+
+            profiling_state->bytes_from_client += buffer_size;
+            profiling_state->parsed_bytes += buffer_size;
 
             // NOTE(hampus): First two bytes are the size of the packet
             U8 *buffer_pointer = buffer + sizeof(U16);
@@ -658,6 +704,7 @@ framed_parse_zones(Void)
                     break;
                 }
 
+                U64 entry_size = 0;
                 PacketHeader *header = (PacketHeader *) buffer_pointer;
                 switch (header->kind)
                 {
@@ -670,6 +717,7 @@ framed_parse_zones(Void)
                             PacketHeader header;
                             Framed_U64 tsc_frequency;
                         };
+#pragma pack(pop)
 
                         Packet *packet = (Packet *) header;
 
@@ -686,9 +734,8 @@ framed_parse_zones(Void)
                         else
                         {
                             profiling_state->tsc_frequency = packet->tsc_frequency;
-                            buffer_pointer += sizeof(Packet);
+                            entry_size = sizeof(Packet);
                         }
-#pragma pack(pop)
                     } break;
                     case Framed_PacketKind_FrameStart:
                     {
@@ -729,7 +776,7 @@ framed_parse_zones(Void)
 
                         profiling_state->frame_begin_tsc = header->tsc;
 
-                        buffer_pointer += sizeof(Packet);
+                        entry_size = sizeof(Packet);
                     } break;
                     case Framed_PacketKind_ZoneBegin:
                     {
@@ -769,7 +816,7 @@ framed_parse_zones(Void)
                             opening->tsc_start = packet->header.tsc;
                             opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
 
-                            buffer_pointer += sizeof(Packet) + packet->name_length;
+                            entry_size = sizeof(Packet) + packet->name_length;
                         }
                     } break;
                     case Framed_PacketKind_ZoneEnd:
@@ -796,7 +843,7 @@ framed_parse_zones(Void)
                         ++zone->hit_count;
                         profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
 
-                        buffer_pointer += sizeof(Packet);
+                        entry_size = sizeof(Packet);
                     } break;
                     default:
                     {
@@ -804,6 +851,7 @@ framed_parse_zones(Void)
                         terminate_connection = true;
                     } break;
                 }
+                buffer_pointer += entry_size;
             }
             release_scratch(scratch);
             size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
@@ -814,6 +862,10 @@ framed_parse_zones(Void)
             net_socket_free(profiling_state->client_socket);
         }
     }
+
+    U64 parse_end_time_ns = os_now_nanoseconds();
+
+    profiling_state->parsed_time_accumulator += (F64)(parse_end_time_ns - parse_start_time_ns) / (F64)billion(1);
 
     debug_function_end(time);
 }
@@ -1098,6 +1150,20 @@ os_main(Str8List arguments)
 
         U64 end_counter = os_now_nanoseconds();
         dt = (F64) (end_counter - start_counter) / (F64) billion(1);
+
+        profiling_state->seconds_accumulator += dt;
+
+        if (profiling_state->seconds_accumulator >= 0.5f)
+        {
+            profiling_state->bandwidth_average_rate = (U64)(profiling_state->bytes_from_client / 0.5);
+            profiling_state->bytes_from_client = 0;
+
+            profiling_state->parsed_average_rate = (U64)((F64)profiling_state->parsed_bytes / (F64)profiling_state->parsed_time_accumulator);
+            profiling_state->parsed_bytes = 0;
+            profiling_state->parsed_time_accumulator = 0;
+
+            profiling_state->seconds_accumulator = 0;
+        }
 
         start_counter = end_counter;
         framed_frame_counter++;
