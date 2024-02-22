@@ -18,6 +18,67 @@ d3d11_get_current_stats(Render_Context *renderer)
     return(&renderer->render_stats[1]);
 }
 
+#pragma optimize( "", off )
+internal Void
+d3d11_load_shaders(Render_BackendContext *backend)
+{
+        D3D11_INPUT_ELEMENT_DESC desc[] =
+        {
+            { "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(Render_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(Render_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(Render_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
+                member_offset(Render_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(Render_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(Render_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
+                member_offset(Render_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(Render_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(Render_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(Render_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(Render_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+            { "USE_NEAREST", 0, DXGI_FORMAT_R32_FLOAT, 0,
+                member_offset(Render_RectInstance, use_nearest), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+
+        };
+
+#include "render/d3d11/d3d11_vshader.h"
+#include "render/d3d11/d3d11_pshader.h"
+
+        ID3D11Device_CreateVertexShader(backend->device, d3d11_vshader, sizeof(d3d11_vshader), 0, &backend->vertex_shader);
+        ID3D11Device_CreatePixelShader(backend->device, d3d11_pshader, sizeof(d3d11_pshader), 0, &backend->pixel_shader);
+        ID3D11Device_CreateInputLayout(backend->device, desc, array_count(desc), d3d11_vshader, sizeof(d3d11_vshader), &backend->input_layout);
+
+}
+
+#pragma optimize( "", on )
+
 internal Render_BackendContext *
 render_backend_init(Render_Context *renderer)
 {
@@ -114,63 +175,6 @@ render_backend_init(Render_Context *renderer)
         ID3D11Device_CreateBuffer(backend->device, &desc, 0, &backend->vertex_buffer);
     }
 
-    // NOTE(hampus): Create shaders
-    {
-        D3D11_INPUT_ELEMENT_DESC desc[] =
-        {
-            { "MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-            member_offset(Render_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-            member_offset(Render_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-            member_offset(Render_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-            member_offset(Render_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-            member_offset(Render_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-            member_offset(Render_RectInstance, colors)+sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-            member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*2, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-            member_offset(Render_RectInstance, colors)+sizeof(Vec4F32)*3, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-            member_offset(Render_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-            member_offset(Render_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-            member_offset(Render_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
-            member_offset(Render_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
-            member_offset(Render_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-            { "USE_NEAREST", 0, DXGI_FORMAT_R32_FLOAT, 0,
-            member_offset(Render_RectInstance, use_nearest), D3D11_INPUT_PER_INSTANCE_DATA, 1 },
-
-        };
-
-#include "render/d3d11/d3d11_vshader.h"
-#include "render/d3d11/d3d11_pshader.h"
-
-        ID3D11Device_CreateVertexShader(backend->device, d3d11_vshader, sizeof(d3d11_vshader), 0, &backend->vertex_shader);
-        ID3D11Device_CreatePixelShader(backend->device, d3d11_pshader, sizeof(d3d11_pshader), 0, &backend->pixel_shader);
-        ID3D11Device_CreateInputLayout(backend->device, desc, array_count(desc), d3d11_vshader, sizeof(d3d11_vshader), &backend->input_layout);
-
-    }
-
     {
         D3D11_BUFFER_DESC desc =
         {
@@ -181,6 +185,8 @@ render_backend_init(Render_Context *renderer)
         };
         ID3D11Device_CreateBuffer(backend->device, &desc, 0, &backend->uniform_buffer);
     }
+
+    d3d11_load_shaders(backend);
 
     // NOTE(hampus): White Texture
     {
