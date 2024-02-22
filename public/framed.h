@@ -208,7 +208,7 @@ FRAMED_DEF void framed_zone_end_(void);
 #    define framed_zone_block(name)
 #    define framed_function
 #else
-#    define framed_zone_block(name) AutoClosingZoneBlock framed_glue(zone, __LINE__)(name)
+#    define framed_zone_block(name) AutoClosingZoneBlock framed_glue(zone, __LINE__)((char *) name)
 #    define framed_function framed_zone_block(__func__)
 #endif
 
@@ -468,11 +468,7 @@ framed__socket_init(Framed_B32 wait_for_connection)
     socket_address.sin_addr.s_addr = framed__u32_byte_swap(127 << 24 | 0 << 16 | 0 << 8 | 1 << 0);
     // TODO(simon): Use `wait_for_connection`
     int error = connect(linux_socket, (struct sockaddr *) &socket_address, sizeof(socket_address));
-    if (error == -1)
-    {
-        // TODO(simon): Report better errors to the user.
-        perror("Framed connect");
-    }
+    // TODO(simon): Report better errors to the user.
 }
 
 static void
