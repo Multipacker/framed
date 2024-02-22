@@ -21,6 +21,7 @@ int my_function_to_be_profiled(int n)
 
 int main(int argc, char **argv)
 {
+    framed_init(true);
     {
         framed_zone_block("Sum loop"); // note that we don't have to close this explicitly
         int n = 0;
@@ -29,5 +30,6 @@ int main(int argc, char **argv)
             n += my_function_to_be_profiled(i);
         }
     }
+    framed_flush();
     return 0;
 }

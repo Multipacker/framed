@@ -326,10 +326,10 @@ framed__u32_byte_swap(Framed_U32 x)
 
 #if FRAMED_OS_WINDOWS
 
+#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#pragma warning(push, 0)
-#    include <winsock2.h>
-#pragma warning(pop)
+#undef WIN32_LEAN_AND_MEAN
+#include <winsock2.h>
 
 #pragma comment(lib, "Ws2_32.lib")
 
