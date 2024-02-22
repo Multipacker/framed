@@ -30,13 +30,13 @@ if not exist build mkdir build
 pushd build
 
 if %freetype_build_mode% == "debug" (
-	set freetype_compile_flags=%freetype_compile_flags% -Od -MTd
-	set freetype_link_flags=%freetype_link_flags%
-	set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype_debug.lib
+    set freetype_compile_flags=%freetype_compile_flags% -Od -MTd
+    set freetype_link_flags=%freetype_link_flags%
+    set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype_debug.lib
 ) else if %freetype_build_mode% == "release" (
-	set freetype_compile_flags=%freetype_compile_flags% -O2 -Oi -fp:fast -GS-
-	set freetype_link_flags=%freetype_link_flags% -opt:icf -opt:ref libvcruntime.lib -fixed
-	set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype.lib
+    set freetype_compile_flags=%freetype_compile_flags% -O2 -Oi -fp:fast -GS-
+    set freetype_link_flags=%freetype_link_flags% -opt:icf -opt:ref libvcruntime.lib -fixed
+    set freetype_lib_flags=%freetype_lib_flags% -OUT:freetype.lib
 )
 
 cl %freetype_compile_flags% -link %freetype_link_flags%
