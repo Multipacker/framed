@@ -108,14 +108,24 @@ framed_zone_block_compare_hit_count(const Void *a, const Void *b)
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
+    B32 data_initialized = view_info->data != 0;
     typedef struct TabViewData TabViewData;
     struct TabViewData
     {
         U64 column_sort_index;
         B32 column_sort_ascending;
+        F32 column_sizes_in_pct[4];
     };
 
     TabViewData *data = framed_ui_get_view_data(view_info, TabViewData);
+
+    if (!data_initialized)
+    {
+        data->column_sizes_in_pct[0] = 0.25f;
+        data->column_sizes_in_pct[1] = 0.25f;
+        data->column_sizes_in_pct[2] = 0.25f;
+        data->column_sizes_in_pct[3] = 0.25f;
+    }
 
     Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -240,11 +250,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
     }
     //- hampus: Display zone values
 
-    F32 name_column_width_pct = 0.25f;
-    F32 cycles_column_width_pct = 0.25f;
-    F32 cycles_children_column_width_pct = 0.25f;
-    F32 hit_count_column_width_pct = 0.25f;
-
     Str8 column_names[] =
     {
         str8_lit("Name"),
@@ -261,6 +266,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
         framed_counter_column_hit_count,
     };
 
+    F32 new_column_pcts[4] = {0};
+    memory_copy_array(new_column_pcts, data->column_sizes_in_pct);
+
     ui_spacer(ui_em(0.3f, 1));
 
     ui_next_width(ui_pct(1, 1.0f));
@@ -269,11 +277,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
     {
         ui_next_width(ui_em(50, 0.5f));
         ui_next_height(ui_pct(1, 1.0f));
-        ui_row()
+        UI_Box *row_parent = ui_named_row_begin(str8_lit("ZoneDisplayContainer"));
         {
             for (U64 i = 0; i < array_count(column_names); ++i)
             {
-                ui_next_width(ui_pct(name_column_width_pct, 0));
+                ui_next_width(ui_pct(data->column_sizes_in_pct[i], 0));
                 ui_next_extra_box_flags(UI_BoxFlag_Clip);
                 ui_named_columnf("%"PRISTR8"Column", str8_expand(column_names[i]))
                 {
@@ -334,9 +342,28 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
                 ui_next_height(ui_em(60, 1));
                 ui_next_corner_radius(0);
                 ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+                ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+                UI_Box *column_divider = ui_box_makef(UI_BoxFlag_DrawBackground |
+                                                      UI_BoxFlag_Clickable,
+                                                      "ColumnSplit%"PRIU64, i);
+                UI_Comm column_comm = ui_comm_from_box(column_divider);
+                F32 drag_delta = column_comm.drag_delta.x;
+                if (column_comm.dragging && i != 3)
+                {
+                    F32 pct_delta = drag_delta / row_parent->fixed_size.x;
+                    F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
+                    F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
+
+                    pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
+
+                    new_column_pcts[i] -= pct_delta;
+                    new_column_pcts[i+1] += pct_delta;
+                }
             }
+            ui_named_row_end();
         }
+
+        memory_copy_array(data->column_sizes_in_pct, new_column_pcts);
 
         //- hampus: Display extra stats
 
