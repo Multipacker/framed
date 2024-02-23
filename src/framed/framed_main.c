@@ -60,6 +60,8 @@ struct CapturedFrame
 typedef struct ProfilingState ProfilingState;
 struct ProfilingState
 {
+    Arena *zone_arena;
+
     CapturedFrame latest_captured_frame;
 
     ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
@@ -67,7 +69,6 @@ struct ProfilingState
     U32 zone_stack_size;
     U64 frame_begin_tsc;
     U64 frame_end_tsc;
-    Arena *zone_arena;
     U64 tsc_frequency;
     U64 frame_index;
 
@@ -88,13 +89,22 @@ struct ProfilingState
     U64 bytes_from_client;
 };
 
-global ProfilingState *profiling_state;
+typedef struct Framed_State Framed_State;
+struct Framed_State
+{
+    Arena *perm_arena;
+    ProfilingState *profiling_state;
+};
+
+Framed_State *framed_state;
 
 #include "framed/framed_views.c"
 
 internal ZoneBlock *
 framed_get_zone_block(Arena *arena, Str8 name)
 {
+    ProfilingState *profiling_state = framed_state->profiling_state;
+
     U64 hash = hash_str8(name);
     U64 slot_index = hash % array_count(profiling_state->zone_blocks);
     while (profiling_state->zone_blocks[slot_index].name.data)
@@ -120,6 +130,8 @@ framed_get_zone_block(Arena *arena, Str8 name)
 internal Void
 framed_parse_zones(Void)
 {
+    ProfilingState *profiling_state = framed_state->profiling_state;
+
     Debug_Time time = debug_function_begin();
 
     //- hampus: Check connection state
@@ -360,11 +372,6 @@ os_main(Str8List arguments)
         log_init(log_file);
     }
 
-    Arena *perm_arena = arena_create("MainPerm");
-
-    framed_ui_state = push_struct(perm_arena, FramedUI_State);
-    framed_ui_state->perm_arena = perm_arena;
-
     Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     Render_Context *renderer = render_init(&gfx);
     Arena *frame_arenas[2];
@@ -372,10 +379,14 @@ os_main(Str8List arguments)
     frame_arenas[1] = arena_create("MainFrame1");
 
     ////////////////////////////////
-    //- hampus: Initialize profiling state
+    //- hampus: Initialize Framed state
 
-    profiling_state = push_struct(perm_arena, ProfilingState);
-    profiling_state->zone_stack_size = 1;
+    Arena *framed_perm_arena = arena_create("FramedPerm");
+    framed_state = push_struct(framed_perm_arena, Framed_State);
+    framed_state->perm_arena = framed_perm_arena;
+    framed_state->profiling_state = push_struct(framed_perm_arena, ProfilingState);
+
+    ProfilingState *profiling_state = framed_state->profiling_state;
     profiling_state->zone_arena = arena_create("ZoneArena");
 
     //- hampus: Allocate listen socket
@@ -397,8 +408,12 @@ os_main(Str8List arguments)
     ////////////////////////////////
     //- hampus: Initialize UI
 
-    UI_Context *ui = ui_init();
+    Arena *framed_ui_perm_arena = arena_create("FramedUIPerm");
+    framed_ui_state = push_struct(framed_ui_perm_arena, FramedUI_State);
+    framed_ui_state->perm_arena = framed_ui_perm_arena;
 
+
+    framed_ui_state->settings.font_size = 12;
     framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelBorderActive, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelBorderInactive, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
@@ -409,6 +424,8 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+
+    UI_Context *ui = ui_init();
 
     framed_ui_state->tab_view_function_table[FramedUI_TabView_Counter]  = framed_ui_tab_view_counters;
     framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
@@ -437,10 +454,6 @@ os_main(Str8List arguments)
 
     framed_ui_state->master_window = master_window;
     framed_ui_state->next_focused_panel = master_window->root_panel;
-
-    //- hampus: Initialize UI settings
-
-    framed_ui_state->settings.font_size = 12;
 
     gfx_set_window_maximized(&gfx);
     gfx_show_window(&gfx);
@@ -508,6 +521,9 @@ os_main(Str8List arguments)
                 }
             }
         }
+
+        ////////////////////////////////
+        //- hampus: Zone parsing
 
         framed_parse_zones();
 

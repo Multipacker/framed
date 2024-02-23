@@ -127,6 +127,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
         data->column_sizes_in_pct[3] = 0.25f;
     }
 
+    ProfilingState *profiling_state = framed_state->profiling_state;
+
     Arena_Temporary scratch = get_scratch(0, 0);
 
     //- hampus: Prepare for zone parsing into another format
