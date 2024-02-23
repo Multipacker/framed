@@ -148,12 +148,49 @@ meta_get_string(Arena *arena, Str8 string)
     return(result);
 }
 
+internal Str8
+meta_get_os_path(Arena *arena, Str8 path)
+{
+    Str8 result = str8_copy(arena, path);
+
+    for (U64 i = 0; i < result.size; ++i)
+    {
+        if (result.data[i] == '/')
+        {
+            result.data[i] = PATH_SEPARATOR;
+        }
+    }
+
+    return(result);
+}
+
+internal Str8
+meta_get_base_name(Str8 path)
+{
+    Str8 file_name = path;
+
+    U64 last_slash = 0;
+    if (str8_last_index_of(file_name, '/', &last_slash))
+    {
+        file_name = str8_skip(file_name, last_slash + 1);
+    }
+
+    U64 first_dot = 0;
+    if (str8_first_index_of(file_name, '.', &first_dot))
+    {
+        file_name = str8_prefix(file_name, first_dot);
+    }
+
+    return(file_name);
+}
+
 typedef struct EmbedNode EmbedNode;
 struct EmbedNode
 {
     EmbedNode *next;
     EmbedNode *prev;
 
+    Str8 base_name;
     Str8 source;
     Str8 embed;
 };
@@ -179,64 +216,39 @@ meta_find_embeds(Arena *arena, Str8List pre_processor_lines)
         line = str8_skip(line, include_str.size);
         line = meta_skip_whitespace(line);
 
-        Str8 framed_embed_str = str8_lit("framed_embed");
-        Str8 framed_embed = str8_prefix(line, framed_embed_str.size);
-        line = str8_skip(line, framed_embed_str.size);
-        line = meta_skip_whitespace(line);
-
-        if (!(str8_equal(include, include_str) && str8_equal(framed_embed, framed_embed_str)))
+        if (!str8_equal(include, include_str))
         {
             continue;
         }
 
-        Str8 left_paren_str = str8_lit("(");
-        Str8 left_paren = str8_prefix(line, left_paren_str.size);
-        line = str8_skip(line, left_paren_str.size);
+        Str8 raw_embed = meta_get_string(arena, line);
+        line = str8_skip(line, raw_embed.size);
         line = meta_skip_whitespace(line);
 
-        Str8 source = meta_get_string(arena, line);
-        line = str8_skip(line, source.size);
-        line = meta_skip_whitespace(line);
+        // NOTE(simon): Skip the quotes.
+        raw_embed = str8_skip(str8_chop(raw_embed, 1), 1);
 
-        Str8 comma_str = str8_lit(",");
-        Str8 comma = str8_prefix(line, comma_str.size);
-        line = str8_skip(line, comma_str.size);
-        line = meta_skip_whitespace(line);
-
-        Str8 embed = meta_get_string(arena, line);
-        line = str8_skip(line, embed.size);
-        line = meta_skip_whitespace(line);
-
-        Str8 right_paren_str = str8_lit(")");
-        Str8 right_paren = str8_prefix(line, right_paren_str.size);
-        line = str8_skip(line, right_paren_str.size);
-        line = meta_skip_whitespace(line);
-
-        if (!(str8_equal(left_paren, left_paren_str) && str8_equal(comma, comma_str) && str8_equal(right_paren, right_paren_str)))
-        {
-            // TODO(simon): Report location information.
-            log_error("Invalid syntax for 'framed_embed'. Expected '#include framed_embed(SOURCE_FILE, EMBED_FILE)'.");
-            continue;
-        }
-
-        if (source.size == 0)
-        {
-            // TODO(simon): Report location information.
-            log_error("Missing source file path.");
-            continue;
-        }
-
-        if (embed.size == 0)
+        if (raw_embed.size == 0)
         {
             // TODO(simon): Report location information.
             log_error("Missing embed file path.");
             continue;
         }
 
-        // TODO(simon): Convert to using the platform specific path separator.
+        Str8 embed_str = str8_lit(".embed");
+        if (!str8_equal(str8_postfix(raw_embed, embed_str.size), embed_str))
+        {
+            continue;
+        }
+
+        U64 last_dot = 0;
+        str8_last_index_of(raw_embed, '.', &last_dot);
+        Str8 raw_source = str8_prefix(raw_embed, last_dot);
+
         EmbedNode *node = push_struct_zero(arena, EmbedNode);
-        node->source = str8_skip(str8_chop(source, 1), 1);
-        node->embed  = str8_skip(str8_chop(embed,  1), 1);
+        node->source = meta_get_os_path(arena, raw_source);
+        node->base_name = meta_get_base_name(raw_embed);
+        node->embed = meta_get_os_path(arena, raw_embed);
 
         dll_push_back(result.first, result.last, node);
     }
@@ -255,6 +267,7 @@ os_main(Str8List arguments)
     }
 
     Arena *arena = arena_create("MetaPerm");
+
     Str8List files = { 0 };
     meta_find_files(arena, str8_lit("src"), &files);
 
@@ -264,7 +277,55 @@ os_main(Str8List arguments)
 
     for (EmbedNode *node = embeds.first; node; node = node->next)
     {
-        printf("%"PRISTR8", %"PRISTR8"\n", str8_expand(node->source), str8_expand(node->embed));
+        arena_scratch(0, 0)
+        {
+            Str8 contents = { 0 };
+            if (os_file_read(scratch, node->source, &contents))
+            {
+                Str8 pre_amble = str8_pushf(scratch,
+                                            "global U64 embed_%"PRISTR8"_size = %"PRIU64";\n"
+                                            "global U8 embed_%"PRISTR8"_data[] = {",
+                                            str8_expand(node->base_name),
+                                            contents.size,
+                                            str8_expand(node->base_name));
+                Str8 post_amble = str8_lit("};\n");
+
+                // NOTE(simon): Each byte is at maximum 3 digits and one comma.
+                U64 buffer_size = pre_amble.size + contents.size * 4 + post_amble.size;
+                U8 *buffer = push_array(scratch, U8, buffer_size);
+                U8 *ptr = buffer;
+
+                memory_copy(ptr, pre_amble.data, pre_amble.size);
+                ptr += pre_amble.size;
+
+                for (U64 i = 0; i < contents.size; ++i)
+                {
+                    U8 byte = contents.data[i];
+                    if (byte >= 100)
+                    {
+                        *ptr++ = '0' + ((byte / 100) % 10);
+                    }
+
+                    if (byte >= 10)
+                    {
+                        *ptr++ = '0' + ((byte / 10) % 10);
+                    }
+
+                    *ptr++ = '0' + (byte % 10);
+
+                    *ptr++ = ',';
+                }
+
+                memory_copy(ptr, post_amble.data, post_amble.size);
+                ptr += post_amble.size;
+
+                Str8 generated = str8_range(buffer, ptr);
+                if (!os_file_write(node->embed, generated, OS_FileMode_Replace))
+                {
+                    log_error("Could not write file '%"PRISTR8"'", str8_expand(node->embed));
+                }
+            }
+        }
     }
 
     return(0);
