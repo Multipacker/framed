@@ -523,6 +523,37 @@ os_file_delete_directory(Str8 path)
     return(success);
 }
 
+internal OS_FileProperties
+os_file_properties(Str8 path)
+{
+    OS_FileProperties result = { 0 };
+
+    arena_scratch(0, 0)
+    {
+        CStr cstr_path = cstr_from_str8(scratch, path);
+        struct stat metadata = { 0 };
+        if (stat(cstr_path, &metadata) != -1)
+        {
+            result.size = (U64) metadata.st_size;
+            result.is_folder = S_ISDIR(metadata.st_mode);
+            result.create_time.time = 0; // TODO: Figure out how to acquire creation time.
+
+            struct tm deconstructed_modify_time = { 0 };
+            if (gmtime_r(&metadata.st_mtim.tv_sec, &deconstructed_modify_time) == &deconstructed_modify_time) {
+                DateTime modify_date_time = linux_date_time_from_tm_and_milliseconds(
+                    &deconstructed_modify_time,
+                    (U16) (metadata.st_mtim.tv_nsec / 1000000)
+                );
+                result.modify_time = dense_time_from_date_time(&modify_date_time);
+            } else {
+                result.modify_time.time = 0;
+            }
+        }
+    }
+
+    return(result);
+}
+
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {

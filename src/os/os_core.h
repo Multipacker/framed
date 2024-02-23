@@ -31,6 +31,15 @@ struct OS_File
     U64 u64[1];
 };
 
+typedef struct OS_FileProperties OS_FileProperties;
+struct OS_FileProperties
+{
+    U64 size;
+    B32 is_folder;
+    DenseTime create_time;
+    DenseTime modify_time;
+};
+
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
@@ -85,6 +94,8 @@ internal B32 os_file_rename(Str8 old_path, Str8 new_path);
 internal B32 os_file_create_directory(Str8 path);
 // NOTE(simon): The directory must be empty.
 internal B32 os_file_delete_directory(Str8 path);
+
+internal OS_FileProperties os_file_properties(Str8 path);
 
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name);
