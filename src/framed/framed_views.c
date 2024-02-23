@@ -1,5 +1,6 @@
 ////////////////////////////////
 //~ hampus: Counter tab view
+
 #define FRAMED_COUNTERS_COLUMN_VIEW(name) Void name(Void *values_array, U64 values_count, B32 profiling_per_frame, U64 tsc_total)
 typedef FRAMED_COUNTERS_COLUMN_VIEW(FramedCountersColumnView);
 
@@ -69,6 +70,42 @@ FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_hit_count)
     }
 }
 
+static int
+framed_zone_block_compare_names(const Void *a, const Void *b)
+{
+    ZoneBlock *zone_block0 = (ZoneBlock *)a;
+    ZoneBlock *zone_block1 = (ZoneBlock *)b;
+    return(str8_are_codepoints_earliear(zone_block1->name, zone_block0->name));
+}
+
+static int
+framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
+{
+    ZoneBlock *zone_block0 = (ZoneBlock *)a;
+    ZoneBlock *zone_block1 = (ZoneBlock *)b;
+    U64 tsc0 = zone_block0->tsc_elapsed - zone_block0->tsc_elapsed_children;
+    U64 tsc1 = zone_block1->tsc_elapsed - zone_block1->tsc_elapsed_children;
+    return(tsc0 < tsc1);
+}
+
+static int
+framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
+{
+    ZoneBlock *zone_block0 = (ZoneBlock *)a;
+    ZoneBlock *zone_block1 = (ZoneBlock *)b;
+    U64 tsc0 = zone_block0->tsc_elapsed_root;
+    U64 tsc1 = zone_block1->tsc_elapsed_root;
+    return(tsc0 < tsc1);
+}
+
+static int
+framed_zone_block_compare_hit_count(const Void *a, const Void *b)
+{
+    ZoneBlock *zone_block0 = (ZoneBlock *)a;
+    ZoneBlock *zone_block1 = (ZoneBlock *)b;
+    return(zone_block0->hit_count < zone_block1->hit_count);
+}
+
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 {
     typedef struct TabViewData TabViewData;
@@ -93,61 +130,114 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
         U64 *hit_count;
     };
 
-    U64 zone_values_count = 0;
     ZoneValues *zone_values = push_struct(scratch.arena, ZoneValues);
 
-    U64 max_number_unique_zones = 4096;
-
-    zone_values->names = push_array(scratch.arena, Str8, max_number_unique_zones);
-    zone_values->tsc_elapsed_without_children = push_array(scratch.arena, U64, max_number_unique_zones);
-    zone_values->tsc_elapsed_with_children = push_array(scratch.arena, U64, max_number_unique_zones);
-    zone_values->hit_count = push_array(scratch.arena, U64, max_number_unique_zones);
-
-    U64 tsc_total = 0;
-
-    ZoneBlock *zone_block_array = 0;
-    U64 zone_block_array_count = 0;
-
-    B32 profiling_per_frame = profiling_state->frame_begin_tsc != 0;;
-
-    if (profiling_per_frame)
-    {
-        // NOTE(hampus): We have got a full frame, take the values from there
-        CapturedFrame *frame = &profiling_state->latest_captured_frame;
-        zone_block_array = frame->zone_blocks;
-        zone_block_array_count = array_count(frame->zone_blocks);
-        tsc_total = frame->total_tsc;
-    }
-    else
-    {
-        // NOTE(hampus): If we haven't got any frame yet, just take the current values
-        zone_block_array = profiling_state->zone_blocks;
-        zone_block_array_count = array_count(profiling_state->zone_blocks);
-    }
+    zone_values->names = push_array(scratch.arena, Str8, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_without_children = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_with_children = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->hit_count = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
 
     //- hampus: Parse zone blocks into a nicer format
 
-    for (U64 i = 0; i < zone_block_array_count; ++i)
-    {
-        ZoneBlock *zone_block = zone_block_array + i;
-        if (zone_block->name.size)
-        {
-            U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-            U64 tsc_with_children = zone_block->tsc_elapsed_root;
-            zone_values->names[zone_values_count] = zone_block->name;
-            zone_values->tsc_elapsed_without_children[zone_values_count] = tsc_without_children;
-            zone_values->tsc_elapsed_with_children[zone_values_count] = tsc_with_children;
-            zone_values->hit_count[zone_values_count] = zone_block->hit_count;
-            zone_values_count++;
+    ZoneBlock *zone_blocks = 0;
+    U64 zone_blocks_count = 0;
+    U64 tsc_total = 0;
+    B32 profiling_per_frame = profiling_state->frame_begin_tsc != 0;;
 
-            if (zone_values_count == max_number_unique_zones)
+    debug_block("Count up zone blocks")
+    {
+        ZoneBlock *zone_block_array = 0;
+
+        if (profiling_per_frame)
+        {
+            // NOTE(hampus): We have got a full frame, take the values from there
+            CapturedFrame *frame = &profiling_state->latest_captured_frame;
+            zone_block_array = frame->zone_blocks;
+            tsc_total = frame->total_tsc;
+        }
+        else
+        {
+            // NOTE(hampus): If we haven't got any frame yet, just take the current values
+            zone_block_array = profiling_state->zone_blocks;
+        }
+
+        zone_blocks = push_array(scratch.arena, ZoneBlock, MAX_NUMBER_OF_UNIQUE_ZONES);
+        for (U64 i = 0; i < MAX_NUMBER_OF_UNIQUE_ZONES; ++i)
+        {
+            ZoneBlock *zone_block = zone_block_array + i;
+            if (zone_block->name.size)
             {
-                log_error("Too many unique zones");
-                break;
+                if (zone_blocks_count == MAX_NUMBER_OF_UNIQUE_ZONES)
+                {
+                    log_error("Maximum number of unique zones was exceeded");
+                    break;
+                }
+
+                zone_blocks[zone_blocks_count] = *zone_block;
+                zone_blocks_count++;
             }
         }
     }
 
+    debug_block("Sort counter columns")
+    {
+        switch (data->column_sort_index)
+        {
+            case 0:
+            {
+                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_names);
+            } break;
+
+            case 1:
+            {
+                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_cycles_without_children);
+            } break;
+
+            case 2:
+            {
+                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_cycles_with_children);
+            } break;
+
+            case 3:
+            {
+                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_hit_count);
+            } break;
+        }
+    }
+
+    debug_block("Parse zone blocks into SOA")
+    {
+        if (data->column_sort_ascending)
+        {
+            for (U64 i = 0; i < zone_blocks_count; ++i)
+            {
+                ZoneBlock *zone_block = zone_blocks + (zone_blocks_count-1-i);
+
+                U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
+                U64 tsc_with_children = zone_block->tsc_elapsed_root;
+
+                zone_values->names[i] = zone_block->name;
+                zone_values->tsc_elapsed_without_children[i] = tsc_without_children;
+                zone_values->tsc_elapsed_with_children[i] = tsc_with_children;
+                zone_values->hit_count[i] = zone_block->hit_count;
+            }
+        }
+        else
+        {
+            for (U64 i = 0; i < zone_blocks_count; ++i)
+            {
+                ZoneBlock *zone_block = zone_blocks + i;
+
+                U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
+                U64 tsc_with_children = zone_block->tsc_elapsed_root;
+
+                zone_values->names[i] = zone_block->name;
+                zone_values->tsc_elapsed_without_children[i] = tsc_without_children;
+                zone_values->tsc_elapsed_with_children[i] = tsc_with_children;
+                zone_values->hit_count[i] = zone_block->hit_count;
+            }
+        }
+    }
     //- hampus: Display zone values
 
     F32 name_column_width_pct = 0.25f;
@@ -185,30 +275,47 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
             {
                 ui_next_width(ui_pct(name_column_width_pct, 0));
                 ui_next_extra_box_flags(UI_BoxFlag_Clip);
-                ui_column()
+                ui_named_columnf("%"PRISTR8"Column", str8_expand(column_names[i]))
                 {
                     ui_next_width(ui_pct(1, 1));
-                    ui_next_height(ui_em(1, 1));
+                    ui_next_height(ui_em(1.2f, 1));
                     ui_row()
                     {
                         ui_next_width(ui_fill());
+                        ui_next_height(ui_pct(1, 1));
                         ui_next_text_align(UI_TextAlign_Left);
-                        ui_text(column_names[i]);
+                        ui_next_hover_cursor(Gfx_Cursor_Hand);
+                        ui_next_child_layout_axis(Axis2_X);
+                        UI_Box *header_box = ui_box_make(UI_BoxFlag_DrawText |
+                                                         UI_BoxFlag_Clickable |
+                                                         UI_BoxFlag_HotAnimation |
+                                                         UI_BoxFlag_ActiveAnimation |
+                                                         UI_BoxFlag_DrawBackground,
+                                                         column_names[i]);
+                        UI_Comm header_comm = ui_comm_from_box(header_box);
 
                         if (data->column_sort_index == i)
                         {
-                            ui_spacer(ui_fill());
+                            ui_parent(header_box)
+                            {
+                                ui_next_text_align(UI_TextAlign_Right);
+                                ui_next_icon(data->column_sort_ascending ? RENDER_ICON_UP : RENDER_ICON_DOWN);
+                                ui_next_height(ui_pct(1, 1));
+                                ui_next_width(ui_pct(1, 0));
+                                ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+                                ui_spacer(ui_em(0.75f, 1));
+                            }
+                        }
 
-                            ui_next_icon(RENDER_ICON_DOWN);
-                            ui_next_height(ui_pct(1, 1));
-                            ui_next_width(ui_em(1, 1));
-                            ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
-
-                            ui_spacer(ui_em(0.5f, 1));
+                        if (header_comm.clicked)
+                        {
+                            if (data->column_sort_index == i)
+                            {
+                                data->column_sort_ascending ^= 1;
+                            }
+                            data->column_sort_index = i;
                         }
                     }
-
-                    ui_spacer(ui_em(0.3f, 1));
 
                     ui_next_width(ui_pct(1, 1));
                     ui_next_height(ui_pixels(1, 1));
@@ -220,7 +327,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
                     Void *values = (Void *)((U64 *)zone_values)[i];
 
-                    column_views[i](values, zone_values_count, profiling_per_frame, tsc_total);
+                    column_views[i](values, zone_blocks_count, profiling_per_frame, tsc_total);
                 }
 
                 ui_next_width(ui_pixels(1, 1));
@@ -296,6 +403,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
     release_scratch(scratch);
 }
+////////////////////////////////
+//~ hampus: About tab view
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_about)
 {
@@ -333,6 +442,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_about)
 
     ui_pop_width();
 }
+
+////////////////////////////////
+//~ hampus: Settings tab view
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
 {
@@ -477,6 +589,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
         }
     }
 }
+
+
+////////////////////////////////
+//~ hampus: Logger tab view
+
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_logger)
 {
     ui_next_width(ui_fill());
@@ -490,6 +607,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_logger)
     ui_logger(log_ui);
 }
 
+////////////////////////////////
+//~ hampus: Texture viewer tab view
+
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_texture_viewer)
 {
     ui_next_width(ui_fill());
@@ -501,6 +621,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_texture_viewer)
     }
     ui_texture_view(texture);
 }
+
+////////////////////////////////
+//~ hampus: Debug tab view
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_debug)
 {

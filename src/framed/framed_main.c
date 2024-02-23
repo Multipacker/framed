@@ -49,11 +49,12 @@ struct ZoneStack
     U64 tsc_elapsed_children;
 };
 
+#define MAX_NUMBER_OF_UNIQUE_ZONES (4096)
 typedef struct CapturedFrame CapturedFrame;
 struct CapturedFrame
 {
     U64 total_tsc;
-    ZoneBlock zone_blocks[4096];
+    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
 };
 
 typedef struct ProfilingState ProfilingState;
@@ -61,7 +62,7 @@ struct ProfilingState
 {
     CapturedFrame latest_captured_frame;
 
-    ZoneBlock zone_blocks[4096];
+    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
     ZoneStack zone_stack[1024];
     U32 zone_stack_size;
     U64 frame_begin_tsc;
