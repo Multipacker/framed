@@ -907,9 +907,27 @@ os_thread_set_name(Str8 string)
     }
 }
 
+internal LONG WINAPI
+win32_exception_filter(EXCEPTION_POINTERS * exception_ptrs)
+{
+    MessageBoxA(0,
+                "An unhandled exception has occurred!\n\n"
+                "You can submit an issue at https://github.com/Multipacker/framed\n\n"
+                "To help us further solve this issue, try to reproduce the error"
+                " in a debugger running the debug build. Then extend the GitHub issue with"
+                " what the stack trace was when the exception occurred.\n\n"
+                "You can also help us by providing the log file which is"
+                " located beside the executable.",
+                "Exception",
+                MB_OK | MB_ICONERROR);
+    ExitProcess(1);
+}
+
 internal S32
 win32_common_main(Void)
 {
+    SetUnhandledExceptionFilter(win32_exception_filter);
+
     timeBeginPeriod(0);
     QueryPerformanceFrequency(&win32_state.frequency);
     win32_state.permanent_arena = arena_create("Win32Perm");
