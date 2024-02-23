@@ -388,6 +388,7 @@ os_main(Str8List arguments)
 
     ProfilingState *profiling_state = framed_state->profiling_state;
     profiling_state->zone_arena = arena_create("ZoneArena");
+    profiling_state->zone_stack_size = 1;
 
     //- hampus: Allocate listen socket
 
