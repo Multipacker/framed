@@ -808,7 +808,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
                 UI_TextOp op = ui_text_op_from_state_and_action(ui_frame_arena(), edit_str, edit_state, &action);
                 if (op.copy_string.size)
                 {
-                    os_set_clipboard(op.copy_string);
+                    gfx_set_clipboard(op.copy_string);
                 }
 
                 arena_scratch(0, 0)

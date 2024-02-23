@@ -521,7 +521,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
     if (action->flags & UI_TextActionFlag_Paste)
     {
-        result.replace_string = os_push_clipboard(arena);
+        result.replace_string = gfx_push_clipboard(arena);
         result.range = v2s64(result.new_cursor, result.new_mark);
         if (result.new_cursor > result.new_mark)
         {
