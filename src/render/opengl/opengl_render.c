@@ -1,5 +1,5 @@
-#include "shader_vert.h"
-#include "shader_frag.h"
+#include "src/render/opengl/opengl_vert.glsl.embed"
+#include "src/render/opengl/opengl_frag.glsl.embed"
 
 internal GLuint
 opengl_create_shader(Str8 source, GLenum shader_type)
@@ -119,11 +119,17 @@ render_backend_init(Render_Context *renderer)
 
     glVertexArrayVertexBuffer(backend->vao, 0, backend->vbo, 0, sizeof(Render_RectInstance));
 
-    GLuint shaders[] = {
-        opengl_create_shader(str8_cstr(opengl_shader_vert), GL_VERTEX_SHADER),
-        opengl_create_shader(str8_cstr(opengl_shader_frag), GL_FRAGMENT_SHADER),
-    };
-    backend->program = opengl_create_program(shaders, array_count(shaders));
+    arena_scratch(0, 0)
+    {
+        Str8 shader_vert = framed_embed_unpack(scratch, embed_opengl_vert_data, embed_opengl_vert_size);
+        Str8 shader_frag = framed_embed_unpack(scratch, embed_opengl_frag_data, embed_opengl_frag_size);
+
+        GLuint shaders[] = {
+            opengl_create_shader(shader_vert, GL_VERTEX_SHADER),
+            opengl_create_shader(shader_frag, GL_FRAGMENT_SHADER),
+        };
+        backend->program = opengl_create_program(shaders, array_count(shaders));
+    }
 
     backend->uniform_projection_location = glGetUniformLocation(backend->program, "uniform_projection");
     backend->uniform_sampler_location    = glGetUniformLocation(backend->program, "uniform_sampler");
