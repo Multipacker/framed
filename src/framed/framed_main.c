@@ -1,5 +1,7 @@
 // [ ] Logging paths
 
+#define MEMORY_DEBUG 1
+
 #include "base/base_inc.h"
 #include "os/os_inc.h"
 #include "log/log_inc.h"

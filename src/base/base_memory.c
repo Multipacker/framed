@@ -61,7 +61,9 @@ arena_create(CStr format, ...)
 internal Void
 arena_destroy_internal(Arena *arena, CStr file, U32 line)
 {
+#if MEMORY_DEBUG
     debug_arena_deleted_internal(file, line, arena);
+#endif
     os_memory_release(arena->memory, arena->cap);
 }
 
@@ -88,7 +90,9 @@ arena_push_internal(Arena *arena, U64 size, CStr file, U32 line)
         ASAN_UNPOISON_MEMORY_REGION(result, size);
     }
 
+#if MEMORY_DEBUG
     debug_arena_changed_internal(file, line, arena);
+#endif
 
     return result;
 }
@@ -117,7 +121,9 @@ arena_pop_to_internal(Arena *arena, U64 pos, CStr file, U32 line)
         }
     }
 
+#if MEMORY_DEBUG
     debug_arena_changed_internal(file, line, arena);
+#endif
 }
 
 internal Void
