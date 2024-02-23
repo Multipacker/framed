@@ -70,15 +70,16 @@ FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_hit_count)
     }
 }
 
-static int
+internal int
 framed_zone_block_compare_names(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
     ZoneBlock *zone_block1 = (ZoneBlock *)b;
-    return(str8_are_codepoints_earliear(zone_block1->name, zone_block0->name));
+    int result = (int) str8_are_codepoints_earliear(zone_block1->name, zone_block0->name);
+    return(result);
 }
 
-static int
+internal int
 framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
@@ -88,7 +89,7 @@ framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
     return(tsc0 < tsc1);
 }
 
-static int
+internal int
 framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
@@ -98,7 +99,7 @@ framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
     return(tsc0 < tsc1);
 }
 
-static int
+internal int
 framed_zone_block_compare_hit_count(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
