@@ -189,7 +189,7 @@ net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data)
 }
 
 internal Net_RecieveResult
-net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
+net_socket_receive(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 {
     Net_RecieveResult result = {0};
     SOCKET sock = (SOCKET) connected_socket.u64[0];
@@ -219,7 +219,7 @@ net_socket_peek(Net_Socket connected_socket, U8 *buffer, U64 buffer_size)
 }
 
 internal Net_RecieveResult
-net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size)
+net_socket_receive_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size)
 {
     Net_RecieveResult result = {0};
     SOCKET sock = (SOCKET) listen_socket.u64[0];

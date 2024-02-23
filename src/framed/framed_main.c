@@ -679,7 +679,7 @@ framed_parse_zones(Void)
         {
             Arena_Temporary scratch = get_scratch(0, 0);
             U8 *buffer = push_array(scratch.arena, U8, buffer_size);
-            Net_RecieveResult recieve_result = net_socket_recieve(profiling_state->client_socket, buffer, buffer_size);
+            Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
 
             if (recieve_result.bytes_recieved != buffer_size)
             {

@@ -61,8 +61,8 @@ internal Void              net_socket_connect(Net_Socket socket, Net_Address to)
 internal Net_AcceptResult  net_socket_accept(Net_Socket socket);
 internal Void              net_socket_send(Net_Socket socket, Str8 data);
 internal Void              net_socket_send_to(Net_Socket socket, Net_Address address, Str8 data);
-internal Net_RecieveResult net_socket_recieve(Net_Socket connected_socket, U8 *buffer, U64 buffer_size);
-internal Net_RecieveResult net_socket_recieve_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size);
+internal Net_RecieveResult net_socket_receive(Net_Socket connected_socket, U8 *buffer, U64 buffer_size);
+internal Net_RecieveResult net_socket_receive_from(Net_Socket listen_socket, Net_Address *address, U8 *buffer, U64 buffer_size);
 internal Void              net_socket_set_blocking_mode(Net_Socket socket, B32 should_block);
 
 #endif
