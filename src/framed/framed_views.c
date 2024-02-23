@@ -185,22 +185,22 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
         {
             case 0:
             {
-                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_names);
+                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_names);
             } break;
 
             case 1:
             {
-                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_cycles_without_children);
+                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_cycles_without_children);
             } break;
 
             case 2:
             {
-                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_cycles_with_children);
+                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_cycles_with_children);
             } break;
 
             case 3:
             {
-                qsort(zone_blocks, zone_blocks_count, sizeof(ZoneBlock), framed_zone_block_compare_hit_count);
+                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_hit_count);
             } break;
         }
     }
