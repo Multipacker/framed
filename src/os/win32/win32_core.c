@@ -907,29 +907,6 @@ os_thread_set_name(Str8 string)
     }
 }
 
-internal Void
-os_set_clipboard(Str8 data)
-{
-    // TODO(hampus): Memory leak?
-    HGLOBAL memory =  GlobalAlloc(GMEM_MOVEABLE, data.size+1);
-    memory_copy(GlobalLock(memory), data.data, data.size);
-    GlobalUnlock(memory);
-    OpenClipboard(0);
-    EmptyClipboard();
-    SetClipboardData(CF_TEXT, memory);
-    CloseClipboard();
-}
-
-internal Str8
-os_push_clipboard(Arena *arena)
-{
-    OpenClipboard(0);
-    CStr data = GetClipboardData(CF_TEXT);
-    Str8 result = str8_copy_cstr(arena, data);
-    CloseClipboard();
-    return(result);
-}
-
 internal S32
 win32_common_main(Void)
 {

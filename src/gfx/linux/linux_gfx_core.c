@@ -342,3 +342,22 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
     result.y = (F32) display_mode.h;
     return(result);
 }
+
+internal Void
+gfx_set_clipboard(Str8 data)
+{
+    arena_scratch(0, 0)
+    {
+        CStr clipboard = cstr_from_str8(scratch, data);
+        SDL_SetClipboardText(clipboard);
+    }
+}
+
+internal Str8
+gfx_push_clipboard(Arena *arena)
+{
+    CStr clipboard = SDL_GetClipboardText();
+    Str8 result = str8_copy(arena, str8_cstr(clipboard));
+    SDL_free(clipboard);
+    return(result);
+}

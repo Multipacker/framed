@@ -8,6 +8,8 @@ fi
 
 mkdir -p build
 
+clang -Isrc -Ivendor -g src/meta/meta.c -o build/meta -lSDL2
+
 src_files="src/framed/framed_main.c"
 out_file="build/framed"
 errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides -Wno-unused-but-set-variable -Wshadow -Wsign-compare -Wsign-conversion -Wtautological-compare -Wtype-limits"

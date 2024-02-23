@@ -31,6 +31,15 @@ struct OS_File
     U64 u64[1];
 };
 
+typedef struct OS_FileProperties OS_FileProperties;
+struct OS_FileProperties
+{
+    U64 size;
+    B32 is_folder;
+    DenseTime create_time;
+    DenseTime modify_time;
+};
+
 typedef struct OS_FileIterator OS_FileIterator;
 struct OS_FileIterator
 {
@@ -86,6 +95,8 @@ internal B32 os_file_create_directory(Str8 path);
 // NOTE(simon): The directory must be empty.
 internal B32 os_file_delete_directory(Str8 path);
 
+internal OS_FileProperties os_file_properties(Str8 path);
+
 internal Void os_file_iterator_init(OS_FileIterator *iterator, Str8 path);
 internal B32  os_file_iterator_next(Arena *arena, OS_FileIterator *iterator, Str8 *result_name);
 internal Void os_file_iterator_end(OS_FileIterator *iterator);
@@ -117,9 +128,6 @@ internal B32 os_run(Str8 program, Str8List arguments);
 
 internal Void os_thread_create(ThreadProc *proc, Void *data);
 internal Void os_thread_set_name(Str8 string);
-
-internal Void os_set_clipboard(Str8 data);
-internal Str8 os_push_clipboard(Arena *arena);
 
 #define os_mutex(mutex) defer_loop(os_mutex_take(mutex), os_mutex_release(mutex))
 

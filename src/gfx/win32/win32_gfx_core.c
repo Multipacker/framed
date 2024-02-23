@@ -426,3 +426,26 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
     result.y = (F32)(monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top);
     return(result);
 }
+
+internal Void
+gfx_set_clipboard(Str8 data)
+{
+    // TODO(hampus): Memory leak?
+    HGLOBAL memory =  GlobalAlloc(GMEM_MOVEABLE, data.size+1);
+    memory_copy(GlobalLock(memory), data.data, data.size);
+    GlobalUnlock(memory);
+    OpenClipboard(0);
+    EmptyClipboard();
+    SetClipboardData(CF_TEXT, memory);
+    CloseClipboard();
+}
+
+internal Str8
+gfx_push_clipboard(Arena *arena)
+{
+    OpenClipboard(0);
+    CStr data = GetClipboardData(CF_TEXT);
+    Str8 result = str8_copy_cstr(arena, data);
+    CloseClipboard();
+    return(result);
+}

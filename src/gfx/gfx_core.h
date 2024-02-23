@@ -166,4 +166,7 @@ internal Void          gfx_set_window_maximized(Gfx_Context *ctx);
 internal Gfx_Monitor   gfx_monitor_from_window(Gfx_Context *ctx);
 internal Vec2F32       gfx_dim_from_monitor(Gfx_Monitor monitor);
 
+internal Void gfx_set_clipboard(Str8 data);
+internal Str8 gfx_push_clipboard(Arena *arena);
+
 #endif //GFX_ESSENTIAL_H
