@@ -6,8 +6,8 @@ typedef struct FramedUI_Tab FramedUI_Tab;
 typedef struct FramedUI_Window FramedUI_Window;
 typedef struct FramedUI_TabViewInfo FramedUI_TabViewInfo;
 
-#define FRAME_UI_TAB_VIEW(name) Void name(struct FramedUI_TabViewInfo *view_info)
-typedef FRAME_UI_TAB_VIEW(FramedUI_TabViewProc);
+#define FRAMED_UI_TAB_VIEW(name) Void name(struct FramedUI_TabViewInfo *view_info)
+typedef FRAMED_UI_TAB_VIEW(FramedUI_TabViewProc);
 
 ////////////////////////////////
 //~ hampus: Tab types
@@ -274,7 +274,7 @@ struct FramedUI_State
 ////////////////////////////////
 //~ hampus: Tab view
 
-FRAME_UI_TAB_VIEW(framed_ui_tab_view_default);
+FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default);
 
 ////////////////////////////////
 //~ hampus: Settings

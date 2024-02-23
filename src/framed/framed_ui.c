@@ -1681,7 +1681,7 @@ framed_ui_get_or_push_view_data_(FramedUI_TabViewInfo *view_info, U64 size)
     return(result);
 }
 
-FRAME_UI_TAB_VIEW(framed_ui_tab_view_default)
+FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default)
 {
     FramedUI_Tab *tab = view_info->data;
     FramedUI_Panel *panel = tab->panel;
