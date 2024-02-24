@@ -18,8 +18,7 @@ set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -w
 set additional_includes=-I../vendor/ -I../vendor/freetype/include -I../src/ -I../
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -MT -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
-set libs=user32.lib kernel32.lib winmm.lib gdi32.lib shcore.lib
-set linker_flags=%libs% -incremental:no
+set linker_flags=-incremental:no
 set src_files=../src/framed/framed_main.c
 
 :: NOTE(hampus): We're compiling everything with the non-debug crt static library
@@ -84,15 +83,26 @@ if %build_mode% == "examples" (
         call script\build_freetype_msvc.bat
     )
 
+
     echo ---- Building shaders ----
 
     fxc.exe /nologo /T vs_5_0 /E vs /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_vshader.h /Vn d3d11_vshader /Qstrip_reflect /Qstrip_debug /Qstrip_priv src/render/d3d11/d3d11_shader.hlsl
     fxc.exe /nologo /T ps_5_0 /E ps /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_pshader.h /Vn d3d11_pshader /Qstrip_reflect /Qstrip_debug /Qstrip_priv src/render/d3d11/d3d11_shader.hlsl
 
-    echo ---- Building Framed ----
-
     if not exist build mkdir build
     pushd build
+
+
+    if not exist meta.exe (
+	    echo ---- Building meta program ----
+        cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta
+    )
+
+    echo ---- Running meta program ----
+
+    meta.exe
+
+    echo ---- Building Framed ----
 
     if exist *.pdb del *.pdb
 

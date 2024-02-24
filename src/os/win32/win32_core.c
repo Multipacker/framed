@@ -1,4 +1,6 @@
 #pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "user32.lib")
+#pragma comment(lib, "winmm.lib")
 
 global Win32_State win32_state;
 
@@ -28,6 +30,34 @@ win32_str16_from_wchar(WCHAR *wide_char)
     {
         result.size++;
     }
+    return(result);
+}
+
+internal DateTime
+win32_date_time_from_system_time(SYSTEMTIME *system_time)
+{
+    DateTime result = {0};
+    result.millisecond = system_time->wMilliseconds;
+    result.second      = (U8) system_time->wSecond;
+    result.minute      = (U8) system_time->wMinute;
+    result.hour        = (U8) system_time->wHour;
+    result.day         = (U8) system_time->wDay;
+    result.month       = (U8) system_time->wMonth;
+    result.year        = (S16) system_time->wYear;
+    return(result);
+}
+
+internal SYSTEMTIME
+win32_system_time_from_date_time(DateTime *date_time)
+{
+    SYSTEMTIME result = {0};
+    result.wMilliseconds = (WORD) date_time->millisecond;
+    result.wSecond       = (WORD) date_time->second;
+    result.wMinute       = (WORD) date_time->minute;
+    result.wHour         = (WORD) date_time->hour;
+    result.wDay          = (WORD) date_time->day;
+    result.wMonth        = (WORD) date_time->month;
+    result.wYear         = (WORD) date_time->year;
     return(result);
 }
 
@@ -466,6 +496,47 @@ os_file_delete_directory(Str8 path)
     return(result);
 }
 
+internal OS_FileProperties
+os_file_properties(Str8 path)
+{
+    OS_FileProperties result = {0};
+
+    arena_scratch(0, 0)
+    {
+        CStr16 cstr16_path = cstr16_from_str8(scratch, path);
+        WIN32_FILE_ATTRIBUTE_DATA file_data = {0};
+        if (GetFileAttributesEx(cstr16_path, GetFileExInfoStandard, &file_data))
+        {
+            result.size = (U64) (file_data.nFileSizeHigh << 16) | (file_data.nFileSizeLow);
+
+            {
+                SYSTEMTIME time = {0};
+                FileTimeToSystemTime(&file_data.ftCreationTime, &time);
+                DateTime date_time = win32_date_time_from_system_time(&time);
+                result.create_time = dense_time_from_date_time(&date_time);
+            }
+
+            {
+                SYSTEMTIME time = {0};
+                FileTimeToSystemTime(&file_data.ftLastWriteTime, &time);
+                DateTime date_time = win32_date_time_from_system_time(&time);
+                result.modify_time = dense_time_from_date_time(&date_time);
+            }
+
+            {
+                DWORD file_attribs = GetFileAttributes(cstr16_path);
+                if (file_attribs & FILE_ATTRIBUTE_DIRECTORY)
+                {
+                    result.is_folder = true;
+                }
+            }
+
+        }
+    }
+
+    return(result);
+}
+
 internal Void
 os_file_iterator_init(OS_FileIterator *iterator, Str8 path)
 {
@@ -592,34 +663,6 @@ os_push_system_path(Arena *arena, OS_SystemPath path)
         invalid_case;
     }
     release_scratch(scratch);
-    return(result);
-}
-
-internal DateTime
-win32_date_time_from_system_time(SYSTEMTIME *system_time)
-{
-    DateTime result = {0};
-    result.millisecond = system_time->wMilliseconds;
-    result.second      = (U8) system_time->wSecond;
-    result.minute      = (U8) system_time->wMinute;
-    result.hour        = (U8) system_time->wHour;
-    result.day         = (U8) system_time->wDay;
-    result.month       = (U8) system_time->wMonth;
-    result.year        = (S16) system_time->wYear;
-    return(result);
-}
-
-internal SYSTEMTIME
-win32_system_time_from_date_time(DateTime *date_time)
-{
-    SYSTEMTIME result = {0};
-    result.wMilliseconds = (WORD) date_time->millisecond;
-    result.wSecond       = (WORD) date_time->second;
-    result.wMinute       = (WORD) date_time->minute;
-    result.wHour         = (WORD) date_time->hour;
-    result.wDay          = (WORD) date_time->day;
-    result.wMonth        = (WORD) date_time->month;
-    result.wYear         = (WORD) date_time->year;
     return(result);
 }
 
