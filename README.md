@@ -11,6 +11,7 @@ your code. This takes care of collecting counters and sending them over to the
 visualizer.
 
 Currently the only supported counter is [RDTSC], but more will be added later.
+Only single-threaded applications can be profiled currently.
 
 
 ## Installation
