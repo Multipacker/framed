@@ -505,6 +505,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
         }
     }
 
+    // NOTE(hampus): Create a snapshot of the settings so that
+    // we can see at the end if anything has changed.
+
+    U32 old_font_size = framed_ui_state->settings.font_size;
+
     //- hampus: General settings
 
     ui_next_font_size(framed_ui_font_size_from_scale(FramedUI_FontScale_Larger));
@@ -617,8 +622,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
             }
         }
     }
+    if (framed_ui_state->settings.font_size != old_font_size)
+    {
+        framed_save_current_settings_to_file();
+    }
 }
-
 
 ////////////////////////////////
 //~ hampus: Logger tab view

@@ -22,83 +22,19 @@
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
 
-// NOTE(hampus): A global frame counter that everyone can read from
-global U64 framed_frame_counter;
-
 #include "public/framed.h"
-
 #include "framed/framed_ui.h"
-#include "framed/framed_ui.c"
+#include "framed/framed_main.h"
 
-typedef struct ZoneBlock ZoneBlock;
-struct ZoneBlock
-{
-    Str8 name;
-    U64 tsc_elapsed;
-    U64 tsc_elapsed_root;
-    U64 tsc_elapsed_children;
-    U64 hit_count;
-};
 
-typedef struct ZoneStack ZoneStack;
-struct ZoneStack
-{
-    Str8 name;
-    U64 tsc_start;
-    U64 old_tsc_elapsed_root;
-    U64 tsc_elapsed_children;
-};
-
-#define MAX_NUMBER_OF_UNIQUE_ZONES (4096)
-typedef struct CapturedFrame CapturedFrame;
-struct CapturedFrame
-{
-    U64 total_tsc;
-    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
-};
-
-typedef struct ProfilingState ProfilingState;
-struct ProfilingState
-{
-    Arena *zone_arena;
-
-    CapturedFrame latest_captured_frame;
-
-    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
-    ZoneStack zone_stack[1024];
-    U32 zone_stack_size;
-    U64 frame_begin_tsc;
-    U64 frame_end_tsc;
-    U64 tsc_frequency;
-    U64 frame_index;
-
-    B32 found_connection;
-    Net_Socket listen_socket;
-    Net_Socket client_socket;
-
-    F64 seconds_accumulator;
-
-    // NOTE(hampus): These are per time unit, which is set at the
-    // end of the frame where these values are calculated
-    U64 parsed_average_rate;
-    U64 bandwidth_average_rate;
-
-    U64 parsed_bytes;
-    F64 parsed_time_accumulator;
-
-    U64 bytes_from_client;
-};
-
-typedef struct Framed_State Framed_State;
-struct Framed_State
-{
-    Arena *perm_arena;
-    ProfilingState *profiling_state;
-};
-
+global U64 framed_frame_counter;
 Framed_State *framed_state;
 
+#include "framed/framed_ui.c"
 #include "framed/framed_views.c"
+
+////////////////////////////////
+//~ hampus: Zone parsing
 
 internal ZoneBlock *
 framed_get_zone_block(Arena *arena, Str8 name)
@@ -359,6 +295,190 @@ framed_parse_zones(Void)
 }
 
 ////////////////////////////////
+//~ hampus: Path helpers
+
+internal Str8
+framed_get_data_folder_path(Void)
+{
+    if (framed_state->data_folder_path.data == 0)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        Str8List data_folder_path_list = {0};
+        str8_list_push(scratch.arena, &data_folder_path_list, os_push_system_path(scratch.arena, OS_SystemPath_UserData));
+        str8_list_push(scratch.arena, &data_folder_path_list, str8_lit("/framed/"));
+        framed_state->data_folder_path = str8_join(framed_state->perm_arena, &data_folder_path_list);
+        release_scratch(scratch);
+        os_file_create_directory(framed_state->data_folder_path);
+    }
+    Str8 result = framed_state->data_folder_path;
+    return(result);
+}
+
+internal Str8
+framed_get_user_settings_file_path(Void)
+{
+    if (framed_state->user_settings_file_path.data == 0)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        Str8List user_settings_file_path = {0};
+        str8_list_push(scratch.arena, &user_settings_file_path, framed_get_data_folder_path());
+        str8_list_push(scratch.arena, &user_settings_file_path, str8_lit("default.framed_settings"));
+        framed_state->user_settings_file_path = str8_join(framed_state->perm_arena, &user_settings_file_path);
+        release_scratch(scratch);
+    }
+    Str8 result = framed_state->user_settings_file_path;
+    return(result);
+}
+
+////////////////////////////////
+//~ hampus: User settings parsing
+
+internal Str8
+framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
+{
+    Str8 result = {0};
+    U8 *string_end = string.data + string.size;
+    U8 *data = string.data;
+    while (data < string_end &&
+           data[0] != '=' &&
+           (data[0] == ' ' ||
+            data[0] == '\r' ||
+            data[0] == '\n' ||
+            data[0] == '/'))
+    {
+        if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
+        {
+            while (data[0] && data[0] != '\n')
+            {
+                ++data;
+            }
+        }
+        data++;
+    }
+    U8 *start = data;
+    while (data < string_end && data[0] != '=' && !(data[0] == ' ' || data[0] == '\r' || data[0] == '\n'))
+    {
+        if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
+        {
+            break;
+        }
+        data++;
+    }
+    U8 *end = data;
+    result = str8_range(start, end);
+    *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
+    return(result);
+}
+
+internal Void
+framed_load_user_settings_from_memory(Str8 data_string)
+{
+    //- hampus: Get the version number
+
+    U32 version = 0;
+
+    U64 bytes_parsed = 0;
+    Str8 version_string = framed_get_next_settings_word(data_string, &bytes_parsed);
+    data_string = str8_skip(data_string, bytes_parsed);
+    Str8 version_number_string = framed_get_next_settings_word(data_string, &bytes_parsed);
+    data_string = str8_skip(data_string, bytes_parsed);
+
+    u32_from_str8(version_number_string, &version);
+
+    // TODO(hampus): Get line number for better error messages
+
+    if (version == 1)
+    {
+        //- hampus: Start reading settings
+
+        for (;data_string.size != 0;)
+        {
+            //- hampus: Get setting name
+
+            Str8 setting_name = framed_get_next_settings_word(data_string, &bytes_parsed);
+            data_string = str8_skip(data_string, bytes_parsed);
+
+            B32 found_equal_sign = false;
+
+            U8 *string_end = data_string.data + data_string.size;
+            for (U8 *data = data_string.data; data < string_end; ++data)
+            {
+                found_equal_sign = data[0] == '=';
+                if (found_equal_sign)
+                {
+                    ++data;
+                    data_string = str8_skip(data_string, int_from_ptr(data) - int_from_ptr(data_string.data));
+                    break;
+                }
+                else
+                {
+                    if (!(data[0] == ' ' || data[0] == '\r' || data[0] == '\n'))
+                    {
+                        if (!found_equal_sign)
+                        {
+                            // NOTE(hampus): We found something else while looking for '='
+                            break;
+                        }
+                    }
+                }
+            }
+
+            //- hampus: Get setting value
+
+            if (found_equal_sign)
+            {
+                Str8 setting_value = framed_get_next_settings_word (data_string, &bytes_parsed);
+                B32 value_valid = false;
+                if (setting_value.size != 0)
+                {
+                    if (str8_equal(setting_name, str8_lit("font_size")))
+                    {
+                        U32 value = 0;
+                        value_valid = u32_from_str8(setting_value, &value) != 0;
+                        value = u32_clamp(1, value, 50);
+                        framed_ui_state->settings.font_size = value;
+                    }
+                }
+                if (value_valid)
+                {
+                    data_string = str8_skip(data_string, bytes_parsed);
+                }
+                else
+                {
+                    log_error("Failed to parse setting value (%"PRISTR8")for setting: \"%"PRISTR8"\"", str8_expand(setting_value), str8_expand(setting_name));
+                }
+            }
+            else
+            {
+                log_error("Failed to parse setting value for setting: \"%"PRISTR8"\"", str8_expand(setting_name));
+                // TODO(hampus): Logging. Setting missed a value
+            }
+        }
+    }
+    else
+    {
+        // TODO(hampus): Logging. Unknown version
+        log_error("Unknown setting file version");
+    }
+}
+
+internal Void
+framed_save_current_settings_to_file(Void)
+{
+    // TODO(hampus): This overrides _all_ settings. It should only override
+    // the ones that have actually changed
+    log_info("Saving settings to file...");
+    Arena_Temporary scratch = get_scratch(0, 0);
+    Str8List settings_file_data = {0};
+    str8_list_pushf(scratch.arena, &settings_file_data, "version %"PRIU32"\n\n", FRAMED_SETTINGS_VERSION);
+    str8_list_pushf(scratch.arena, &settings_file_data, "font_size=%"PRIU32"\n", framed_ui_state->settings.font_size);
+    Str8 data = str8_join(scratch.arena, &settings_file_data);
+    os_file_write(framed_get_user_settings_file_path(), data, OS_FileMode_Replace);
+    release_scratch(scratch);
+
+}
+
+////////////////////////////////
 //~ hampus: Main
 
 internal S32
@@ -413,7 +533,6 @@ os_main(Str8List arguments)
     framed_ui_state = push_struct(framed_ui_perm_arena, FramedUI_State);
     framed_ui_state->perm_arena = framed_ui_perm_arena;
 
-
     framed_ui_state->settings.font_size = 12;
     framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelBorderActive, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
@@ -425,6 +544,21 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+
+    Arena_Temporary scratch = get_scratch(0, 0);
+    Str8 user_settings_data = {0};
+    if (os_file_read(scratch.arena, framed_get_user_settings_file_path(), &user_settings_data))
+    {
+        // NOTE(hampus): Load user settings from file
+        framed_load_user_settings_from_memory(user_settings_data);
+    }
+    else
+    {
+        // NOTE(hampus): We didn't have any user settings file. Create one and
+        // use the default settings.
+        framed_save_current_settings_to_file();
+    }
+    release_scratch(scratch);
 
     UI_Context *ui = ui_init();
 
@@ -516,7 +650,6 @@ os_main(Str8List arguments)
                             framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab);
 
                             framed_ui_panel_set_active_tab(debug_window->root_panel, debug_tab);
-
                         }
                     }
                 }

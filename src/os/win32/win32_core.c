@@ -908,7 +908,7 @@ os_thread_set_name(Str8 string)
 }
 
 internal LONG WINAPI
-win32_exception_filter(EXCEPTION_POINTERS * exception_ptrs)
+win32_exception_filter(EXCEPTION_POINTERS *exception_ptrs)
 {
     MessageBoxA(0,
                 "An unhandled exception has occurred!\n\n"
