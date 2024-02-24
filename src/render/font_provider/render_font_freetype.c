@@ -3,8 +3,8 @@
 #include "freetype/freetype.h"
 #define internal static
 
-#include "render/noto_sans_medium.h"
-#include "render/fontello.h"
+#include "data/fonts/NotoSansMono_Medium.ttf.embed"
+#include "data/fonts/fontello.ttf.embed"
 
 internal Str8
 render_get_ft_error_message(FT_Error err)
@@ -239,17 +239,6 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
     U32 compressed_size = 0;
     U64 last_slash = 0;
     str8_last_index_of(params.path, '/', &last_slash);
-    Str8 font_name = str8_skip(params.path, last_slash+1);
-    if (str8_equal(font_name, str8_lit("NotoSansMono-Medium.ttf")))
-    {
-        compressed_data = (U8 *)noto_sans_medium_compressed_data;
-        compressed_size = noto_sans_medium_compressed_size;
-    }
-    else if (str8_equal(font_name, str8_lit("fontello.ttf")))
-    {
-        compressed_data = (U8 *)fontello_data;
-        compressed_size = fontello_size;
-    }
 
     FT_Library ft;
     // NOTE(hampus): 0 indicates a success in freetype, otherwise error
@@ -261,10 +250,14 @@ render_load_font(Render_Context *renderer, Render_Font *font, Render_FontLoadPar
         FT_Library_Version(ft, &major_version, &minor_version, &patch);
 
         Str8 file_read_result = { 0 };
-        if (compressed_data)
+        Str8 font_name = str8_skip(params.path, last_slash+1);
+        if (str8_equal(font_name, str8_lit("NotoSansMono-Medium.ttf")))
         {
-            file_read_result.data = compressed_data;
-            file_read_result.size = compressed_size;
+            file_read_result = framed_embed_unpack(scratch.arena, embed_NotoSansMono_Medium_data, embed_NotoSansMono_Medium_size);
+        }
+        else if (str8_equal(font_name, str8_lit("fontello.ttf")))
+        {
+            file_read_result = framed_embed_unpack(scratch.arena, embed_fontello_data, embed_fontello_size);
         }
         else
         {

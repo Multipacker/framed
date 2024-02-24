@@ -8,11 +8,14 @@ fi
 
 mkdir -p build
 
-clang -Isrc -Ivendor -g src/meta/meta.c -o build/meta -lSDL2
+errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides -Wno-unused-but-set-variable -Wshadow -Wsign-compare -Wsign-conversion -Wtautological-compare -Wtype-limits"
+
+clang -Isrc -Ivendor $errors -lm src/meta/meta.c -o build/meta
+
+build/meta
 
 src_files="src/framed/framed_main.c"
 out_file="build/framed"
-errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides -Wno-unused-but-set-variable -Wshadow -Wsign-compare -Wsign-conversion -Wtautological-compare -Wtype-limits"
 common_flags="-I. -Isrc -Ivendor -Ivendor/freetype/include -o $out_file -DRENDERER_OPENGL=1 -pthread"
 linker_flags="-lSDL2 build/freetype/freetype -lm"
 
