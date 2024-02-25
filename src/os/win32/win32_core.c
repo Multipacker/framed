@@ -1,7 +1,3 @@
-#pragma comment(lib, "shell32.lib")
-#pragma comment(lib, "user32.lib")
-#pragma comment(lib, "winmm.lib")
-
 global Win32_State win32_state;
 
 internal Void

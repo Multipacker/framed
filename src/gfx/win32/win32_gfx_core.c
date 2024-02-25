@@ -1,5 +1,3 @@
-#pragma comment(lib, "shcore.lib")
-
 global volatile Win32_Gfx_State win32_gfx_state;
 
 internal LRESULT CALLBACK

@@ -143,18 +143,12 @@ int main(int argc, char *argv[])
 
 Framed is released under the [MIT License].
 
-This software uses FreeType which is licensed under the [FreeType Project
-LICENSE] and is copyright © 2024 The FreeType Project ([www.freetype.org]). All
-rights reserved.
-
 This software uses SDL 2 which is licensed under the [zlib license].
 
 
-[FreeType Project LICENSE]: https://github.com/freetype/freetype/blob/master/docs/FTL.TXT
 [MIT License]:              /LICENSE
 [RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
 [examples]:                 /examples
 [stb]:                      https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
-[www.freetype.org]:         https://www.freetype.org
 [zlib license]:             https://www.zlib.net/zlib_license.html
 [examples/auto_closing_zones.cpp]: /examples/auto_closing_zones.cpp

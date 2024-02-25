@@ -68,6 +68,8 @@ typedef Void ThreadProc(Void *);
 
 #define os_handle_is_valid(handle) (!type_is_zero(handle))
 
+internal Void *os_memory_alloc(U64 size);
+
 internal Void *os_memory_reserve(U64 size);
 internal Void  os_memory_commit(Void *ptr, U64 size);
 internal Void  os_memory_decommit(Void *ptr, U64 size);

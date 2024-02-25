@@ -87,6 +87,7 @@ os_memory_decommit(Void *ptr, U64 size)
     mprotect(ptr, size, PROT_NONE);
     madvise(ptr, size, MADV_DONTNEED);
 }
+
 internal Void
 os_memory_release(Void *ptr, U64 size)
 {

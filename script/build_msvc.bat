@@ -15,28 +15,28 @@
 :: -- Common flags --
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710 -wd4200
-set additional_includes=-I../vendor/ -I../vendor/freetype/include -I../src/ -I../
+set additional_includes=-I../vendor/ -I../src/ -I../
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -MT -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
-set linker_flags=-incremental:no
+set linker_flags=-incremental:no user32.lib kernel32.lib "winmm.lib" shell32.lib shcore.lib
 set src_files=../src/framed/framed_main.c
 
 :: NOTE(hampus): We're compiling everything with the non-debug crt static library
 
 :: -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
-set debug_linker_flags=-subsystem:console freetype.lib
+set debug_compiler_flags=-RTC1 -fsanitize=address -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_linker_flags=-subsystem:console
 
 :: -- Optimized build flags --
 
 set optimized_compiler_flags=-Zi -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE_OPTIMIZED=1
-set optimized_linker_flags=-subsystem:console freetype.lib
+set optimized_linker_flags=-subsystem:console
 
 :: -- Release build flags --
 
 set release_compiler_flags=-O2 -Oi -EHsc -fp:fast -GS- -DBUILD_MODE_RELEASE=1
-set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib freetype.lib
+set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib
 
 set build_mode="%1%"
 
@@ -44,7 +44,6 @@ if %build_mode% == "debug" (
     echo [debug build]
     set compiler_flags=%compiler_flags% %debug_compiler_flags%
     set linker_flags=%linker_flags% %debug_linker_flags%
-    set build_debug_freetype=1
 ) else if %build_mode% == "optimized" (
     echo [optimized build]
     set compiler_flags=%compiler_flags% %optimized_compiler_flags%
@@ -77,12 +76,6 @@ if %build_mode% == "examples" (
 	popd
 
 ) else (
-
-    if not exist build/freetype.lib (
-	    echo ---- Building freetype ----
-        call script\build_freetype_msvc.bat
-    )
-
 
     echo ---- Building shaders ----
 

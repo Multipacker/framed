@@ -342,7 +342,8 @@ render_font_stream_thread(Void *data)
                 render_unload_font(renderer, font);
 
                 U64 start_timer = os_now_nanoseconds();
-                B32 success = render_load_font(renderer, font, entry.params);
+
+                B32 success = render_load_font_truetype(renderer, font, entry.params);
 
                 if (success)
                 {

@@ -1,5 +1,8 @@
+#include "data/fonts/NotoSansMono_Medium.ttf.embed"
+#include "data/fonts/fontello.ttf.embed"
+
 #include "render/render_core.c"
-#include "render/font_provider/render_font_freetype.c"
+#include "render/font_provider/render_font_truetype.c"
 #include "render/render_font.c"
 
 #if OS_LINUX

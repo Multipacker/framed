@@ -309,6 +309,8 @@ internal RectF32 rectf32(Vec2F32 min, Vec2F32 max);
 internal Vec2F32 rectf32_center(RectF32 rect);
 internal Vec2F32 rectf32_dim(RectF32 rect);
 
+internal Vec2S32 rects32_dim(RectS32 rect);
+
 internal RectF32 rectf32_from_rects32(RectS32 rect);
 internal RectS32 rects32(Vec2S32 min, Vec2S32 max);
 internal RectU32 rectu32(Vec2U32 min, Vec2U32 max);

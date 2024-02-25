@@ -591,6 +591,11 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 
     instance = batch->instances + batch->instance_count;
 
+    min.x = f32_round(min.x);
+    min.y = f32_round(min.y);
+    max.x = f32_round(max.x);
+    max.y = f32_round(max.y);
+
     instance->min              = min;
     instance->max              = max;
     instance->min_uv           = params->slice.region.min;

@@ -2,10 +2,6 @@
 
 mode=${1:-release}
 
-if [ ! -f build/freetype/freetype ]; then
-    source "script/build_freetype_gcc.sh"
-fi
-
 mkdir -p build
 
 errors="-Werror -Wall -Wextra -Wno-missing-braces -Wno-unused-parameter -Wno-unused-variable -Wno-unused-function -Wno-override-init-side-effects -Wno-unused-but-set-variable -Wconversion -Wno-comment -Wno-array-bounds -Wno-missing-field-initializers"
@@ -16,8 +12,8 @@ build/meta
 
 src_files="src/framed/framed_main.c"
 out_file="build/framed"
-common_flags="-I. -Isrc -Ivendor -Ivendor/freetype/include -o $out_file -DRENDERER_OPENGL=1 -pthread"
-linker_flags="-lm -lSDL2 build/freetype/freetype"
+common_flags="-I. -Isrc -Ivendor -o $out_file -DRENDERER_OPENGL=1 -pthread"
+linker_flags="-lm -lSDL2"
 
 if [ "$mode" == "debug" ]; then
     compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"

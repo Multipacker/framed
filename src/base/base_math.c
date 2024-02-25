@@ -386,6 +386,17 @@ rectf32_dim(RectF32 rect)
     return(result);
 }
 
+internal Vec2S32
+rects32_dim(RectS32 rect)
+{
+    Vec2S32 result =
+    {
+        .x = rect.max.x - rect.min.x,
+        .y = rect.max.y - rect.min.y,
+    };
+    return(result);
+}
+
 internal RectF32
 rectf32_from_rects32(RectS32 rect)
 {
