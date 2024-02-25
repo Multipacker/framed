@@ -336,15 +336,57 @@ framed_get_user_settings_file_path(Void)
 //~ hampus: User settings parsing
 
 internal Str8
-framed_skip_whitespace(Str8 string, U64 *bytes_parsed)
+framed_skip_to_equal_sign(Str8 string, U64 *bytes_parsed)
+{
+    Str8 result = string;
+    U8 *at = string.data;
+    U8 *end = string.data + string.size;
+    for (;at < end && at[0] != '='; ++at);
+    *bytes_parsed = int_from_ptr(at) - int_from_ptr(string.data);
+    result = str8_skip(string, *bytes_parsed);
+    return(result);
+}
+
+internal Str8
+framed_get_next_line(Str8 string, U64 *bytes_parsed)
+{
+    Str8 result = string;
+    U8 *string_end = string.data + string.size;
+    U8 *at = string.data;
+    U8 *comment_start = 0;
+    for (;at < string_end;)
+    {
+        if (at[0] == '\n')
+        {
+            break;
+        }
+        if ((at+1) < string_end)
+        {
+            if (at[0] == '/' && at[1] == '/')
+            {
+                comment_start = at;
+            }
+        }
+        at++;
+    }
+    *bytes_parsed = int_from_ptr(at) - int_from_ptr(string.data);
+    if (comment_start)
+    {
+        at = comment_start;
+    }
+    result.size = int_from_ptr(at) - int_from_ptr(string.data);
+    return(result);
+}
+
+internal Str8
+framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
 {
     Str8 result = {0};
     U8 *string_end = string.data + string.size;
     U8 *data = string.data;
     while (data < string_end &&
+           data[0] != '=' &&
            (data[0] == ' ' ||
-            data[0] == '\r' ||
-            data[0] == '\n' ||
             data[0] == '/'))
     {
         if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
@@ -356,21 +398,7 @@ framed_skip_whitespace(Str8 string, U64 *bytes_parsed)
         }
         data++;
     }
-    *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
     U8 *start = data;
-    result = str8(start, string.size - *bytes_parsed);
-    return(result);
-}
-
-internal Str8
-framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
-{
-    Str8 result = {0};
-
-    Str8 start = framed_skip_whitespace(string, bytes_parsed);
-
-    U8 *string_end = string.data + string.size;
-    U8 *data = start.data;
     while (data < string_end && data[0] != '=' && !(data[0] == ' ' || data[0] == '\r' || data[0] == '\n'))
     {
         if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
@@ -379,8 +407,9 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
         }
         data++;
     }
-    result = str8_prefix(start, int_from_ptr(data) - int_from_ptr(start.data));
     *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
+    U8 *end = data;
+    result = str8_range(start, end);
     return(result);
 }
 
@@ -389,94 +418,80 @@ framed_load_user_settings_from_memory(Str8 data_string)
 {
     //- hampus: Get the version number
 
-    U32 version = 0;
-
+    U64 line_index = 0;
     U64 bytes_parsed = 0;
-    Str8 version_string = framed_get_next_settings_word(data_string, &bytes_parsed);
-    data_string = str8_skip(data_string, bytes_parsed);
-    Str8 version_number_string = framed_get_next_settings_word(data_string, &bytes_parsed);
-    data_string = str8_skip(data_string, bytes_parsed);
 
-    u32_from_str8(version_number_string, &version);
-
-    data_string = framed_skip_whitespace(data_string, &bytes_parsed);
-
-    // TODO(hampus): Get line number for better error messages
-
-    if (version == 1)
+    U64 version = 0;
     {
-        //- hampus: Start reading settings
-
-        for (;data_string.size != 0;)
+        Str8 line = framed_get_next_line(data_string, &bytes_parsed);
+        if (line.size != 0)
         {
-            //- hampus: Get setting name
-
-            Str8 setting_name = framed_get_next_settings_word(data_string, &bytes_parsed);
-            data_string = str8_skip(data_string, bytes_parsed);
-
-            B32 found_equal_sign = false;
-
-            U8 *string_end = data_string.data + data_string.size;
-            for (U8 *data = data_string.data; data < string_end; ++data)
+            line_index++;
+            data_string = str8_skip(data_string, bytes_parsed+1);
+            Str8 first_word = framed_get_next_settings_word(line, &bytes_parsed);
+            if (str8_equal(first_word, str8_lit("version")))
             {
-                found_equal_sign = data[0] == '=';
-                if (found_equal_sign)
-                {
-                    ++data;
-                    data_string = str8_skip(data_string, int_from_ptr(data) - int_from_ptr(data_string.data));
-                    break;
-                }
-                else
-                {
-                    if (!(data[0] == ' ' || data[0] == '\r' || data[0] == '\n'))
-                    {
-                        if (!found_equal_sign)
-                        {
-                            // NOTE(hampus): We found something else while looking for '='
-                            break;
-                        }
-                    }
-                }
-            }
-
-            //- hampus: Get setting value
-
-            if (found_equal_sign)
-            {
-                Str8 setting_value = framed_get_next_settings_word (data_string, &bytes_parsed);
-                B32 value_valid = false;
-                if (setting_value.size != 0)
-                {
-                    if (str8_equal(setting_name, str8_lit("font_size")))
-                    {
-                        U32 value = 0;
-                        value_valid = u32_from_str8(setting_value, &value) != 0;
-                        value = u32_clamp(1, value, 50);
-                        framed_ui_state->settings.font_size = value;
-                    }
-                }
-                if (value_valid)
-                {
-                    data_string = str8_skip(data_string, bytes_parsed);
-                }
-                else
-                {
-                    log_error("Failed to parse setting value (%"PRISTR8")for setting: \"%"PRISTR8"\"", str8_expand(setting_value), str8_expand(setting_name));
-                }
+                line = str8_skip(line, bytes_parsed);
+                Str8 version_string = framed_get_next_settings_word(line, &bytes_parsed);
+                u64_from_str8(version_string, &version);
             }
             else
             {
-                log_error("Failed to parse setting value for setting: \"%"PRISTR8"\"", str8_expand(setting_name));
-                // TODO(hampus): Logging. Setting missed a value
+                log_error("User settings: missing version number");
             }
-
-            data_string = framed_skip_whitespace(data_string, &bytes_parsed);
         }
     }
-    else
+
+    //- hampus: Get the settings
+
+    if (version == 1)
     {
-        // TODO(hampus): Logging. Unknown version
-        log_error("Unknown setting file version");
+        for (;data_string.size;)
+        {
+            Str8 line = framed_get_next_line(data_string, &bytes_parsed);
+            data_string = str8_skip(data_string, bytes_parsed+1);
+
+            if (line.size != 0)
+            {
+                //- hampus: Setting name
+
+                Str8 setting_name = framed_get_next_settings_word(line, &bytes_parsed);
+                line = str8_skip(line, bytes_parsed);
+                U64 equal_sign_index = 0;
+                if (str8_first_index_of(line, '=', &equal_sign_index))
+                {
+                    //- hampus: Setting value
+
+                    line = str8_skip(line, equal_sign_index+1);
+                    Str8 setting_value = framed_get_next_settings_word(line, &bytes_parsed);
+                    B32 valid_value = false;
+                    if (str8_equal(setting_name, str8_lit("font_size")))
+                    {
+                        U32 font_size = 0;
+                        U64 font_size_length = u32_from_str8(setting_value, &font_size);
+                        if (font_size_length != 0)
+                        {
+                            if (font_size > 0 && font_size < 9999)
+                            {
+                                framed_ui_state->settings.font_size = font_size;
+                                valid_value = true;
+                            }
+                        }
+                    }
+
+                    if (!valid_value)
+                    {
+                        log_error("User settings line %"PRIU64": bad value (%"PRISTR8") for '%"PRISTR8"'", line_index, str8_expand(setting_value), str8_expand(setting_name));
+                    }
+                    line = str8_skip(line, bytes_parsed);
+                }
+                else
+                {
+                    log_error("User settings line %"PRIU64": missing '=' for '%"PRISTR8"'", line_index, str8_expand(setting_name));
+                }
+            }
+            line_index++;
+        }
     }
 }
 
@@ -489,7 +504,9 @@ framed_save_current_settings_to_file(Void)
     Arena_Temporary scratch = get_scratch(0, 0);
     Str8List settings_file_data = {0};
     str8_list_pushf(scratch.arena, &settings_file_data, "version %"PRIU32"\n\n", FRAMED_SETTINGS_VERSION);
-    str8_list_pushf(scratch.arena, &settings_file_data, "font_size=%"PRIU32"\n", framed_ui_state->settings.font_size);
+    str8_list_pushf(scratch.arena, &settings_file_data, "// general settings\n\n");
+    str8_list_pushf(scratch.arena, &settings_file_data, "font_size = %"PRIU32"\n\n", framed_ui_state->settings.font_size);
+    str8_list_pushf(scratch.arena, &settings_file_data, "// colors\n\n");
     Str8 data = str8_join(scratch.arena, &settings_file_data);
     os_file_write(framed_get_user_settings_file_path(), data, OS_FileMode_Replace);
     release_scratch(scratch);
