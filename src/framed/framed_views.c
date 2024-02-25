@@ -589,34 +589,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
             }
             ui_spacer(ui_em(0.5f, 1));
         }
-        arena_scratch(0, 0)
-        {
-            ui_row()
-            {
-                ui_spacer(ui_em(0.3f, 1));
-                ui_next_width(ui_text_content(1));
-                if (ui_button(str8_lit("Dump theme to file")).clicked)
-                {
-                    Str8List string_list = {0};
-                    for (FramedUI_Color color = (FramedUI_Color) 0; color < FramedUI_Color_COUNT; ++color)
-                    {
-                        Str8 label = framed_ui_string_from_color(color);
-                        Vec4F32 color_value = framed_ui_color_from_theme(color);
-                        str8_list_push(scratch, &string_list, label);
-                        str8_list_pushf(
-                                        scratch, &string_list, ": %.2f, %.2f, %.2f, %.2f\n",
-                                        color_value.r,
-                                        color_value.g,
-                                        color_value.b,
-                                        color_value.a
-                                        );
-                    }
-                    Str8 dump_data = str8_join(scratch, &string_list);
-                    Str8 theme_dump_file_name = str8_lit("theme_dump.framed");
-                    os_file_write(theme_dump_file_name, dump_data, OS_FileMode_Replace);
-                }
-            }
-        }
     }
     if (framed_ui_state->settings.font_size != old_font_size)
     {
