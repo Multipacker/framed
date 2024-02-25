@@ -64,6 +64,8 @@ internal Void            arena_end_temporary_internal(Arena_Temporary temporary,
 #define memory_zero_array(destination)        memory_zero((destination), sizeof(destination))
 #define memory_zero_typed(destination, count) memory_zero((destination), sizeof(*(destination)) * (count))
 
+#define memory_set(destination, val, size)       memset((destination), val, (size))
+
 #define memory_match(a, b, size) (memcmp((a), (b), (size)) == 0)
 #define type_is_zero(x) (memcmp(&x, (U8 [sizeof(x)]) { 0 }, sizeof(x)) == 0)
 

@@ -935,6 +935,17 @@ f64_from_str8(Str8 string, F64 *destination)
     return(bytes_read);
 }
 
+internal  U64
+cstring_length(CStr data)
+{
+    U64 result = 0;
+    while (data[result])
+    {
+        ++result;
+    }
+    return(result);
+}
+
 internal
 B32 is_num(U8 ch)
 {

@@ -3,6 +3,19 @@
 #define STBTT_malloc(x, u) ((void)(u),os_memory_alloc(x))
 #define STBTT_free(x,u)    ((void)(u),os_memory_release(x, 0))
 #endif
+#define STBTT_ifloor(x)   ((int) f64_floor(x))
+#define STBTT_iceil(x)    ((int) f64_ceil(x))
+#define STBTT_sqrt(x)      f64_sqrt(x)
+#define STBTT_pow(x,y)     f64_pow(x,y)
+#define STBTT_fmod(x,y)    f64_mod(x,y)
+#define STBTT_cos(x)       f64_cos(x)
+#define STBTT_acos(x)      f64_acos(x)
+#define STBTT_fabs(x)      f64_abs(x)
+#define STBTT_assert(x)    assert(x)
+#define STBTT_strlen(x)    cstring_length(x)
+#define STBTT_memcpy       memory_copy
+#define STBTT_memset       memory_set
+#define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 

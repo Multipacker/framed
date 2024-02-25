@@ -454,6 +454,7 @@ internal F64 f64_sqrt(F64 x);
 internal F64 f64_sin(F64 x);
 internal F64 f64_cos(F64 x);
 internal F64 f64_tan(F64 x);
+internal F64 f64_acos(F64 x);
 internal F64 f64_ln(F64 x);
 internal F64 f64_lg(F64 x);
 internal F64 f64_lerp(F64 a, F64 b, F64 t);
@@ -462,6 +463,7 @@ internal F64 f64_pow(F64 a, F64 b);
 internal F64 f64_floor(F64 x);
 internal F64 f64_ceil(F64 x);
 internal F64 f64_round(F64 x);
+internal F64 f64_mod(F64 a, F64 b);
 internal F64 f64_clamp(F64 min, F64 val, F64 max);
 
 internal Vec3F32 hsv_from_rgb(Vec3F32 rgb);

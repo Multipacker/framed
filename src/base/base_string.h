@@ -113,6 +113,8 @@ internal U64 s8_from_str8(Str8 string, S8 *destination);
 
 internal U64 f64_from_str8(Str8 string, F64 *destination);
 
+internal U64 cstring_length(CStr data);
+
 internal B32 is_num(U8 ch);
 
 #endif // BASE_STRING_H

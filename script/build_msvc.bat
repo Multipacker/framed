@@ -25,7 +25,7 @@ set src_files=../src/framed/framed_main.c
 
 :: -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -fsanitize=address -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console
 
 :: -- Optimized build flags --

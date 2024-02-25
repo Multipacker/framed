@@ -1187,6 +1187,12 @@ f64_tan(F64 x)
 }
 
 internal F64
+f64_acos(F64 x)
+{
+    return acos(x);
+}
+
+internal F64
 f64_ln(F64 x)
 {
     return log(x);
@@ -1238,6 +1244,13 @@ internal F64
 f64_round(F64 x)
 {
     return round(x);
+}
+
+internal F64
+f64_mod(F64 a, F64 b)
+{
+    F64 result = fmod(a, b);
+    return(result);
 }
 
 internal F64
