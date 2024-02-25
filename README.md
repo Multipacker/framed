@@ -16,7 +16,7 @@ Only single-threaded applications can be profiled currently.
 
 ## Installation
 
-Clone the repository and its submodules to wherever you like. Then read the
+Clone the repository to wherever you like. Then read the
 section below that corresponds with your operating system.
 
 ### Linux

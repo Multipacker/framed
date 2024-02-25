@@ -59,7 +59,7 @@ internal Void            arena_end_temporary_internal(Arena_Temporary temporary,
 #define push_array(arena, type, count)      ((type *) arena_push(arena, sizeof(type)*(count)))
 #define push_array_zero(arena, type, count) ((type *) arena_push_zero(arena, sizeof(type)*(count)))
 
-#define memory_zero(destionation, size)       memset((destionation), 0, (size))
+#define memory_zero(destination, size)        memset((destination), 0, (size))
 #define memory_zero_struct(destination)       memory_zero((destination), sizeof(*(destination)))
 #define memory_zero_array(destination)        memory_zero((destination), sizeof(destination))
 #define memory_zero_typed(destination, count) memory_zero((destination), sizeof(*(destination)) * (count))
@@ -72,7 +72,7 @@ internal Void            arena_end_temporary_internal(Arena_Temporary temporary,
 #define memory_move(destination, source, size)        memmove((destination), (source), size)
 #define memory_copy(destination, source, size)        memcpy((destination), (source), size)
 #define memory_copy_struct(destination, source)       memory_copy((destination), (source), u64_min(sizeof(*(destination)), sizeof(*(source))))
-#define memory_copy_array(destination, source) 	      memory_copy((destination), (source), u64_min(sizeof(destination), sizeof(source)))
+#define memory_copy_array(destination, source)        memory_copy((destination), (source), u64_min(sizeof(destination), sizeof(source)))
 #define memory_copy_typed(destination, source, count) memory_copy((destination), (source), u64_min(sizeof(*(destination)), sizeof(*(source)))*(count))
 
 #define arena_temporary(a)                                             \
