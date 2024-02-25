@@ -12,7 +12,7 @@
 #define STBTT_acos(x)      f64_acos(x)
 #define STBTT_fabs(x)      f64_abs(x)
 #define STBTT_assert(x)    assert(x)
-#define STBTT_strlen(x)    cstring_length(x)
+#define STBTT_strlen(x)    length_cstr(x)
 #define STBTT_memcpy       memory_copy
 #define STBTT_memset       memory_set
 #define STBTT_STATIC

@@ -478,6 +478,12 @@ framed_load_user_settings_from_memory(Str8 data_string)
                             }
                         }
                     }
+                    else if (str8_equal(setting_name, str8_lit("panel_background")))
+                    {
+                        U32 color = 0;
+                        u32hex_from_str8(setting_value, &color);
+                        valid_value = true;
+                    }
 
                     if (!valid_value)
                     {

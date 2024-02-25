@@ -871,6 +871,71 @@ s8_from_str8(Str8 string, S8 *destination)
     return(result);
 }
 
+// NOTE(hampus): With and without 0x prefix works.
+internal U32
+u32hex_from_str8(Str8 string, U32 *destination)
+{
+    U32 result = 0;
+    if (string.size >= 2)
+    {
+        if (string.data[0] == '0' && string.data[1] == 'x')
+        {
+            string = str8_skip(string, 2);
+            result += 2;
+        }
+    }
+    // NOTE(hampus): Get the number of hex digits
+
+    U32 hex_digit_count = 0;
+    for (;hex_digit_count < string.size && hex_digit_count < 8;)
+    {
+        U8 ch = string.data[hex_digit_count];
+        if ((ch >= '0' && ch <= '9') ||
+            (ch >= 'a' && ch <= 'f') ||
+            (ch >= 'A' && ch <= 'F'))
+        {
+            hex_digit_count++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    static U32 hex_power_table[] =
+    {
+        1,
+        16,
+        16*16,
+        16*16*16,
+        16*16*16*16,
+        16*16*16*16*16,
+        16*16*16*16*16*16,
+        16*16*16*16*16*16*16,
+    };
+
+    for (U64 i = 0; i < hex_digit_count; ++i)
+    {
+        U8 ch = string.data[i];
+        if (ch >= '0' && ch <= '9')
+        {
+            *destination += (ch - '0') * hex_power_table[hex_digit_count-i-1];
+        }
+        else if (ch >= 'a' && ch <= 'f')
+        {
+            *destination += (ch - 'a' + 10) * hex_power_table[hex_digit_count-i-1];
+        }
+        else
+        {
+            *destination += (ch - 'A' + 10) * hex_power_table[hex_digit_count-i-1];
+        }
+    }
+
+    result += hex_digit_count;
+
+    return(result);
+}
+
 internal U64
 f64_from_str8(Str8 string, F64 *destination)
 {
@@ -922,8 +987,8 @@ f64_from_str8(Str8 string, F64 *destination)
     return(bytes_read);
 }
 
-internal  U64
-cstring_length(CStr data)
+internal U64
+length_cstr(CStr data)
 {
     U64 result = 0;
     while (data[result])
