@@ -784,7 +784,6 @@ u32_from_str8(Str8 string, U32 *destination)
     U64 result = 0;
     U64 temp = 0;
     result = u64_from_str8(string, &temp);
-    assert(temp <= U32_MAX);
     *destination = (U32) temp;
 
     return(result);
@@ -796,7 +795,6 @@ u16_from_str8(Str8 string, U16 *destination)
     U64 result = 0;
     U64 temp = 0;
     result = u64_from_str8(string, &temp);
-    assert(temp <= U16_MAX);
     *destination = (U16) temp;
 
     return(result);
@@ -808,9 +806,7 @@ u8_from_str8(Str8 string, U8 *destination)
     U64 result = 0;
     U64 temp = 0;
     result = u64_from_str8(string, &temp);
-    assert(temp <= U8_MAX);
     *destination = (U8) temp;
-
     return(result);
 }
 
@@ -851,10 +847,7 @@ s32_from_str8(Str8 string, S32 *destination)
     U64 result = 0;
     S64 temp = 0;
     result = s64_from_str8(string, &temp);
-    assert(temp <= S32_MAX);
-    assert(temp >= S32_MIN);
     *destination = (S32) temp;
-
     return(result);
 }
 
@@ -864,10 +857,7 @@ s16_from_str8(Str8 string, S16 *destination)
     U64 result = 0;
     S64 temp = 0;
     result = s64_from_str8(string, &temp);
-    assert(temp <= S16_MAX);
-    assert(temp >= S16_MIN);
     *destination = (S16) temp;
-
     return(result);
 }
 
@@ -877,10 +867,7 @@ s8_from_str8(Str8 string, S8 *destination)
     U64 result = 0;
     S64 temp = 0;
     result = s64_from_str8(string, &temp);
-    assert(temp <= S8_MAX);
-    assert(temp >= S8_MIN);
     *destination = (S8) temp;
-
     return(result);
 }
 
