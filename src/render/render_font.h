@@ -94,8 +94,6 @@ struct Render_CodepointMap
 typedef struct Render_Font Render_Font;
 struct Render_Font
 {
-    // TODO(hampus): Remove the arena from here and
-    // try to allocate from the renderer arena
     Arena *arena;
 
     Render_CodepointMap *codepoint_map;
@@ -112,13 +110,7 @@ struct Render_Font
     F32 max_descent;
 
     F32 line_height;        // NOTE(hampus): How much vertical spaces a line occupy
-    F32 max_advance_width;
-    F32 underline_position; // NOTE(hampus): Relative to the baseline
-    B32 has_kerning;
     U32 num_glyphs;
-
-    Str8 family_name;
-    Str8 style_name;
 
     U64 last_frame_index_used;
 

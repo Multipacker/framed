@@ -1,7 +1,7 @@
 #if OS_WINDOWS
 // NOTE(hampus): munmap() can't take 0 as a length in os_memory_release(). We can only do this on windows
-#define STBTT_malloc(x, u) ((void)(u),os_memory_alloc(x))
-#define STBTT_free(x,u)    ((void)(u),os_memory_release(x, 0))
+#    define STBTT_malloc(x, u) ((void)(u),os_memory_alloc(x))
+#    define STBTT_free(x,u)    ((void)(u),os_memory_release(x, 0))
 #endif
 #define STBTT_ifloor(x)   ((int) f64_floor(x))
 #define STBTT_iceil(x)    ((int) f64_ceil(x))
