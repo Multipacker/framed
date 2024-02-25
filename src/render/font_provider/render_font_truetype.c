@@ -71,7 +71,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
             {
                 S32 sum = 0;
                 S32 filter_weight_index = 0;
-                    S32 kernel_x_end = (x == x_end - 1) ? x + 1 : x + 2;
+                S32 kernel_x_end = (x == x_end - 1) ? x + 1 : x + 2;
 
                 for (S32 kernel_x = x - 2; kernel_x <= kernel_x_end; kernel_x++)
                 {
@@ -197,23 +197,23 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
         U32 *glyph_indicies = 0;
         U32 *codepoints     = 0;
 
-            num_glyphs_to_load = u64_min(stb_font.numGlyphs-1, 128);
+        num_glyphs_to_load = u64_min(stb_font.numGlyphs-1, 128);
 
-            glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
-            codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
+        glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
+        codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
 
-            for (int codepoint = 0, index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint);
-                 glyph_count < num_glyphs_to_load;
-                 index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint))
+        for (int codepoint = 0, index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint);
+             glyph_count < num_glyphs_to_load;
+             index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint))
+        {
+            if (index)
             {
-                if (index)
-                {
-                    glyph_indicies[glyph_count] = index;
-                    codepoints[glyph_count]     = codepoint;
-                    ++glyph_count;
-                }
-                ++codepoint;
+                glyph_indicies[glyph_count] = index;
+                codepoints[glyph_count]     = codepoint;
+                ++glyph_count;
             }
+            ++codepoint;
+        }
 
         font->num_glyphs       = (U32) num_glyphs_to_load;
         font->font_atlas_regions = push_array(font->arena, Render_FontAtlasRegion, num_glyphs_to_load);
