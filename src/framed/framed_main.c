@@ -336,13 +336,12 @@ framed_get_user_settings_file_path(Void)
 //~ hampus: User settings parsing
 
 internal Str8
-framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
+framed_skip_whitespace(Str8 string, U64 *bytes_parsed)
 {
     Str8 result = {0};
     U8 *string_end = string.data + string.size;
     U8 *data = string.data;
     while (data < string_end &&
-           data[0] != '=' &&
            (data[0] == ' ' ||
             data[0] == '\r' ||
             data[0] == '\n' ||
@@ -357,7 +356,21 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
         }
         data++;
     }
+    *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
     U8 *start = data;
+    result = str8(start, string.size - *bytes_parsed);
+    return(result);
+}
+
+internal Str8
+framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
+{
+    Str8 result = {0};
+
+    Str8 start = framed_skip_whitespace(string, bytes_parsed);
+
+    U8 *string_end = string.data + string.size;
+    U8 *data = start.data;
     while (data < string_end && data[0] != '=' && !(data[0] == ' ' || data[0] == '\r' || data[0] == '\n'))
     {
         if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
@@ -366,8 +379,7 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
         }
         data++;
     }
-    U8 *end = data;
-    result = str8_range(start, end);
+    result = str8_prefix(start, int_from_ptr(data) - int_from_ptr(start.data));
     *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
     return(result);
 }
@@ -386,6 +398,8 @@ framed_load_user_settings_from_memory(Str8 data_string)
     data_string = str8_skip(data_string, bytes_parsed);
 
     u32_from_str8(version_number_string, &version);
+
+    data_string = framed_skip_whitespace(data_string, &bytes_parsed);
 
     // TODO(hampus): Get line number for better error messages
 
@@ -455,6 +469,8 @@ framed_load_user_settings_from_memory(Str8 data_string)
                 log_error("Failed to parse setting value for setting: \"%"PRISTR8"\"", str8_expand(setting_name));
                 // TODO(hampus): Logging. Setting missed a value
             }
+
+            data_string = framed_skip_whitespace(data_string, &bytes_parsed);
         }
     }
     else
