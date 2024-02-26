@@ -19,6 +19,9 @@
 #define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
+#include "data/fonts/NotoSansMono_Medium.ttf.embed"
+#include "data/fonts/fontello.ttf.embed"
+
 internal Void
 render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_index, U32 glyph_array_index, U32 codepoint, Render_FontRenderMode render_mode, F32 scale)
 {

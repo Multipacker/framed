@@ -77,6 +77,20 @@ if %build_mode% == "examples" (
 
 ) else (
 
+    if not exist build mkdir build
+    pushd build
+
+    if exist *.pdb del *.pdb
+
+	echo ---- Building meta program ----
+    cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
+
+    popd
+
+    echo ---- Running meta program ----
+
+    build\meta.exe
+
     echo ---- Building shaders ----
 
     fxc.exe /nologo /T vs_5_0 /E vs /O3 /WX /Zpc /Ges /Fh src/render/d3d11/d3d11_vshader.h /Vn d3d11_vshader /Qstrip_reflect /Qstrip_debug /Qstrip_priv src/render/d3d11/d3d11_shader.hlsl
@@ -85,19 +99,7 @@ if %build_mode% == "examples" (
     if not exist build mkdir build
     pushd build
 
-
-    if not exist meta.exe (
-	    echo ---- Building meta program ----
-        cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
-    )
-
-    echo ---- Running meta program ----
-
-    meta.exe
-
     echo ---- Building Framed ----
-
-    if exist *.pdb del *.pdb
 
     cl %src_files% %compiler_flags% -link %linker_flags%
 
