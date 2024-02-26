@@ -268,7 +268,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
         {
             for (U32 j = 0; j < glyph_count; ++j)
             {
-                int kerning = stbtt_GetCodepointKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
+                int kerning = stbtt_GetGlyphKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
                 if (kerning)
                 {
                     ++kerning_pairs;
@@ -286,7 +286,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
             {
                 for (U32 j = 0; j < glyph_count; ++j)
                 {
-                    int kerning = stbtt_GetCodepointKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
+                    int kerning = stbtt_GetGlyphKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
                     if (kerning)
                     {
                         U64 pair = (U64) glyph_indicies[i] << 32 | (U64) glyph_indicies[j];
