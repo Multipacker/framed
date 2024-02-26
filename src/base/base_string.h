@@ -47,6 +47,7 @@ typedef char *CStr;
 typedef U16  *CStr16;
 
 #define str8_lit(literal) ((Str8) { .data = (U8 *) literal, .size = sizeof(literal) - 1})
+#define str8_comp(literal) { .data = (U8 *) literal, .size = sizeof(literal) - 1}
 #define str8_expand(string) (int) string.size, string.data
 
 typedef struct StringDecode StringDecode;

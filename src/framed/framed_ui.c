@@ -86,27 +86,6 @@ framed_ui_set_color(FramedUI_Color color, Vec4F32 value)
     framed_ui_state->settings.theme_colors[color] = value;
 }
 
-internal Str8
-framed_ui_string_from_color(FramedUI_Color color)
-{
-    Str8 result = str8_lit("");
-    switch (color)
-    {
-        case FramedUI_Color_Panel: { result = str8_lit("Panel background"); } break;
-        case FramedUI_Color_PanelBorderInactive: { result = str8_lit("Inactive panel border"); } break;
-        case FramedUI_Color_PanelBorderActive: { result = str8_lit("Active panel border"); } break;
-        case FramedUI_Color_PanelOverlayInactive: { result = str8_lit("Inactive panel overlay"); } break;
-        case FramedUI_Color_TabBar: { result = str8_lit("Tab bar background"); } break;
-        case FramedUI_Color_TabActive: { result = str8_lit("Active tab background"); } break;
-        case FramedUI_Color_TabInactive: { result = str8_lit("Inactive tab background"); } break;
-        case FramedUI_Color_TabTitle: { result = str8_lit("Tab foreground"); } break;
-        case FramedUI_Color_TabBorder: { result = str8_lit("Tab border"); } break;
-        case FramedUI_Color_TabBarButtons: { result = str8_lit("Tab bar buttons background"); } break;
-        invalid_case;
-    }
-    return(result);
-}
-
 ////////////////////////////////
 //~ hampus: Command
 

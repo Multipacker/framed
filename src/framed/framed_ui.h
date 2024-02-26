@@ -210,6 +210,21 @@ enum FramedUI_Color
     FramedUI_Color_COUNT,
 };
 
+global Str8 framed_ui_string_color_table[] =
+{
+    [FramedUI_Color_Panel]                = str8_comp("Panel background"),
+    [FramedUI_Color_PanelBorderInactive]  = str8_comp("Panel border inactive"),
+    [FramedUI_Color_PanelBorderActive]    = str8_comp("Panel border active"),
+    [FramedUI_Color_PanelOverlayInactive] = str8_comp("Panel overlay inactive"),
+
+    [FramedUI_Color_TabBar]        = str8_comp("Tab bar background"),
+    [FramedUI_Color_TabBarButtons] = str8_comp("Tab bar buttons"),
+    [FramedUI_Color_TabActive]     = str8_comp("Tab background active"),
+    [FramedUI_Color_TabInactive]   = str8_comp("Tab background inactive"),
+    [FramedUI_Color_TabTitle]      = str8_comp("Tab title background"),
+    [FramedUI_Color_TabBorder]     = str8_comp("Tab border"),
+};
+
 typedef enum FramedUI_FontScale FramedUI_FontScale;
 enum FramedUI_FontScale
 {
@@ -282,7 +297,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default);
 internal U32 framed_ui_font_size_from_scale(FramedUI_FontScale scale);
 internal Vec4F32 framed_ui_color_from_theme(FramedUI_Color color);
 internal Void framed_ui_set_color(FramedUI_Color color, Vec4F32 value);
-internal Str8 framed_ui_string_from_color(FramedUI_Color color);
 
 ////////////////////////////////
 //~ hampus: Command

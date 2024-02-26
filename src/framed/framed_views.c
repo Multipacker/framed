@@ -564,7 +564,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
             ui_next_width(ui_em(20, 1));
             ui_row()
             {
-                Str8 string = framed_ui_string_from_color(color);
+                Str8 string = framed_ui_string_color_table[color];
                 ui_text(string);
                 ui_spacer(ui_fill());
                 ui_next_color(framed_ui_color_from_theme(color));
