@@ -1331,6 +1331,7 @@ rgb_from_hsv(Vec3F32 hsv)
 
     Vec3F32 rgb = {r + m, g + m, b + m};
     return(rgb);
+}
 
 internal Vec4F32
 rgba_from_u32(U32 u32)
