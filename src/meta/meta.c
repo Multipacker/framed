@@ -263,7 +263,7 @@ os_main(Str8List arguments)
     {
         Str8 binary_path = os_push_system_path(scratch, OS_SystemPath_Binary);
         Str8 log_file = str8_pushf(scratch, "%"PRISTR8"%cmeta_log.txt", str8_expand(binary_path), PATH_SEPARATOR);
-        log_init(log_file);
+        log_init(log_file, megabytes(40));
     }
 
     Arena *arena = arena_create("MetaPerm");

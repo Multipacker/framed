@@ -32,7 +32,7 @@ struct Log_EntryBuffer
     U32 volatile count;
 };
 
-internal Void log_init(Str8 log_file);
+internal Void log_init(Str8 log_file, U64 file_size_limit);
 
 #define log_info(...)    log_message(Log_Level_Info,    __FILE__, __LINE__, __VA_ARGS__)
 #define log_warning(...) log_message(Log_Level_Warning, __FILE__, __LINE__, __VA_ARGS__)

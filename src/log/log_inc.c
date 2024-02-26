@@ -18,6 +18,8 @@ struct Logger
 {
     Arena *arena;
     OS_File log_file;
+    U64 file_size_limit;
+    U64 file_size;
 
     OS_Semaphore semaphore;
 
@@ -95,14 +97,18 @@ log_flusher_thread(Void *argument)
             arena_scratch(0, 0)
             {
                 Str8 log_entry = log_format_entry(scratch, &entry);
-                os_file_stream_write(logger->log_file, log_entry);
+                if (logger->file_size + log_entry.size <= logger->file_size_limit)
+                {
+                    logger->file_size += log_entry.size;
+                    os_file_stream_write(logger->log_file, log_entry);
+                }
             }
         }
     }
 }
 
 internal Void
-log_init(Str8 log_file)
+log_init(Str8 log_file, U64 file_size_limit)
 {
     Logger *logger = &global_logger;
 
@@ -114,6 +120,7 @@ log_init(Str8 log_file)
     logger->read_buffer  = &logger->buffers[1];
     logger->queue = push_array_zero(logger->arena, Log_QueueEntry, LOG_QUEUE_SIZE);
     os_file_stream_open(log_file, OS_FileMode_Replace, &logger->log_file);
+    logger->file_size_limit = file_size_limit;
 
     os_thread_create(log_flusher_thread, 0);
 }
