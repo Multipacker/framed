@@ -18,7 +18,7 @@ set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -w
 set additional_includes=-I../vendor/ -I../src/ -I../
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
 set compiler_flags=%opts% -nologo -MT -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
-set linker_flags=-incremental:no user32.lib kernel32.lib "winmm.lib" shell32.lib shcore.lib
+set linker_flags=-incremental:no user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
 set src_files=../src/framed/framed_main.c
 
 :: NOTE(hampus): We're compiling everything with the non-debug crt static library
@@ -88,7 +88,7 @@ if %build_mode% == "examples" (
 
     if not exist meta.exe (
 	    echo ---- Building meta program ----
-        cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta
+        cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
     )
 
     echo ---- Running meta program ----
