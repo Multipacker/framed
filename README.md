@@ -1,14 +1,14 @@
 # Framed
 
-The Framed profiler is a hobby project that measures various counters across
+The Framed profiler is a hobby project that measures time taken by various zones across
 sections of your code and displays them visually. It currently only has direct
 support for C and C++.  It consists of two parts: a small [stb]-style single
-header file library for capturing counters, and a graphical visualizer for
-displaying the counters.
+header file library for capturing zones, and an graphical application for displaying
+them visually.
 
-Gathering of counters happens by manually adding a minimal amount of markup to
-your code. This takes care of collecting counters and sending them over to the
-visualizer.
+Gathering of zones happens by manually adding a minimal amount of markup to
+your code. This takes care of collecting zones and sending them over to the
+visualizer application. See more in [Usage](README.md##usage)
 
 Currently the only supported counter is [RDTSC], but more will be added later.
 Only single-threaded applications can be profiled currently.
@@ -65,11 +65,11 @@ files.
 
 ```c
 #define FRAMED_IMPLEMENTATION
-#include "framed.h"
+#include "framed/public/framed.h"
 ```
 
-This will generate the implementation of the library. To then use the markup in
-any other files, you now only have to include `framed.h` in it.
+                                This will generate the implementation of the library. To then use the markup in
+                                any other files, you now only have to include `framed.h` from the [public] folder
 
 Before any actual profiling can be done, you need to initialize the library.
 This has to be done before using any other part of the API. Initialization
@@ -86,7 +86,7 @@ When your program is done profiling, it might not have sent all of the data to
 the visualizer yet. To ensure this is done, you can call `framed_flush()`
 before your program exits.
 
-The API for collecting counters consists of two functions at its core:
+The API for collecting zones consists of two functions at its core:
 `framed_zone_begin(NAME)` to start a new zone named `NAME`, and
 `framed_zone_end()` to end it. Note that you have to call `framed_zone_end()`
 (except if you are compiling in C++, more in next paragraph)
@@ -152,3 +152,4 @@ This software uses SDL 2 which is licensed under the [zlib license].
 [stb]:                      https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
 [zlib license]:             https://www.zlib.net/zlib_license.html
 [examples/auto_closing_zones.cpp]: /examples/auto_closing_zones.cpp
+[public]: /public/
