@@ -17,7 +17,24 @@
 #define STBTT_memset       memory_set
 #define STBTT_STATIC
 #define STB_TRUETYPE_IMPLEMENTATION
+
+#if COMPILER_CLANG
+#    pragma clang diagnostic push
+#    pragma clang diagnostic ignored "-Wconversion"
+#elif COMPILER_GCC
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wconversion"
+#    pragma GCC diagnostic ignored "-Wsign-conversion"
+#    pragma GCC diagnostic ignored "-Wsign-compare"
+#endif
+
 #include "stb_truetype.h"
+
+#if COMPILER_CLANG
+#    pragma clang diagnostic pop
+#elif COMPILER_GCC
+#    pragma GCC diagnostic pop
+#endif
 
 #include "data/fonts/NotoSansMono_Medium.ttf.embed"
 #include "data/fonts/fontello.ttf.embed"
@@ -39,38 +56,38 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
 
     Render_Glyph *glyph = font->glyphs + glyph_array_index;
 
-    S32 horizontal_filter_padding = 1;
+    U32 horizontal_filter_padding = 1;
 
     int glyph_advance_width = 0;
     int glyph_left_side_bearing = 0;
-    stbtt_GetGlyphHMetrics(&stb_font, stb_glyph_index, &glyph_advance_width, &glyph_left_side_bearing);
+    stbtt_GetGlyphHMetrics(&stb_font, (int) stb_glyph_index, &glyph_advance_width, &glyph_left_side_bearing);
 
     RectS32 glyph_bounding_box = {0};
-    stbtt_GetGlyphBox(&stb_font, stb_glyph_index, &glyph_bounding_box.x0, &glyph_bounding_box.y0, &glyph_bounding_box.x1, &glyph_bounding_box.y1);
+    stbtt_GetGlyphBox(&stb_font, (int) stb_glyph_index, &glyph_bounding_box.x0, &glyph_bounding_box.y0, &glyph_bounding_box.x1, &glyph_bounding_box.y1);
 
     RectS32 glyph_box = {0};
-    stbtt_GetGlyphBitmapBox(&stb_font, stb_glyph_index, scale, scale, &glyph_box.x0, &glyph_box.y0, &glyph_box.x1, &glyph_box.y1);
+    stbtt_GetGlyphBitmapBox(&stb_font, (int) stb_glyph_index, scale, scale, &glyph_box.x0, &glyph_box.y0, &glyph_box.x1, &glyph_box.y1);
     Vec2S32 glyph_dim = rects32_dim(glyph_box);
 
     if (glyph_dim.x > 0 && glyph_dim.y > 0)
     {
         Vec2S32 padded_glyph_dim = glyph_dim;
-        padded_glyph_dim.x += 2*horizontal_filter_padding;
+        padded_glyph_dim.x += 2 * horizontal_filter_padding;
 
-        S32 horizontal_resolution = 3;
+        U32 horizontal_resolution = 3;
 
-        S32 bitmap_stride = padded_glyph_dim.x * horizontal_resolution;
-        S32 bitmap_size = bitmap_stride * padded_glyph_dim.y;
-        S32 glyph_offset_x = (horizontal_filter_padding) * horizontal_resolution;
-        U8 *glyph_bitmap = push_array_zero(scratch.arena, U8, bitmap_size+4); // NOTE(hampus): This 4 stops the sanitizer from complaining for some reason..
+        U32 bitmap_stride = (U32) padded_glyph_dim.x * horizontal_resolution;
+        U32 bitmap_size = bitmap_stride * (U32) padded_glyph_dim.y;
+        U32 glyph_offset_x = horizontal_filter_padding * horizontal_resolution;
+        U8 *glyph_bitmap = push_array_zero(scratch.arena, U8, bitmap_size + 4); // NOTE(hampus): This 4 stops the sanitizer from complaining for some reason..
         stbtt_MakeGlyphBitmap(&stb_font,
                               glyph_bitmap + glyph_offset_x,
-                              padded_glyph_dim.x* horizontal_resolution,
+                              padded_glyph_dim.x * (S32) horizontal_resolution,
                               padded_glyph_dim.y,
-                              bitmap_stride,
-                              scale * horizontal_resolution,
+                              (int) bitmap_stride,
+                              scale * (F32) horizontal_resolution,
                               scale,
-                              stb_glyph_index);
+                              (int) stb_glyph_index);
 
         // TODO(hampus): Just render directly into the atlas bitmap
         U8 *subpx_bitmap = push_array_zero(scratch.arena, U8, bitmap_size);
@@ -79,19 +96,19 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
 
         U8 *subpx_row = subpx_bitmap;
         U8 filter_weights[5] = { 0x08, 0x4D, 0x56, 0x4D, 0x08 };
-        for (S32 y = 0; y < padded_glyph_dim.y; y++)
+        for (U32 y = 0; y < (U32) padded_glyph_dim.y; y++)
         {
-            S32 x_end = padded_glyph_dim.x * horizontal_resolution - 1;
+            U32 x_end = (U32) padded_glyph_dim.x * horizontal_resolution - 1;
             U8 *subpx_pixel = subpx_row + 4;
-            for (S32 x = 4; x < x_end; x++)
+            for (U32 x = 4; x < x_end; x++)
             {
                 S32 sum = 0;
                 S32 filter_weight_index = 0;
-                S32 kernel_x_end = (x == x_end - 1) ? x + 1 : x + 2;
+                U32 kernel_x_end = (x == x_end - 1) ? x + 1 : x + 2;
 
-                for (S32 kernel_x = x - 2; kernel_x <= kernel_x_end; kernel_x++)
+                for (U32 kernel_x = x - 2; kernel_x <= kernel_x_end; kernel_x++)
                 {
-                    S32 offset = kernel_x + y*bitmap_stride;
+                    U32 offset = kernel_x + y * bitmap_stride;
                     sum += glyph_bitmap[offset] * filter_weights[filter_weight_index++];
                 }
 
@@ -107,7 +124,7 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
         os_mutex(&renderer->font_atlas_mutex)
         {
             atlas_region = &font->font_atlas_regions[font->num_font_atlas_regions++];
-            *atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32(padded_glyph_dim.x+2, padded_glyph_dim.y+2));
+            *atlas_region = render_alloc_font_atlas_region(renderer, renderer->font_atlas, v2u32((U32) padded_glyph_dim.x + 2, (U32) padded_glyph_dim.y + 2));
         }
 
         RectU32 rect_region = atlas_region->region;
@@ -141,8 +158,8 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
         RectU32 adjusted_rect_region =
         {
             .min = rect_region.min,
-            .max = v2u32(rect_region.min.x + padded_glyph_dim.x,
-                         rect_region.min.y + padded_glyph_dim.y),
+            .max = v2u32(rect_region.min.x + (U32) padded_glyph_dim.x,
+                         rect_region.min.y + (U32) padded_glyph_dim.y),
         };
 
         RectF32 adjusted_rect_region_f32 = rectf32_from_rectu32(adjusted_rect_region);
@@ -159,9 +176,9 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
         glyph->size_in_pixels    = v2f32((F32) padded_glyph_dim.x, (F32) padded_glyph_dim.y);
     }
 
-    glyph->bearing_in_pixels = v2f32((F32)f32_round(glyph_left_side_bearing*scale),
-                                     (F32)f32_floor(glyph_bounding_box.y1*scale));
-    glyph->advance_width     = f32_round(glyph_advance_width * scale);
+    glyph->bearing_in_pixels = v2f32(f32_round((F32) glyph_left_side_bearing * scale),
+                                     f32_floor((F32) glyph_bounding_box.y1 * scale));
+    glyph->advance_width     = f32_round((F32) glyph_advance_width * scale);
 
     release_scratch(scratch);
 }
@@ -189,6 +206,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
     {
         os_file_read(scratch.arena, params.path, &file_read_result);
     }
+
     if (file_read_result.size)
     {
         //- hampus: Init font
@@ -197,30 +215,25 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
 
         stbtt_fontinfo stb_font = {0};
         stbtt_InitFont(&stb_font, file_read_result.data, 0);
-        F32 scale = stbtt_ScaleForMappingEmToPixels(&stb_font, (F32)params.size*1.33f);
+        F32 scale = stbtt_ScaleForMappingEmToPixels(&stb_font, (F32) params.size * 1.33f);
 
         {
             int ascent, descent, line_gap;
             stbtt_GetFontVMetrics(&stb_font, &ascent, &descent, &line_gap);
-            font->max_ascent = (F32)f32_floor(ascent * scale);
-            font->max_descent = (F32)f32_floor(descent * scale);
-            font->line_height = (F32)f32_floor(font->max_ascent - font->max_descent + line_gap);
+            font->max_ascent  = f32_floor((F32) ascent  * scale);
+            font->max_descent = f32_floor((F32) descent * scale);
+            font->line_height = f32_floor(font->max_ascent - font->max_descent + (F32) line_gap);
         }
 
-        U64 num_glyphs_to_load = 0;
-        U32 glyph_count     = 0;
+        U32 glyph_count        = 0;
+        U64 num_glyphs_to_load = u64_min((U64) stb_font.numGlyphs - 1, 128);
 
-        U32 *glyph_indicies = 0;
-        U32 *codepoints     = 0;
+        U32 *glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
+        U32 *codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
 
-        num_glyphs_to_load = u64_min(stb_font.numGlyphs-1, 128);
-
-        glyph_indicies = push_array(scratch.arena, U32, num_glyphs_to_load);
-        codepoints     = push_array(scratch.arena, U32, num_glyphs_to_load);
-
-        for (int codepoint = 0, index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint);
+        for (U32 codepoint = 0, index = (U32) stbtt_FindGlyphIndex(&stb_font, (int) codepoint);
              glyph_count < num_glyphs_to_load;
-             index = (U32) stbtt_FindGlyphIndex(&stb_font, codepoint))
+             index = (U32) stbtt_FindGlyphIndex(&stb_font, (int) codepoint))
         {
             if (index)
             {
@@ -255,7 +268,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
         {
             for (U32 j = 0; j < glyph_count; ++j)
             {
-                int kerning = stbtt_GetCodepointKernAdvance(&stb_font, glyph_indicies[i], glyph_indicies[j]);
+                int kerning = stbtt_GetCodepointKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
                 if (kerning)
                 {
                     ++kerning_pairs;
@@ -273,7 +286,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
             {
                 for (U32 j = 0; j < glyph_count; ++j)
                 {
-                    int kerning = stbtt_GetCodepointKernAdvance(&stb_font, glyph_indicies[i], glyph_indicies[j]);
+                    int kerning = stbtt_GetCodepointKernAdvance(&stb_font, (int) glyph_indicies[i], (int) glyph_indicies[j]);
                     if (kerning)
                     {
                         U64 pair = (U64) glyph_indicies[i] << 32 | (U64) glyph_indicies[j];
@@ -286,7 +299,7 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
                         }
 
                         font->kern_pairs[index].pair = pair;
-                        font->kern_pairs[index].value = (F32) f32_round(kerning * scale)*10;
+                        font->kern_pairs[index].value = f32_round((F32) kerning * scale) * 10;
                     }
                 }
             }
