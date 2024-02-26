@@ -68,8 +68,8 @@ files.
 #include "framed/public/framed.h"
 ```
 
-                                This will generate the implementation of the library. To then use the markup in
-                                any other files, you now only have to include `framed.h` from the [public] folder
+This will generate the implementation of the library. To then use the markup in
+any other files, you now only have to include `framed.h` from the [public] folder
 
 Before any actual profiling can be done, you need to initialize the library.
 This has to be done before using any other part of the API. Initialization
