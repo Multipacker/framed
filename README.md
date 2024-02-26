@@ -105,7 +105,7 @@ Here is a complete example. There are more complex ones available in the
 #include <stdbool.h>
 
 #define FRAMED_IMPLEMENTATION
-#include "framed.h"
+#include "framed/public/framed.h"
 
 int factorial(int n)
 {
