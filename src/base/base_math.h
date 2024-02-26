@@ -468,5 +468,7 @@ internal F64 f64_clamp(F64 min, F64 val, F64 max);
 
 internal Vec3F32 hsv_from_rgb(Vec3F32 rgb);
 internal Vec3F32 rgb_from_hsv(Vec3F32 hsv);
+internal U32     u32_from_rgba(Vec4F32 rgba);
+internal Vec4F32 rgba_from_u32(U32 u32);
 
 #endif // BASE_MATH_H

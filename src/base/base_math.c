@@ -1331,4 +1331,25 @@ rgb_from_hsv(Vec3F32 hsv)
 
     Vec3F32 rgb = {r + m, g + m, b + m};
     return(rgb);
+
+internal Vec4F32
+rgba_from_u32(U32 u32)
+{
+    Vec4F32 result = {0};
+    result.r = (F32)((u32 >> 24) & 0xFF) / 255.0f;
+    result.g = (F32)((u32 >> 16) & 0xFF) / 255.0f;
+    result.b = (F32)((u32 >> 8) & 0xFF) / 255.0f;
+    result.a = (F32)(u32 & 0xFF) / 255.0f;
+    return(result);
+}
+
+internal U32
+u32_from_rgba(Vec4F32 rgba)
+{
+    U32 result = 0;
+    result |= (U32)(f32_round(rgba.r * 255.0f)) << 24;
+    result |= (U32)(f32_round(rgba.g * 255.0f)) << 16;
+    result |= (U32)(f32_round(rgba.b * 255.0f)) << 8;
+    result |= (U32)(f32_round(rgba.a * 255.0f));
+    return(result);
 }
