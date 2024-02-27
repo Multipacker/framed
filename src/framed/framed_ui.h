@@ -212,15 +212,15 @@ enum FramedUI_Color
 
 global Str8 framed_ui_string_color_table[] =
 {
-    [FramedUI_Color_PanelBackground]                = str8_comp("Panel background"),
-    [FramedUI_Color_PanelBorderActive]    = str8_comp("Panel active border"),
-    [FramedUI_Color_PanelBorderInactive]  = str8_comp("Panel inactive border"),
-    [FramedUI_Color_PanelOverlayInactive] = str8_comp("Panel inactive overlay"),
+    [FramedUI_Color_PanelBackground]      = str8_comp("Panel background"),
+    [FramedUI_Color_PanelBorderActive]    = str8_comp("Panel border active"),
+    [FramedUI_Color_PanelBorderInactive]  = str8_comp("Panel border inactive"),
+    [FramedUI_Color_PanelOverlayInactive] = str8_comp("Panel overlay inactive"),
 
     [FramedUI_Color_TabBarBackground]        = str8_comp("Tab bar background"),
     [FramedUI_Color_TabBarButtonsBackground] = str8_comp("Tab bar buttons background"),
-    [FramedUI_Color_TabBackgroundActive]     = str8_comp("Tab active background"),
-    [FramedUI_Color_TabBackgroundInactive]   = str8_comp("Tab inactive background"),
+    [FramedUI_Color_TabBackgroundActive]     = str8_comp("Tab background active"),
+    [FramedUI_Color_TabBackgroundInactive]   = str8_comp("Tab background inactive"),
     [FramedUI_Color_TabForeground] = str8_comp("Tab foreground"),
     [FramedUI_Color_TabBorder]     = str8_comp("Tab border"),
 };

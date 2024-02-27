@@ -504,7 +504,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
     // NOTE(hampus): Create a snapshot of the settings so that
     // we can see at the end if anything has changed.
 
-    U32 old_font_size = framed_ui_state->settings.font_size;
+    FramedUI_Settings old_settings = framed_ui_state->settings;
 
     //- hampus: General settings
 
@@ -532,9 +532,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
                         data->font_size_string_length = u64_min(text_buffer_str8.size, data->font_size_text_buffer_size);
                         memory_copy_typed(data->font_size_text_buffer, text_buffer_str8.data, data->font_size_string_length);
                     }
-                }
-                else
-                {
                 }
             }
         }
@@ -590,10 +587,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
             ui_spacer(ui_em(0.5f, 1));
         }
     }
-    if (framed_ui_state->settings.font_size != old_font_size)
-    {
+    if (!memory_match(&old_settings, &framed_ui_state->settings, sizeof(FramedUI_Settings)))
+        {
         framed_save_current_settings_to_file();
-    }
+        }
 }
 
 ////////////////////////////////

@@ -367,6 +367,46 @@ framed_get_next_line(Str8 string, U64 *bytes_parsed)
 }
 
 internal Str8
+framed_get_next_setting_name_or_value(Str8 string, U64 *bytes_parsed)
+{
+    Str8 result = {0};
+    U8 *string_end = string.data + string.size;
+    U8 *data = string.data;
+    while (data < string_end &&
+           data[0] != '=' &&
+           (data[0] == ' ' ||
+            data[0] == '/'))
+    {
+        if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
+        {
+            while (data[0] && data[0] != '\n')
+            {
+                ++data;
+            }
+        }
+        data++;
+    }
+    U8 *start = data;
+
+    U8 *end = start;
+    while (data < string_end && !(data[0] == '=' || data[0] == '\n'))
+    {
+        if (data[0] != ' ')
+        {
+            end = data;
+        }
+        if ((data + 1) < string_end && data[0] == '/' && data[1] == '/')
+        {
+            break;
+        }
+        data++;
+    }
+    *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
+    result = str8_range(start, end+1);
+    return(result);
+}
+
+internal Str8
 framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
 {
     Str8 result = {0};
@@ -396,8 +436,7 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
         data++;
     }
     *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
-    U8 *end = data;
-    result = str8_range(start, end);
+    result = str8_range(start, data);
     return(result);
 }
 
@@ -418,6 +457,8 @@ framed_lines_from_user_settings(Arena *arena, Str8 data)
 internal Void
 framed_load_user_settings_from_memory(Str8 data_string)
 {
+    log_info("Loading settings from file...");
+
     // TODO(hampus): Find a good way to do serializing if the settings
     // version is not up to date. If the settings version is not up to date,
     // we should maybe first update it to the newest version, write to the file,
@@ -433,12 +474,12 @@ framed_load_user_settings_from_memory(Str8 data_string)
     //
     // enum ChangeKind
     // {
-    //   ChangeKind_Add,     // if adding an entirely entirely
-    //   ChangeKind_Remove, // if removing the setting entirely, without any replacement
+    //   ChangeKind_Add,     // if adding a new setting
+    //   ChangeKind_Remove,  // if removing the setting entirely, without any replacement
     //   ChangeKind_Replace, // if keeping the setting, but just changing its name or value type
     // };
     //
-    // struct VersionChangeGroupEntry
+    // struct VersionChange
     // {
     //   ChangeKind kind;
     //   Str8 setting_name;
@@ -503,6 +544,46 @@ framed_load_user_settings_from_memory(Str8 data_string)
 
     if (version == 1)
     {
+        typedef enum SettingValKind SettingValKind;
+        enum SettingValKind
+        {
+            SettingValKind_U32,
+            SettingValKind_Color,
+        };
+
+        typedef struct SettingEntry SettingEntry;
+        struct SettingEntry
+        {
+            Str8 name;
+            SettingValKind kind;
+            Void *dst;
+            B32 found;
+        };
+
+#define SETTING_THEME_COLOR(i) \
+{ \
+framed_ui_string_color_table[i], \
+SettingValKind_Color, \
+&framed_ui_state->settings.theme_colors[i] \
+}
+
+        SettingEntry setting_entries_table[] =
+        {
+            {str8_lit("Font size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
+
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderActive),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelOverlayInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBarBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundActive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabForeground),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBorder),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBarButtonsBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+        };
+
         Str8List lines = framed_lines_from_user_settings(scratch.arena, data_string);
 
         for (Str8Node *node = lines.first; node != 0; node = node->next)
@@ -516,38 +597,7 @@ framed_load_user_settings_from_memory(Str8 data_string)
 
             //- hampus: Setting name
 
-            typedef enum SettingValKind SettingValKind;
-            enum SettingValKind
-            {
-                SettingValKind_U32,
-                SettingValKind_Color,
-            };
-
-            typedef struct SettingEntry SettingEntry;
-            struct SettingEntry
-            {
-                Str8 name;
-                SettingValKind kind;
-                Void *dst;
-                B32 found;
-            };
-
-            SettingEntry setting_entries_table[] =
-            {
-                {str8_lit("font_size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
-                {str8_lit("panel_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBackground]},
-                {str8_lit("panel_border_active"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBorderActive]},
-                {str8_lit("panel_border_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBorderInactive]},
-                {str8_lit("panel_overlay_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelOverlayInactive]},
-                {str8_lit("tab_bar_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBarBackground]},
-                {str8_lit("tab_background_active"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBackgroundActive]},
-                {str8_lit("tab_background_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBackgroundInactive]},
-                {str8_lit("tab_foreground"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabForeground]},
-                {str8_lit("tab_border"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBorder]},
-                {str8_lit("tab_bar_buttons_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBarButtonsBackground]},
-            };
-
-            Str8 setting_name = framed_get_next_settings_word(line, &bytes_parsed);
+            Str8 setting_name = framed_get_next_setting_name_or_value(line, &bytes_parsed);
             line = str8_skip(line, bytes_parsed);
             U64 equal_sign_index = 0;
             if (str8_first_index_of(line, '=', &equal_sign_index))
@@ -557,7 +607,7 @@ framed_load_user_settings_from_memory(Str8 data_string)
                 // TODO(hampus): Check that the setting is an appropiate value
 
                 line = str8_skip(line, equal_sign_index+1);
-                Str8 setting_value = framed_get_next_settings_word(line, &bytes_parsed);
+                Str8 setting_value = framed_get_next_setting_name_or_value(line, &bytes_parsed);
                 B32 valid_value = false;
 
                 for (U64 i = 0; i < array_count(setting_entries_table); ++i)
@@ -585,6 +635,7 @@ framed_load_user_settings_from_memory(Str8 data_string)
 
                             invalid_case;
                         }
+                        entry->found = true;
                         break;
                     }
                 }
@@ -602,6 +653,16 @@ framed_load_user_settings_from_memory(Str8 data_string)
 
             ++line_index;
         }
+
+        for (U64 i = 0; i < array_count(setting_entries_table); ++i)
+        {
+
+            SettingEntry *entry = setting_entries_table + i;
+            if (!entry->found)
+            {
+                // TODO(hampus): Write the default value to disk.
+            }
+        }
     }
     else
     {
@@ -613,19 +674,23 @@ framed_load_user_settings_from_memory(Str8 data_string)
 internal Void
 framed_save_current_settings_to_file(Void)
 {
-    // TODO(hampus): This overrides _all_ settings. It should only override
+    // TODO(hampus): This overrides all settings. It should only override
     // the ones that have actually changed
+
     log_info("Saving settings to file...");
     Arena_Temporary scratch = get_scratch(0, 0);
     Str8List settings_file_data = {0};
     str8_list_pushf(scratch.arena, &settings_file_data, "version %"PRIU32"\n\n", FRAMED_SETTINGS_VERSION);
-    str8_list_pushf(scratch.arena, &settings_file_data, "// general settings\n\n");
-    str8_list_pushf(scratch.arena, &settings_file_data, "font_size = %"PRIU32"\n\n", framed_ui_state->settings.font_size);
-    str8_list_pushf(scratch.arena, &settings_file_data, "// colors\n\n");
+    str8_list_pushf(scratch.arena, &settings_file_data, "// General settings\n\n");
+    str8_list_pushf(scratch.arena, &settings_file_data, "Font size = %"PRIU32"\n\n", framed_ui_state->settings.font_size);
+    str8_list_pushf(scratch.arena, &settings_file_data, "// Colors\n\n");
+    for (U64 i = 0; i < FramedUI_Color_TabBarButtonsBackground; ++i)
+    {
+        str8_list_pushf(scratch.arena, &settings_file_data, "%"PRISTR8" = ""0x%08x\n", str8_expand(framed_ui_string_color_table[i]), u32_from_rgba(framed_ui_state->settings.theme_colors[i]));
+    }
     Str8 data = str8_join(scratch.arena, &settings_file_data);
     os_file_write(framed_get_user_settings_file_path(), data, OS_FileMode_Replace);
     release_scratch(scratch);
-
 }
 
 ////////////////////////////////
