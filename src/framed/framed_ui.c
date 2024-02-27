@@ -1128,7 +1128,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_named_column(str8_lit("TabDropDownContainer"))
                         {
                             F32 corner_radius = (F32) ui_top_font_line_height() * 0.25f;
-                            ui_spacer(ui_em(0.1f, 1));
+                            ui_spacer(ui_em(0.2f, 1));
                             ui_next_icon(RENDER_ICON_LIST);
                             ui_next_width(ui_em(title_bar_height_em+0.3f, 1));
                             ui_next_height(ui_em(title_bar_height_em+0.3f, 1));
