@@ -1,5 +1,3 @@
-#pragma comment(lib, "opengl32.lib")
-
 global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
 global PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
 global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = 0;
@@ -16,50 +14,49 @@ win32_debug_output(GLenum source,
     // NOTE(hampus): We do not care about these warnings
     if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
 
-    printf("---------------\n");
-    printf("Debug message (%d): %s", id, message);
-
+    Str8 source_string = {0};
     switch (source)
     {
-        case GL_DEBUG_SOURCE_API:             printf("Source: API"); break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   printf("Source: Window System"); break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: printf("Source: Shader Compiler"); break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     printf("Source: Third Party"); break;
-        case GL_DEBUG_SOURCE_APPLICATION:     printf("Source: Application"); break;
-        case GL_DEBUG_SOURCE_OTHER:           printf("Source: Other"); break;
+        case GL_DEBUG_SOURCE_API:             source_string = str8_lit("Source: API"); break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   source_string = str8_lit("Source: Window System"); break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER: source_string = str8_lit("Source: Shader Compiler"); break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:     source_string = str8_lit("Source: Third Party"); break;
+        case GL_DEBUG_SOURCE_APPLICATION:     source_string = str8_lit("Source: Application"); break;
+        case GL_DEBUG_SOURCE_OTHER:           source_string = str8_lit("Source: Other"); break;
     }
 
-    printf("\n");
-
+    Str8 type_string = {0};
     switch (type)
     {
-        case GL_DEBUG_TYPE_ERROR:               printf("Type: Error"); break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: printf("Type: Deprecated Behaviour"); break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  printf("Type: Undefined Behaviour"); break;
-        case GL_DEBUG_TYPE_PORTABILITY:         printf("Type: Portability"); break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         printf("Type: Performance"); break;
-        case GL_DEBUG_TYPE_MARKER:              printf("Type: Marker"); break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          printf("Type: Push Group"); break;
-        case GL_DEBUG_TYPE_POP_GROUP:           printf("Type: Pop Group"); break;
-        case GL_DEBUG_TYPE_OTHER:               printf("Type: Other"); break;
+        case GL_DEBUG_TYPE_ERROR:               type_string = str8_lit("Type: Error"); break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: type_string = str8_lit("Type: Deprecated Behaviour"); break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  type_string = str8_lit("Type: Undefined Behaviour"); break;
+        case GL_DEBUG_TYPE_PORTABILITY:         type_string = str8_lit("Type: Portability"); break;
+        case GL_DEBUG_TYPE_PERFORMANCE:         type_string = str8_lit("Type: Performance"); break;
+        case GL_DEBUG_TYPE_MARKER:              type_string = str8_lit("Type: Marker"); break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:          type_string = str8_lit("Type: Push Group"); break;
+        case GL_DEBUG_TYPE_POP_GROUP:           type_string = str8_lit("Type: Pop Group"); break;
+        case GL_DEBUG_TYPE_OTHER:               type_string = str8_lit("Type: Other"); break;
     }
 
-    printf("\n");
-
+    Str8 severity_string = {0};
     switch (severity)
     {
-        case GL_DEBUG_SEVERITY_HIGH:         printf("Severity: high"); break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       printf("Severity: medium"); break;
-        case GL_DEBUG_SEVERITY_LOW:          printf("Severity: low"); break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: printf("Severity: notification"); break;
+        case GL_DEBUG_SEVERITY_HIGH:         severity_string = str8_lit("Severity: high"); break;
+        case GL_DEBUG_SEVERITY_MEDIUM:       severity_string = str8_lit("Severity: medium"); break;
+        case GL_DEBUG_SEVERITY_LOW:          severity_string = str8_lit("Severity: low"); break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: severity_string = str8_lit("Severity: notification"); break;
     }
+
+    log_error("OpenGL: Debug message (%d): %s. %"PRISTR8", %"PRISTR8", %"PRISTR8, id, message,
+              str8_expand(source_string),
+              str8_expand(type_string),
+              str8_expand(severity_string));
 
     if (severity == GL_DEBUG_SEVERITY_HIGH)
     {
         assert(false);
     }
-
-    printf("\n");
 }
 
 internal Void
