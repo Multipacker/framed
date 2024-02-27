@@ -761,10 +761,42 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabBarButtonsBackground, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
     Arena_Temporary scratch = get_scratch(0, 0);
-    Str8 user_settings_data = {0};
-    if (os_file_read(scratch.arena, framed_get_user_settings_file_path(), &user_settings_data))
+    Str8 default_settings_path = framed_get_user_settings_file_path();
+    Str8 custom_settings_path = {0};
+    for (Str8Node *node = arguments.first; node != 0; node = node->next)
     {
-        // NOTE(hampus): Load user settings from file
+        U64 equal_sign_index = 0;
+        Str8 first_two_characters = str8_substring(node->string, 0, 2);
+        if (str8_equal(first_two_characters, str8_lit("--")))
+        {
+            node->string = str8_skip(node->string, 2);
+            if (str8_first_index_of(node->string, '=', &equal_sign_index))
+            {
+                Str8 option_name = str8_prefix(node->string, equal_sign_index);
+                if (str8_equal(option_name, str8_lit("settings")))
+                {
+                    custom_settings_path = str8_substring(node->string, equal_sign_index+1, node->string.size);
+                }
+            }
+        }
+    }
+    Str8 user_settings_data = {0};
+    B32 okay_custom_path = false;
+    if (custom_settings_path.size != 0)
+    {
+        if (!os_file_read(scratch.arena, custom_settings_path, &user_settings_data))
+        {
+            log_warning("Tried to load settings from '%"PRISTR8"', but it was not found", str8_expand(custom_settings_path));
+        }
+    }
+
+    if (!user_settings_data.size)
+    {
+        os_file_read(scratch.arena, default_settings_path, &user_settings_data);
+    }
+
+    if (user_settings_data.size)
+    {
         framed_load_user_settings_from_memory(user_settings_data);
     }
     else
@@ -773,6 +805,7 @@ os_main(Str8List arguments)
         // use the default settings.
         framed_save_current_settings_to_file();
     }
+
     release_scratch(scratch);
 
     UI_Context *ui = ui_init();
