@@ -6,8 +6,7 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
     Arena_Temporary scratch = get_scratch(0, 0);
     Gfx_Event event;
     LRESULT result = 0;
-    if (
-        message == WM_SIZE ||
+    if (message == WM_SIZE ||
         message == WM_KEYDOWN ||
         message == WM_KEYUP ||
         message == WM_SYSKEYDOWN ||
@@ -30,9 +29,37 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
     {
         if (message == WM_SETCURSOR)
         {
-            SetCursor(win32_gfx_state.cursors[win32_gfx_state.cursor]);
+            RECT rect = {0};
+            GetClientRect(win32_gfx_state.context.hwnd, &rect);
+            POINT point = {0};
+            GetCursorPos(&point);
+            ScreenToClient(win32_gfx_state.context.hwnd, &point);
+            B32 mouse_is_hover_window =
+                point.x >= rect.left && point.x < rect.right &&
+                point.y >= rect.top  && point.y < rect.bottom;
+
+            if (!win32_gfx_state.resizing && mouse_is_hover_window)
+            {
+                SetCursor(win32_gfx_state.cursor);
+            }
+            else
+            {
+                result = DefWindowProc(hwnd, message, wparam, lparam);
+            }
         }
-        PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam);
+        else
+        {
+            PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam);
+            result = true;
+        }
+    }
+    else if (message == WM_ENTERSIZEMOVE)
+    {
+        win32_gfx_state.resizing = true;
+    }
+    else if (message == WM_EXITSIZEMOVE)
+    {
+        win32_gfx_state.resizing = false;
     }
     else
     {
@@ -81,7 +108,6 @@ win32_gfx_startup_thread(Void *data)
     window_class.lpfnWndProc = win32_window_proc;
     window_class.hInstance = instance;
     window_class.lpszClassName = class_name;
-    window_class.hCursor = LoadCursor(0, (LPCWSTR) IDC_ARROW);
 
     ATOM register_class_result = RegisterClass(&window_class);
     if (register_class_result)
@@ -90,12 +116,12 @@ win32_gfx_startup_thread(Void *data)
 
         CStr16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
         result.hwnd = CreateWindow(
-            window_class.lpszClassName, (LPCWSTR) title_s16,
-            create_window_flags,
-            window_creation_data->x, window_creation_data->y,
-            window_creation_data->width, window_creation_data->height,
-            0, 0, instance, 0
-        );
+                                   window_class.lpszClassName, (LPCWSTR) title_s16,
+                                   create_window_flags,
+                                   window_creation_data->x, window_creation_data->y,
+                                   window_creation_data->width, window_creation_data->height,
+                                   0, 0, instance, 0
+                                   );
         if (result.hwnd)
         {
             result.hdc = GetDC(result.hwnd);
@@ -236,7 +262,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
             case WM_KEYUP:
             case WM_KEYDOWN:
             {
-            key_begin:
+                key_begin:
                 U32 vk_code = (U32) message.wParam;
                 B32 was_down = ((message.lParam & (1 << 30)) != 0);
                 B32 is_down = ((message.lParam & (1 << 31)) == 0);
@@ -359,12 +385,12 @@ gfx_toggle_fullscreen(Gfx_Context *context)
             SetWindowLong(context->hwnd, GWL_STYLE, window_style & ~WS_OVERLAPPEDWINDOW);
 
             SetWindowPos(
-                context->hwnd, HWND_TOP,
-                monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
-                monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
-                monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
-                SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-            );
+                         context->hwnd, HWND_TOP,
+                         monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
+                         monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
+                         monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+                         );
         }
     }
     else
@@ -372,10 +398,10 @@ gfx_toggle_fullscreen(Gfx_Context *context)
         SetWindowLong(context->hwnd, GWL_STYLE, window_style | WS_OVERLAPPEDWINDOW);
         SetWindowPlacement(context->hwnd, &prev_placement);
         SetWindowPos(
-            context->hwnd, NULL, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-            SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-        );
+                     context->hwnd, NULL, 0, 0, 0, 0,
+                     SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED
+                     );
     }
 }
 
@@ -397,8 +423,15 @@ gfx_get_dpi(Gfx_Context *gfx)
 internal Void
 gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 {
-    win32_gfx_state.cursor = cursor;
-    PostMessage(ctx->hwnd, WM_SETCURSOR, 0, 0);
+    HCURSOR win32_cursor = win32_gfx_state.cursors[cursor];
+    if (!win32_gfx_state.resizing && win32_gfx_state.cursor != win32_cursor)
+    {
+        win32_gfx_state.cursor = win32_cursor;
+        PostMessage(ctx->hwnd, WM_SETCURSOR, 0, 0);
+        POINT p = {0};
+        GetCursorPos(&p);
+        SetCursorPos(p.x, p.y);
+    }
 }
 
 internal void

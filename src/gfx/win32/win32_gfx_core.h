@@ -16,7 +16,8 @@ struct Win32_Gfx_State
     U8  key_table[128];
     DWORD main_thread_id;
     HCURSOR cursors[Gfx_Cursor_COUNT];
-    Gfx_Cursor cursor;
+    HCURSOR cursor;
+    B32 resizing;
 };
 
 #endif // WIN32_GFX_CORE_H
