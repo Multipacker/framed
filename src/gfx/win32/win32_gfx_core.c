@@ -482,3 +482,10 @@ gfx_push_clipboard(Arena *arena)
     CloseClipboard();
     return(result);
 }
+
+internal Vec2F32
+gfx_scale_from_monitor(Gfx_Monitor monitor)
+{
+    Vec2F32 result = {0};
+    return(result);
+}
