@@ -29,7 +29,7 @@ X(PFNGLTEXTUREPARAMETERIPROC,           glTextureParameteri         ) \
 X(PFNGLTEXTURESTORAGE2DPROC,            glTextureStorage2D          ) \
 X(PFNGLTEXTURESUBIMAGE2DPROC,           glTextureSubImage2D         ) \
 X(PFNGLDEBUGMESSAGECALLBACKPROC,        glDebugMessageCallback      ) \
-X(PFNGLNAMEDBUFFERSUBDATAPROC,     	 glNamedBufferSubData        ) \
+X(PFNGLNAMEDBUFFERSUBDATAPROC,          glNamedBufferSubData        ) \
 X(PFNGLDRAWARRAYSINSTANCEDPROC,         glDrawArraysInstanced       ) \
 X(PFNGLSCISSORINDEXEDPROC,              glScissorIndexed            ) \
 X(PFNGLVERTEXARRAYBINDINGDIVISORPROC,   glVertexArrayBindingDivisor ) \

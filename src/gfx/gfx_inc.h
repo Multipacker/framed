@@ -15,6 +15,7 @@
 #elif OS_LINUX
 #    if defined(LINUX_ESSENTIAL_H)
 #        include "gfx/linux/linux_gfx_core.h"
+#        include "gfx/linux/linux_gfx_opengl.h"
 #    else
 #        error OS layer has not been included
 #    endif
