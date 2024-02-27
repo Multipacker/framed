@@ -341,6 +341,13 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
     return(result);
 }
 
+internal Vec2F32
+gfx_scale_from_monitor(Gfx_Monitor monitor)
+{
+    Vec2F32 result = v2f32(1, 1);
+    return(result);
+}
+
 internal Void
 gfx_set_clipboard(Str8 data)
 {
