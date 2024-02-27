@@ -1098,6 +1098,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     B32 left_mouse_released = false;
     B32 left_mouse_pressed  = false;
     B32 escape_key_pressed  = false;
+    B32 return_pressed = false;
     for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
     {
         switch (node->kind)
@@ -1123,6 +1124,10 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
                 if (node->key == Gfx_Key_Escape)
                 {
                     escape_key_pressed = true;
+                }
+                if (node->key == Gfx_Key_Return)
+                {
+                    return_pressed = true;
                 }
 
                 if (node->key == Gfx_Key_MouseLeft)
@@ -1255,7 +1260,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     }
     else
     {
-        if (escape_key_pressed)
+        if (escape_key_pressed || return_pressed)
         {
             ui_ctx->focus_key = ui_key_null();
         }
