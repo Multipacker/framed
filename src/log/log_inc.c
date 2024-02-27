@@ -85,6 +85,20 @@ log_flusher_thread(Void *argument)
             memory_fence();
             ++logger->queue_read_index;
 
+            Str8 path = str8_cstr(entry.file);
+            U64 root_start = 0;
+            if (str8_find_substr8(path, str8_lit("/src/"), &root_start))
+            {
+                ++root_start;
+            }
+            else if (str8_find_substr8(path, str8_lit("\\src\\"), &root_start))
+            {
+                ++root_start;
+            }
+            path = str8_skip(path, root_start);
+            // NOTE(simon): This is okay in this context as the source is a c-string.
+            entry.file = (CStr) path.data;
+
             // NOTE(simon): Potentially save the entry for later retrieval.
             Log_EntryBuffer *buffer = logger->write_buffer;
             if (buffer->count < LOG_BUFFER_SIZE)
