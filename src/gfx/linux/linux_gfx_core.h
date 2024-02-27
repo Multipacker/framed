@@ -2,7 +2,6 @@
 #define LINUX_GFX_CORE_H
 
 #include <SDL2/SDL.h>
-#include "glad/glad.c"
 
 struct Gfx_Context
 {

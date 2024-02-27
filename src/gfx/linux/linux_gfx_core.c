@@ -47,14 +47,8 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
         {
             gfx.gl_context = SDL_GL_CreateContext(gfx.window);
 
-            if (gladLoadGLLoader(SDL_GL_GetProcAddress))
-            {
-                SDL_GL_SetSwapInterval(1);
-            }
-            else
-            {
-                // TODO(simon): Could not load OpenGL functions.
-            }
+            linux_init_opengl();
+            SDL_GL_SetSwapInterval(1);
         }
         else
         {
