@@ -341,15 +341,15 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
                     column_views[i](values, zone_blocks_count, profiling_per_frame, tsc_total);
                 }
 
-                ui_next_width(ui_pixels(1, 1));
+
+                ui_next_width(ui_em(0.3f, 1));
                 ui_next_height(ui_em(60, 1));
-                ui_next_corner_radius(0);
-                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
                 ui_next_hover_cursor(Gfx_Cursor_SizeWE);
-                UI_Box *column_divider = ui_box_makef(UI_BoxFlag_DrawBackground |
-                                                      UI_BoxFlag_Clickable,
-                                                      "ColumnSplit%"PRIU64, i);
-                UI_Comm column_comm = ui_comm_from_box(column_divider);
+                ui_next_child_layout_axis(Axis2_X);
+                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable,
+                                                             "ColumnSplit%"PRIU64, i);
+
+                UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
                 F32 drag_delta = column_comm.drag_delta.x;
                 if (column_comm.dragging && i != 3)
                 {
@@ -361,6 +361,20 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
                     new_column_pcts[i] -= pct_delta;
                     new_column_pcts[i+1] += pct_delta;
+                }
+
+                ui_parent(column_divider_hitbox)
+                {
+                    ui_spacer(ui_fill());
+
+                    ui_next_width(ui_pixels(1, 1));
+                    ui_next_height(ui_pct(1, 1));
+                    ui_next_corner_radius(0);
+                    ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                    UI_Box *column_divider = ui_box_make(UI_BoxFlag_DrawBackground,
+                                                         str8_lit(""));
+
+                    ui_spacer(ui_fill());
                 }
             }
             ui_named_row_end();
@@ -588,9 +602,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
         }
     }
     if (!memory_match(&old_settings, &framed_ui_state->settings, sizeof(FramedUI_Settings)))
-        {
+    {
         framed_save_current_settings_to_file();
-        }
+    }
 }
 
 ////////////////////////////////
