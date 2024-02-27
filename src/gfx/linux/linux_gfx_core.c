@@ -1,3 +1,5 @@
+#include "render/opengl/opengl.h"
+
 global Gfx_Key linux_sdl_to_gfx_keycode[128];
 
 internal Gfx_Context
@@ -47,7 +49,9 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
         {
             gfx.gl_context = SDL_GL_CreateContext(gfx.window);
 
-            linux_init_opengl();
+#define X(type, name) name = (type) SDL_GL_GetProcAddress(#name); assert(name);
+            GL_FUNCTIONS(X)
+#undef X
             SDL_GL_SetSwapInterval(1);
         }
         else

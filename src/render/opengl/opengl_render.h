@@ -1,6 +1,8 @@
 #ifndef OPENGL_RENDER_H
 #define OPENGL_RENDER_H
 
+#include "opengl.h"
+
 #define OPENGL_BATCH_SIZE 1024
 
 #define OPENGL_TEXTURE_UPDATE_QUEUE_SIZE (1 << 6)
