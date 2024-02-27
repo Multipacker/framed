@@ -336,18 +336,6 @@ framed_get_user_settings_file_path(Void)
 //~ hampus: User settings parsing
 
 internal Str8
-framed_skip_to_equal_sign(Str8 string, U64 *bytes_parsed)
-{
-    Str8 result = string;
-    U8 *at = string.data;
-    U8 *end = string.data + string.size;
-    for (;at < end && at[0] != '='; ++at);
-    *bytes_parsed = int_from_ptr(at) - int_from_ptr(string.data);
-    result = str8_skip(string, *bytes_parsed);
-    return(result);
-}
-
-internal Str8
 framed_get_next_line(Str8 string, U64 *bytes_parsed)
 {
     Str8 result = string;
@@ -413,9 +401,78 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
     return(result);
 }
 
+internal Str8List
+framed_lines_from_user_settings(Arena *arena, Str8 data)
+{
+    Str8List result = {0};
+    U64 bytes_parsed = 0;
+    for (;data.size > 0;)
+    {
+        Str8 line = framed_get_next_line(data, &bytes_parsed);
+        data = str8_skip(data, bytes_parsed+1);
+        str8_list_push(arena, &result, line);
+    }
+    return(result);
+}
+
 internal Void
 framed_load_user_settings_from_memory(Str8 data_string)
 {
+    // TODO(hampus): Find a good way to do serializing if the settings
+    // version is not up to date. If the settings version is not up to date,
+    // we should maybe first update it to the newest version, write to the file,
+    // and then call the serializing function again.
+    //
+    // To do this conversion from an older version to the newest, we need
+    // a good way to avoid an explosion of combinatorics, we can't write
+    // a conversion for each combination of version, as this would spiral
+    // out of control fast. We want to somehow instead keep in linear,
+    // so that we can go v1 -> v4, v1->v5, ... .
+    //
+    // We could keep a table which records every change, something like this:
+    //
+    // enum ChangeKind
+    // {
+    //   ChangeKind_Add,     // if adding an entirely entirely
+    //   ChangeKind_Remove, // if removing the setting entirely, without any replacement
+    //   ChangeKind_Replace, // if keeping the setting, but just changing its name or value type
+    // };
+    //
+    // struct VersionChangeGroupEntry
+    // {
+    //   ChangeKind kind;
+    //   Str8 setting_name;
+    //   // Keep information about the setting value aswell. Type, value, ...
+    // };
+    //
+    // enum Version
+    // {
+    //   Version_1
+    //   Version_2
+    //   ...
+    //   Version_COUNT
+    // };
+    //
+    // struct VersionChangeGroup
+    // {
+    //   Version version;
+    //   U32 count;
+    //   VersionChangeEntry *entries;
+    // };
+    //
+    // struct VersionChangeTable
+    // {
+    //   VersionChangeGroup change_groups[Version_COUNT];
+    // };
+    //
+    // This will keep an array of all changes in from all version.
+    // To then go from v1 -> v5 at one go, we would have a function that
+    // iterates the chage_groups and calculate what the overral change would
+    // be and then apply that to v1. If the versions only differ by 1,
+    // we wouldn't need to do this. I will probably try to do something like
+    // this in the future.
+
+    Arena_Temporary scratch = get_scratch(0, 0);
     //- hampus: Get the version number
 
     U64 line_index = 0;
@@ -446,59 +503,111 @@ framed_load_user_settings_from_memory(Str8 data_string)
 
     if (version == 1)
     {
-        for (;data_string.size;)
+        Str8List lines = framed_lines_from_user_settings(scratch.arena, data_string);
+
+        for (Str8Node *node = lines.first; node != 0; node = node->next)
         {
-            Str8 line = framed_get_next_line(data_string, &bytes_parsed);
-            data_string = str8_skip(data_string, bytes_parsed+1);
+            Str8 line = node->string;
 
-            if (line.size != 0)
+            if (line.size == 0)
             {
-                //- hampus: Setting name
-
-                Str8 setting_name = framed_get_next_settings_word(line, &bytes_parsed);
-                line = str8_skip(line, bytes_parsed);
-                U64 equal_sign_index = 0;
-                if (str8_first_index_of(line, '=', &equal_sign_index))
-                {
-                    //- hampus: Setting value
-
-                    line = str8_skip(line, equal_sign_index+1);
-                    Str8 setting_value = framed_get_next_settings_word(line, &bytes_parsed);
-                    B32 valid_value = false;
-                    if (str8_equal(setting_name, str8_lit("font_size")))
-                    {
-                        U32 font_size = 0;
-                        U64 font_size_length = u32_from_str8(setting_value, &font_size);
-                        if (font_size_length != 0)
-                        {
-                            if (font_size > 0 && font_size < 9999)
-                            {
-                                framed_ui_state->settings.font_size = font_size;
-                                valid_value = true;
-                            }
-                        }
-                    }
-                    else if (str8_equal(setting_name, str8_lit("panel_background")))
-                    {
-                        U32 color = 0;
-                        u32hex_from_str8(setting_value, &color);
-                        valid_value = true;
-                    }
-
-                    if (!valid_value)
-                    {
-                        log_error("User settings line %"PRIU64": bad value (%"PRISTR8") for '%"PRISTR8"'", line_index, str8_expand(setting_value), str8_expand(setting_name));
-                    }
-                    line = str8_skip(line, bytes_parsed);
-                }
-                else
-                {
-                    log_error("User settings line %"PRIU64": missing '=' for '%"PRISTR8"'", line_index, str8_expand(setting_name));
-                }
+                continue;
             }
-            line_index++;
+
+            //- hampus: Setting name
+
+            typedef enum SettingValKind SettingValKind;
+            enum SettingValKind
+            {
+                SettingValKind_U32,
+                SettingValKind_Color,
+            };
+
+            typedef struct SettingEntry SettingEntry;
+            struct SettingEntry
+            {
+                Str8 name;
+                SettingValKind kind;
+                Void *dst;
+                B32 found;
+            };
+
+            SettingEntry setting_entries_table[] =
+            {
+                {str8_lit("font_size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
+                {str8_lit("panel_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBackground]},
+                {str8_lit("panel_border_active"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBorderActive]},
+                {str8_lit("panel_border_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelBorderInactive]},
+                {str8_lit("panel_overlay_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_PanelOverlayInactive]},
+                {str8_lit("tab_bar_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBarBackground]},
+                {str8_lit("tab_background_active"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBackgroundActive]},
+                {str8_lit("tab_background_inactive"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBackgroundInactive]},
+                {str8_lit("tab_foreground"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabForeground]},
+                {str8_lit("tab_border"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBorder]},
+                {str8_lit("tab_bar_buttons_background"), SettingValKind_Color, &framed_ui_state->settings.theme_colors[FramedUI_Color_TabBarButtonsBackground]},
+            };
+
+            Str8 setting_name = framed_get_next_settings_word(line, &bytes_parsed);
+            line = str8_skip(line, bytes_parsed);
+            U64 equal_sign_index = 0;
+            if (str8_first_index_of(line, '=', &equal_sign_index))
+            {
+                //- hampus: Setting value
+
+                // TODO(hampus): Check that the setting is an appropiate value
+
+                line = str8_skip(line, equal_sign_index+1);
+                Str8 setting_value = framed_get_next_settings_word(line, &bytes_parsed);
+                B32 valid_value = false;
+
+                for (U64 i = 0; i < array_count(setting_entries_table); ++i)
+                {
+                    SettingEntry *entry = setting_entries_table + i;
+                    if (str8_equal(setting_name, entry->name))
+                    {
+                        switch (entry->kind)
+                        {
+                            case SettingValKind_U32:
+                            {
+                                U32 *dst = entry->dst;
+                                u32_from_str8(setting_value, dst);
+                                valid_value = true;
+                            } break;
+
+                            case SettingValKind_Color:
+                            {
+                                Vec4F32 *dst = entry->dst;
+                                U32 color = 0;
+                                u32hex_from_str8(setting_value, &color);
+                                *dst = rgba_from_u32(color);
+                                valid_value = true;
+                            } break;
+
+                            invalid_case;
+                        }
+                        break;
+                    }
+                }
+
+                if (!valid_value)
+                {
+                    log_error("User settings line %"PRIU64": bad value (%"PRISTR8") for '%"PRISTR8"'", line_index, str8_expand(setting_value), str8_expand(setting_name));
+                }
+                line = str8_skip(line, bytes_parsed);
+            }
+            else
+            {
+                log_error("User settings line %"PRIU64": missing '=' for '%"PRISTR8"'", line_index, str8_expand(setting_name));
+            }
+
+            ++line_index;
         }
     }
+    else
+    {
+        log_error("User settings: bad version: %"PRIU32, version);
+    }
+    release_scratch(scratch);
 }
 
 internal Void
@@ -575,16 +684,16 @@ os_main(Str8List arguments)
     framed_ui_state->perm_arena = framed_ui_perm_arena;
 
     framed_ui_state->settings.font_size = 12;
-    framed_ui_set_color(FramedUI_Color_Panel, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_PanelBackground, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelBorderActive, v4f32(1.0f, 0.8f, 0.0f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelBorderInactive, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_PanelOverlayInactive, v4f32(0, 0, 0, 0.3f));
-    framed_ui_set_color(FramedUI_Color_TabBar, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_TabActive, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_TabInactive, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_TabTitle, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabBarBackground, v4f32(0.15f, 0.15f, 0.15f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabBackgroundActive, v4f32(0.3f, 0.3f, 0.3f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabBackgroundInactive, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabForeground, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
     framed_ui_set_color(FramedUI_Color_TabBorder, v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-    framed_ui_set_color(FramedUI_Color_TabBarButtons, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
+    framed_ui_set_color(FramedUI_Color_TabBarButtonsBackground, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
     Arena_Temporary scratch = get_scratch(0, 0);
     Str8 user_settings_data = {0};

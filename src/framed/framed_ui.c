@@ -305,8 +305,8 @@ framed_ui_tab_button(FramedUI_Tab *tab)
     F32 corner_radius = (F32) ui_top_font_line_height() * 0.2f;
 
     Vec4F32 color = active ?
-        framed_ui_color_from_theme(FramedUI_Color_TabActive) :
-    framed_ui_color_from_theme(FramedUI_Color_TabInactive);
+        framed_ui_color_from_theme(FramedUI_Color_TabBackgroundActive) :
+    framed_ui_color_from_theme(FramedUI_Color_TabBackgroundInactive);
     ui_next_color(color);
     ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
     ui_next_vert_corner_radius(corner_radius, 0);
@@ -332,7 +332,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
         ui_next_hover_cursor(Gfx_Cursor_Hand);
         ui_next_corner_radies(corner_radius, 0, 0, 0);
         ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
-        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabInactive));
+        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBackgroundInactive));
         UI_BoxFlags pin_box_flags = UI_BoxFlag_Clickable;
         if (pinned)
         {
@@ -340,7 +340,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
         }
         UI_Box *pin_box = ui_box_make(pin_box_flags, str8_lit("PinButton"));
 
-        ui_next_text_color(framed_ui_color_from_theme(FramedUI_Color_TabTitle));
+        ui_next_text_color(framed_ui_color_from_theme(FramedUI_Color_TabForeground));
         UI_Box *title = ui_box_make(UI_BoxFlag_DrawText, tab->display_string);
 
         ui_box_equip_display_string(title, tab->display_string);
@@ -351,7 +351,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
         ui_next_hover_cursor(Gfx_Cursor_Hand);
         ui_next_corner_radies(0, corner_radius, 0, 0);
         ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
-        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabInactive));
+        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBackgroundInactive));
         UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable, str8_lit("CloseButton"));
 
         // TODO(hampus): We shouldn't need to do this here
@@ -757,7 +757,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
     // all the click and scroll events at the end to prevent boxes from behind
     // it to take them.
     Str8 root_string = str8_pushf(framed_ui_state->frame_arena, "PanelRoot%p", root);
-    ui_next_color(framed_ui_color_from_theme(FramedUI_Color_Panel));
+    ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
     UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
                               UI_BoxFlag_Clickable |
                               UI_BoxFlag_ViewScroll,
@@ -782,7 +782,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
             ui_next_size(!root->split_axis, ui_pct(1, 1));
             ui_next_corner_radius(0);
             ui_next_hover_cursor(root->split_axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
-            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_Panel));
+            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
             UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
                                                 UI_BoxFlag_DrawBackground,
                                                 str8_lit("DraggableBox"));
@@ -1042,7 +1042,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                         UI_BoxFlag_ActiveAnimation);
             }
 
-            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBar));
+            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarBackground));
             title_bar = ui_box_make(UI_BoxFlag_DrawBackground, str8_lit("TitleBar"));
             ui_parent(title_bar)
             {
@@ -1134,7 +1134,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             ui_next_height(ui_em(title_bar_height_em+0.3f, 1));
                             ui_next_hover_cursor(Gfx_Cursor_Hand);
                             ui_next_vert_corner_radius(corner_radius, 0);
-                            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtons));
+                            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
                             UI_Box *tab_dropdown_list_box = ui_box_make(UI_BoxFlag_DrawBackground |
                                                                         UI_BoxFlag_DrawBorder |
                                                                         UI_BoxFlag_HotAnimation |
@@ -1255,7 +1255,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_next_width(ui_em(title_bar_height_em, 1));
                         ui_next_icon(RENDER_ICON_LEFT_OPEN);
                         ui_next_hover_cursor(Gfx_Cursor_Hand);
-                        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtons));
+                        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
                         UI_Box *prev_tab_button = ui_box_make(UI_BoxFlag_Clickable |
                                                               UI_BoxFlag_DrawText |
                                                               UI_BoxFlag_HotAnimation |
@@ -1282,7 +1282,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_next_width(ui_em(title_bar_height_em, 1));
                         ui_next_icon(RENDER_ICON_RIGHT_OPEN);
                         ui_next_hover_cursor(Gfx_Cursor_Hand);
-                        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtons));
+                        ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
                         UI_Box *next_tab_button = ui_box_make(UI_BoxFlag_Clickable |
                                                               UI_BoxFlag_DrawText |
                                                               UI_BoxFlag_HotAnimation |
@@ -1385,7 +1385,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
             ui_next_height(ui_fill());
             ui_next_child_layout_axis(Axis2_Y);
             // TODO(hampus): Should this actually be called panel color...
-            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_Panel));
+            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
             UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
                                               UI_BoxFlag_DrawBorder |
                                               UI_BoxFlag_Clip,
@@ -1611,7 +1611,7 @@ framed_ui_window_update(FramedUI_Window *window)
             rect.min.y -= ui_top_font_line_height() * resizer_size_in_em;
             ui_next_fixed_rect(rect);
             ui_next_child_layout_axis(Axis2_X);
-            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_Panel));
+            ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
             UI_Box *window_container = ui_box_make(UI_BoxFlag_FixedRect |
                                                    UI_BoxFlag_DrawDropShadow,
                                                    str8_lit(""));

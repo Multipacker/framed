@@ -83,7 +83,7 @@ if %build_mode% == "examples" (
     if exist *.pdb del *.pdb
 
 	echo ---- Building meta program ----
-    cl -nologo -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
+    cl -nologo -FC -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib
 
     popd
 

@@ -863,7 +863,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
                 Vec2F32 text_size = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str);
                 F32 padding = ui_em(0.5f, 1).value;
 
-                // NOTE(hampus): Scroll to the left if there is empty 
+                // NOTE(hampus): Scroll to the left if there is empty
                 // space to the right and there are still characters
                 // outside on the left iside
                 F32 content_size = text_size.x + cursor_box->fixed_size.x + padding + cursor_extra_offset;
@@ -961,15 +961,6 @@ ui_color_picker(UI_ColorPickerData *data)
             }
             rgba->rgb = rgb_from_hsv(hsv);
             ui_spacer(ui_em(0.5f, 1));
-        }
-        ui_spacer(ui_em(0.5f, 1));
-        ui_row()
-            ui_width(ui_em(4, 1))
-        {
-            ui_textf("R: %.2f", rgba->r);
-            ui_textf("G: %.2f", rgba->g);
-            ui_textf("B: %.2f", rgba->b);
-            ui_textf("A: %.2f", rgba->a);
         }
         ui_spacer(ui_em(0.5f, 1));
         ui_row()
