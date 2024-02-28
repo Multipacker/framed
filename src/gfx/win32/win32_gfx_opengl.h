@@ -1,58 +1,56 @@
 #ifndef WIN32_GFX_OPENGL_H
 #define WIN32_GFX_OPENGL_H
 
-#include <GL/gl.h>
+#define WGL_DRAW_TO_WINDOW_ARB 0x2001
+#define WGL_SUPPORT_OPENGL_ARB 0x2010
+#define WGL_DOUBLE_BUFFER_ARB  0x2011
+#define WGL_PIXEL_TYPE_ARB     0x2013
+#define WGL_TYPE_RGBA_ARB      0x202B
+#define WGL_COLOR_BITS_ARB     0x2014
+#define WGL_DEPTH_BITS_ARB     0x2022
+#define WGL_STENCIL_BITS_ARB   0x2023
+#define WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB  0x20A9
+#define WGL_CONTEXT_MAJOR_VERSION_ARB     0x2091
+#define WGL_CONTEXT_MINOR_VERSION_ARB     0x2092
+#define WGL_CONTEXT_PROFILE_MASK_ARB      0x9126
+#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB  0x00000001
+#define WGL_CONTEXT_FLAGS_ARB             0x2094
+#define WGL_CONTEXT_DEBUG_BIT_ARB         0x00000001
 
-#include "glcorearb.h"
-#include "wglext.h"
 
-#define GL_FUNCTIONS(X) \
-X(PFNGLCREATEBUFFERSPROC,               glCreateBuffers             ) \
-X(PFNGLNAMEDBUFFERSTORAGEPROC,          glNamedBufferStorage        ) \
-X(PFNGLBINDVERTEXARRAYPROC,             glBindVertexArray           ) \
-X(PFNGLCREATEVERTEXARRAYSPROC,          glCreateVertexArrays        ) \
-X(PFNGLVERTEXARRAYATTRIBBINDINGPROC,    glVertexArrayAttribBinding  ) \
-X(PFNGLVERTEXARRAYVERTEXBUFFERPROC,     glVertexArrayVertexBuffer   ) \
-X(PFNGLVERTEXARRAYATTRIBFORMATPROC,     glVertexArrayAttribFormat   ) \
-X(PFNGLENABLEVERTEXARRAYATTRIBPROC,     glEnableVertexArrayAttrib   ) \
-X(PFNGLCREATESHADERPROGRAMVPROC,        glCreateShaderProgramv      ) \
-X(PFNGLGETPROGRAMIVPROC,                glGetProgramiv              ) \
-X(PFNGLGETPROGRAMINFOLOGPROC,           glGetProgramInfoLog         ) \
-X(PFNGLGENPROGRAMPIPELINESPROC,         glGenProgramPipelines       ) \
-X(PFNGLUSEPROGRAMSTAGESPROC,            glUseProgramStages          ) \
-X(PFNGLBINDPROGRAMPIPELINEPROC,         glBindProgramPipeline       ) \
-X(PFNGLPROGRAMUNIFORMMATRIX2FVPROC,     glProgramUniformMatrix2fv   ) \
-X(PFNGLPROGRAMUNIFORMMATRIX4FVPROC,     glProgramUniformMatrix4fv   ) \
-X(PFNGLBINDTEXTUREUNITPROC,             glBindTextureUnit           ) \
-X(PFNGLCREATETEXTURESPROC,              glCreateTextures            ) \
-X(PFNGLTEXTUREPARAMETERIPROC,           glTextureParameteri         ) \
-X(PFNGLTEXTURESTORAGE2DPROC,            glTextureStorage2D          ) \
-X(PFNGLTEXTURESUBIMAGE2DPROC,           glTextureSubImage2D         ) \
-X(PFNGLDEBUGMESSAGECALLBACKPROC,        glDebugMessageCallback      ) \
-X(PFNGLNAMEDBUFFERSUBDATAPROC,          glNamedBufferSubData        ) \
-X(PFNGLDRAWARRAYSINSTANCEDPROC,         glDrawArraysInstanced       ) \
-X(PFNGLSCISSORINDEXEDPROC,              glScissorIndexed            ) \
-X(PFNGLVERTEXARRAYBINDINGDIVISORPROC,   glVertexArrayBindingDivisor ) \
-X(PFNGLCREATESHADERPROC,                glCreateShader              ) \
-X(PFNGLSHADERSOURCEPROC,                glShaderSource              ) \
-X(PFNGLCOMPILESHADERPROC,               glCompileShader             ) \
-X(PFNGLGETSHADERIVPROC,                 glGetShaderiv               ) \
-X(PFNGLGETSHADERINFOLOGPROC,            glGetShaderInfoLog          ) \
-X(PFNGLDELETESHADERPROC,                glDeleteShader              ) \
-X(PFNGLCREATEPROGRAMPROC,               glCreateProgram             ) \
-X(PFNGLATTACHSHADERPROC,                glAttachShader              ) \
-X(PFNGLLINKPROGRAMPROC,                 glLinkProgram               ) \
-X(PFNGLDETACHSHADERPROC,                glDetachShader              ) \
-X(PFNGLDELETEPROGRAMPROC,               glDeleteProgram             ) \
-X(PFNGLNAMEDBUFFERDATAPROC,             glNamedBufferData           ) \
-X(PFNGLGETUNIFORMLOCATIONPROC,          glGetUniformLocation        ) \
-X(PFNGLUSEPROGRAMPROC,                  glUseProgram                ) \
-X(PFNGLPROGRAMUNIFORM1IPROC,            glProgramUniform1i          ) \
-X(PFNGLBLENDFUNCSEPARATEPROC,           glBlendFuncSeparate         ) \
+#define GL_DEBUG_SOURCE_API               0x8246
+#define GL_DEBUG_SOURCE_WINDOW_SYSTEM     0x8247
+#define GL_DEBUG_SOURCE_SHADER_COMPILER   0x8248
+#define GL_DEBUG_SOURCE_THIRD_PARTY       0x8249
+#define GL_DEBUG_SOURCE_APPLICATION       0x824A
+#define GL_DEBUG_SOURCE_OTHER             0x824B
 
-#define X(type, name) global type name;
-GL_FUNCTIONS(X)
-#undef X
+#define GL_DEBUG_TYPE_ERROR               0x824C
+#define GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR 0x824D
+#define GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  0x824E
+#define GL_DEBUG_TYPE_PORTABILITY         0x824F
+#define GL_DEBUG_TYPE_PERFORMANCE         0x8250
+#define GL_DEBUG_TYPE_OTHER               0x8251
+#define GL_DEBUG_TYPE_PERFORMANCE         0x8250
+#define GL_DEBUG_TYPE_OTHER               0x8251
+#define GL_DEBUG_TYPE_MARKER              0x8268
+#define GL_DEBUG_TYPE_PUSH_GROUP          0x8269
+#define GL_DEBUG_TYPE_POP_GROUP           0x826A
+
+#define GL_DEBUG_SEVERITY_HIGH            0x9146
+#define GL_DEBUG_SEVERITY_MEDIUM          0x9147
+#define GL_DEBUG_SEVERITY_LOW             0x9148
+#define GL_DEBUG_SEVERITY_NOTIFICATION    0x826B
+
+#define GL_DEBUG_OUTPUT_SYNCHRONOUS       0x8242
+
+#define GL_FALSE                0
+#define GL_TRUE                 1
+
+typedef BOOL(WINAPI * PFNWGLCHOOSEPIXELFORMATARBPROC) (HDC hdc, const int *piAttribIList, const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
+typedef HGLRC(WINAPI * PFNWGLCREATECONTEXTATTRIBSARBPROC) (HDC hDC, HGLRC hShareContext, const int *attribList);
+typedef BOOL(WINAPI * PFNWGLSWAPINTERVALEXTPROC) (int interval);
+typedef const char *(WINAPI * PFNWGLGETEXTENSIONSSTRINGARBPROC) (HDC hdc);
 
 internal Void win32_init_opengl(Gfx_Context *gfx);
 

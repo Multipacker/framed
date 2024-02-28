@@ -389,7 +389,7 @@ render_backend_end(Render_Context *renderer)
             }
 
             // NOTE(hampus): Create RenderTarget view for new backbuffer texture
-            ID3D11Texture2D* backbuffer;
+            ID3D11Texture2D *backbuffer = 0;
             IDXGISwapChain1_GetBuffer(backend->swap_chain, 0, &IID_ID3D11Texture2D, (Void**) &backbuffer);
             D3D11_RENDER_TARGET_VIEW_DESC render_target_view_desc = { .Format = DXGI_FORMAT_R8G8B8A8_UNORM, .ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D };
             ID3D11Device_CreateRenderTargetView(backend->device, (ID3D11Resource*) backbuffer, &render_target_view_desc, &backend->render_target_view);

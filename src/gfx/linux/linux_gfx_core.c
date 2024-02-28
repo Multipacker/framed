@@ -50,6 +50,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
             gfx.gl_context = SDL_GL_CreateContext(gfx.window);
 
 #define X(type, name) name = (type) SDL_GL_GetProcAddress(#name); assert(name);
+            GL_LINUX_FUNCTION(X)
             GL_FUNCTIONS(X)
 #undef X
             SDL_GL_SetSwapInterval(1);

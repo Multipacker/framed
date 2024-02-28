@@ -1,63 +1,13 @@
+void glEnable(GLenum cap);
+void glDisable(GLenum cap);
+void glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
+void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+void glClear(GLbitfield mask);
+void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+
 global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
 global PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
 global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = 0;
-
-internal Void APIENTRY
-win32_debug_output(GLenum source,
-                                GLenum type,
-                                 U32 id,
-                                GLenum severity,
-                                GLsizei length,
-                                    const char *message,
-                                 const Void *userParam)
-{
-    // NOTE(hampus): We do not care about these warnings
-    if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
-
-    Str8 source_string = {0};
-    switch (source)
-    {
-        case GL_DEBUG_SOURCE_API:             source_string = str8_lit("Source: API"); break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   source_string = str8_lit("Source: Window System"); break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: source_string = str8_lit("Source: Shader Compiler"); break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     source_string = str8_lit("Source: Third Party"); break;
-        case GL_DEBUG_SOURCE_APPLICATION:     source_string = str8_lit("Source: Application"); break;
-        case GL_DEBUG_SOURCE_OTHER:           source_string = str8_lit("Source: Other"); break;
-    }
-
-    Str8 type_string = {0};
-    switch (type)
-    {
-        case GL_DEBUG_TYPE_ERROR:               type_string = str8_lit("Type: Error"); break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: type_string = str8_lit("Type: Deprecated Behaviour"); break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  type_string = str8_lit("Type: Undefined Behaviour"); break;
-        case GL_DEBUG_TYPE_PORTABILITY:         type_string = str8_lit("Type: Portability"); break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         type_string = str8_lit("Type: Performance"); break;
-        case GL_DEBUG_TYPE_MARKER:              type_string = str8_lit("Type: Marker"); break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          type_string = str8_lit("Type: Push Group"); break;
-        case GL_DEBUG_TYPE_POP_GROUP:           type_string = str8_lit("Type: Pop Group"); break;
-        case GL_DEBUG_TYPE_OTHER:               type_string = str8_lit("Type: Other"); break;
-    }
-
-    Str8 severity_string = {0};
-    switch (severity)
-    {
-        case GL_DEBUG_SEVERITY_HIGH:         severity_string = str8_lit("Severity: high"); break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       severity_string = str8_lit("Severity: medium"); break;
-        case GL_DEBUG_SEVERITY_LOW:          severity_string = str8_lit("Severity: low"); break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: severity_string = str8_lit("Severity: notification"); break;
-    }
-
-    log_error("OpenGL: Debug message (%d): %s. %"PRISTR8", %"PRISTR8", %"PRISTR8, id, message,
-              str8_expand(source_string),
-              str8_expand(type_string),
-              str8_expand(severity_string));
-
-    if (severity == GL_DEBUG_SEVERITY_HIGH)
-    {
-        assert(false);
-    }
-}
 
 internal Void
 win32_get_wgl_functions(Void)
@@ -106,8 +56,7 @@ win32_get_wgl_functions(Void)
     ok = wglMakeCurrent(dc, rc);
     assert(ok && "Failed to make current OpenGL context for dummy window");
 
-    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB =
-        (Void*) wglGetProcAddress("wglGetExtensionsStringARB");
+    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (Void *)wglGetProcAddress("wglGetExtensionsStringARB");
     if (!wglGetExtensionsStringARB)
     {
         assert(!"OpenGL does not support WGL_ARB_extensions_string extension!");
@@ -211,10 +160,6 @@ win32_init_opengl(Gfx_Context *gfx)
         GL_FUNCTIONS(X)
 #undef X
 
-#if !BUILD_MODE_RELEASE
-            glDebugMessageCallback(&win32_debug_output, NULL);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-#endif
     }
 }
 
