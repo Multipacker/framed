@@ -49,7 +49,10 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
         }
         else
         {
-            PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam);
+            if (!PostThreadMessage(win32_gfx_state.main_thread_id, message, wparam, lparam))
+            {
+                win32_print_error_message();
+            }
             result = true;
         }
     }
@@ -82,6 +85,8 @@ struct Win32_WindowCreationData
 DWORD
 win32_gfx_startup_thread(Void *data)
 {
+    SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
     Win32_WindowCreationData *window_creation_data = (Win32_WindowCreationData *) data;
 
     ThreadContext *context = thread_ctx_init(str8_lit("Events"));
@@ -378,45 +383,35 @@ gfx_toggle_fullscreen(Gfx_Context *context)
     if (window_style & WS_OVERLAPPEDWINDOW)
     {
         MONITORINFO monitor_info = {sizeof(monitor_info)};
-        if (
-            GetWindowPlacement(context->hwnd, &prev_placement) &&
+        if (GetWindowPlacement(context->hwnd, &prev_placement) &&
             GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info))
         {
             SetWindowLong(context->hwnd, GWL_STYLE, window_style & ~WS_OVERLAPPEDWINDOW);
 
-            SetWindowPos(
-                         context->hwnd, HWND_TOP,
+            SetWindowPos(context->hwnd, HWND_TOP,
                          monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
                          monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
                          monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
-                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-                         );
+                         SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
         }
     }
     else
     {
         SetWindowLong(context->hwnd, GWL_STYLE, window_style | WS_OVERLAPPEDWINDOW);
         SetWindowPlacement(context->hwnd, &prev_placement);
-        SetWindowPos(
-                     context->hwnd, NULL, 0, 0, 0, 0,
+        SetWindowPos(context->hwnd, NULL, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED
-                     );
+                     SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
 }
 
 internal Vec2F32
 gfx_get_dpi(Gfx_Context *gfx)
 {
-    // NOTE(hampus): The primary monitor by definition
-    // has its upper left corner at (0, 0)
-    POINT point = {0, 0};
-    HMONITOR monitor = MonitorFromPoint(point, MONITOR_DEFAULTTOPRIMARY);
-    U32 dpi_x, dpi_y;
-    GetDpiForMonitor(monitor, MDT_EFFECTIVE_DPI, &dpi_x, &dpi_y);
+    UINT dpi = GetDpiForWindow(gfx->hwnd);
     Vec2F32 result;
-    result.x = (F32) dpi_x;
-    result.y = (F32) dpi_y;
+    result.x = (F32) dpi;
+    result.y = (F32) dpi;
     return(result);
 }
 
@@ -484,8 +479,14 @@ gfx_push_clipboard(Arena *arena)
 }
 
 internal Vec2F32
-gfx_scale_from_monitor(Gfx_Monitor monitor)
+gfx_scale_from_window(Gfx_Context *gfx)
 {
-    Vec2F32 result = {0};
+    Vec2F32 result = {1, 1};
+    UINT dpi_for_window = GetDpiForWindow(gfx->hwnd);
+    if (dpi_for_window)
+    {
+        result.x = (F32)dpi_for_window / 96.0f;
+        result.y = (F32)dpi_for_window / 96.0f;
+    }
     return(result);
 }

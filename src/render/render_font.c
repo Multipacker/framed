@@ -432,6 +432,8 @@ render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 internal Render_Font *
 render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 {
+    Vec2F32 scale = gfx_scale_from_window(renderer->gfx);
+    font_key.font_size = (U32)(font_key.font_size * scale.y);
     assert(renderer);
     assert(font_key.font_size > 0);
     assert(font_key.path.size > 0);
