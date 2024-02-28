@@ -48,14 +48,6 @@ struct FramedUI_TabViewInfo
     Arena *arena;
 };
 
-typedef struct FramedUI_DragData FramedUI_DragData;
-struct FramedUI_DragData
-{
-    FramedUI_Tab   *tab;
-    FramedUI_Panel *hovered_panel;
-    Vec2F32 drag_origin;
-};
-
 typedef struct FramedUI_FreeTab FramedUI_FreeTab;
 struct FramedUI_FreeTab
 {
@@ -81,6 +73,15 @@ struct FramedUI_TabGroup
     FramedUI_Tab *first;
     FramedUI_Tab *last;
     U64 count;
+};
+
+typedef struct FramedUI_DragData FramedUI_DragData;
+struct FramedUI_DragData
+{
+    FramedUI_TabGroup tab_group;
+    FramedUI_Panel *hovered_panel;
+    Vec2F32 drag_origin;
+    Vec2F32 offset;
 };
 
 ////////////////////////////////
@@ -150,6 +151,7 @@ enum FramedUI_CommandKind
     FramedUI_CommandKind_CloseTab,
     FramedUI_CommandKind_SplitPanel,
     FramedUI_CommandKind_SplitPanelAndInsertTab,
+    FramedUI_CommandKind_SplitPanelAndInsertTabGroup,
     FramedUI_CommandKind_SetTabActive,
     FramedUI_CommandKind_ClosePanel,
     FramedUI_CommandKind_CloseWindow,
@@ -162,6 +164,7 @@ struct FramedUI_CommandParams
     FramedUI_Window *window;
     FramedUI_Panel *panel;
     FramedUI_Tab *tab;
+    FramedUI_TabGroup tab_group;
     Axis2 axis;
     Side side;
     B32 set_active;
@@ -306,7 +309,7 @@ internal Void framed_ui_command_push(FramedUI_CommandKind kind, FramedUI_Command
 ////////////////////////////////
 //~ hampus: Tab dragging
 
-internal Void framed_ui_drag_begin_reordering(FramedUI_Tab *tab);
+internal Void framed_ui_drag_begin_reordering(FramedUI_Tab *tab, B32 drag_whole_tab_group, Vec2F32 offset);
 internal Void framed_ui_wait_for_drag_threshold(Void);
 internal Void framed_ui_drag_release(Void);
 internal Void framed_ui_drag_end(Void);

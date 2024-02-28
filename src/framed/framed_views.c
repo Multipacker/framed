@@ -297,6 +297,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
                         ui_next_text_align(UI_TextAlign_Left);
                         ui_next_hover_cursor(Gfx_Cursor_Hand);
                         ui_next_child_layout_axis(Axis2_X);
+                        ui_next_corner_radius(0);
                         UI_Box *header_box = ui_box_make(UI_BoxFlag_DrawText |
                                                          UI_BoxFlag_Clickable |
                                                          UI_BoxFlag_HotAnimation |
@@ -603,7 +604,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
     }
     if (!memory_match(&old_settings, &framed_ui_state->settings, sizeof(FramedUI_Settings)))
     {
-        framed_save_current_settings_to_file();
+        framed_save_current_settings_to_file(framed_state->current_user_settings_file_path);
     }
 }
 

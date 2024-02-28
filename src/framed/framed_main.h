@@ -68,7 +68,8 @@ struct Framed_State
     Arena *perm_arena;
     ProfilingState *profiling_state;
     Str8 data_folder_path;
-    Str8 user_settings_file_path;
+    Str8 default_user_settings_file_path;
+    Str8 current_user_settings_file_path;
 };
 
 ////////////////////////////////
@@ -81,14 +82,14 @@ internal Void framed_parse_zones(Void);
 //~ hampus: Path helpers
 
 internal Str8 framed_get_data_folder_path(Void);
-internal Str8 framed_get_user_settings_file_path(Void);
+internal Str8 framed_get_default_user_settings_file_path(Void);
 
 ////////////////////////////////
 //~ hampus: User settings parsing
 
 internal Str8 framed_get_next_settings_word(Str8 string, U64 *bytes_parsed);
 internal Void framed_load_user_settings_from_memory(Str8 data_string);
-internal Void framed_save_current_settings_to_file(Void);
+internal Void framed_save_current_settings_to_file(Str8 path);
 
 ////////////////////////////////
 //~ hampus: Main

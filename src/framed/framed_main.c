@@ -317,18 +317,18 @@ framed_get_data_folder_path(Void)
 }
 
 internal Str8
-framed_get_user_settings_file_path(Void)
+framed_get_default_user_settings_file_path(Void)
 {
-    if (framed_state->user_settings_file_path.data == 0)
+    if (framed_state->default_user_settings_file_path.data == 0)
     {
         Arena_Temporary scratch = get_scratch(0, 0);
         Str8List user_settings_file_path = {0};
         str8_list_push(scratch.arena, &user_settings_file_path, framed_get_data_folder_path());
         str8_list_push(scratch.arena, &user_settings_file_path, str8_lit("default.framed_settings"));
-        framed_state->user_settings_file_path = str8_join(framed_state->perm_arena, &user_settings_file_path);
+        framed_state->default_user_settings_file_path = str8_join(framed_state->perm_arena, &user_settings_file_path);
         release_scratch(scratch);
     }
-    Str8 result = framed_state->user_settings_file_path;
+    Str8 result = framed_state->default_user_settings_file_path;
     return(result);
 }
 
@@ -458,60 +458,6 @@ internal Void
 framed_load_user_settings_from_memory(Str8 data_string)
 {
     log_info("Loading settings from file...");
-
-    // TODO(hampus): Find a good way to do serializing if the settings
-    // version is not up to date. If the settings version is not up to date,
-    // we should maybe first update it to the newest version, write to the file,
-    // and then call the serializing function again.
-    //
-    // To do this conversion from an older version to the newest, we need
-    // a good way to avoid an explosion of combinatorics, we can't write
-    // a conversion for each combination of version, as this would spiral
-    // out of control fast. We want to somehow instead keep in linear,
-    // so that we can go v1 -> v4, v1->v5, ... .
-    //
-    // We could keep a table which records every change, something like this:
-    //
-    // enum ChangeKind
-    // {
-    //   ChangeKind_Add,     // if adding a new setting
-    //   ChangeKind_Remove,  // if removing the setting entirely, without any replacement
-    //   ChangeKind_Replace, // if keeping the setting, but just changing its name or value type
-    // };
-    //
-    // struct VersionChange
-    // {
-    //   ChangeKind kind;
-    //   Str8 setting_name;
-    //   // Keep information about the setting value aswell. Type, value, ...
-    // };
-    //
-    // enum Version
-    // {
-    //   Version_1
-    //   Version_2
-    //   ...
-    //   Version_COUNT
-    // };
-    //
-    // struct VersionChangeGroup
-    // {
-    //   Version version;
-    //   U32 count;
-    //   VersionChangeEntry *entries;
-    // };
-    //
-    // struct VersionChangeTable
-    // {
-    //   VersionChangeGroup change_groups[Version_COUNT];
-    // };
-    //
-    // This will keep an array of all changes in from all version.
-    // To then go from v1 -> v5 at one go, we would have a function that
-    // iterates the chage_groups and calculate what the overral change would
-    // be and then apply that to v1. If the versions only differ by 1,
-    // we wouldn't need to do this. I will probably try to do something like
-    // this in the future.
 
     Arena_Temporary scratch = get_scratch(0, 0);
     //- hampus: Get the version number
@@ -672,7 +618,7 @@ SettingValKind_Color, \
 }
 
 internal Void
-framed_save_current_settings_to_file(Void)
+framed_save_current_settings_to_file(Str8 path)
 {
     // TODO(hampus): This overrides all settings. It should only override
     // the ones that have actually changed
@@ -689,7 +635,7 @@ framed_save_current_settings_to_file(Void)
         str8_list_pushf(scratch.arena, &settings_file_data, "%"PRISTR8" = ""0x%08x\n", str8_expand(framed_ui_string_color_table[i]), u32_from_rgba(framed_ui_state->settings.theme_colors[i]));
     }
     Str8 data = str8_join(scratch.arena, &settings_file_data);
-    os_file_write(framed_get_user_settings_file_path(), data, OS_FileMode_Replace);
+    os_file_write(path, data, OS_FileMode_Replace);
     release_scratch(scratch);
 }
 
@@ -761,8 +707,7 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabBarButtonsBackground, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
     Arena_Temporary scratch = get_scratch(0, 0);
-    Str8 default_settings_path = framed_get_user_settings_file_path();
-    Str8 custom_settings_path = {0};
+    Str8 settings_path = framed_get_default_user_settings_file_path();
     for (Str8Node *node = arguments.first; node != 0; node = node->next)
     {
         U64 equal_sign_index = 0;
@@ -775,35 +720,23 @@ os_main(Str8List arguments)
                 Str8 option_name = str8_prefix(node->string, equal_sign_index);
                 if (str8_equal(option_name, str8_lit("settings")))
                 {
-                    custom_settings_path = str8_substring(node->string, equal_sign_index+1, node->string.size);
+                    // TODO(hampus): Check that it actually is a valid settings file path.
+                    settings_path = str8_substring(node->string, equal_sign_index+1, node->string.size);
                 }
             }
         }
     }
+
+    framed_state->current_user_settings_file_path = settings_path;
+
     Str8 user_settings_data = {0};
-    B32 okay_custom_path = false;
-    if (custom_settings_path.size != 0)
-    {
-        if (!os_file_read(scratch.arena, custom_settings_path, &user_settings_data))
-        {
-            log_warning("Tried to load settings from '%"PRISTR8"', but it was not found", str8_expand(custom_settings_path));
-        }
-    }
-
-    if (!user_settings_data.size)
-    {
-        os_file_read(scratch.arena, default_settings_path, &user_settings_data);
-    }
-
-    if (user_settings_data.size)
+    if (os_file_read(scratch.arena, settings_path, &user_settings_data))
     {
         framed_load_user_settings_from_memory(user_settings_data);
     }
     else
     {
-        // NOTE(hampus): We didn't have any user settings file. Create one and
-        // use the default settings.
-        framed_save_current_settings_to_file();
+        framed_save_current_settings_to_file(settings_path);
     }
 
     release_scratch(scratch);

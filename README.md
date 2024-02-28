@@ -1,6 +1,6 @@
 # Framed
 
-The Framed profiler is a hobby project that measures time taken by various marked code blocks, 
+The Framed profiler is a hobby project that measures time taken by various marked code blocks,
 referred to as "zones", across sections of your code and displays them visually. It currently only has direct
 support for C and C++.  It consists of two parts: a small [stb]-style single
 header file library for capturing zones, and an graphical application for displaying

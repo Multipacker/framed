@@ -12,3 +12,4 @@ framed_log.txt
 /src/render/d3d11/d3d11_vshader.h
 /examples/build
 **/*.embed
+/framed.framed_settings

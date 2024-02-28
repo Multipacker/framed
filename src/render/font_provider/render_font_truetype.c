@@ -220,9 +220,9 @@ render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_Fo
         {
             int ascent, descent, line_gap;
             stbtt_GetFontVMetrics(&stb_font, &ascent, &descent, &line_gap);
-            font->max_ascent  = f32_floor((F32) ascent  * scale);
-            font->max_descent = f32_floor((F32) descent * scale);
-            font->line_height = f32_floor(font->max_ascent - font->max_descent + (F32) line_gap);
+            font->max_ascent  = f32_round((F32) ascent  * scale);
+            font->max_descent = f32_round((F32) descent * scale);
+            font->line_height = f32_round(font->max_ascent - font->max_descent + (F32) line_gap);
         }
 
         U32 glyph_count        = 0;
