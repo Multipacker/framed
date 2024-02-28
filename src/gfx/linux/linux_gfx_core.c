@@ -57,6 +57,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
         if (gfx.window)
         {
             gfx.gl_context = SDL_GL_CreateContext(gfx.window);
+            SDL_GL_MakeCurrent(gfx.window, gfx.gl_context);
 
 #define X(type, name) name = (type) SDL_GL_GetProcAddress(#name); assert(name);
             GL_LINUX_FUNCTION(X)
