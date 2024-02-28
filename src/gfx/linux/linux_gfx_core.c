@@ -343,7 +343,7 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
 }
 
 internal Vec2F32
-gfx_scale_from_monitor(Gfx_Monitor monitor)
+gfx_scale_from_window(Gfx_Context *gfx)
 {
     Vec2F32 result = v2f32(1, 1);
     return(result);
