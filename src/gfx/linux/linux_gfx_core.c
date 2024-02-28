@@ -29,6 +29,15 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
     if (SDL_Init(SDL_INIT_VIDEO) == 0)
     {
+        gfx.cursors[Gfx_Cursor_Arrow]    = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+        gfx.cursors[Gfx_Cursor_Hand]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+        gfx.cursors[Gfx_Cursor_Beam]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
+        gfx.cursors[Gfx_Cursor_SizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+        gfx.cursors[Gfx_Cursor_SizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+        gfx.cursors[Gfx_Cursor_SizeWE]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+        gfx.cursors[Gfx_Cursor_SizeNS]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+        gfx.cursors[Gfx_Cursor_SizeAll]  = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+
         SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_BLUE_SIZE, 8);
@@ -313,7 +322,8 @@ gfx_get_dpi(Gfx_Context *ctx)
 internal Void
 gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 {
-    // TODO(simon): SDL doesn't seem to have support for this for some reason?
+    SDL_SetCursor(ctx->cursors[cursor]);
+    SDL_ShowCursor(SDL_TRUE);
 }
 
 internal Void
