@@ -42,7 +42,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
             cstr_title,
             (int) x, (int) y,
             (int) width, (int) height,
-            SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE
+            SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
         );
 
         if (gfx.window)
@@ -345,7 +345,11 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
 internal Vec2F32
 gfx_scale_from_window(Gfx_Context *gfx)
 {
-    Vec2F32 result = v2f32(1, 1);
+    Vec2F32 dpi = {0};
+    int display_index = SDL_GetWindowDisplayIndex(gfx->window);
+    SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
+
+    Vec2F32 result = v2f32(dpi.x / 96.0f, dpi.y / 96.0f);
     return(result);
 }
 
