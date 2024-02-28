@@ -1627,11 +1627,6 @@ framed_ui_window_update(FramedUI_Window *window)
         }
         else
         {
-            Vec2U32 window_dim = gfx_get_window_client_area(ui_renderer()->gfx);
-            window->rect.min.v[Axis2_X] = f32_clamp(0, window->rect.min.v[Axis2_X], (F32) window_dim.x);
-            window->rect.min.v[Axis2_Y] = f32_clamp(0, window->rect.min.v[Axis2_Y], (F32) window_dim.y);
-            // window->rect.max.v[Axis2_X] = f32_clamp(window->rect.min.v[Axis2_X]+ui_top_font_line_height(), window->rect.max.v[Axis2_X], (F32) window_dim.x);
-            // window->rect.max.v[Axis2_Y] = f32_clamp(window->rect.min.v[Axis2_Y]+ui_top_font_line_height(), window->rect.max.v[Axis2_Y], (F32) window_dim.y);
             F32 resizer_size_in_em = 0.4f;
             // NOTE(hampus): Take the resizers into account and offset it by their size
             RectF32 rect = window->rect;
