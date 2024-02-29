@@ -149,9 +149,6 @@ struct Gfx_Monitor
     U64 u64[1];
 };
 
-internal B32 gfx_key_pressed(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
-internal B32 gfx_key_released(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
-
 internal Gfx_Context   gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title);
 internal Void          gfx_show_window(Gfx_Context *gfx);
 internal Gfx_EventList gfx_get_events(Arena *arena, Gfx_Context *gfx);
