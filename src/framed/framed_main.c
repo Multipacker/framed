@@ -743,11 +743,11 @@ os_main(Str8List arguments)
 
     UI_Context *ui = ui_init();
 
-    framed_ui_state->tab_view_function_table[FramedUI_TabView_Counter]  = framed_ui_tab_view_counters;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Zones]    = framed_ui_tab_view_zones;
     framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
     framed_ui_state->tab_view_function_table[FramedUI_TabView_About]    = framed_ui_tab_view_about;
 
-    framed_ui_state->tab_view_string_table[FramedUI_TabView_Counter]  = str8_lit("Counter");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Zones]    = str8_lit("Zones");
     framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
     framed_ui_state->tab_view_string_table[FramedUI_TabView_About]    = str8_lit("About");
 
@@ -766,7 +766,7 @@ os_main(Str8List arguments)
     framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
 #endif
 
-    framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Counter]);
+    framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Zones]);
 
     framed_ui_state->master_window = master_window;
     framed_ui_state->next_focused_panel = master_window->root_panel;

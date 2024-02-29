@@ -249,7 +249,7 @@ struct FramedUI_Settings
 typedef enum FramedUI_TabView FramedUI_TabView;
 enum FramedUI_TabView
 {
-    FramedUI_TabView_Counter,
+    FramedUI_TabView_Zones,
     FramedUI_TabView_Settings,
     FramedUI_TabView_About,
     FramedUI_TabView_COUNT,

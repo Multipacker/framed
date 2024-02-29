@@ -1,10 +1,10 @@
 ////////////////////////////////
 //~ hampus: Counter tab view
 
-#define FRAMED_COUNTERS_COLUMN_VIEW(name) Void name(Void *values_array, U64 values_count, B32 profiling_per_frame, U64 tsc_total)
-typedef FRAMED_COUNTERS_COLUMN_VIEW(FramedCountersColumnView);
+#define FRAMED_ZONE_STAT_COLUMN(name) Void name(Void *values_array, U64 values_count, B32 profiling_per_frame, U64 tsc_total)
+typedef FRAMED_ZONE_STAT_COLUMN(FramedCountersColumnView);
 
-FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_name)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_name)
 {
     Str8 *names = (Str8 *)values_array;
     for (U64 i = 0; i < values_count; ++i)
@@ -13,7 +13,7 @@ FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_name)
     }
 }
 
-FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_cycles)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
 {
     U64 *cycle_values = (U64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
@@ -35,7 +35,7 @@ FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_cycles)
     }
 }
 
-FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_cycles_with_children)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_with_children)
 {
     U64 *cycle_values = (U64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
@@ -57,7 +57,7 @@ FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_cycles_with_children)
     }
 }
 
-FRAMED_COUNTERS_COLUMN_VIEW(framed_counter_column_hit_count)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_hit_count)
 {
     U64 *hit_counts = (U64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
@@ -107,7 +107,7 @@ framed_zone_block_compare_hit_count(const Void *a, const Void *b)
     return(zone_block0->hit_count < zone_block1->hit_count);
 }
 
-FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
+FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
     B32 data_initialized = view_info->data != 0;
     typedef struct TabViewData TabViewData;
@@ -263,10 +263,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_counters)
 
     FramedCountersColumnView *column_views[] =
     {
-        framed_counter_column_name,
-        framed_counter_column_cycles,
-        framed_counter_column_cycles_with_children,
-        framed_counter_column_hit_count,
+        framed_zone_column_name,
+        framed_zone_column_cycles,
+        framed_zone_column_cycles_with_children,
+        framed_zone_column_hit_count,
     };
 
     F32 new_column_pcts[4] = {0};
