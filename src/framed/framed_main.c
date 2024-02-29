@@ -117,6 +117,8 @@ framed_parse_zones(Void)
             profiling_state->bytes_from_client += buffer_size;
             profiling_state->parsed_bytes += buffer_size;
 
+            profiling_state->time_since_last_recieve = 0;
+
             // NOTE(hampus): First two bytes are the size of the packet
             U8 *buffer_pointer = buffer + sizeof(U16);
             U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
@@ -974,6 +976,17 @@ os_main(Str8List arguments)
             profiling_state->parsed_time_accumulator = 0;
 
             profiling_state->seconds_accumulator = 0;
+        }
+
+        // NOTE(hampus): This will only be accurate if Framed runs at a
+        // high frame rate.
+        if (net_socket_connection_is_alive(profiling_state->client_socket))
+        {
+            profiling_state->time_since_last_recieve += dt;
+            if (profiling_state->time_since_last_recieve >= 2)
+            {
+                memory_zero_struct(&profiling_state->client_socket);
+            }
         }
 
         start_counter = end_counter;

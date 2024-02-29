@@ -448,7 +448,7 @@ render_backend_end(Render_Context *renderer)
             {
                 Mat4F32 transform = m4f32_ortho(0, (F32) client_area.width, (F32) client_area.height, 0, -1.0f, 1.0f);
 
-                D3D11_MAPPED_SUBRESOURCE mapped;
+                D3D11_MAPPED_SUBRESOURCE mapped = {0};;
                 ID3D11DeviceContext_Map(backend->context, (ID3D11Resource*) backend->uniform_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
                 memory_copy_typed((U8 *) mapped.pData, &transform.m, sizeof(transform));
                 ID3D11DeviceContext_Unmap(backend->context, (ID3D11Resource*) backend->uniform_buffer, 0);
@@ -456,7 +456,7 @@ render_backend_end(Render_Context *renderer)
 
             // NOTE(hampus): Setup vertex buffer
             {
-                D3D11_MAPPED_SUBRESOURCE mapped;
+                D3D11_MAPPED_SUBRESOURCE mapped = {0};;
                 ID3D11DeviceContext_Map(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
                 memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(Render_RectInstance) * batch->instance_count);
                 ID3D11DeviceContext_Unmap(backend->context, (ID3D11Resource*) backend->vertex_buffer, 0);

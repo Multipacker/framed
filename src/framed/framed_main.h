@@ -60,6 +60,8 @@ struct ProfilingState
     F64 parsed_time_accumulator;
 
     U64 bytes_from_client;
+    
+    F64 time_since_last_recieve;
 };
 
 typedef struct Framed_State Framed_State;
