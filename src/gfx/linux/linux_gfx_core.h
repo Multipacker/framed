@@ -1,14 +1,23 @@
 #ifndef LINUX_GFX_CORE_H
 #define LINUX_GFX_CORE_H
 
-#include <SDL2/SDL.h>
+#include "sdl/sdl_gfx_core.h"
+#include "wayland/wayland_gfx_core.h"
+
+typedef enum Gfx_Linux_ContextKind Gfx_Linux_ContextKind;
+enum Gfx_Linux_ContextKind
+{
+    Gfx_Linux_ContextKind_Wayland,
+    Gfx_Linux_ContextKind_SDL,
+};
 
 struct Gfx_Context
 {
-    B32 is_fullscreen;
-    SDL_Window *window;
-    SDL_GLContext gl_context;
-    SDL_Cursor *cursors[Gfx_Cursor_COUNT];
+    Gfx_Linux_ContextKind kind;
+    union {
+        Gfx_Wayland_Context wayland;
+        Gfx_SDL_Context     sdl;
+    };
 };
 
 #endif // LINUX_GFX_CORE_H
