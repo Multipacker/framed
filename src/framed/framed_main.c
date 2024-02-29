@@ -28,7 +28,6 @@
 #include "framed/framed_ui.h"
 #include "framed/framed_main.h"
 
-
 global U64 framed_frame_counter;
 Framed_State *framed_state;
 
@@ -162,6 +161,7 @@ framed_parse_zones(Void)
                         }
                         else
                         {
+                            profiling_state->profile_begin_tsc = packet->header.tsc;
                             profiling_state->tsc_frequency = packet->tsc_frequency;
                             entry_size = sizeof(Packet);
                         }
@@ -179,31 +179,35 @@ framed_parse_zones(Void)
 
                         //- hampus: Save the last frame's data and produce a fresh captured frame
 
-                        profiling_state->frame_index++;
                         Packet *packet = (Packet *) header;
 
                         profiling_state->frame_end_tsc = header->tsc;
 
                         CapturedFrame *frame = &profiling_state->latest_captured_frame;
-                        frame->total_tsc = profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
                         // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
                         // But this is simple and easy and works for now.
-                        memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
-
-                        //- hampus: Clear the new zone stats and begin a new frame
-
-                        // NOTE(hampus): Keep the name so the display gets less messy
-                        // from counters jumping everywhere
-                        for (U64 i = 0; i < array_count(profiling_state->zone_blocks); ++i)
+                        if (profiling_state->frame_begin_tsc)
                         {
-                            ZoneBlock *zone_block = profiling_state->zone_blocks + i;
-                            zone_block->tsc_elapsed = 0;
-                            zone_block->tsc_elapsed_root = 0;
-                            zone_block->tsc_elapsed_children = 0;
-                            zone_block->hit_count = 0;
+                            profiling_state->frame_tsc += profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
+                        }
+
+                        if ((profiling_state->frame_index_accumulator % profiling_state->sample_size== 0 ||
+                             profiling_state->sample_size != profiling_state->next_sample_size) &&
+                            profiling_state->frame_index_accumulator != 0)
+                        {
+                            frame->num_frames = profiling_state->frame_index_accumulator;
+                            memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
+                            frame->total_tsc = profiling_state->frame_tsc;
+                            memory_zero_array(profiling_state->zone_blocks);
+                            profiling_state->frame_tsc = 0;
+                            profiling_state->frame_index_accumulator = 0;
+                            profiling_state->sample_size = profiling_state->next_sample_size;
                         }
 
                         profiling_state->frame_begin_tsc = header->tsc;
+
+                        profiling_state->frame_index++;
+                        profiling_state->frame_index_accumulator++;
 
                         entry_size = sizeof(Packet);
                     } break;
@@ -246,6 +250,8 @@ framed_parse_zones(Void)
                             opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
 
                             entry_size = sizeof(Packet) + packet->name_length;
+
+                            profiling_state->profile_end_tsc = packet->header.tsc;
                         }
                     } break;
                     case Framed_PacketKind_ZoneEnd:
@@ -273,6 +279,8 @@ framed_parse_zones(Void)
                         profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
 
                         entry_size = sizeof(Packet);
+
+                        profiling_state->profile_end_tsc = packet->header.tsc;
                     } break;
                     default:
                     {
@@ -673,6 +681,7 @@ os_main(Str8List arguments)
     ProfilingState *profiling_state = framed_state->profiling_state;
     profiling_state->zone_arena = arena_create("ZoneArena");
     profiling_state->zone_stack_size = 1;
+    profiling_state->sample_size = profiling_state->next_sample_size = 1;
 
     //- hampus: Allocate listen socket
 
@@ -965,9 +974,9 @@ os_main(Str8List arguments)
         U64 end_counter = os_now_nanoseconds();
         dt = (F64) (end_counter - start_counter) / (F64) billion(1);
 
-        profiling_state->seconds_accumulator += dt;
+        profiling_state->stats_seconds_accumulator += dt;
 
-        if (profiling_state->seconds_accumulator >= 0.5f)
+        if (profiling_state->stats_seconds_accumulator >= 0.5f)
         {
             profiling_state->bandwidth_average_rate = (U64)((F64) profiling_state->bytes_from_client / 0.5);
             profiling_state->bytes_from_client = 0;
@@ -976,7 +985,7 @@ os_main(Str8List arguments)
             profiling_state->parsed_bytes = 0;
             profiling_state->parsed_time_accumulator = 0;
 
-            profiling_state->seconds_accumulator = 0;
+            profiling_state->stats_seconds_accumulator = 0;
         }
 
         // NOTE(hampus): This will only be accurate if Framed runs at a

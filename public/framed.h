@@ -520,6 +520,7 @@ framed_init_(Framed_B32 wait_for_connection)
     Framed_U64 entry_size = sizeof(Packet);
 
     Packet *packet = (Packet *)(framed->buffer + framed->buffer_pos);
+    packet->header.tsc = framed__rdtsc();
     packet->header.kind = Framed_PacketKind_Init;
     packet->tsc_frequency = framed__guess_tsc_frequency(1000);
     packet->version = 0;

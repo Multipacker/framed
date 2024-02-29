@@ -1,7 +1,7 @@
 ////////////////////////////////
 //~ hampus: Counter tab view
 
-#define FRAMED_ZONE_STAT_COLUMN(name) Void name(Void *values_array, U64 values_count, B32 profiling_per_frame, U64 tsc_total)
+#define FRAMED_ZONE_STAT_COLUMN(name) Void name(Void *values_array, U64 values_count, B32 profiling_per_frame, F64 tsc_total)
 typedef FRAMED_ZONE_STAT_COLUMN(FramedCountersColumnView);
 
 FRAMED_ZONE_STAT_COLUMN(framed_zone_column_name)
@@ -15,7 +15,7 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_name)
 
 FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
 {
-    U64 *cycle_values = (U64 *)values_array;
+    F64 *cycle_values = (F64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
         ui_width(ui_pct(1, 1))
     {
@@ -24,11 +24,11 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
             Str8 string = {0};
             if (profiling_per_frame)
             {
-                string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", cycle_values[i],  ((F32)cycle_values[i] / (F32)tsc_total) * 100.0f);
+                string = str8_pushf(ui_frame_arena(), "%.2f (%5.2f%%)", cycle_values[i],  (cycle_values[i] / tsc_total) * 100.0f);
             }
             else
             {
-                string = str8_pushf(ui_frame_arena(), "%"PRIU64, cycle_values[i]);
+                string = str8_pushf(ui_frame_arena(), "%.2f", cycle_values[i]);
             }
             ui_text(string);
         }
@@ -37,7 +37,7 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
 
 FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_with_children)
 {
-    U64 *cycle_values = (U64 *)values_array;
+    F64 *cycle_values = (F64*)values_array;
     ui_text_align(UI_TextAlign_Right)
         ui_width(ui_pct(1, 1))
     {
@@ -46,11 +46,11 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_with_children)
             Str8 string = {0};
             if (profiling_per_frame)
             {
-                string = str8_pushf(ui_frame_arena(), "%"PRIU64" (%5.2f%%)", cycle_values[i],  ((F32)cycle_values[i] / (F32)tsc_total) * 100.0f);
+                string = str8_pushf(ui_frame_arena(), "%.2f (%5.2f%%)", cycle_values[i],  (cycle_values[i] / tsc_total) * 100.0f);
             }
             else
             {
-                string = str8_pushf(ui_frame_arena(), "%"PRIU64, cycle_values[i]);
+                string = str8_pushf(ui_frame_arena(), "%.2f", cycle_values[i]);
             }
             ui_text(string);
         }
@@ -59,13 +59,13 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_with_children)
 
 FRAMED_ZONE_STAT_COLUMN(framed_zone_column_hit_count)
 {
-    U64 *hit_counts = (U64 *)values_array;
+    F64 *hit_counts = (F64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
         ui_width(ui_pct(1, 1))
     {
         for (U64 i = 0; i < values_count; ++i)
         {
-            ui_textf("%"PRIU64, hit_counts[i]);
+            ui_textf("%.2f", hit_counts[i]);
         }
     }
 }
@@ -107,6 +107,15 @@ framed_zone_block_compare_hit_count(const Void *a, const Void *b)
     return(zone_block0->hit_count < zone_block1->hit_count);
 }
 
+typedef enum DisplayFlag DisplayFlag;
+enum DisplayFlag
+{
+    DisplayFlag_Accumulative = (1 << 0),
+    DisplayFlag_Cycles  = (1 << 1),
+    DisplayFlag_SortAscending  = (1 << 2),
+    DisplayFlag_PerHit  = (1 << 3),
+};
+
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
     B32 data_initialized = view_info->data != 0;
@@ -114,11 +123,19 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     struct TabViewData
     {
         U64 column_sort_index;
-        B32 column_sort_ascending;
         F32 column_sizes_in_pct[4];
+
+        UI_TextEditState capture_frequency_text_edit_state;
+        U8 *capture_frequency_text_buffer;
+        U64 capture_frequency_text_buffer_size;
+        U64 capture_frequency_string_length;
+
+        DisplayFlag display_flags;
     };
 
     TabViewData *data = framed_ui_get_view_data(view_info, TabViewData);
+
+    ProfilingState *profiling_state = framed_state->profiling_state;
 
     if (!data_initialized)
     {
@@ -126,9 +143,17 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         data->column_sizes_in_pct[1] = 0.25f;
         data->column_sizes_in_pct[2] = 0.25f;
         data->column_sizes_in_pct[3] = 0.25f;
-    }
 
-    ProfilingState *profiling_state = framed_state->profiling_state;
+        data->capture_frequency_text_buffer_size = 3;
+        data->capture_frequency_text_buffer = push_array(view_info->arena, U8, data->capture_frequency_text_buffer_size);
+        arena_scratch(0, 0)
+        {
+            Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU32, profiling_state->sample_size);
+            U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->capture_frequency_text_buffer_size);
+            memory_copy_typed(data->capture_frequency_text_buffer, text_buffer_initial_string.data, initial_string_length);
+            data->capture_frequency_string_length = initial_string_length;
+        }
+    }
 
     Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -138,24 +163,26 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     struct ZoneValues
     {
         Str8 *names;
-        U64 *tsc_elapsed_without_children;
-        U64 *tsc_elapsed_with_children;
-        U64 *hit_count;
+        F64 *tsc_elapsed_without_children;
+        F64 *tsc_elapsed_with_children;
+        F64 *hit_count;
     };
 
     ZoneValues *zone_values = push_struct(scratch.arena, ZoneValues);
 
     zone_values->names = push_array(scratch.arena, Str8, MAX_NUMBER_OF_UNIQUE_ZONES);
-    zone_values->tsc_elapsed_without_children = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
-    zone_values->tsc_elapsed_with_children = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
-    zone_values->hit_count = push_array(scratch.arena, U64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_without_children = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_with_children = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->hit_count = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
 
     //- hampus: Parse zone blocks into a nicer format
 
     ZoneBlock *zone_blocks = 0;
     U64 zone_blocks_count = 0;
-    U64 tsc_total = 0;
+    F64 tsc_total = 0;
     B32 profiling_per_frame = profiling_state->frame_begin_tsc != 0;;
+
+    CapturedFrame *frame = &profiling_state->latest_captured_frame;
 
     debug_block("Count up zone blocks")
     {
@@ -164,14 +191,14 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         if (profiling_per_frame)
         {
             // NOTE(hampus): We have got a full frame, take the values from there
-            CapturedFrame *frame = &profiling_state->latest_captured_frame;
             zone_block_array = frame->zone_blocks;
-            tsc_total = frame->total_tsc;
+            tsc_total = (F64)frame->total_tsc;
         }
         else
         {
             // NOTE(hampus): If we haven't got any frame yet, just take the current values
             zone_block_array = profiling_state->zone_blocks;
+            tsc_total = (F64)(profiling_state->profile_begin_tsc - profiling_state->profile_end_tsc );
         }
 
         zone_blocks = push_array(scratch.arena, ZoneBlock, MAX_NUMBER_OF_UNIQUE_ZONES);
@@ -218,9 +245,20 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         }
     }
 
-    debug_block("Parse zone blocks into SOA")
+    F64 ms_total = ((F64)tsc_total/(F64)profiling_state->tsc_frequency) * 1000.0;
+
+    F64 total_time = tsc_total;
+    Str8 column_names[] =
     {
-        if (data->column_sort_ascending)
+        str8_lit("Name"),
+        str8_lit("Time (cycles)"),
+        str8_lit("Time (cycles) w/ children"),
+        str8_lit("Hit count"),
+    };
+
+    debug_block("Display view values transformation")
+    {
+        if (data->display_flags & DisplayFlag_SortAscending)
         {
             for (U64 i = 0; i < zone_blocks_count; ++i)
             {
@@ -230,9 +268,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 U64 tsc_with_children = zone_block->tsc_elapsed_root;
 
                 zone_values->names[i] = zone_block->name;
-                zone_values->tsc_elapsed_without_children[i] = tsc_without_children;
-                zone_values->tsc_elapsed_with_children[i] = tsc_with_children;
-                zone_values->hit_count[i] = zone_block->hit_count;
+                zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;
+                zone_values->tsc_elapsed_with_children[i] = (F64)tsc_with_children;
+                zone_values->hit_count[i] = (F64)zone_block->hit_count;
             }
         }
         else
@@ -245,21 +283,52 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 U64 tsc_with_children = zone_block->tsc_elapsed_root;
 
                 zone_values->names[i] = zone_block->name;
-                zone_values->tsc_elapsed_without_children[i] = tsc_without_children;
-                zone_values->tsc_elapsed_with_children[i] = tsc_with_children;
-                zone_values->hit_count[i] = zone_block->hit_count;
+                zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;
+                zone_values->tsc_elapsed_with_children[i] = (F64)tsc_with_children;
+                zone_values->hit_count[i] = (F64)zone_block->hit_count;
+            }
+        }
+
+        if (!(data->display_flags & DisplayFlag_Cycles))
+        {
+            for (U64 i = 0; i < zone_blocks_count; ++i)
+            {
+                ZoneBlock *zone_block = zone_blocks + i;
+
+                zone_values->tsc_elapsed_without_children[i] = (zone_values->tsc_elapsed_without_children[i] / tsc_total) * ms_total;
+                zone_values->tsc_elapsed_with_children[i] =  (zone_values->tsc_elapsed_with_children[i] / tsc_total) * ms_total;
+            }
+            column_names[1] = str8_lit("Time (ms)");
+            column_names[2] = str8_lit("Time (ms) w/ children");
+
+            total_time = ms_total;
+        }
+
+        if (!(data->display_flags & DisplayFlag_Accumulative) && profiling_per_frame)
+        {
+            for (U64 i = 0; i < zone_blocks_count; ++i)
+            {
+                ZoneBlock *zone_block = zone_blocks + i;
+
+                zone_values->tsc_elapsed_without_children[i] /= (F64)frame->num_frames;
+                zone_values->tsc_elapsed_with_children[i] /= (F64)frame->num_frames;
+                zone_values->hit_count[i] /= (F64)frame->num_frames;
+            }
+            total_time /= frame->num_frames;
+        }
+
+        if ((data->display_flags & DisplayFlag_PerHit))
+        {
+            for (U64 i = 0; i < zone_blocks_count; ++i)
+            {
+                ZoneBlock *zone_block = zone_blocks + i;
+
+                zone_values->tsc_elapsed_without_children[i] /= zone_values->hit_count[i];
+                zone_values->tsc_elapsed_with_children[i] /= zone_values->hit_count[i];
             }
         }
     }
     //- hampus: Display zone values
-
-    Str8 column_names[] =
-    {
-        str8_lit("Name"),
-        str8_lit("Cycles"),
-        str8_lit("Cycles w/ children"),
-        str8_lit("Hit count"),
-    };
 
     FramedCountersColumnView *column_views[] =
     {
@@ -271,8 +340,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     F32 new_column_pcts[4] = {0};
     memory_copy_array(new_column_pcts, data->column_sizes_in_pct);
-
-    ui_spacer(ui_em(0.3f, 1));
 
     ui_next_width(ui_pct(1, 1.0f));
     ui_next_height(ui_pct(1, 1.0f));
@@ -311,7 +378,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                             ui_parent(header_box)
                             {
                                 ui_next_text_align(UI_TextAlign_Right);
-                                ui_next_icon(data->column_sort_ascending ? RENDER_ICON_UP : RENDER_ICON_DOWN);
+                                ui_next_icon((data->display_flags & DisplayFlag_SortAscending) ? RENDER_ICON_UP : RENDER_ICON_DOWN);
                                 ui_next_height(ui_pct(1, 1));
                                 ui_next_width(ui_pct(1, 0));
                                 ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
@@ -323,7 +390,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                         {
                             if (data->column_sort_index == i)
                             {
-                                data->column_sort_ascending ^= 1;
+                                data->display_flags ^= DisplayFlag_SortAscending;
                             }
                             data->column_sort_index = i;
                         }
@@ -339,7 +406,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                     Void *values = (Void *)((U64 *)zone_values)[i];
 
-                    column_views[i](values, zone_blocks_count, profiling_per_frame, tsc_total);
+                    column_views[i](values, zone_blocks_count, profiling_per_frame, total_time);
                 }
 
 
@@ -387,6 +454,78 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
         ui_column()
         {
+            //- hampus: Display view controls
+
+            ui_text_padding(Axis2_X, 0)
+            {
+                if (profiling_per_frame)
+                {
+                    ui_row()
+                    {
+                        ui_spacer(ui_em(0.5f, 1));
+                        ui_text(str8_lit("Sample size (frames):"));
+                        ui_spacer(ui_em(0.5f, 1));
+                        ui_next_width(ui_em(3, 1));
+                        UI_Comm comm = ui_line_edit(&data->capture_frequency_text_edit_state, data->capture_frequency_text_buffer, data->capture_frequency_text_buffer_size, &data->capture_frequency_string_length, str8_lit("CaptureFrequencyLineEdit"));
+                        if (!ui_box_is_focused(comm.box))
+                        {
+                            U32 u32 = 0;
+                            u32_from_str8(str8(data->capture_frequency_text_buffer, data->capture_frequency_string_length), &u32);
+                            profiling_state->next_sample_size = u32;
+                            Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, profiling_state->next_sample_size);
+                            data->capture_frequency_string_length = u64_min(text_buffer_str8.size, data->capture_frequency_text_buffer_size);
+                            memory_copy_typed(data->capture_frequency_text_buffer, text_buffer_str8.data, data->capture_frequency_string_length);
+                        }
+                    }
+
+                    ui_spacer(ui_em(0.3f, 1));
+
+                    ui_next_width(ui_em(10, 1));
+                    ui_row()
+                    {
+                        ui_spacer(ui_em(0.5f, 1));
+                        ui_text(str8_lit("Show accumulative:"));
+                        ui_spacer(ui_fill());
+                        B32 pressed = ui_check2(data->display_flags & DisplayFlag_Accumulative, str8_lit("ShowAccumulativeCheck")).pressed;
+                        if (pressed)
+                        {
+                            data->display_flags ^= DisplayFlag_Accumulative;
+                        }
+                    }
+
+                    ui_spacer(ui_em(0.3f, 1));
+                }
+                ui_next_width(ui_em(10, 1));
+                ui_row()
+                {
+                    ui_spacer(ui_em(0.5f, 1));
+                    ui_text(str8_lit("Show cycles:"));
+                    ui_spacer(ui_fill());
+                    B32 pressed = ui_check2(data->display_flags & DisplayFlag_Cycles, str8_lit("ShowCyclesCheck")).pressed;
+                    if (pressed)
+                    {
+                        data->display_flags ^= DisplayFlag_Cycles;
+                    }
+                }
+
+                ui_spacer(ui_em(0.3f, 1));
+
+                ui_next_width(ui_em(10, 1));
+                ui_row()
+                {
+                    ui_spacer(ui_em(0.5f, 1));
+                    ui_text(str8_lit("Show per hit:"));
+                    ui_spacer(ui_fill());
+                    B32 pressed = ui_check2(data->display_flags & DisplayFlag_PerHit, str8_lit("ShowPerHitCheck")).pressed;
+                    if (pressed)
+                    {
+                        data->display_flags ^= DisplayFlag_PerHit;
+                    }
+                }
+
+                ui_spacer(ui_em(0.3f, 1));
+            }
+
             //- hampus: Misc profiling stats
 
             ui_spacer(ui_em(0.3f, 1));
@@ -396,8 +535,15 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             if (profiling_per_frame)
             {
                 ui_spacer(ui_em(0.3f, 1));
-                F32 ms = ((F32)tsc_total/(F32)profiling_state->tsc_frequency) * 1000.0f;
-                ui_textf("Total cycles for frame: %"PRIU64" (%.2fms)", tsc_total, ms);
+                if (data->display_flags & DisplayFlag_Cycles)
+                {
+                    ui_textf("Total time: %.2f cycles", total_time);
+                }
+                else
+                {
+                    ui_textf("Total time: %.2f ms", total_time);
+                }
+
                 ui_spacer(ui_em(0.3f, 1));
                 ui_textf("Frames captured: %"PRIU64, profiling_state->frame_index-1);
             }

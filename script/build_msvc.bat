@@ -77,10 +77,10 @@ if %build_mode% == "examples" (
 
 ) else (
 
+    if exist build\*.pdb del build\*.pdb
+
     if not exist build mkdir build
     pushd build
-
-    if exist *.pdb del *.pdb
 
 	echo ---- Building meta program ----
     cl -nologo -FC -O2 -I../src/ -I../vendor/ ../src/meta/meta.c -Fe:meta -link user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib

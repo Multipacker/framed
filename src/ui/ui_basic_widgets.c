@@ -119,6 +119,38 @@ ui_check(B32 *value, Str8 string)
 }
 
 internal UI_Comm
+ui_check2(B32 value, Str8 string)
+{
+    UI_Comm comm = {0};
+
+    ui_next_width(ui_em(1.0f, 1));
+    ui_next_height(ui_em(1.0f, 1));
+    ui_next_hover_cursor(Gfx_Cursor_Hand);
+    UI_Box *container = ui_box_make(
+                                    UI_BoxFlag_DrawBackground |
+                                    UI_BoxFlag_Clickable |
+                                    UI_BoxFlag_HotAnimation |
+                                    UI_BoxFlag_ActiveAnimation |
+                                    UI_BoxFlag_DrawBorder,
+                                    string
+                                    );
+    comm = ui_comm_from_box(container);
+
+    ui_parent(container)
+    {
+        if (value)
+        {
+            ui_next_icon(RENDER_ICON_CHECK);
+        }
+        ui_next_width(ui_pct(1.0f, 1));
+        ui_next_height(ui_pct(1.0f, 1));
+        UI_Box *check = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+    }
+
+    return(comm);
+}
+
+internal UI_Comm
 ui_checkf(B32 *value, CStr fmt, ...)
 {
     UI_Comm comm = {0};
