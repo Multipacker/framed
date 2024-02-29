@@ -80,6 +80,7 @@ framed_parse_zones(Void)
         if (profiling_state->found_connection)
         {
             // NOTE(hampus): The client disconnected
+            net_socket_free(profiling_state->client_socket);
             log_info("Disconnected from client");
             profiling_state->found_connection = false;
         }
@@ -985,6 +986,7 @@ os_main(Str8List arguments)
             profiling_state->time_since_last_recieve += dt;
             if (profiling_state->time_since_last_recieve >= 2)
             {
+                net_socket_free(profiling_state->client_socket);
                 memory_zero_struct(&profiling_state->client_socket);
             }
         }
