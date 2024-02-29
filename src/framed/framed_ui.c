@@ -1253,7 +1253,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             }
                         }
 
-                        tab_overflow = tabs_container->scroll.x != 0 || (last_box->rel_pos.x+last_box->fixed_size.x) > tabs_container->fixed_size.x;
+                        tab_overflow = root->tab_group.count > 1 && (tabs_container->scroll.x != 0 || (last_box->rel_pos.x+last_box->fixed_size.x) > tabs_container->fixed_size.x);
 
                         Vec2F32 tab_visiblity_range = v2f32(active_box->rel_pos.x,
                                                             active_box->rel_pos.x + active_box->fixed_size.x);
@@ -1269,8 +1269,15 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         delta_left = f32_min(delta_left, 0);
                         delta_right = f32_max(delta_right, 0);
 
-                        tabs_container->scroll.x += delta_right;
-                        tabs_container->scroll.x += delta_left;
+                        if (tabs_container->fixed_size.x > active_box->fixed_size.x)
+                        {
+                            tabs_container->scroll.x += delta_left;
+                            tabs_container->scroll.x += delta_right;
+                        }
+                        else
+                        {
+                            tabs_container->scroll.x = active_box->rel_pos.x;
+                        }
                         tabs_container->scroll.x = f32_max(0, tabs_container->scroll.x);
                     }
 
