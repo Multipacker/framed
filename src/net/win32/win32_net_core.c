@@ -11,9 +11,9 @@ net_win32_print_error_message(Void)
     {
         U8 buffer[1024] = {0};
         U64 size = FormatMessageA(
-            FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-            0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
-        );
+                                  FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                                  0, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR) &buffer, 1024, 0
+                                  );
         log_error((CStr) buffer);
         assert(false);
     }
@@ -247,12 +247,9 @@ net_socket_set_blocking_mode(Net_Socket socket, B32 should_block)
 internal B32
 net_socket_connection_is_alive(Net_Socket socket)
 {
-    // TODO(hampus): This might not be the best way to check for
-    // connection, recv() may not catch all errors. But it works for now.
     B32 result = true;
     SOCKET sock = (SOCKET) socket.u64[0];
-    char buffer;
-    int error = recv(sock, &buffer, 1, MSG_PEEK);
+    int error = send(sock, 0, 0, 0);
     if (error == SOCKET_ERROR)
     {
         int error_code = WSAGetLastError();
