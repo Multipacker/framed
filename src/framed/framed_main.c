@@ -195,7 +195,8 @@ framed_parse_zones(Void)
                              profiling_state->sample_size != profiling_state->next_sample_size) &&
                             profiling_state->frame_index_accumulator != 0)
                         {
-                            frame->num_frames = profiling_state->frame_index_accumulator;
+                            frame->start_frame_index = profiling_state->frame_index - profiling_state->frame_index_accumulator;
+                            frame->end_frame_index = profiling_state->frame_index;
                             memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
                             frame->total_tsc = profiling_state->frame_tsc;
                             memory_zero_array(profiling_state->zone_blocks);

@@ -110,10 +110,10 @@ framed_zone_block_compare_hit_count(const Void *a, const Void *b)
 typedef enum DisplayFlag DisplayFlag;
 enum DisplayFlag
 {
-    DisplayFlag_Accumulative = (1 << 0),
-    DisplayFlag_Cycles  = (1 << 1),
+    DisplayFlag_Accumulative   = (1 << 0),
+    DisplayFlag_Cycles         = (1 << 1),
     DisplayFlag_SortAscending  = (1 << 2),
-    DisplayFlag_PerHit  = (1 << 3),
+    DisplayFlag_PerHit         = (1 << 3),
 };
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
@@ -246,7 +246,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     }
 
     F64 ms_total = ((F64)tsc_total/(F64)profiling_state->tsc_frequency) * 1000.0;
-
+    U64 num_frames = frame->end_frame_index - frame->start_frame_index;
     F64 total_time = tsc_total;
     Str8 column_names[] =
     {
@@ -310,11 +310,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                zone_values->tsc_elapsed_without_children[i] /= (F64)frame->num_frames;
-                zone_values->tsc_elapsed_with_children[i] /= (F64)frame->num_frames;
-                zone_values->hit_count[i] /= (F64)frame->num_frames;
+                zone_values->tsc_elapsed_without_children[i] /= (F64)num_frames;
+                zone_values->tsc_elapsed_with_children[i] /= (F64)num_frames;
+                zone_values->hit_count[i] /= (F64)num_frames;
             }
-            total_time /= frame->num_frames;
+            total_time /= num_frames;
         }
 
         if ((data->display_flags & DisplayFlag_PerHit))
@@ -460,6 +460,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 if (profiling_per_frame)
                 {
+                    ui_row()
+                    {
+                        ui_spacer(ui_em(0.5f, 1));
+                        ui_textf("Frame index: %"PRIU64" - %"PRIU64, frame->start_frame_index, frame->end_frame_index);
+                    }
+                    ui_spacer(ui_em(0.3f, 1));
                     ui_row()
                     {
                         ui_spacer(ui_em(0.5f, 1));

@@ -28,7 +28,8 @@ struct CapturedFrame
 {
     U64 total_tsc;
     ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
-    U64 num_frames;
+    U64 start_frame_index;
+    U64 end_frame_index;
 };
 
 typedef struct ProfilingState ProfilingState;
