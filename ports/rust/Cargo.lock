@@ -14,3 +14,7 @@ version = "0.1.0"
 dependencies = [
  "cc",
 ]
+
+[[package]]
+name = "framed-rs-macros"
+version = "0.1.0"
