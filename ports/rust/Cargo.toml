@@ -18,3 +18,7 @@ framed-rs-macros = { path = "./framed_macro" }
 [[bin]]
 name = "simple_init_and_send"
 path = "src/examples/simple_init_and_send.rs"
+
+[[bin]]
+name = "zones"
+path = "src/examples/zones.rs"
