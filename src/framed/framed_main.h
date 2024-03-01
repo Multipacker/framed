@@ -46,7 +46,7 @@ struct ProfilingState
 
     // NOTE(hampus): Per frame (except if you are not profiling frames, then this would just be the total and never resetted)
 
-    Arena *frame_arena;
+    Arena *frame_arenas[2];
     ZoneStack zone_stack[1024];
     U32 zone_stack_size;
     U64 frame_begin_tsc;

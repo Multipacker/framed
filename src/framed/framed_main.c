@@ -277,7 +277,8 @@ framed_parse_zones(Void)
                             profiling_state->frame_tsc = 0;
                             profiling_state->frame_index_accumulator = 0;
                             profiling_state->sample_size = profiling_state->next_sample_size;
-                            arena_pop_to(profiling_state->frame_arena, 0);
+                            swap(profiling_state->frame_arenas[0], profiling_state->frame_arenas[1], Arena *);
+                            arena_pop_to(profiling_state->frame_arenas[0], 0);
                         }
 
                         profiling_state->frame_begin_tsc = header->tsc;
@@ -323,7 +324,7 @@ framed_parse_zones(Void)
                             ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
                             memory_zero_struct(opening);
 
-                            ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arena, name);
+                            ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arenas[0], name);
 
                             opening->name = zone->name;
                             opening->tsc_start = packet->header.tsc;
@@ -348,10 +349,10 @@ framed_parse_zones(Void)
                         Packet *packet = (Packet *) header;
 
                         ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
-                        ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arena, opening->name);
+                        ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arenas[0], opening->name);
 
                         ZoneStack *opening_parent = &profiling_state->zone_stack[profiling_state->zone_stack_size-1];
-                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->frame_arena, opening_parent->name);
+                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->frame_arenas[0], opening_parent->name);
 
                         U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
 
@@ -765,7 +766,8 @@ os_main(Str8List arguments)
     framed_state->profiling_state = push_struct(framed_perm_arena, ProfilingState);
 
     ProfilingState *profiling_state = framed_state->profiling_state;
-    profiling_state->frame_arena = arena_create("PerFrame ProfilingArena");
+    profiling_state->frame_arenas[0] = arena_create("PerFrame ProfilingArena");
+    profiling_state->frame_arenas[1] = arena_create("PerFrame ProfilingArena");
     profiling_state->zone_stack_size = 1;
     profiling_state->sample_size = profiling_state->next_sample_size = 1;
 
