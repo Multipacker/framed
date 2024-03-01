@@ -84,8 +84,8 @@ framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
     ZoneBlock *zone_block1 = (ZoneBlock *)b;
-    U64 tsc0 = zone_block0->tsc_elapsed - zone_block0->tsc_elapsed_children;
-    U64 tsc1 = zone_block1->tsc_elapsed - zone_block1->tsc_elapsed_children;
+    U64 tsc0 = zone_block0->tsc_elapsed_exc;
+    U64 tsc1 = zone_block1->tsc_elapsed_exc;
     return(tsc0 < tsc1);
 }
 
@@ -94,8 +94,8 @@ framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
     ZoneBlock *zone_block1 = (ZoneBlock *)b;
-    U64 tsc0 = zone_block0->tsc_elapsed_root;
-    U64 tsc1 = zone_block1->tsc_elapsed_root;
+    U64 tsc0 = zone_block0->tsc_elapsed_inc;
+    U64 tsc1 = zone_block1->tsc_elapsed_inc;
     return(tsc0 < tsc1);
 }
 
@@ -264,8 +264,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + (zone_blocks_count-1-i);
 
-                U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-                U64 tsc_with_children = zone_block->tsc_elapsed_root;
+                U64 tsc_without_children = zone_block->tsc_elapsed_exc;
+                U64 tsc_with_children = zone_block->tsc_elapsed_inc;
 
                 zone_values->names[i] = zone_block->name;
                 zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;
@@ -279,8 +279,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                U64 tsc_without_children = zone_block->tsc_elapsed - zone_block->tsc_elapsed_children;
-                U64 tsc_with_children = zone_block->tsc_elapsed_root;
+                U64 tsc_without_children = zone_block->tsc_elapsed_exc;
+                U64 tsc_with_children = zone_block->tsc_elapsed_inc;
 
                 zone_values->names[i] = zone_block->name;
                 zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;

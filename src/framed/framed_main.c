@@ -248,7 +248,7 @@ framed_parse_zones(Void)
 
                             opening->name = zone->name;
                             opening->tsc_start = packet->header.tsc;
-                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_root;
+                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_inc;
 
                             entry_size = sizeof(Packet) + packet->name_length;
 
@@ -273,11 +273,10 @@ framed_parse_zones(Void)
 
                         U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
 
-                        zone->tsc_elapsed += tsc_elapsed;
-                        zone->tsc_elapsed_root = opening->old_tsc_elapsed_root + tsc_elapsed;
-                        zone->tsc_elapsed_children += opening->tsc_elapsed_children;
-                        ++zone->hit_count;
+                        zone->tsc_elapsed_inc = opening->old_tsc_elapsed_root + tsc_elapsed;
+                        zone->tsc_elapsed_exc += tsc_elapsed - opening->tsc_elapsed_children;
                         profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+                        ++zone->hit_count;
 
                         entry_size = sizeof(Packet);
 

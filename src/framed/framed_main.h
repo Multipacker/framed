@@ -7,9 +7,8 @@ typedef struct ZoneBlock ZoneBlock;
 struct ZoneBlock
 {
     Str8 name;
-    U64 tsc_elapsed;
-    U64 tsc_elapsed_root;
-    U64 tsc_elapsed_children;
+    U64 tsc_elapsed_inc;
+    U64 tsc_elapsed_exc;
     U64 hit_count;
 };
 
