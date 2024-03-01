@@ -9,3 +9,7 @@ path = "src/lib.rs"
 
 [build-dependencies]
 cc = "1.0.88"
+
+[[bin]]
+name = "simple_init_and_send"
+path = "src/examples/simple_init_and_send.rs"
