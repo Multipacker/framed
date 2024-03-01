@@ -1,9 +1,10 @@
 use proc_macro::{Span, TokenStream};
+use quote::{format_ident, ToTokens};
 use std::ffi::CString;
 use std::ops::Deref;
-use syn::{parse, parse_quote, spanned::Spanned, ItemFn, LitStr, Visibility, Ident, Block, FnArg, Pat};
-use quote::{ToTokens, format_ident};
-
+use syn::{
+    parse, parse_quote, spanned::Spanned, Block, FnArg, Ident, ItemFn, LitStr, Pat, Visibility,
+};
 
 #[proc_macro_attribute]
 /// Automatically set up a zone for a function.
@@ -36,8 +37,8 @@ use quote::{ToTokens, format_ident};
 /// * a `self` parameter (any variant).
 ///
 /// # Errors
-/// 
-/// The attribute will raise a compilation error if the name (that of the function or the supplied) contains 
+///
+/// The attribute will raise a compilation error if the name (that of the function or the supplied) contains
 /// any non ascii characters or null bytes.
 ///
 pub fn framed_zone(attr: TokenStream, item: TokenStream) -> TokenStream {
@@ -71,33 +72,40 @@ pub fn framed_zone(attr: TokenStream, item: TokenStream) -> TokenStream {
             }
         }
     };
-    
-    let ItemFn { attrs, vis, mut sig, block } = function_tree;
+
+    let ItemFn {
+        attrs,
+        vis,
+        mut sig,
+        block,
+    } = function_tree;
 
     if sig.variadic.is_some() {
         todo!("handle variadic arguments to functions");
     }
-    
-    let mut inner_fun = ItemFn { 
-        attrs: Vec::new(), 
-        vis: Visibility::Inherited, 
+
+    let mut inner_fun = ItemFn {
+        attrs: Vec::new(),
+        vis: Visibility::Inherited,
         sig: sig.clone(),
         block,
     };
 
     inner_fun.sig.ident = Ident::new("wrapped", inner_fun.sig.ident.span());
-    let variables: Vec<_> = sig.inputs.pairs_mut().enumerate().map(|(i, mut pair)| {
-        match pair.value_mut() {
+    let variables: Vec<_> = sig
+        .inputs
+        .pairs_mut()
+        .enumerate()
+        .map(|(i, mut pair)| match pair.value_mut() {
             FnArg::Receiver(_) => todo!("handle methods"),
             FnArg::Typed(typed) => {
-                let varname = format_ident!("var{}", i); 
+                let varname = format_ident!("var{}", i);
                 let new_ident: Pat = parse_quote! { #varname };
                 typed.pat = Box::new(new_ident);
                 varname
             }
-        }
-    }).collect();
-    
+        })
+        .collect();
 
     let cstr = zone.into_bytes_with_nul();
     let cstr_slice = cstr.as_slice();
@@ -106,14 +114,14 @@ pub fn framed_zone(attr: TokenStream, item: TokenStream) -> TokenStream {
             // Wrapper
             #inner_fun;
             let name = [ #(#cstr_slice),* ];
-            let cname = unsafe { 
+            let cname = unsafe {
                 // SAFE: the bytes are created in a safe way
                 ::core::ffi::CStr::from_bytes_with_nul_unchecked(&name[..])
             };
             ::framed::zone_begin(cname);
             let r = wrapped( #(#variables),* );
             ::framed::zone_end();
-            return r; 
+            return r;
         }
     };
 
@@ -123,7 +131,7 @@ pub fn framed_zone(attr: TokenStream, item: TokenStream) -> TokenStream {
         sig,
         block: Box::new(inner_block),
     };
-    
+
     new_function.into_token_stream().into()
 }
 

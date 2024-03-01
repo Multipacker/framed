@@ -7,7 +7,7 @@
 //!
 //! # No std
 //!
-//! This library does not use the standard library. 
+//! This library does not use the standard library.
 //!
 //! # Examples
 //!
@@ -44,8 +44,8 @@
 //! is taken to be that of the function.
 //!
 //! ### Note
-//! 
-//! This feature is still a work-in-progress and does not for example support adding zones to 
+//!
+//! This feature is still a work-in-progress and does not for example support adding zones to
 //! methods (ie `foo(self, ..)` signatures) or functions with variadic arguments.
 
 /// Raw bindings
@@ -75,7 +75,6 @@ pub fn flush() -> () {
     }
 }
 
-
 /// Mark start of frame
 pub fn mark_frame_start() -> () {
     unsafe {
@@ -86,7 +85,7 @@ pub fn mark_frame_start() -> () {
 /// Mark the start of a zone
 pub fn zone_begin(name: &::core::ffi::CStr) -> () {
     unsafe {
-        // SAFE: 
+        // SAFE:
         //  * The string is not freed or reallocated in framed_zone_begin_ despite the absence of
         //    the const specifier.
         //  * global memory managed by framed
