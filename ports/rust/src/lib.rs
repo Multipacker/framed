@@ -14,8 +14,10 @@
 //!
 //! ```
 //! use framed;
+//! use std::ffi::CString;
+//!
 //! framed::init(true);
-//! framed::zone_begin("Test");
+//! framed::zone_begin(&CString::new("Test").unwrap());
 //! framed::zone_end();
 //! framed::flush();
 //! ```
