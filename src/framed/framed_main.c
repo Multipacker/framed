@@ -244,11 +244,11 @@ framed_parse_zones(Void)
                             ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
                             memory_zero_struct(opening);
 
-                            ZoneBlock *zone = framed_get_zone_block(profiling_state->zone_arena, name);
+                            ZoneBlock *zone = framed_get_zone_block(profiling_state->session_arena, name);
 
                             opening->name = zone->name;
                             opening->tsc_start = packet->header.tsc;
-                            opening->old_tsc_elapsed_root = zone->tsc_elapsed_inc;
+                            opening->old_tsc_elapsed_inc = zone->tsc_elapsed_inc;
 
                             entry_size = sizeof(Packet) + packet->name_length;
 
@@ -269,13 +269,16 @@ framed_parse_zones(Void)
                         Packet *packet = (Packet *) header;
 
                         ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
-                        ZoneBlock *zone = framed_get_zone_block(profiling_state->zone_arena, opening->name);
+                        ZoneBlock *zone = framed_get_zone_block(profiling_state->session_arena, opening->name);
+
+                        ZoneStack *opening_parent = &profiling_state->zone_stack[profiling_state->zone_stack_size-1];
+                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->session_arena, opening_parent->name);
 
                         U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
 
-                        zone->tsc_elapsed_inc = opening->old_tsc_elapsed_root + tsc_elapsed;
-                        zone->tsc_elapsed_exc += tsc_elapsed - opening->tsc_elapsed_children;
-                        profiling_state->zone_stack[profiling_state->zone_stack_size - 1].tsc_elapsed_children += tsc_elapsed;
+                        zone_parent->tsc_elapsed_exc -= tsc_elapsed;
+                        zone->tsc_elapsed_exc += tsc_elapsed;
+                        zone->tsc_elapsed_inc = opening->old_tsc_elapsed_inc + tsc_elapsed;
                         ++zone->hit_count;
 
                         entry_size = sizeof(Packet);

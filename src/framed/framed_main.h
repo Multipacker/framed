@@ -17,8 +17,7 @@ struct ZoneStack
 {
     Str8 name;
     U64 tsc_start;
-    U64 old_tsc_elapsed_root;
-    U64 tsc_elapsed_children;
+    U64 old_tsc_elapsed_inc;
 };
 
 #define MAX_NUMBER_OF_UNIQUE_ZONES (4096)
