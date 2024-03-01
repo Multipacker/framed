@@ -314,7 +314,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 zone_values->tsc_elapsed_with_children[i] /= (F64)num_frames;
                 zone_values->hit_count[i] /= (F64)num_frames;
             }
-            total_time /= num_frames;
+            total_time /= (F64) num_frames;
         }
 
         if ((data->display_flags & DisplayFlag_PerHit))
