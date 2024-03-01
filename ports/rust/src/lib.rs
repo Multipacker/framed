@@ -1,7 +1,6 @@
 #![deny(missing_docs)]
 #![no_std]
 
-
 //! # Framed
 //!
 //! Rust bindings for `framed.h`.
@@ -10,7 +9,11 @@
 //!
 //! This library does not use the standard library. 
 //!
-//! # Example
+//! # Examples
+//!
+//! ## Manual
+//!
+//! Zones can be manually set up by calling [`zone_begin`] and [`zone_end`];
 //!
 //! ```
 //! use framed;
@@ -21,9 +24,34 @@
 //! framed::zone_end();
 //! framed::flush();
 //! ```
+//!
+//! ## [`framed_zone`] attribute
+//!
+//! Using [`framed_zone`], functions can automatically be made into a zone. The attribute
+//! will add calls to [`zone_begin`] on entry and [`zone_end`] on return;
+//!
+//! ```
+//! use framed::framed_zone;
+//!
+//! #[framed_zone(name = "custom name")]
+//! fn foo(x: i32) { /* ... */ }
+//!
+//! #[framed_zone]
+//! fn zone_name(y: i32) { /* ... */ }
+//! ```
+//!
+//! Note how the name can be made explicit by specifying it in the attribute, otherwise it
+//! is taken to be that of the function.
+//!
+//! ### Note
+//! 
+//! This feature is still a work-in-progress and does not for example support adding zones to 
+//! methods (ie `foo(self, ..)` signatures) or functions with variadic arguments.
 
 /// Raw bindings
 pub mod ffi;
+
+pub use framed_macro::framed_zone;
 
 /// Initialize a tcp connection to the framed server.
 ///
