@@ -13,7 +13,7 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_name)
     }
 }
 
-FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_exc)
 {
     F64 *cycle_values = (F64 *)values_array;
     ui_text_align(UI_TextAlign_Right)
@@ -35,7 +35,7 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles)
     }
 }
 
-FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_with_children)
+FRAMED_ZONE_STAT_COLUMN(framed_zone_column_cycles_inc)
 {
     F64 *cycle_values = (F64*)values_array;
     ui_text_align(UI_TextAlign_Right)
@@ -70,7 +70,7 @@ FRAMED_ZONE_STAT_COLUMN(framed_zone_column_hit_count)
     }
 }
 
-internal int
+int
 framed_zone_block_compare_names(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
@@ -79,8 +79,8 @@ framed_zone_block_compare_names(const Void *a, const Void *b)
     return(result);
 }
 
-internal int
-framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
+int
+framed_zone_block_compare_cycles_exc(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
     ZoneBlock *zone_block1 = (ZoneBlock *)b;
@@ -89,8 +89,8 @@ framed_zone_block_compare_cycles_without_children(const Void *a, const Void *b)
     return(tsc0 < tsc1);
 }
 
-internal int
-framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
+int
+framed_zone_block_compare_cycles_inc(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
     ZoneBlock *zone_block1 = (ZoneBlock *)b;
@@ -99,7 +99,7 @@ framed_zone_block_compare_cycles_with_children(const Void *a, const Void *b)
     return(tsc0 < tsc1);
 }
 
-internal int
+int
 framed_zone_block_compare_hit_count(const Void *a, const Void *b)
 {
     ZoneBlock *zone_block0 = (ZoneBlock *)a;
@@ -125,10 +125,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         U64 column_sort_index;
         F32 column_sizes_in_pct[4];
 
-        UI_TextEditState capture_frequency_text_edit_state;
-        U8 *capture_frequency_text_buffer;
-        U64 capture_frequency_text_buffer_size;
-        U64 capture_frequency_string_length;
+        UI_TextEditState sample_size_text_edit_state;
+        U8 *sample_size_text_buffer;
+        U64 sample_size_text_buffer_size;
+        U64 sample_size_string_length;
 
         DisplayFlag display_flags;
     };
@@ -144,14 +144,14 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         data->column_sizes_in_pct[2] = 0.25f;
         data->column_sizes_in_pct[3] = 0.25f;
 
-        data->capture_frequency_text_buffer_size = 3;
-        data->capture_frequency_text_buffer = push_array(view_info->arena, U8, data->capture_frequency_text_buffer_size);
+        data->sample_size_text_buffer_size = 3;
+        data->sample_size_text_buffer = push_array(view_info->arena, U8, data->sample_size_text_buffer_size);
         arena_scratch(0, 0)
         {
             Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU32, profiling_state->sample_size);
-            U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->capture_frequency_text_buffer_size);
-            memory_copy_typed(data->capture_frequency_text_buffer, text_buffer_initial_string.data, initial_string_length);
-            data->capture_frequency_string_length = initial_string_length;
+            U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->sample_size_text_buffer_size);
+            memory_copy_typed(data->sample_size_text_buffer, text_buffer_initial_string.data, initial_string_length);
+            data->sample_size_string_length = initial_string_length;
         }
     }
 
@@ -163,16 +163,16 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     struct ZoneValues
     {
         Str8 *names;
-        F64 *tsc_elapsed_without_children;
-        F64 *tsc_elapsed_with_children;
+        F64 *tsc_elapsed_exc;
+        F64 *tsc_elapsed_inc;
         F64 *hit_count;
     };
 
     ZoneValues *zone_values = push_struct(scratch.arena, ZoneValues);
 
     zone_values->names = push_array(scratch.arena, Str8, MAX_NUMBER_OF_UNIQUE_ZONES);
-    zone_values->tsc_elapsed_without_children = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
-    zone_values->tsc_elapsed_with_children = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_exc = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
+    zone_values->tsc_elapsed_inc = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
     zone_values->hit_count = push_array(scratch.arena, F64, MAX_NUMBER_OF_UNIQUE_ZONES);
 
     //- hampus: Parse zone blocks into a nicer format
@@ -182,7 +182,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     F64 tsc_total = 0;
     B32 profiling_per_frame = profiling_state->frame_begin_tsc != 0;;
 
-    CapturedFrame *frame = &profiling_state->latest_captured_frame;
+    CapturedSample *frame = &profiling_state->latest_captured_sample;
 
     debug_block("Count up zone blocks")
     {
@@ -219,35 +219,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         }
     }
 
-    debug_block("Sort counter columns")
-    {
-        switch (data->column_sort_index)
-        {
-            case 0:
-            {
-                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_names);
-            } break;
-
-            case 1:
-            {
-                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_cycles_without_children);
-            } break;
-
-            case 2:
-            {
-                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_cycles_with_children);
-            } break;
-
-            case 3:
-            {
-                qsort(zone_blocks, zone_blocks_count, ZoneBlock, framed_zone_block_compare_hit_count);
-            } break;
-        }
-    }
-
-    F64 ms_total = ((F64)tsc_total/(F64)profiling_state->tsc_frequency) * 1000.0;
-    U64 num_frames = frame->end_frame_index - frame->start_frame_index;
-    F64 total_time = tsc_total;
     Str8 column_names[] =
     {
         str8_lit("Name"),
@@ -256,20 +227,51 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         str8_lit("Hit count"),
     };
 
+    FramedCountersColumnView *column_views[] =
+    {
+        framed_zone_column_name,
+        framed_zone_column_cycles_exc,
+        framed_zone_column_cycles_inc,
+        framed_zone_column_hit_count,
+    };
+
+    typedef int ColumnSortProc(const Void *, const Void *);
+
+    ColumnSortProc *column_sorts[] =
+    {
+        framed_zone_block_compare_names,
+        framed_zone_block_compare_cycles_exc,
+        framed_zone_block_compare_cycles_inc,
+        framed_zone_block_compare_hit_count,
+    };
+
+    column_sorts[data->column_sort_index];
+
+    debug_block("Sort counter columns")
+    {
+        qsort(zone_blocks, zone_blocks_count, ZoneBlock, column_sorts[data->column_sort_index]);
+    }
+
+    F64 ms_total = ((F64)tsc_total/(F64)profiling_state->tsc_frequency) * 1000.0;
+    U64 num_frames = frame->end_frame_index - frame->start_frame_index;
+    F64 total_time = tsc_total;
+
     debug_block("Display view values transformation")
     {
+
+        // TODO(hampus): This could probably be expensive.
         if (data->display_flags & DisplayFlag_SortAscending)
         {
             for (U64 i = 0; i < zone_blocks_count; ++i)
             {
                 ZoneBlock *zone_block = zone_blocks + (zone_blocks_count-1-i);
 
-                U64 tsc_without_children = zone_block->tsc_elapsed_exc;
-                U64 tsc_with_children = zone_block->tsc_elapsed_inc;
+                U64 tsc_exc = zone_block->tsc_elapsed_exc;
+                U64 tsc_inc = zone_block->tsc_elapsed_inc;
 
                 zone_values->names[i] = zone_block->name;
-                zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;
-                zone_values->tsc_elapsed_with_children[i] = (F64)tsc_with_children;
+                zone_values->tsc_elapsed_exc[i] = (F64)tsc_exc;
+                zone_values->tsc_elapsed_inc[i] = (F64)tsc_inc;
                 zone_values->hit_count[i] = (F64)zone_block->hit_count;
             }
         }
@@ -279,12 +281,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                U64 tsc_without_children = zone_block->tsc_elapsed_exc;
-                U64 tsc_with_children = zone_block->tsc_elapsed_inc;
+                U64 tsc_exc = zone_block->tsc_elapsed_exc;
+                U64 tsc_inc = zone_block->tsc_elapsed_inc;
 
                 zone_values->names[i] = zone_block->name;
-                zone_values->tsc_elapsed_without_children[i] = (F64)tsc_without_children;
-                zone_values->tsc_elapsed_with_children[i] = (F64)tsc_with_children;
+                zone_values->tsc_elapsed_exc[i] = (F64)tsc_exc;
+                zone_values->tsc_elapsed_inc[i] = (F64)tsc_inc;
                 zone_values->hit_count[i] = (F64)zone_block->hit_count;
             }
         }
@@ -295,8 +297,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                zone_values->tsc_elapsed_without_children[i] = (zone_values->tsc_elapsed_without_children[i] / tsc_total) * ms_total;
-                zone_values->tsc_elapsed_with_children[i] =  (zone_values->tsc_elapsed_with_children[i] / tsc_total) * ms_total;
+                zone_values->tsc_elapsed_exc[i] = (zone_values->tsc_elapsed_exc[i] / tsc_total) * ms_total;
+                zone_values->tsc_elapsed_inc[i] =  (zone_values->tsc_elapsed_inc[i] / tsc_total) * ms_total;
             }
             column_names[1] = str8_lit("Time (ms)");
             column_names[2] = str8_lit("Time (ms) w/ children");
@@ -310,8 +312,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                zone_values->tsc_elapsed_without_children[i] /= (F64)num_frames;
-                zone_values->tsc_elapsed_with_children[i] /= (F64)num_frames;
+                zone_values->tsc_elapsed_exc[i] /= (F64)num_frames;
+                zone_values->tsc_elapsed_inc[i] /= (F64)num_frames;
                 zone_values->hit_count[i] /= (F64)num_frames;
             }
             total_time /= (F64) num_frames;
@@ -323,20 +325,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             {
                 ZoneBlock *zone_block = zone_blocks + i;
 
-                zone_values->tsc_elapsed_without_children[i] /= zone_values->hit_count[i];
-                zone_values->tsc_elapsed_with_children[i] /= zone_values->hit_count[i];
+                zone_values->tsc_elapsed_exc[i] /= zone_values->hit_count[i];
+                zone_values->tsc_elapsed_inc[i] /= zone_values->hit_count[i];
             }
         }
     }
     //- hampus: Display zone values
-
-    FramedCountersColumnView *column_views[] =
-    {
-        framed_zone_column_name,
-        framed_zone_column_cycles,
-        framed_zone_column_cycles_with_children,
-        framed_zone_column_hit_count,
-    };
 
     F32 new_column_pcts[4] = {0};
     memory_copy_array(new_column_pcts, data->column_sizes_in_pct);
@@ -472,15 +466,15 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                         ui_text(str8_lit("Sample size (frames):"));
                         ui_spacer(ui_em(0.5f, 1));
                         ui_next_width(ui_em(3, 1));
-                        UI_Comm comm = ui_line_edit(&data->capture_frequency_text_edit_state, data->capture_frequency_text_buffer, data->capture_frequency_text_buffer_size, &data->capture_frequency_string_length, str8_lit("CaptureFrequencyLineEdit"));
+                        UI_Comm comm = ui_line_edit(&data->sample_size_text_edit_state, data->sample_size_text_buffer, data->sample_size_text_buffer_size, &data->sample_size_string_length, str8_lit("CaptureFrequencyLineEdit"));
                         if (!ui_box_is_focused(comm.box))
                         {
                             U32 u32 = 0;
-                            u32_from_str8(str8(data->capture_frequency_text_buffer, data->capture_frequency_string_length), &u32);
+                            u32_from_str8(str8(data->sample_size_text_buffer, data->sample_size_string_length), &u32);
                             profiling_state->next_sample_size = u32;
                             Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, profiling_state->next_sample_size);
-                            data->capture_frequency_string_length = u64_min(text_buffer_str8.size, data->capture_frequency_text_buffer_size);
-                            memory_copy_typed(data->capture_frequency_text_buffer, text_buffer_str8.data, data->capture_frequency_string_length);
+                            data->sample_size_string_length = u64_min(text_buffer_str8.size, data->sample_size_text_buffer_size);
+                            memory_copy_typed(data->sample_size_text_buffer, text_buffer_str8.data, data->sample_size_string_length);
                         }
                     }
 

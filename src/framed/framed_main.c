@@ -1,5 +1,3 @@
-// [ ] Logging paths
-
 #define MEMORY_DEBUG 1
 
 #include "base/base_inc.h"
@@ -33,6 +31,77 @@ Framed_State *framed_state;
 
 #include "framed/framed_ui.c"
 #include "framed/framed_views.c"
+
+FRAMED_POP_MESSAGE_PROC(framed_pop_up_message_stub)
+{
+}
+
+FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
+{
+    ui_parent(ui_ctx->normal_root)
+    {
+        ui_next_width(ui_fill());
+        ui_next_height(ui_fill());
+        ui_next_color(v4f32(0, 0, 0, 0.5f));
+        UI_Box *parent_box = ui_box_make(UI_BoxFlag_DrawBackground |
+                                         UI_BoxFlag_FixedPos |
+                                         UI_BoxFlag_Clickable,
+                                         str8_lit("ParentPopup"));
+        ui_parent(parent_box)
+        {
+            ui_spacer(ui_fill());
+            ui_next_width(ui_pct(1, 1));
+            ui_row()
+            {
+                ui_spacer(ui_fill());
+
+                ui_next_width(ui_em(20, 1));
+                ui_next_height(ui_em(10, 1));
+                ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_PanelBorderActive));
+                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
+                                          UI_BoxFlag_DrawBorder |
+                                          UI_BoxFlag_DrawDropShadow |
+                                          UI_BoxFlag_AnimateDim,
+                                          str8_lit("PopupMessageBackground"));
+                ui_parent(box)
+                {
+                    ui_spacer(ui_fill());
+                    ui_next_width(ui_fill());
+                    ui_row()
+                    {
+                        ui_spacer(ui_fill());
+                        ui_text(message);
+                        ui_spacer(ui_fill());
+                    }
+                    ui_spacer(ui_fill());
+                    ui_next_width(ui_fill());
+                    ui_row()
+                    {
+                        ui_spacer(ui_fill());
+                        if (ui_button(str8_lit("OK")).pressed)
+                        {
+                            framed_state->popup_message = framed_pop_up_message_stub;
+                            framed_state->popup_string = str8_lit("");
+                        }
+                        ui_spacer(ui_em(1, 1));
+                        ui_button(str8_lit("Show log"));
+                        ui_spacer(ui_fill());
+                    }
+                    ui_spacer(ui_fill());
+                }
+                ui_spacer(ui_fill());
+            }
+            ui_spacer(ui_fill());
+        }
+
+        ui_comm_from_box(parent_box);
+    }
+}
+
+internal Void
+framed_show_popup(Str8 message, Framed_PopUpMessageProc *proc)
+{
+}
 
 ////////////////////////////////
 //~ hampus: Zone parsing
@@ -128,6 +197,7 @@ framed_parse_zones(Void)
                 {
                     log_error("Not enough data for packet header, terminating connection");
                     terminate_connection = true;
+                    framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                     break;
                 }
 
@@ -153,11 +223,15 @@ framed_parse_zones(Void)
                         {
                             log_error("Not enough data for zone packet, terminating connection");
                             terminate_connection = true;
+                            framed_state->popup_message = framed_pop_up_message;
+                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                         }
                         else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                         {
                             log_error("Not enough data for zone name, terminating connection");
                             terminate_connection = true;
+                            framed_state->popup_message = framed_pop_up_message;
+                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                         }
                         else
                         {
@@ -183,7 +257,7 @@ framed_parse_zones(Void)
 
                         profiling_state->frame_end_tsc = header->tsc;
 
-                        CapturedFrame *frame = &profiling_state->latest_captured_frame;
+                        CapturedSample *frame = &profiling_state->latest_captured_sample;
                         // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
                         // But this is simple and easy and works for now.
                         if (profiling_state->frame_begin_tsc)
@@ -203,6 +277,7 @@ framed_parse_zones(Void)
                             profiling_state->frame_tsc = 0;
                             profiling_state->frame_index_accumulator = 0;
                             profiling_state->sample_size = profiling_state->next_sample_size;
+                            arena_pop_to(profiling_state->frame_arena, 0);
                         }
 
                         profiling_state->frame_begin_tsc = header->tsc;
@@ -230,11 +305,15 @@ framed_parse_zones(Void)
                         {
                             log_error("Not enough data for zone packet, terminating connection");
                             terminate_connection = true;
+                            framed_state->popup_message = framed_pop_up_message;
+                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                         }
                         else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
                         {
                             log_error("Not enough data for zone name, terminating connection");
                             terminate_connection = true;
+                            framed_state->popup_message = framed_pop_up_message;
+                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                         }
                         else
                         {
@@ -244,7 +323,7 @@ framed_parse_zones(Void)
                             ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
                             memory_zero_struct(opening);
 
-                            ZoneBlock *zone = framed_get_zone_block(profiling_state->session_arena, name);
+                            ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arena, name);
 
                             opening->name = zone->name;
                             opening->tsc_start = packet->header.tsc;
@@ -269,10 +348,10 @@ framed_parse_zones(Void)
                         Packet *packet = (Packet *) header;
 
                         ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
-                        ZoneBlock *zone = framed_get_zone_block(profiling_state->session_arena, opening->name);
+                        ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arena, opening->name);
 
                         ZoneStack *opening_parent = &profiling_state->zone_stack[profiling_state->zone_stack_size-1];
-                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->session_arena, opening_parent->name);
+                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->frame_arena, opening_parent->name);
 
                         U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
 
@@ -289,6 +368,8 @@ framed_parse_zones(Void)
                     {
                         log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
                         terminate_connection = true;
+                        framed_state->popup_message = framed_pop_up_message;
+                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                     } break;
                 }
                 buffer_pointer += entry_size;
@@ -299,7 +380,9 @@ framed_parse_zones(Void)
 
         if (terminate_connection)
         {
+            memory_zero_struct(&profiling_state->latest_captured_sample);
             net_socket_free(profiling_state->client_socket);
+            memory_zero_struct(&profiling_state->client_socket);
         }
     }
 
@@ -682,9 +765,11 @@ os_main(Str8List arguments)
     framed_state->profiling_state = push_struct(framed_perm_arena, ProfilingState);
 
     ProfilingState *profiling_state = framed_state->profiling_state;
-    profiling_state->zone_arena = arena_create("ZoneArena");
+    profiling_state->frame_arena = arena_create("PerFrame ProfilingArena");
     profiling_state->zone_stack_size = 1;
     profiling_state->sample_size = profiling_state->next_sample_size = 1;
+
+    framed_state->popup_message = framed_pop_up_message_stub;
 
     //- hampus: Allocate listen socket
 
@@ -866,6 +951,8 @@ os_main(Str8List arguments)
         ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
         ui_push_font_size(framed_ui_state->settings.font_size);
 
+        framed_state->popup_message(framed_state->popup_string);
+
         //- hampus: Menu bar
 
         UI_Key view_dropdown_key = ui_key_from_string(ui_key_null(), str8_lit("ViewDropdownMenu"));
@@ -998,6 +1085,7 @@ os_main(Str8List arguments)
             profiling_state->time_since_last_recieve += dt;
             if (profiling_state->time_since_last_recieve >= 2)
             {
+                memory_zero_struct(&profiling_state->latest_captured_sample);
                 net_socket_free(profiling_state->client_socket);
                 memory_zero_struct(&profiling_state->client_socket);
             }
