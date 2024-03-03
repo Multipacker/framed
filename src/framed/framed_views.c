@@ -614,9 +614,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_about)
     ui_text(str8_lit("available at (https://github.com/Multipacker/framed/tree/main/licenses)."));
 
     ui_spacer(ui_em(1, 1));
-    ui_text(str8_lit("This software uses SDL 2 which is licensed under the zlib license."));
-
-    ui_spacer(ui_em(1, 1));
     ui_text(str8_lit("This software bundles Noto Sans Mono Medium which is licensed under the"));
     ui_text(str8_lit("SIL Open Font License, Version 1.1 and is copyright (c) 2022"));
     ui_text(str8_lit("The Noto Project Authors (https://github.com/notofonts/latin-greek-cyrillic)."));

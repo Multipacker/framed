@@ -143,13 +143,14 @@ int main(int argc, char *argv[])
 
 Framed is released under the [MIT License].
 
-This software uses SDL 2 which is licensed under the [zlib license].
+The client side header library is dual licensed under the [MIT License] and the
+[Unlicense].
 
 
-[MIT License]:              /LICENSE
-[RDTSC]:                    https://en.wikipedia.org/wiki/Time_Stamp_Counter
-[examples]:                 /examples
-[stb]:                      https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
-[zlib license]:             https://www.zlib.net/zlib_license.html
+[MIT License]:                     /LICENSE
+[RDTSC]:                           https://en.wikipedia.org/wiki/Time_Stamp_Counter
+[Unlicense]:                       https://unlicense.org/
 [examples/auto_closing_zones.cpp]: /examples/auto_closing_zones.cpp
-[public]: /public/
+[examples]:                        /examples
+[public]:                          /public/
+[stb]:                             https://github.com/nothings/stb/blob/master/docs/stb_howto.txt
