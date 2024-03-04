@@ -397,9 +397,9 @@ framed__socket_init(Framed_B32 wait_for_connection)
     // TODO(hampus): Make use of `wait_for_connection`. It is always
     // waiting for now.
     int error = connect(sock, (struct sockaddr *) &sockaddrin, sizeof(sockaddrin));
-    int flag = 1;
 
     // NOTE(hampus): Disable nagle's algorithm
+    int flag = 1;
     setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char *) &flag, sizeof(int));
 }
 

@@ -178,7 +178,7 @@ p == nil ? ((n)->prev = nil, (n)->next = (f), (f == nil ? (nil) : ((f)->prev = (
 
 #define sll_push_front(f, n) sll_push_front_np(f, n, next)
 
-#define stack_push_n(f, n, next) ((n)->next=(f),(f)=(n))
+#define stack_push_n(f, n, next) (((n)->next)=(f),(f)=(n))
 
 #define stack_pop_nz(f, next, nil) ((f == nil)?(nil):\
 ((f)=(f)->next))

@@ -17,7 +17,7 @@
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710 -wd4200
 set additional_includes=-I../vendor/ -I../src/ -I../
 set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
-set compiler_flags=%opts% -nologo -MT -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
+set compiler_flags=%opts% -nologo -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
 set linker_flags=-incremental:no user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib opengl32.lib gdi32.lib
 set src_files=../src/framed/framed_main.c
 
@@ -25,17 +25,17 @@ set src_files=../src/framed/framed_main.c
 
 :: -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -Zi -Od -fsanitize=address -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -MTd -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console
 
 :: -- Optimized build flags --
 
-set optimized_compiler_flags=-Zi -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE_OPTIMIZED=1
+set optimized_compiler_flags=-MT -Zi -O2 -Oi -fp:fast -GS- -DCONSOLE=1 -DBUILD_MODE_OPTIMIZED=1
 set optimized_linker_flags=-subsystem:console
 
 :: -- Release build flags --
 
-set release_compiler_flags=-O2 -Oi -EHsc -fp:fast -GS- -DBUILD_MODE_RELEASE=1
+set release_compiler_flags=-MT -O2 -Oi -EHsc -fp:fast -GS- -DBUILD_MODE_RELEASE=1
 set release_linker_flags=-fixed -opt:icf -opt:ref -subsystem:windows libvcruntime.lib
 
 set build_mode="%1%"

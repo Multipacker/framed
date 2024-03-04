@@ -106,33 +106,6 @@ framed_show_popup(Str8 message, Framed_PopUpMessageProc *proc)
 ////////////////////////////////
 //~ hampus: Zone parsing
 
-internal ZoneBlock *
-framed_get_zone_block(Arena *arena, Str8 name)
-{
-    ProfilingState *profiling_state = framed_state->profiling_state;
-
-    U64 hash = hash_str8(name);
-    U64 slot_index = hash % array_count(profiling_state->zone_blocks);
-    while (profiling_state->zone_blocks[slot_index].name.data)
-    {
-        if (str8_equal(profiling_state->zone_blocks[slot_index].name, name))
-        {
-            break;
-        }
-
-        slot_index = (slot_index + 1) % array_count(profiling_state->zone_blocks);
-    }
-
-    ZoneBlock *result = &profiling_state->zone_blocks[slot_index];
-
-    if (!result->name.data)
-    {
-        result->name = str8_copy(arena, name);
-    }
-
-    return(result);
-}
-
 internal Void
 framed_parse_zones(Void)
 {
@@ -145,13 +118,6 @@ framed_parse_zones(Void)
     if (!net_socket_connection_is_alive(profiling_state->client_socket))
     {
         Net_AcceptResult accept_result = {0};
-        if (profiling_state->found_connection)
-        {
-            // NOTE(hampus): The client disconnected
-            net_socket_free(profiling_state->client_socket);
-            log_info("Disconnected from client");
-            profiling_state->found_connection = false;
-        }
         accept_result = net_socket_accept(profiling_state->listen_socket);
         profiling_state->found_connection = accept_result.succeeded;
         if (profiling_state->found_connection)
@@ -159,232 +125,219 @@ framed_parse_zones(Void)
             profiling_state->client_socket = accept_result.socket;
             log_info("Connected to client");
             net_socket_set_blocking_mode(accept_result.socket, false);
-            memory_zero_array(profiling_state->zone_blocks);
         }
     }
 
     U64 parse_start_time_ns = os_now_nanoseconds();
 
     //- hampus: Gather & process data from client
-    if (net_socket_connection_is_alive(profiling_state->client_socket))
-    {
-        B32 terminate_connection = false;
-        U16 buffer_size = 0;
-        Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-        while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
-        {
-            Arena_Temporary scratch = get_scratch(0, 0);
-            U8 *buffer = push_array(scratch.arena, U8, buffer_size);
-            Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
 
-            if (recieve_result.bytes_recieved != buffer_size)
+    B32 terminate_connection = false;
+    U16 buffer_size = 0;
+    Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+    while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
+    {
+        Arena_Temporary scratch = get_scratch(0, 0);
+        U8 *buffer = push_array(scratch.arena, U8, buffer_size);
+        Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
+
+        if (recieve_result.bytes_recieved != buffer_size)
+        {
+            // TODO(simon): What do we do in this case? At the moment
+            // the rest of the code assumes that this never happens.
+        }
+
+        profiling_state->bytes_from_client += buffer_size;
+        profiling_state->parsed_bytes += buffer_size;
+
+        profiling_state->time_since_last_recieve = 0;
+
+        // NOTE(hampus): First two bytes are the size of the packet
+        U8 *buffer_pointer = buffer + sizeof(U16);
+        U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
+        while (buffer_pointer < buffer_opl && !terminate_connection)
+        {
+            if ((U64) (buffer_opl - buffer_pointer) < sizeof(PacketHeader))
             {
-                // TODO(simon): What do we do in this case? At the moment
-                // the rest of the code assumes that this never happens.
+                log_error("Not enough data for packet header, terminating connection");
+                terminate_connection = true;
+                framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                break;
             }
 
-            profiling_state->bytes_from_client += buffer_size;
-            profiling_state->parsed_bytes += buffer_size;
-
-            profiling_state->time_since_last_recieve = 0;
-
-            // NOTE(hampus): First two bytes are the size of the packet
-            U8 *buffer_pointer = buffer + sizeof(U16);
-            U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
-            while (buffer_pointer < buffer_opl && !terminate_connection)
+            U64 entry_size = 0;
+            PacketHeader *header = (PacketHeader *) buffer_pointer;
+            switch (header->kind)
             {
-                if ((U64) (buffer_opl - buffer_pointer) < sizeof(PacketHeader))
+                case Framed_PacketKind_Init:
                 {
-                    log_error("Not enough data for packet header, terminating connection");
-                    terminate_connection = true;
-                    framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                    break;
-                }
-
-                U64 entry_size = 0;
-                PacketHeader *header = (PacketHeader *) buffer_pointer;
-                switch (header->kind)
-                {
-                    case Framed_PacketKind_Init:
-                    {
 #pragma pack(push, 1)
-                        typedef struct Packet Packet;
-                        struct Packet
-                        {
-                            PacketHeader header;
-                            Framed_U64 tsc_frequency;
-                            Framed_U16 version;
-                        };
+                    typedef struct Packet Packet;
+                    struct Packet
+                    {
+                        PacketHeader header;
+                        Framed_U64 tsc_frequency;
+                        Framed_U16 version;
+                    };
 #pragma pack(pop)
 
-                        Packet *packet = (Packet *) header;
+                    Packet *packet = (Packet *) header;
 
-                        if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
-                        {
-                            log_error("Not enough data for zone packet, terminating connection");
-                            terminate_connection = true;
-                            framed_state->popup_message = framed_pop_up_message;
-                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                        }
-                        else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
-                        {
-                            log_error("Not enough data for zone name, terminating connection");
-                            terminate_connection = true;
-                            framed_state->popup_message = framed_pop_up_message;
-                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                        }
-                        else
-                        {
-                            profiling_state->profile_begin_tsc = packet->header.tsc;
-                            profiling_state->tsc_frequency = packet->tsc_frequency;
-                            entry_size = sizeof(Packet);
-                        }
-                    } break;
-                    case Framed_PacketKind_FrameStart:
+                    if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                     {
-#pragma pack(push, 1)
-                        typedef struct Packet Packet;
-                        struct Packet
-                        {
-                            PacketHeader header;
-                        };
-#pragma pack(pop)
-                        // NOTE(simon): No need to ensure size, the event is only the header.
-
-                        //- hampus: Save the last frame's data and produce a fresh captured frame
-
-                        Packet *packet = (Packet *) header;
-
-                        profiling_state->frame_end_tsc = header->tsc;
-
-                        CapturedSample *frame = &profiling_state->latest_captured_sample;
-                        // TODO(hampus): We only actually have to save the active counters, not the whole 4096.
-                        // But this is simple and easy and works for now.
-                        if (profiling_state->frame_begin_tsc)
-                        {
-                            profiling_state->frame_tsc += profiling_state->frame_end_tsc - profiling_state->frame_begin_tsc;
-                        }
-
-                        if ((profiling_state->frame_index_accumulator % profiling_state->sample_size== 0 ||
-                             profiling_state->sample_size != profiling_state->next_sample_size) &&
-                            profiling_state->frame_index_accumulator != 0)
-                        {
-                            frame->start_frame_index = profiling_state->frame_index - profiling_state->frame_index_accumulator;
-                            frame->end_frame_index = profiling_state->frame_index;
-                            memory_copy_array(frame->zone_blocks, profiling_state->zone_blocks);
-                            frame->total_tsc = profiling_state->frame_tsc;
-                            memory_zero_array(profiling_state->zone_blocks);
-                            profiling_state->frame_tsc = 0;
-                            profiling_state->frame_index_accumulator = 0;
-                            profiling_state->sample_size = profiling_state->next_sample_size;
-                            swap(profiling_state->frame_arenas[0], profiling_state->frame_arenas[1], Arena *);
-                            arena_pop_to(profiling_state->frame_arenas[0], 0);
-                        }
-
-                        profiling_state->frame_begin_tsc = header->tsc;
-
-                        profiling_state->frame_index++;
-                        profiling_state->frame_index_accumulator++;
-
-                        entry_size = sizeof(Packet);
-                    } break;
-                    case Framed_PacketKind_ZoneBegin:
-                    {
-#pragma pack(push, 1)
-                        typedef struct Packet Packet;
-                        struct Packet
-                        {
-                            PacketHeader header;
-                            Framed_U8 name_length;
-                            Framed_U8 name[];
-                        };
-#pragma pack(pop)
-
-                        Packet *packet = (Packet *) header;
-
-                        if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
-                        {
-                            log_error("Not enough data for zone packet, terminating connection");
-                            terminate_connection = true;
-                            framed_state->popup_message = framed_pop_up_message;
-                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                        }
-                        else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
-                        {
-                            log_error("Not enough data for zone name, terminating connection");
-                            terminate_connection = true;
-                            framed_state->popup_message = framed_pop_up_message;
-                            framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                        }
-                        else
-                        {
-                            Str8 name = str8(packet->name, packet->name_length);
-
-                            assert(profiling_state->zone_stack_size < array_count(profiling_state->zone_stack));
-                            ZoneStack *opening = &profiling_state->zone_stack[profiling_state->zone_stack_size++];
-                            memory_zero_struct(opening);
-
-                            ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arenas[0], name);
-
-                            opening->name = zone->name;
-                            opening->tsc_start = packet->header.tsc;
-                            opening->old_tsc_elapsed_inc = zone->tsc_elapsed_inc;
-
-                            entry_size = sizeof(Packet) + packet->name_length;
-
-                            profiling_state->profile_end_tsc = packet->header.tsc;
-                        }
-                    } break;
-                    case Framed_PacketKind_ZoneEnd:
-                    {
-#pragma pack(push, 1)
-                        typedef struct Packet Packet;
-                        struct Packet
-                        {
-                            PacketHeader header;
-                        };
-#pragma pack(pop)
-                        // NOTE(simon): No need to ensure size, the event is only the header.
-
-                        Packet *packet = (Packet *) header;
-
-                        ZoneStack *opening = &profiling_state->zone_stack[--profiling_state->zone_stack_size];
-                        ZoneBlock *zone = framed_get_zone_block(profiling_state->frame_arenas[0], opening->name);
-
-                        ZoneStack *opening_parent = &profiling_state->zone_stack[profiling_state->zone_stack_size-1];
-                        ZoneBlock *zone_parent = framed_get_zone_block(profiling_state->frame_arenas[0], opening_parent->name);
-
-                        U64 tsc_elapsed = packet->header.tsc - opening->tsc_start;
-
-                        zone_parent->tsc_elapsed_exc -= tsc_elapsed;
-                        zone->tsc_elapsed_exc += tsc_elapsed;
-                        zone->tsc_elapsed_inc = opening->old_tsc_elapsed_inc + tsc_elapsed;
-                        ++zone->hit_count;
-
-                        entry_size = sizeof(Packet);
-
-                        profiling_state->profile_end_tsc = packet->header.tsc;
-                    } break;
-                    default:
-                    {
-                        log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
+                        log_error("Not enough data for zone packet, terminating connection");
                         terminate_connection = true;
                         framed_state->popup_message = framed_pop_up_message;
                         framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                    } break;
-                }
-                buffer_pointer += entry_size;
-            }
-            release_scratch(scratch);
-            size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-        }
+                    }
+                    else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                    {
+                        log_error("Not enough data for zone name, terminating connection");
+                        terminate_connection = true;
+                        framed_state->popup_message = framed_pop_up_message;
+                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                    }
+                    else
+                    {
+                        profiling_state->profile_begin_tsc = packet->header.tsc;
+                        profiling_state->tsc_frequency = packet->tsc_frequency;
 
-        if (terminate_connection)
-        {
-            memory_zero_struct(&profiling_state->latest_captured_sample);
-            net_socket_free(profiling_state->client_socket);
-            memory_zero_struct(&profiling_state->client_socket);
+                        Frame *frame = &profiling_state->current_frame;
+
+                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
+
+                        entry_size = sizeof(Packet);
+                    }
+                } break;
+                case Framed_PacketKind_FrameStart:
+                {
+#pragma pack(push, 1)
+                    typedef struct Packet Packet;
+                    struct Packet
+                    {
+                        PacketHeader header;
+                    };
+#pragma pack(pop)
+                    // NOTE(simon): No need to ensure size, the event is only the header.
+
+                    //- hampus: Save the last frame's data and produce a fresh captured frame
+
+                    Packet *packet = (Packet *) header;
+
+                    Frame *frame = &profiling_state->current_frame;
+
+                    frame->end_tsc = header->tsc;
+
+                    swap(profiling_state->current_frame, profiling_state->finished_frame, Frame);
+                    frame = &profiling_state->current_frame;
+                    arena_pop_to(frame->arena, 0);
+                    frame->zone_blocks_count = 0;
+                    frame->begin_tsc = 0;
+                    frame->end_tsc = 0;
+                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
+                    profiling_state->zone_stack_pos = 0;
+
+                    frame->begin_tsc = header->tsc;
+
+                    profiling_state->frame_index++;
+
+                    entry_size = sizeof(Packet);
+                } break;
+                case Framed_PacketKind_ZoneBegin:
+                {
+#pragma pack(push, 1)
+                    typedef struct Packet Packet;
+                    struct Packet
+                    {
+                        PacketHeader header;
+                        Framed_U8 name_length;
+                        Framed_U8 name[];
+                    };
+#pragma pack(pop)
+
+                    Packet *packet = (Packet *) header;
+
+                    if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
+                    {
+                        log_error("Not enough data for zone packet, terminating connection");
+                        terminate_connection = true;
+                        framed_state->popup_message = framed_pop_up_message;
+                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                    }
+                    else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
+                    {
+                        log_error("Not enough data for zone name, terminating connection");
+                        terminate_connection = true;
+                        framed_state->popup_message = framed_pop_up_message;
+                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                    }
+                    else
+                    {
+                        Str8 name = str8(packet->name, packet->name_length);
+
+                        Frame *frame = &profiling_state->current_frame;
+
+                        ZoneBlock *zone = frame->zone_blocks + frame->zone_blocks_count;
+
+                        zone->name = str8_copy(frame->arena, name);
+                        zone->start_tsc = packet->header.tsc;
+
+                        ZoneStackEntry *stack_entry = profiling_state->zone_stack + profiling_state->zone_stack_pos;
+                        stack_entry->zone_block = zone;
+
+                        frame->zone_blocks_count++;
+
+                        profiling_state->zone_stack_pos++;
+
+                        assert(profiling_state->zone_stack_pos < array_count(profiling_state->zone_stack));
+
+                        entry_size = sizeof(Packet) + packet->name_length;
+                    }
+                } break;
+                case Framed_PacketKind_ZoneEnd:
+                {
+#pragma pack(push, 1)
+                    typedef struct Packet Packet;
+                    struct Packet
+                    {
+                        PacketHeader header;
+                    };
+#pragma pack(pop)
+                    // NOTE(simon): No need to ensure size, the event is only the header.
+
+                    Packet *packet = (Packet *) header;
+
+                    Frame *frame = &profiling_state->current_frame;
+
+                    profiling_state->zone_stack_pos--;
+
+                    ZoneStackEntry *stack_entry = profiling_state->zone_stack + profiling_state->zone_stack_pos;
+                    ZoneBlock *zone = stack_entry->zone_block;
+
+                    zone->end_tsc = packet->header.tsc;
+
+                    entry_size = sizeof(Packet);
+
+                    profiling_state->profile_end_tsc = packet->header.tsc;
+                } break;
+                default:
+                {
+                    log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
+                    terminate_connection = true;
+                    framed_state->popup_message = framed_pop_up_message;
+                    framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                } break;
+            }
+            buffer_pointer += entry_size;
         }
+        release_scratch(scratch);
+        size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+    }
+
+    if (terminate_connection)
+    {
+        net_socket_free(profiling_state->client_socket);
+        memory_zero_struct(&profiling_state->client_socket);
     }
 
     U64 parse_end_time_ns = os_now_nanoseconds();
@@ -766,10 +719,8 @@ os_main(Str8List arguments)
     framed_state->profiling_state = push_struct(framed_perm_arena, ProfilingState);
 
     ProfilingState *profiling_state = framed_state->profiling_state;
-    profiling_state->frame_arenas[0] = arena_create("PerFrame ProfilingArena");
-    profiling_state->frame_arenas[1] = arena_create("PerFrame ProfilingArena");
-    profiling_state->zone_stack_size = 1;
-    profiling_state->sample_size = profiling_state->next_sample_size = 1;
+    profiling_state->finished_frame.arena = arena_create("FinishedZoneFrameArena");
+    profiling_state->current_frame.arena = arena_create("CurrentZoneFrameArena");
 
     framed_state->popup_message = framed_pop_up_message_stub;
 
@@ -1078,19 +1029,6 @@ os_main(Str8List arguments)
             profiling_state->parsed_time_accumulator = 0;
 
             profiling_state->stats_seconds_accumulator = 0;
-        }
-
-        // NOTE(hampus): This will only be accurate if Framed runs at a
-        // high frame rate.
-        if (net_socket_connection_is_alive(profiling_state->client_socket))
-        {
-            profiling_state->time_since_last_recieve += dt;
-            if (profiling_state->time_since_last_recieve >= 2)
-            {
-                memory_zero_struct(&profiling_state->latest_captured_sample);
-                net_socket_free(profiling_state->client_socket);
-                memory_zero_struct(&profiling_state->client_socket);
-            }
         }
 
         start_counter = end_counter;

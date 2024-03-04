@@ -4,53 +4,41 @@
 #define FRAMED_SETTINGS_VERSION (1)
 
 typedef struct ZoneBlock ZoneBlock;
-struct ZoneBlock
+    struct ZoneBlock
 {
-    Str8 name;
-    U64 tsc_elapsed_inc;
-    U64 tsc_elapsed_exc;
-    U64 hit_count;
+        Str8 name;
+        U64 start_tsc;
+        U64 end_tsc;
+    };
+
+typedef struct ZoneStackEntry ZoneStackEntry;
+struct ZoneStackEntry
+{
+    ZoneBlock *zone_block;
 };
 
-typedef struct ZoneStack ZoneStack;
-struct ZoneStack
+typedef struct Frame Frame;
+struct Frame
 {
-    Str8 name;
-    U64 tsc_start;
-    U64 old_tsc_elapsed_inc;
+    Arena *arena;
+    ZoneBlock *zone_blocks;
+    U64 zone_blocks_count;
+    U64 begin_tsc;
+    U64 end_tsc;
 };
 
-#define MAX_NUMBER_OF_UNIQUE_ZONES (4096)
-typedef struct CapturedSample CapturedSample;
-struct CapturedSample
+    typedef struct ProfilingState ProfilingState;
+    struct ProfilingState
 {
-    U64 total_tsc;
-    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
-    U64 start_frame_index;
-    U64 end_frame_index;
-};
+        // NOTE(hampus): Finished sample
 
-typedef struct ProfilingState ProfilingState;
-struct ProfilingState
-{
-    CapturedSample latest_captured_sample;
+    Frame finished_frame;
 
-    U64 next_sample_size;
-    U64 sample_size;
+    // NOTE(hampus): Current stats in progress
 
-    // NOTE(hampus): Per sample
-
-    ZoneBlock zone_blocks[MAX_NUMBER_OF_UNIQUE_ZONES];
-    U64 frame_tsc;
-    U64 frame_index_accumulator;
-
-    // NOTE(hampus): Per frame (except if you are not profiling frames, then this would just be the total and never resetted)
-
-    Arena *frame_arenas[2];
-    ZoneStack zone_stack[1024];
-    U32 zone_stack_size;
-    U64 frame_begin_tsc;
-    U64 frame_end_tsc;
+    Frame current_frame;
+    ZoneStackEntry zone_stack[1024];
+    U64 zone_stack_pos;
 
     // NOTE(hampus): Per session
 
