@@ -244,8 +244,6 @@ ui_logger(LogUI_State *state)
             --state->has_new_entries;
         }
 
-        ui_push_font_size(11);
-
         for (U32 i = 0; i < state->entry_count; ++i)
         {
             Log_QueueEntry *entry = &state->entries[i];
