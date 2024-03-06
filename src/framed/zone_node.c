@@ -143,12 +143,12 @@ zone_node_hierarchy_from_frame(Frame *frame)
                 node->name = zone->name;
                 dll_push_back(parent_node->first, parent_node->last, node);
                 node->parent = parent_node;
-                zone_node_push_id(hash_str8(node->name));
             }
 
             parent_node = node;
 
             exc_values_stack++;
+            zone_node_push_id(hash_str8(node->name));
 
             exc_values_stack->tsc_start = zone->start_tsc;
 
