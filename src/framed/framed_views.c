@@ -175,8 +175,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         str8_comp("Exc. (ms)"),
         str8_comp("Inc. (ms)"),
         str8_comp("Hit count"),
-        str8_comp("Min. (ms)"),
-        str8_comp("Max. (ms)"),
+        str8_comp("Min exc. (ms)"),
+        str8_comp("Max exc. (ms)"),
     };
 
     F32 new_column_pcts[6] = {0};
@@ -189,10 +189,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     {
         for (U64 i = 0; i < array_count(column_names); ++i)
         {
-            ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 1.0f));
+            ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 1));
             ui_next_extra_box_flags(UI_BoxFlag_Clip);
             ui_named_column_beginf("ZoneColumn%"PRIU64, i);
-            ui_next_width(ui_pct(1, 0.5f));
+
+            ui_next_width(ui_pct(1, 1));
             ui_box_make(UI_BoxFlag_DrawText |
                         UI_BoxFlag_DrawBackground,
                         column_names[i]);

@@ -77,6 +77,7 @@ zone_node_hash_from_name(Str8 name)
 typedef struct ZoneTempValues ZoneTempValues;
 struct ZoneTempValues
 {
+    Str8 name;
     F64 ms_elapsed_exc;
     U64 tsc_start;
     U64 tsc_end;
@@ -98,7 +99,7 @@ zone_node_hierarchy_from_frame(Frame *frame)
     // keep around while creating the hierarchy.
     ZoneTempValues *exc_values_stack_base = push_array(scratch.arena, ZoneTempValues, 512);
     ZoneTempValues *exc_values_stack = exc_values_stack_base;
-    exc_values_stack->tsc_end = U64_MAX;
+    exc_values_stack->tsc_end = frame->end_tsc;
     exc_values_stack->tsc_start = 0;
 
     U64 cycles_per_second = frame->tsc_frequency;
@@ -118,17 +119,19 @@ zone_node_hierarchy_from_frame(Frame *frame)
             parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
             parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
             exc_values_stack--;
-            parent_node = parent_node->parent;
-            zone_node_pop_id();
+            if (!str8_equal(parent_node->name, exc_values_stack->name))
+            {
+                parent_node = parent_node->parent;
+                zone_node_pop_id();
+            }
         }
 
         F64 ms_total = ((F64)(zone->end_tsc - zone->start_tsc)/(F64)cycles_per_second) * 1000.f;
 
         ZoneNode *node = parent_node;
+        exc_values_stack->ms_elapsed_exc -= ms_total;
         if (!str8_equal(zone->name, node->name))
         {
-            exc_values_stack->ms_elapsed_exc -= ms_total;
-
             node = 0;
             for (ZoneNode *n = parent_node->first; n != 0; n = n->next)
             {
@@ -153,16 +156,16 @@ zone_node_hierarchy_from_frame(Frame *frame)
 
             parent_node = node;
 
-            exc_values_stack++;
             zone_node_push_id(hash_str8(node->name));
 
-            exc_values_stack->tsc_start = zone->start_tsc;
-
-            exc_values_stack->ms_elapsed_exc = ms_total;
+            node->ms_elapsed_inc += ms_total;
         }
 
+        exc_values_stack++;
+        exc_values_stack->tsc_start = zone->start_tsc;
         exc_values_stack->tsc_end = zone->end_tsc;
-        node->ms_elapsed_inc += ms_total;
+        exc_values_stack->ms_elapsed_exc = ms_total;
+        exc_values_stack->name = zone->name;
 
         node->hit_count++;
     }
@@ -173,7 +176,11 @@ zone_node_hierarchy_from_frame(Frame *frame)
         parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
         parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
         exc_values_stack--;
-        parent_node = parent_node->parent;
+
+        if (!str8_equal(parent_node->name, exc_values_stack->name))
+        {
+            parent_node = parent_node->parent;
+        }
     }
 
     release_scratch(scratch);

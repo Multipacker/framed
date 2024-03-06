@@ -46,7 +46,7 @@ enum UI_BoxFlags
     UI_BoxFlag_AllowOverflowY       = (1 << 10),
 
     // NOTE(hampus): This decides if the box's rect should be pushed as a clip
-    // rect when it is rendered and for input.
+    // rect when it is rendered and for input
     UI_BoxFlag_Clip            = (1 << 11),
 
     // NOTE(hampus): These makes the ui auto-layouting
