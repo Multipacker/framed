@@ -1379,10 +1379,13 @@ framed_ui_panel_update(FramedUI_Panel *root)
             if (!framed_ui_is_dragging())
             {
                 UI_Comm title_bar_comm = ui_comm_from_box(title_bar);
-                if (title_bar_comm.pressed)
+                if (root->tab_group.count != 0)
                 {
-                    framed_ui_drag_begin_reordering(root->tab_group.active_tab, true, title_bar_comm.rel_mouse);
-                    framed_ui_wait_for_drag_threshold();
+                    if (title_bar_comm.pressed)
+                    {
+                        framed_ui_drag_begin_reordering(root->tab_group.active_tab, true, title_bar_comm.rel_mouse);
+                        framed_ui_wait_for_drag_threshold();
+                    }
                 }
             }
         }
@@ -1821,6 +1824,7 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 {
                     // NOTE(hampus): Calculate the new window size
                     FramedUI_Panel *panel_child = tab->panel;
+
                     Vec2F32 prev_panel_pct = v2f32(1, 1);
                     for (FramedUI_Panel *panel_parent = panel_child->parent;
                          !framed_ui_panel_is_nil(panel_parent);
