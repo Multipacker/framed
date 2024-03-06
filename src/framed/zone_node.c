@@ -63,6 +63,7 @@ zone_node_push_id(U64 id)
 internal Void
 zone_node_pop_id(Void)
 {
+    assert(id_stack_pos > 0);
     id_stack_pos--;
 }
 
@@ -84,8 +85,8 @@ struct ZoneTempValues
 internal ZoneNode *
 zone_node_hierarchy_from_frame(Frame *frame)
 {
-    id_stack_pos = 0;
-    id_stack[id_stack_pos] = 0;
+    id_stack_pos = 1;
+    id_stack[0] = 0;
 
     Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -97,7 +98,7 @@ zone_node_hierarchy_from_frame(Frame *frame)
     // keep around while creating the hierarchy.
     ZoneTempValues *exc_values_stack_base = push_array(scratch.arena, ZoneTempValues, 512);
     ZoneTempValues *exc_values_stack = exc_values_stack_base;
-    exc_values_stack->tsc_end = frame->end_tsc;
+    exc_values_stack->tsc_end = U64_MAX;
     exc_values_stack->tsc_start = 0;
 
     U64 cycles_per_second = frame->tsc_frequency;
@@ -105,6 +106,11 @@ zone_node_hierarchy_from_frame(Frame *frame)
     for (U64 i = 0; i < frame->zone_blocks_count; ++i)
     {
         ZoneBlock *zone = frame->zone_blocks + i;
+
+        if (zone->end_tsc == 0)
+        {
+            continue;
+        }
 
         while (!(zone->start_tsc >= exc_values_stack->tsc_start && zone->end_tsc <= exc_values_stack->tsc_end))
         {
