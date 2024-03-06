@@ -13,7 +13,7 @@ build/meta
 src_files="src/framed/framed_main.c"
 out_file="build/framed"
 common_flags="-I. -Isrc -Ivendor -o $out_file -DRENDERER_OPENGL=1 -pthread"
-linker_flags="-lSDL2 -lm"
+linker_flags="-lSDL2 -lm -lwayland-client"
 
 if [ "$mode" == "debug" ]; then
     compiler_flags="-g -fsanitize=address -DENABLE_ASSERT=1 -DBUILD_MODE_DEBUG=1"

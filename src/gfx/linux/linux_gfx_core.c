@@ -10,6 +10,7 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
     result.sdl  = sdl_init(x, y, width, height, title);
     //result.kind     = Gfx_Linux_ContextKind_Wayland;
     //result.wayland  = wayland_init(x, y, width, height, title);
+    wayland_init(x, y, width, height, title);
 
     return(result);
 }
