@@ -190,86 +190,87 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         for (U64 i = 0; i < array_count(column_names); ++i)
         {
             ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 1.0f));
-            ui_column()
+            ui_next_extra_box_flags(UI_BoxFlag_Clip);
+            ui_named_column_beginf("ZoneColumn%"PRIU64, i);
+            ui_next_width(ui_pct(1, 0.5f));
+            ui_box_make(UI_BoxFlag_DrawText |
+                        UI_BoxFlag_DrawBackground,
+                        column_names[i]);
+
+            ui_next_width(ui_pct(1, 1));
+            ui_next_height(ui_em(0.05f, 1));
+            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+            switch (i)
             {
-                ui_next_width(ui_pct(1, 0.5f));
-                ui_box_make(UI_BoxFlag_DrawText |
-                            UI_BoxFlag_DrawBackground,
-                            column_names[i]);
-
-                ui_next_width(ui_pct(1, 1));
-                ui_next_height(ui_em(0.05f, 1));
-                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-                switch (i)
+                case 0:
                 {
-                    case 0:
+                    for (ZoneNode *node = root->first; node != 0; node = node->next)
+                    {
+                        display_zone_name(node);
+                    }
+                } break;
+                case 1:
+                {
+                    ui_text_align(UI_TextAlign_Right)
+                        ui_width(ui_pct(1, 1))
                     {
                         for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            display_zone_name(node);
+                            display_zone_exc(node);
                         }
-                    } break;
-                    case 1:
+                    }
+                } break;
+                case 2:
+                {
+                    ui_text_align(UI_TextAlign_Right)
+                        ui_width(ui_pct(1, 1))
                     {
-                        ui_text_align(UI_TextAlign_Right)
-                            ui_width(ui_pct(1, 1))
+                        for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            for (ZoneNode *node = root->first; node != 0; node = node->next)
-                            {
-                                display_zone_exc(node);
-                            }
+                            display_zone_inc(node);
                         }
-                    } break;
-                    case 2:
-                    {
-                        ui_text_align(UI_TextAlign_Right)
-                            ui_width(ui_pct(1, 1))
-                        {
-                            for (ZoneNode *node = root->first; node != 0; node = node->next)
-                            {
-                                display_zone_inc(node);
-                            }
-                        }
-                    } break;
-                    case 3:
-                    {
+                    }
+                } break;
+                case 3:
+                {
 
-                        ui_text_align(UI_TextAlign_Right)
-                            ui_width(ui_pct(1, 1))
-                        {
-                            for (ZoneNode *node = root->first; node != 0; node = node->next)
-                            {
-                                display_zone_hit_count(node);
-                            }
-                        }
-                    } break;
-                    case 4:
+                    ui_text_align(UI_TextAlign_Right)
+                        ui_width(ui_pct(1, 1))
                     {
-                        ui_text_align(UI_TextAlign_Right)
-                            ui_width(ui_pct(1, 1))
+                        for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            for (ZoneNode *node = root->first; node != 0; node = node->next)
-                            {
-                                display_zone_min_exc(node);
-                            }
+                            display_zone_hit_count(node);
                         }
-                    } break;
-                    case 5:
+                    }
+                } break;
+                case 4:
+                {
+                    ui_text_align(UI_TextAlign_Right)
+                        ui_width(ui_pct(1, 1))
                     {
-                        ui_text_align(UI_TextAlign_Right)
-                            ui_width(ui_pct(1, 1))
+                        for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            for (ZoneNode *node = root->first; node != 0; node = node->next)
-                            {
-                                display_zone_max_exc(node);
-                            }
+                            display_zone_min_exc(node);
                         }
-                    } break;
-                    invalid_case;
-                }
+                    }
+                } break;
+                case 5:
+                {
+                    ui_text_align(UI_TextAlign_Right)
+                        ui_width(ui_pct(1, 1))
+                    {
+                        for (ZoneNode *node = root->first; node != 0; node = node->next)
+                        {
+                            display_zone_max_exc(node);
+                        }
+                    }
+                } break;
+                invalid_case;
             }
+
+            ui_named_column_end();
 
             ui_next_width(ui_em(0.3f, 1));
             ui_next_height(ui_pct(1, 1));
@@ -305,7 +306,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_spacer(ui_fill());
             }
-
         }
     }
     ui_named_row_end();
