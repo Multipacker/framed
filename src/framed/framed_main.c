@@ -25,12 +25,14 @@
 #include "public/framed.h"
 #include "framed/framed_ui.h"
 #include "framed/framed_main.h"
+#include "framed/zone_node.h"
 
 global U64 framed_frame_counter;
 Framed_State *framed_state;
 
 #include "framed/framed_ui.c"
 #include "framed/framed_views.c"
+#include "framed/zone_node.c"
 
 FRAMED_POP_MESSAGE_PROC(framed_pop_up_message_stub)
 {
@@ -723,6 +725,8 @@ os_main(Str8List arguments)
     profiling_state->current_frame.arena = arena_create("CurrentZoneFrameArena");
 
     framed_state->popup_message = framed_pop_up_message_stub;
+
+    zone_node_init();
 
     //- hampus: Allocate listen socket
 

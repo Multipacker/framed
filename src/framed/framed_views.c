@@ -1,130 +1,123 @@
 ////////////////////////////////
 //~ hampus: Zones tab view
 
-typedef struct ZoneBlockNode ZoneBlockNode;
-struct ZoneBlockNode
-{
-    ZoneBlockNode *parent;
-    ZoneBlockNode *next;
-    ZoneBlockNode *prev;
-    ZoneBlockNode *first;
-    ZoneBlockNode *last;
-
-    ZoneBlockNode *hash_next;
-
-    U64 tsc_start;
-    U64 tsc_end;
-
-    Str8 name;
-    F64 ms_elapsed_inc;
-    F64 ms_elapsed_exc;
-    F64 ms_min_elapsed_exc;
-    F64 ms_max_elapsed_exc;
-    F64 hit_count;
-};
-
 internal Void
-display_zone_min_exc(ZoneBlockNode *root)
+display_zone_min_exc(ZoneNode *root)
 {
     ui_textf("%.2f", root->ms_min_elapsed_exc);
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
-        display_zone_min_exc(node);
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_min_exc(node);
+        }
     }
 }
 
 internal Void
-display_zone_max_exc(ZoneBlockNode *root)
+display_zone_max_exc(ZoneNode *root)
 {
     ui_textf("%.2f", root->ms_max_elapsed_exc);
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
-        display_zone_max_exc(node);
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_max_exc(node);
+        }
     }
 }
 
 internal Void
-display_zone_hit_count(ZoneBlockNode *root)
+display_zone_hit_count(ZoneNode *root)
 {
-    ui_textf("%.2f", root->hit_count);
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+    ui_textf("%"PRIU64, root->hit_count);if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
-        display_zone_hit_count(node);
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_hit_count(node);
+        }
     }
 }
 
 internal Void
-display_zone_inc(ZoneBlockNode *root)
+display_zone_inc(ZoneNode *root)
 {
     ui_textf("%.2f", root->ms_elapsed_inc);
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
-        display_zone_inc(node);
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_inc(node);
+        }
     }
 }
 
 internal Void
-display_zone_exc(ZoneBlockNode *root)
+display_zone_exc(ZoneNode *root)
 {
     ui_textf("%.2f", root->ms_elapsed_exc);
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
-        display_zone_exc(node);
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_exc(node);
+        }
     }
 }
 
 internal Void
-display_zone_name(ZoneBlockNode *root)
+display_zone_name(ZoneNode *root)
 {
-    ui_textf("%"PRISTR8, str8_expand(root->name));
-    ui_row()
+    if (root->first)
     {
-        ui_spacer(ui_em(1, 1));
-        ui_column()
+        ui_next_extra_box_flags(UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation);
+        ui_next_hover_cursor(Gfx_Cursor_Hand);
+        ui_next_width(ui_pct(1, 0));
+        UI_Box *row = ui_named_row_beginf("%"PRIU64, root->id);
+        UI_Comm comm = ui_comm_from_box(row);
+        if (comm.hovering)
         {
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+            row->flags |= UI_BoxFlag_DrawBackground;
+        }
+        if (comm.pressed)
+        {
+            root->flags ^= ZoneNodeFlag_Collapsed;
+        }
+        ui_next_width(ui_em(1, 1));
+        ui_next_height(ui_em(1, 1));
+        if (root->flags & ZoneNodeFlag_Collapsed)
+        {
+            ui_next_icon(RENDER_ICON_RIGHT_OPEN);
+        }
+        else
+        {
+            ui_next_icon(RENDER_ICON_DOWN_OPEN);
+        }
+        ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
+        ui_next_text_padding(Axis2_X, ui_top_font_line_height()*0.2f);
+        ui_text(root->name);
+        ui_named_row_end();
+    }
+    else
+    {
+        ui_text(root->name);
+    }
+
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
+    {
+        ui_next_width(ui_pct(1, 0));
+        ui_row()
+        {
+            ui_spacer(ui_em(1.2f, 1));
+            ui_next_width(ui_pct(1, 0));
+            ui_column()
             {
-                display_zone_name(node);
+                for (ZoneNode *node = root->first; node != 0; node = node->next)
+                {
+                    display_zone_name(node);
+                }
             }
         }
-    }
-}
-
-internal Void
-flatten_hierarchy(Arena *arena, ZoneBlockNode *root, ZoneBlockNode *new_root, ZoneBlockNode **map)
-{
-    U64 hash = hash_str8(root->name);
-    U64 slot_index = (hash%4096);
-    ZoneBlockNode *map_entry = map[slot_index];
-    while (map_entry)
-    {
-        if (str8_equal(map_entry->name, root->name))
-        {
-            break;
-        }
-        map_entry = map_entry->hash_next;
-    }
-
-    if (!map_entry)
-    {
-        map_entry = push_struct_zero(arena, ZoneBlockNode);
-
-        map_entry->name = root->name;
-        map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
-
-        sll_push_front_np(map[slot_index], map_entry, hash_next);
-        dll_push_back(new_root->first, new_root->last, map[slot_index]);
-    }
-
-    map_entry->hit_count += root->hit_count;
-    map_entry->ms_elapsed_inc += root->ms_elapsed_inc;
-    map_entry->ms_elapsed_exc += root->ms_elapsed_exc;
-    map_entry->ms_min_elapsed_exc = f64_min(map_entry->ms_min_elapsed_exc, root->ms_min_elapsed_exc);
-    map_entry->ms_max_elapsed_exc = f64_max(map_entry->ms_max_elapsed_exc, root->ms_max_elapsed_exc);
-
-    for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
-    {
-        flatten_hierarchy(arena, node, new_root, map);
     }
 }
 
@@ -135,9 +128,20 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     struct TabViewData
     {
         B32 flatten;
+        F32 column_sizes_in_pct[6];
     };
 
     TabViewData *view_data = framed_ui_get_view_data(view_info, TabViewData);
+
+    if (!data_initialized)
+    {
+        view_data->column_sizes_in_pct[0] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[1] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[2] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[3] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[4] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[5] = 1.0f/6.0f;
+    }
 
     ProfilingState *profiling_state = framed_state->profiling_state;
 
@@ -152,96 +156,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     }
 
     Arena_Temporary scratch = get_scratch(0, 0);
+    frame->tsc_frequency = profiling_state->tsc_frequency;
 
-    ZoneBlockNode *root = push_struct_zero(scratch.arena, ZoneBlockNode);
-    root->tsc_end = U64_MAX;
-
-    ZoneBlockNode *parent_node = root;
-
-    typedef struct ZoneValueExcluded ZoneValueExcluded;
-    struct ZoneValueExcluded
-    {
-        F64 ms_elapsed_exc;
-    };
-
-    ZoneValueExcluded *exc_values_stack_base = push_array(scratch.arena, ZoneValueExcluded, 512);
-    ZoneValueExcluded *exc_values_stack = exc_values_stack_base;
-
-    U64 cycles_per_second = profiling_state->tsc_frequency;
-
-    for (U64 i = 0; i < frame->zone_blocks_count; ++i)
-    {
-        ZoneBlock *zone = frame->zone_blocks + i;
-
-        while (!(zone->start_tsc >= parent_node->tsc_start && zone->end_tsc <= parent_node->tsc_end))
-        {
-            parent_node->ms_min_elapsed_exc = f64_min(parent_node->ms_min_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-            parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-            parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
-            exc_values_stack--;
-            parent_node = parent_node->parent;
-        }
-
-        F64 ms_total = ((F64)(zone->end_tsc - zone->start_tsc)/(F64)cycles_per_second) * 1000.f;
-
-        ZoneBlockNode *node = parent_node;
-        if (!str8_equal(zone->name, node->name))
-        {
-            exc_values_stack->ms_elapsed_exc -= ms_total;
-
-            node = 0;
-            for (ZoneBlockNode *n = parent_node->first; n != 0; n = n->next)
-            {
-                if (str8_equal(zone->name, n->name))
-                {
-                    node = n;
-                }
-            }
-
-            if (!node)
-            {
-                node = push_struct_zero(scratch.arena, ZoneBlockNode);
-                dll_push_back(parent_node->first, parent_node->last, node);
-                node->parent = parent_node;
-                node->ms_min_elapsed_exc = (F64)U64_MAX;
-            }
-
-            parent_node = node;
-
-            node->tsc_start = zone->start_tsc;
-            node->name = zone->name;
-
-            exc_values_stack++;
-            exc_values_stack->ms_elapsed_exc = ms_total;
-        }
-
-        node->tsc_end = zone->end_tsc;
-        node->ms_elapsed_inc += ms_total;
-
-        node->hit_count++;
-    }
-
-    while (exc_values_stack >= exc_values_stack_base)
-    {
-        parent_node->ms_min_elapsed_exc = f64_min(parent_node->ms_min_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-        parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-        parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
-        exc_values_stack--;
-        parent_node = parent_node->parent;
-    }
-
-    if (view_data->flatten)
-    {
-        ZoneBlockNode *new_root = push_struct_zero(scratch.arena, ZoneBlockNode);
-        ZoneBlockNode **map = push_array_zero(scratch.arena, ZoneBlockNode *, 4096);
-
-        for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
-        {
-            flatten_hierarchy(scratch.arena, node, new_root, map);
-        }
-
-        root = new_root;
-    }
+    ZoneNode *root = zone_node_hierarchy_from_frame(frame);
 
     ui_row()
     {
@@ -250,117 +167,150 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         ui_check(&view_data->flatten, str8_lit("FlattenCheck"));
     }
 
-    ui_spacer(ui_em(1, 1));
+    ui_spacer(ui_em(0.5f, 1));
+
+    local Str8 column_names[] =
+    {
+        str8_comp("Name"),
+        str8_comp("Exc. (ms)"),
+        str8_comp("Inc. (ms)"),
+        str8_comp("Hit count"),
+        str8_comp("Min. (ms)"),
+        str8_comp("Max. (ms)"),
+    };
+
+    F32 new_column_pcts[6] = {0};
+    memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
 
     ui_next_height(ui_pct(1, 1));
-    ui_row()
+    ui_next_width(ui_pct(0.5f, 1));
+    UI_Box *row_parent = ui_named_row_begin(str8_lit("ZoneDisplayContainer"));
+    ui_corner_radius(0)
     {
-        ui_next_width(ui_em(10, 1));
-        ui_column()
+        for (U64 i = 0; i < array_count(column_names); ++i)
         {
-            ui_text(str8_lit("Name"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+            ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 1.0f));
+            ui_column()
             {
-                display_zone_name(node);
+                ui_next_width(ui_pct(1, 0.5f));
+                ui_box_make(UI_BoxFlag_DrawText |
+                            UI_BoxFlag_DrawBackground,
+                            column_names[i]);
+
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_em(0.05f, 1));
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                switch (i)
+                {
+                    case 0:
+                    {
+                        for (ZoneNode *node = root->first; node != 0; node = node->next)
+                        {
+                            display_zone_name(node);
+                        }
+                    } break;
+                    case 1:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_exc(node);
+                            }
+                        }
+                    } break;
+                    case 2:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_inc(node);
+                            }
+                        }
+                    } break;
+                    case 3:
+                    {
+
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_hit_count(node);
+                            }
+                        }
+                    } break;
+                    case 4:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_min_exc(node);
+                            }
+                        }
+                    } break;
+                    case 5:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_max_exc(node);
+                            }
+                        }
+                    } break;
+                    invalid_case;
+                }
             }
-        }
 
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+            ui_next_width(ui_em(0.3f, 1));
+            ui_next_height(ui_pct(1, 1));
+            ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+            ui_next_child_layout_axis(Axis2_X);
+            UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable,
+                                                         "ColumnSplit%"PRIU64, i);
 
-        ui_next_width(ui_em(5, 1));
-        ui_column()
-            ui_text_align(UI_TextAlign_Right)
-            ui_width(ui_pct(1, 1))
-        {
-            ui_text(str8_lit("Exc (ms)"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+            UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
+            F32 drag_delta = column_comm.drag_delta.x;
+            if (column_comm.dragging && i != (array_count(column_names)-1))
             {
-                display_zone_exc(node);
+                F32 pct_delta = drag_delta / row_parent->fixed_size.x;
+                F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
+                F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
+
+                pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
+
+                new_column_pcts[i] -= pct_delta;
+                new_column_pcts[i+1] += pct_delta;
             }
-        }
 
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        ui_next_width(ui_em(5, 1));
-        ui_column()
-            ui_text_align(UI_TextAlign_Right)
-            ui_width(ui_pct(1, 1))
-        {
-            ui_text(str8_lit("Inc (ms)"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
+            ui_parent(column_divider_hitbox)
             {
-                display_zone_inc(node);
+                ui_spacer(ui_fill());
+
+                ui_next_width(ui_pixels(1, 1));
+                ui_next_height(ui_pct(1, 1));
+                ui_next_corner_radius(0);
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                UI_Box *column_divider = ui_box_make(UI_BoxFlag_DrawBackground,
+                                                     str8_lit(""));
+
+                ui_spacer(ui_fill());
             }
+
         }
-
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        ui_next_width(ui_em(5, 1));
-        ui_column()
-            ui_text_align(UI_TextAlign_Right)
-            ui_width(ui_pct(1, 1))
-        {
-            ui_text(str8_lit("Hit count"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
-            {
-                display_zone_hit_count(node);
-            }
-        }
-
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        ui_next_width(ui_em(5, 1));
-        ui_column()
-            ui_text_align(UI_TextAlign_Right)
-            ui_width(ui_pct(1, 1))
-        {
-            ui_text(str8_lit("Min (ms)"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
-            {
-                display_zone_min_exc(node);
-            }
-        }
-
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-        ui_next_width(ui_em(5, 1));
-        ui_column()
-            ui_text_align(UI_TextAlign_Right)
-            ui_width(ui_pct(1, 1))
-        {
-            ui_text(str8_lit("Max (ms)"));
-            ui_spacer(ui_em(0.5f, 1));
-            for (ZoneBlockNode *node = root->first; node != 0; node = node->next)
-            {
-                display_zone_max_exc(node);
-            }
-        }
-
-        ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_em(0.05f, 1));
-        ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-        ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
     }
+    ui_named_row_end();
+
+    memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
 
     release_scratch(scratch);
 }
@@ -811,6 +761,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                     ui_spacer(ui_fill());
                 }
+
             }
             ui_named_row_end();
         }

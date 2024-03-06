@@ -25,6 +25,7 @@ struct Frame
     U64 zone_blocks_count;
     U64 begin_tsc;
     U64 end_tsc;
+    U64 tsc_frequency;
 };
 
     typedef struct ProfilingState ProfilingState;
