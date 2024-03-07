@@ -290,15 +290,15 @@ struct Framed_Socket
     Framed_U64 u64[1];
 };
 
-typedef struct Framed_ClientState Framed_ClientState;
-struct Framed_ClientState
+typedef struct Framed_State Framed_State;
+struct Framed_State
 {
     Framed_Socket socket;
     Framed_U8 *buffer;
     Framed_U64 buffer_pos;
 };
 
-static Framed_ClientState global_framed_state;
+static Framed_State global_framed_state;
 
 #ifdef __cplusplus
 
@@ -342,7 +342,7 @@ framed__ensure_space(Framed_U64 size)
 {
     framed__assert(size <= FRAMED_BUFFER_CAPACITY);
 
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     if ((framed->buffer_pos + size) > FRAMED_BUFFER_CAPACITY)
     {
         framed_flush_();
@@ -434,7 +434,7 @@ framed__guess_tsc_frequency(Framed_U64 ms_to_wait)
 static void
 framed__socket_init(Framed_B32 wait_for_connection)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     WSADATA wsa_data;
     WSAStartup(MAKEWORD(2, 2), &wsa_data);
     SOCKET sock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -458,7 +458,7 @@ framed__socket_init(Framed_B32 wait_for_connection)
 static void
 framed__socket_send(void)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     SOCKET sock = (SOCKET) framed->socket.u64[0];
     Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
     *packet_size = (Framed_U16)framed->buffer_pos;
@@ -511,7 +511,7 @@ framed__guess_tsc_frequency(Framed_U64 ms_to_wait)
 static void
 framed__socket_init(Framed_B32 wait_for_connection)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     int linux_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     framed->socket.u64[0] = (Framed_U64) linux_socket;
     struct sockaddr_in socket_address = {0};
@@ -526,7 +526,7 @@ framed__socket_init(Framed_B32 wait_for_connection)
 static void
 framed__socket_send(void)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     int linux_socket = (int) framed->socket.u64[0];
     Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
     *packet_size = (Framed_U16)framed->buffer_pos;
@@ -545,7 +545,7 @@ framed__socket_send(void)
 FRAMED_DEF void
 framed_init_(Framed_B32 wait_for_connection)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
     framed__socket_init(wait_for_connection);
     framed->buffer     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
@@ -585,7 +585,7 @@ framed_init_(Framed_B32 wait_for_connection)
 FRAMED_DEF void
 framed_flush_(void)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
     framed__socket_send();
     // NOTE(hampus): First two bytes are the size of the packet
     framed->buffer_pos = sizeof(Framed_U16);
@@ -594,7 +594,7 @@ framed_flush_(void)
 FRAMED_DEF void
 framed_mark_frame_start_(void)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
 #pragma pack(push, 1)
     typedef struct Packet Packet;
@@ -617,7 +617,7 @@ framed_mark_frame_start_(void)
 FRAMED_DEF void
 framed_zone_begin_(char *name)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
 #pragma pack(push, 1)
     typedef struct Packet Packet;
@@ -649,7 +649,7 @@ framed_zone_begin_(char *name)
 FRAMED_DEF void
 framed_zone_end_(void)
 {
-    Framed_ClientState *framed = &global_framed_state;
+    Framed_State *framed = &global_framed_state;
 
 #pragma pack(push, 1)
     typedef struct Packet Packet;

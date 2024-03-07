@@ -70,7 +70,5 @@ int main(int argc, char **argv)
 
   framed_zone_end();
 
-    framed_flush();
-
-    Sleep(3000);
+  framed_flush();
 }

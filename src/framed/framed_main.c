@@ -22,7 +22,6 @@
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
 
-#define FRAMED_IMPLEMENTATION
 #include "public/framed.h"
 #include "framed/framed_ui.h"
 #include "framed/framed_main.h"
