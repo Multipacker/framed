@@ -631,6 +631,13 @@ u16_big_to_local_endian(U16 x)
 #endif
 }
 
+internal U16
+u16_clamp(U16 min, U16 val, U16 max)
+{
+    U16 result = u16_max(u16_min(val, max), min);
+    return(result);
+}
+
 internal U32
 u32_min(U32 a, U32 b)
 {

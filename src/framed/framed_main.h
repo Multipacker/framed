@@ -60,6 +60,7 @@ struct Frame
     B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;
+    U16 port;
 };
 
 #define FRAMED_POP_MESSAGE_PROC(name) Void name(Str8 message)

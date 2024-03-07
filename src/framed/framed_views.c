@@ -129,9 +129,16 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     {
         B32 flatten;
         F32 column_sizes_in_pct[6];
+
+        UI_TextEditState port_text_edit_state;
+        U8 *port_text_buffer;
+        U64 port_text_buffer_size;
+        U64 port_string_length;
     };
 
     TabViewData *view_data = framed_ui_get_view_data(view_info, TabViewData);
+
+    ProfilingState *profiling_state = framed_state->profiling_state;
 
     if (!data_initialized)
     {
@@ -141,9 +148,17 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         view_data->column_sizes_in_pct[3] = 1.0f/6.0f;
         view_data->column_sizes_in_pct[4] = 1.0f/6.0f;
         view_data->column_sizes_in_pct[5] = 1.0f/6.0f;
-    }
 
-    ProfilingState *profiling_state = framed_state->profiling_state;
+        view_data->port_text_buffer_size = 5;
+        view_data->port_text_buffer = push_array(view_info->arena, U8, view_data->port_text_buffer_size);
+        arena_scratch(0, 0)
+        {
+            Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU16, profiling_state->port);
+            U64 initial_string_length = u64_min(text_buffer_initial_string.size, view_data->port_text_buffer_size);
+            memory_copy_typed(view_data->port_text_buffer, text_buffer_initial_string.data, initial_string_length);
+            view_data->port_string_length = initial_string_length;
+        }
+    }
 
     Frame *frame = 0;
     if (profiling_state->frame_index)
@@ -183,133 +198,181 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
 
     ui_next_height(ui_pct(1, 1));
-    ui_next_width(ui_pct(0.5f, 1));
-    UI_Box *row_parent = ui_named_row_begin(str8_lit("ZoneDisplayContainer"));
-    ui_corner_radius(0)
+    ui_next_width(ui_pct(1, 1));
+    ui_row()
     {
-        for (U64 i = 0; i < array_count(column_names); ++i)
+        ui_next_height(ui_pct(1, 1));
+        ui_next_width(ui_pct(0.5f, 1));
+        UI_Box *row_parent = ui_named_row_begin(str8_lit("ZoneDisplayContainer"));
+        ui_corner_radius(0)
         {
-            ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 1));
-            ui_next_extra_box_flags(UI_BoxFlag_Clip);
-            ui_named_column_beginf("ZoneColumn%"PRIU64, i);
-
-            ui_next_width(ui_pct(1, 1));
-            ui_box_make(UI_BoxFlag_DrawText |
-                        UI_BoxFlag_DrawBackground,
-                        column_names[i]);
-
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_em(0.05f, 1));
-            ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
-            ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
-
-            switch (i)
+            for (U64 i = 0; i < array_count(column_names); ++i)
             {
-                case 0:
+                ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 0));
+                ui_next_extra_box_flags(UI_BoxFlag_Clip);
+                ui_named_column_beginf("ZoneColumn%"PRIU64, i);
+
+                ui_next_width(ui_pct(1, 1));
+                ui_box_make(UI_BoxFlag_DrawText |
+                            UI_BoxFlag_DrawBackground,
+                            column_names[i]);
+
+                ui_next_width(ui_pct(1, 1));
+                ui_next_height(ui_em(0.05f, 1));
+                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+                ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                switch (i)
                 {
-                    for (ZoneNode *node = root->first; node != 0; node = node->next)
-                    {
-                        display_zone_name(node);
-                    }
-                } break;
-                case 1:
-                {
-                    ui_text_align(UI_TextAlign_Right)
-                        ui_width(ui_pct(1, 1))
-                    {
-                        for (ZoneNode *node = root->first; node != 0; node = node->next)
-                        {
-                            display_zone_exc(node);
-                        }
-                    }
-                } break;
-                case 2:
-                {
-                    ui_text_align(UI_TextAlign_Right)
-                        ui_width(ui_pct(1, 1))
+                    case 0:
                     {
                         for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            display_zone_inc(node);
+                            display_zone_name(node);
                         }
-                    }
-                } break;
-                case 3:
-                {
-
-                    ui_text_align(UI_TextAlign_Right)
-                        ui_width(ui_pct(1, 1))
+                    } break;
+                    case 1:
                     {
-                        for (ZoneNode *node = root->first; node != 0; node = node->next)
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
                         {
-                            display_zone_hit_count(node);
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_exc(node);
+                            }
                         }
-                    }
-                } break;
-                case 4:
-                {
-                    ui_text_align(UI_TextAlign_Right)
-                        ui_width(ui_pct(1, 1))
+                    } break;
+                    case 2:
                     {
-                        for (ZoneNode *node = root->first; node != 0; node = node->next)
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
                         {
-                            display_zone_min_exc(node);
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_inc(node);
+                            }
                         }
-                    }
-                } break;
-                case 5:
-                {
-                    ui_text_align(UI_TextAlign_Right)
-                        ui_width(ui_pct(1, 1))
+                    } break;
+                    case 3:
                     {
-                        for (ZoneNode *node = root->first; node != 0; node = node->next)
+
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
                         {
-                            display_zone_max_exc(node);
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_hit_count(node);
+                            }
                         }
-                    }
-                } break;
-                invalid_case;
-            }
+                    } break;
+                    case 4:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_min_exc(node);
+                            }
+                        }
+                    } break;
+                    case 5:
+                    {
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_max_exc(node);
+                            }
+                        }
+                    } break;
+                    invalid_case;
+                }
 
-            ui_named_column_end();
+                ui_named_column_end();
 
-            ui_next_width(ui_em(0.3f, 1));
-            ui_next_height(ui_pct(1, 1));
-            ui_next_hover_cursor(Gfx_Cursor_SizeWE);
-            ui_next_child_layout_axis(Axis2_X);
-            UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable,
-                                                         "ColumnSplit%"PRIU64, i);
-
-            UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
-            F32 drag_delta = column_comm.drag_delta.x;
-            if (column_comm.dragging && i != (array_count(column_names)-1))
-            {
-                F32 pct_delta = drag_delta / row_parent->fixed_size.x;
-                F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
-                F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
-
-                pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
-
-                new_column_pcts[i] -= pct_delta;
-                new_column_pcts[i+1] += pct_delta;
-            }
-
-            ui_parent(column_divider_hitbox)
-            {
-                ui_spacer(ui_fill());
-
-                ui_next_width(ui_pixels(1, 1));
+                ui_next_width(ui_em(0.3f, 1));
                 ui_next_height(ui_pct(1, 1));
-                ui_next_corner_radius(0);
-                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-                UI_Box *column_divider = ui_box_make(UI_BoxFlag_DrawBackground,
-                                                     str8_lit(""));
+                ui_next_hover_cursor(Gfx_Cursor_SizeWE);
+                ui_next_child_layout_axis(Axis2_X);
+                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable,
+                                                             "ColumnSplit%"PRIU64, i);
 
-                ui_spacer(ui_fill());
+                UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
+                F32 drag_delta = column_comm.drag_delta.x;
+                if (column_comm.dragging && i != (array_count(column_names)-1))
+                {
+                    F32 pct_delta = drag_delta / row_parent->fixed_size.x;
+                    F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
+                    F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
+
+                    pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
+
+                    new_column_pcts[i] -= pct_delta;
+                    new_column_pcts[i+1] += pct_delta;
+                }
+
+                ui_parent(column_divider_hitbox)
+                {
+                    ui_spacer(ui_fill());
+
+                    ui_next_width(ui_pixels(1, 1));
+                    ui_next_height(ui_pct(1, 1));
+                    ui_next_corner_radius(0);
+                    ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
+                    UI_Box *column_divider = ui_box_make(UI_BoxFlag_DrawBackground,
+                                                         str8_lit(""));
+
+                    ui_spacer(ui_fill());
+                }
             }
         }
+        ui_named_row_end();
+        U16 next_port = profiling_state->port;
+        ui_row()
+        {
+            ui_text(str8_lit("Listen port:"));
+            UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state,
+                                        view_data->port_text_buffer,
+                                        view_data->port_text_buffer_size,
+                                        &view_data->port_string_length,
+                                        str8_lit("CaptureFrequencyLineEdit"));
+
+            if (!ui_box_is_focused(comm.box))
+            {
+                U16 u16 = 0;
+                u16_from_str8(str8(view_data->port_text_buffer, view_data->port_string_length), &u16);
+                // NOTE(hampus): Ports lower than 1024 are reserved by the system and ports over 50000
+                // are used when dynamically assigning ports
+                next_port = u16_clamp(1024, u16, 50000);
+                Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, next_port);
+                view_data->port_string_length = u64_min(text_buffer_str8.size, view_data->port_text_buffer_size);
+                memory_copy_typed(view_data->port_text_buffer, text_buffer_str8.data, view_data->port_string_length);
+            }
+
+        }
+
+        if (next_port != profiling_state->port)
+        {
+            net_socket_free(profiling_state->listen_socket);
+
+            profiling_state->listen_socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
+            Net_Address address =
+            {
+                .ip.u8[0] = 127,
+                .ip.u8[1] = 0,
+                .ip.u8[2] = 0,
+                .ip.u8[3] = 1,
+                .port = next_port,
+            };
+
+            net_socket_bind(profiling_state->listen_socket , address);;
+            net_socket_set_blocking_mode(profiling_state->listen_socket , false);
+
+            profiling_state->port = next_port;
+        }
     }
-    ui_named_row_end();
 
     memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
 

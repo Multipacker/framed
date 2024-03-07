@@ -371,6 +371,7 @@ internal U16 u16_rotate_left(U16 x, U16 amount);
 internal U16 u16_ceil_to_power_of_2(U16 x);
 internal U16 u16_reverse(U16 x);
 internal U16 u16_big_to_local_endian(U16 x);
+internal U16 u16_clamp(U16 min, U16 val, U16 max);
 
 internal U32 u32_min(U32 a, U32 b);
 internal U32 u32_max(U32 a, U32 b);
