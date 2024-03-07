@@ -39,6 +39,6 @@ struct ZoneNode
 internal ZoneNode *zone_node_alloc(Void);
 internal Void zone_node_free(ZoneNode *zone);
 internal ZoneNode *zone_node_from_id(U64 id);
-internal ZoneNode *zone_node_hierarchy_from_frame(Frame *frame);
+internal ZoneNode *zone_node_hierarchy_from_frame(Arena *arena, Frame *frame);
 
 #endif //ZONE_NODE_H

@@ -16,7 +16,7 @@
 
 set disabled_warnings=-wd4201 -wd4152 -wd4100 -wd4189 -wd4101 -wd4310 -wd4061 -wd4820 -wd4191 -wd5045 -wd4711 -wd4710 -wd4200
 set additional_includes=-I../vendor/ -I../src/ -I../
-set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1
+set opts=-DENABLE_ASSERT=1 -DRENDERER_D3D11=1 -DENABLE_SELF_PROFILING=0
 set compiler_flags=%opts% -nologo -FC -Wall -MP -WX %disabled_warnings% %additional_includes% -Fe:framed
 set linker_flags=-incremental:no user32.lib kernel32.lib winmm.lib shell32.lib shcore.lib opengl32.lib gdi32.lib
 set src_files=../src/framed/framed_main.c
@@ -25,7 +25,7 @@ set src_files=../src/framed/framed_main.c
 
 :: -- Debug build flags --
 
-set debug_compiler_flags=-RTC1 -MTd -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
+set debug_compiler_flags=-RTC1 -fsanitize=address -MTd -Zi -Od -DCONSOLE=1 -DBUILD_MODE_DEBUG=1
 set debug_linker_flags=-subsystem:console
 
 :: -- Optimized build flags --
@@ -67,9 +67,9 @@ if %build_mode% == "examples" (
     if not exist examples\build mkdir examples\build
     pushd examples\build
 
-    cl -nologo ..\recursion.c -I..\..\
-    cl -nologo ..\simple_init_and_send.c -I..\..\
-    cl -nologo ..\auto_closing_zones.cpp -I..\..\
+    cl -nologo -FC -O2 ..\recursion.c -I..\..\
+    cl -nologo -FC -O2 ..\simple_init_and_send.c -I..\..\
+    cl -nologo -FC -O2 ..\auto_closing_zones.cpp -I..\..\
 
 	popd
 

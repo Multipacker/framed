@@ -293,6 +293,22 @@ typedef Void VoidFunction(Void);
 #define million(n)  ((thousand(n))*1000)
 #define billion(n)  ((million(n))*1000)
 
+#if ENABLE_SELF_PROFILING
+#    define profile_begin_function()   framed_function_begin()
+#    define profile_end_function()     framed_function_end()
+#    define profile_begin_block(name)  framed_zone_begin(name)
+#    define profile_end_block()        framed_zone_end()
+#    define profile_init(port)         framed_init(true, port)
+#    define profile_mark_frame_start() framed_mark_frame_start()
+#else
+#    define profile_begin_function()
+#    define profile_end_function()
+#    define profile_begin_block(name)
+#    define profile_end_block()
+#    define profile_init(port)
+#    define profile_mark_frame_start()
+#endif
+
 #define swap(a, b, type) \
 { \
 type temp##__LINE__ = a; \

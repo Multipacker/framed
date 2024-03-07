@@ -195,13 +195,17 @@ str8_pushf(Arena *arena, CStr cstr, ...)
 internal B32
 str8_equal(Str8 a, Str8 b)
 {
+    profile_begin_function();
+
     if (a.size != b.size)
     {
+        profile_end_function();
         return(false);
     }
 
     if (a.data == b.data)
     {
+        profile_end_function();
         return(true);
     }
 
@@ -218,9 +222,12 @@ str8_equal(Str8 a, Str8 b)
 
         if (a_decode.codepoint != b_decode.codepoint)
         {
+            profile_end_function();
             return false;
         }
     }
+
+    profile_end_function();
 
     return true;
 }

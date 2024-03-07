@@ -21,7 +21,7 @@ struct Arena_Temporary
     U64 pos;
 };
 
-#define ARENA_DEFAULT_RESERVE_SIZE gigabytes(1)
+#define ARENA_DEFAULT_RESERVE_SIZE gigabytes(64)
 // TODO(hampus): Test performance with higher/lower commit block size
 #define ARENA_COMMIT_BLOCK_SIZE    megabytes(1)
 

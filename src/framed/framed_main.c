@@ -11,6 +11,9 @@
 #include "ui/ui_inc.h"
 #include "net/net_inc.h"
 
+#define FRAMED_IMPLEMENTATION
+#include "public/framed.h"
+
 #include "base/base_inc.c"
 #include "os/os_inc.c"
 #include "log/log_inc.c"
@@ -22,7 +25,6 @@
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
 
-#include "public/framed.h"
 #include "framed/framed_ui.h"
 #include "framed/framed_main.h"
 #include "framed/zone_node.h"
@@ -206,7 +208,8 @@ framed_parse_zones(Void)
 
                         Frame *frame = &profiling_state->current_frame;
                         arena_pop_to(frame->arena, 0);
-                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
+                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096*10);
+                        frame->tsc_frequency = profiling_state->tsc_frequency;
 
                         entry_size = sizeof(Packet);
                     }
@@ -236,7 +239,8 @@ framed_parse_zones(Void)
                     frame->zone_blocks_count = 0;
                     frame->begin_tsc = 0;
                     frame->end_tsc = 0;
-                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
+                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096*10);
+                    frame->tsc_frequency = profiling_state->tsc_frequency;
                     profiling_state->zone_stack_pos = 0;
 
                     frame->begin_tsc = header->tsc;
@@ -699,6 +703,8 @@ framed_save_current_settings_to_file(Str8 path)
 internal S32
 os_main(Str8List arguments)
 {
+    profile_init(1550);
+
     debug_init();
     arena_scratch(0, 0)
     {
@@ -733,14 +739,16 @@ os_main(Str8List arguments)
 
     net_socket_init();
     profiling_state->listen_socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
+    profiling_state->port = FRAMED_DEFAULT_PORT;
     Net_Address address =
     {
         .ip.u8[0] = 127,
         .ip.u8[1] = 0,
         .ip.u8[2] = 0,
         .ip.u8[3] = 1,
-        .port = 1234,
+        .port = profiling_state->port,
     };
+
 
     net_socket_bind(profiling_state->listen_socket , address);;
     net_socket_set_blocking_mode(profiling_state->listen_socket , false);
@@ -841,6 +849,10 @@ os_main(Str8List arguments)
     FramedUI_Window *debug_window = 0;
     while (running)
     {
+        profile_mark_frame_start();
+
+        profile_begin_block("Main loop");
+
         Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
         Arena *current_arena  = frame_arenas[0];
         Arena *previous_arena = frame_arenas[1];
@@ -1038,6 +1050,8 @@ os_main(Str8List arguments)
 
         start_counter = end_counter;
         framed_frame_counter++;
+
+        profile_end_block();
     }
 
     return(0);
