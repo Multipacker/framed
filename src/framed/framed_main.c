@@ -203,6 +203,23 @@ framed_parse_zones(Void)
                     }
                     else
                     {
+                        profiling_state->frame_index = 0;
+
+                        memory_zero_array(zone_vis_node_map);
+                        memory_zero_array(id_stack);
+                        first_free_zone_node = 0;
+                        arena_pop_to(zone_node_arena, 0);
+
+                        if (profiling_state->current_frame.zone_blocks)
+                        {
+                        memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
+                        }
+
+                        if (profiling_state->current_frame.zone_blocks)
+                        {
+                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
+                        }
+
                         profiling_state->profile_begin_tsc = packet->header.tsc;
                         profiling_state->tsc_frequency = packet->tsc_frequency;
 
@@ -346,12 +363,6 @@ framed_parse_zones(Void)
         }
         release_scratch(scratch);
         size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
-    }
-
-    if (terminate_connection)
-    {
-        net_socket_free(profiling_state->client_socket);
-        memory_zero_struct(&profiling_state->client_socket);
     }
 
     U64 gather_end_time_ns = os_now_nanoseconds();
