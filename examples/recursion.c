@@ -56,7 +56,7 @@ TreeNode *tree_insert(TreeNode *tree, int value)
 
 int main(int argc, char **argv)
 {
-  framed_init(true);
+  framed_init(true, FRAMED_DEFAULT_PORT);
 
   framed_zone_begin("main");
 

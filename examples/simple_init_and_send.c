@@ -9,7 +9,7 @@
 
 int main(int argc, char **argv)
 {
-    framed_init(true);
+    framed_init(true, FRAMED_DEFAULT_PORT);
     framed_zone_begin("Test");
     framed_zone_end();
     framed_flush();
