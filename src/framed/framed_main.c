@@ -208,7 +208,7 @@ framed_parse_zones(Void)
 
                         Frame *frame = &profiling_state->current_frame;
                         arena_pop_to(frame->arena, 0);
-                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096*10);
+                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
                         frame->tsc_frequency = profiling_state->tsc_frequency;
 
                         entry_size = sizeof(Packet);
@@ -239,7 +239,7 @@ framed_parse_zones(Void)
                     frame->zone_blocks_count = 0;
                     frame->begin_tsc = 0;
                     frame->end_tsc = 0;
-                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096*10);
+                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
                     frame->tsc_frequency = profiling_state->tsc_frequency;
                     profiling_state->zone_stack_pos = 0;
 
@@ -263,6 +263,8 @@ framed_parse_zones(Void)
 
                     Packet *packet = (Packet *) header;
 
+                    Frame *frame = &profiling_state->current_frame;
+
                     if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                     {
                         log_error("Not enough data for zone packet, terminating connection");
@@ -277,11 +279,16 @@ framed_parse_zones(Void)
                         framed_state->popup_message = framed_pop_up_message;
                         framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                     }
+                    else if (frame->zone_blocks_count >= 4096*4096)
+                    {
+                        log_error("Zone limit was exceeded");
+                        terminate_connection = true;
+                        framed_state->popup_message = framed_pop_up_message;
+                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                    }
                     else
                     {
                         Str8 name = str8(packet->name, packet->name_length);
-
-                        Frame *frame = &profiling_state->current_frame;
 
                         ZoneBlock *zone = frame->zone_blocks + frame->zone_blocks_count;
 
