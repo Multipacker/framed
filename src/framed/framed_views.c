@@ -123,6 +123,8 @@ display_zone_name(ZoneNode *root)
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
+    Debug_Time function_begin_time = debug_function_begin();
+
     B32 data_initialized = view_info->data != 0;
     typedef struct TabViewData TabViewData;
     struct TabViewData
@@ -314,6 +316,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
 
     release_scratch(scratch);
+
+    debug_function_end(function_begin_time);
 }
 
 #if 0

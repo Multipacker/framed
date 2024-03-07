@@ -1,6 +1,12 @@
+#define profile_begin_function() framed_function_begin()
+#define profile_end_function()   framed_function_end()
+
+#define profile_begin_block(name) framed_zone_begin(name)
+#define profile_end_block()       framed_zone_end()
+
 global U64 id_stack[4096];
 global U64 id_stack_pos = 1;
-global ZoneNode *zone_vis_node_map[4096];
+global ZoneNode *zone_node_map[4096];
 global FreeZoneNode *first_free_zone_node;
 global Arena *zone_node_arena;
 
@@ -31,9 +37,9 @@ internal ZoneNode *
 zone_node_from_id(U64 id)
 {
     ZoneNode *result = 0;
-    U64 slot_index = id % array_count(zone_vis_node_map);
+    U64 slot_index = id % array_count(zone_node_map);
 
-    for (ZoneNode *node = zone_vis_node_map[slot_index]; node != 0; node = node->hash_next)
+    for (ZoneNode *node = zone_node_map[slot_index]; node != 0; node = node->hash_next)
     {
         if (node->id == id)
         {
@@ -46,8 +52,8 @@ zone_node_from_id(U64 id)
     {
         result = zone_node_alloc();
         result->id = id;
-        result->hash_next = zone_vis_node_map[slot_index];
-        zone_vis_node_map[slot_index] = result;
+        result->hash_next = zone_node_map[slot_index];
+        zone_node_map[slot_index] = result;
     }
 
     return(result);
@@ -103,7 +109,6 @@ zone_node_hierarchy_from_frame(Frame *frame)
     exc_values_stack->tsc_start = 0;
 
     U64 cycles_per_second = frame->tsc_frequency;
-
     for (U64 i = 0; i < frame->zone_blocks_count; ++i)
     {
         ZoneBlock *zone = frame->zone_blocks + i;
@@ -113,21 +118,20 @@ zone_node_hierarchy_from_frame(Frame *frame)
             continue;
         }
 
-        while (!(zone->start_tsc >= exc_values_stack->tsc_start && zone->end_tsc <= exc_values_stack->tsc_end))
-        {
-            parent_node->ms_min_elapsed_exc = f64_min(parent_node->ms_min_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-            parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
-            parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
-            exc_values_stack--;
-            if (!str8_equal(parent_node->name, exc_values_stack->name))
+            while (!(zone->start_tsc >= exc_values_stack->tsc_start && zone->end_tsc <= exc_values_stack->tsc_end))
             {
-                parent_node = parent_node->parent;
-                zone_node_pop_id();
+                parent_node->ms_min_elapsed_exc = f64_min(parent_node->ms_min_elapsed_exc, exc_values_stack->ms_elapsed_exc);
+                parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
+                parent_node->ms_elapsed_exc += exc_values_stack->ms_elapsed_exc;
+                exc_values_stack--;
+                if (!str8_equal(parent_node->name, exc_values_stack->name))
+                {
+                    parent_node = parent_node->parent;
+                    zone_node_pop_id();
+                }
             }
-        }
 
         F64 ms_total = ((F64)(zone->end_tsc - zone->start_tsc)/(F64)cycles_per_second) * 1000.f;
-
         ZoneNode *node = parent_node;
         exc_values_stack->ms_elapsed_exc -= ms_total;
         if (!str8_equal(zone->name, node->name))
@@ -159,7 +163,7 @@ zone_node_hierarchy_from_frame(Frame *frame)
             zone_node_push_id(hash_str8(node->name));
 
             node->ms_elapsed_inc += ms_total;
-        }
+            }
 
         exc_values_stack++;
         exc_values_stack->tsc_start = zone->start_tsc;
@@ -168,7 +172,8 @@ zone_node_hierarchy_from_frame(Frame *frame)
         exc_values_stack->name = zone->name;
 
         node->hit_count++;
-    }
+
+        }
 
     while (exc_values_stack >= exc_values_stack_base)
     {

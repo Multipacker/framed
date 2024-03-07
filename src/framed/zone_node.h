@@ -24,9 +24,9 @@ struct ZoneNode
 
     ZoneNode *hash_next;
     ZoneNode *hash_prev;
+    U64 id;
 
     ZoneNodeFlag flags;
-    U64 id;
 
     Str8 name;
     F64 ms_elapsed_inc;
