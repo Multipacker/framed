@@ -132,7 +132,7 @@ framed_parse_zones(Void)
         }
     }
 
-    U64 parse_start_time_ns = os_now_nanoseconds();
+    U64 gather_start_time_ns = os_now_nanoseconds();
 
     //- hampus: Gather & process data from client
 
@@ -152,7 +152,7 @@ framed_parse_zones(Void)
         }
 
         profiling_state->bytes_from_client += buffer_size;
-        profiling_state->parsed_bytes += buffer_size;
+        profiling_state->gather_bytes += buffer_size;
 
         profiling_state->time_since_last_recieve = 0;
 
@@ -354,9 +354,9 @@ framed_parse_zones(Void)
         memory_zero_struct(&profiling_state->client_socket);
     }
 
-    U64 parse_end_time_ns = os_now_nanoseconds();
+    U64 gather_end_time_ns = os_now_nanoseconds();
 
-    profiling_state->parsed_time_accumulator += (F64)(parse_end_time_ns - parse_start_time_ns) / (F64)billion(1);
+    profiling_state->gather_time_accumulator += (F64)(gather_end_time_ns - gather_start_time_ns) / (F64)billion(1);
 
     debug_function_end(time);
 }
@@ -1047,6 +1047,10 @@ os_main(Str8List arguments)
         {
             profiling_state->bandwidth_average_rate = (U64)((F64) profiling_state->bytes_from_client / 0.5);
             profiling_state->bytes_from_client = 0;
+
+            profiling_state->gather_average_rate = (U64)((F64)profiling_state->gather_bytes / (F64)profiling_state->gather_time_accumulator);
+            profiling_state->gather_bytes = 0;
+            profiling_state->gather_time_accumulator = 0;
 
             profiling_state->parsed_average_rate = (U64)((F64)profiling_state->parsed_bytes / (F64)profiling_state->parsed_time_accumulator);
             profiling_state->parsed_bytes = 0;

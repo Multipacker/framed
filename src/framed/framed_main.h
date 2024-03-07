@@ -47,16 +47,22 @@ struct Frame
     U64 profile_begin_tsc;
     U64 profile_end_tsc;
     U64 tsc_frequency;
-    F64 stats_seconds_accumulator;
-    U64 parsed_average_rate;
+
     U64 bandwidth_average_rate;
+    U64 bytes_from_client;
+    F64 stats_seconds_accumulator;
+
+    U64 gather_average_rate;
+    U64 gather_bytes;
+    F64 gather_time_accumulator;
+
+    U64 parsed_average_rate;
     U64 parsed_bytes;
     F64 parsed_time_accumulator;
-    U64 bytes_from_client;
-    F64 time_since_last_recieve;
 
     // NOTE(hampus): Networking
 
+    F64 time_since_last_recieve;
     B32 found_connection;
     Net_Socket listen_socket;
     Net_Socket client_socket;

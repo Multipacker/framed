@@ -142,12 +142,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     if (!data_initialized)
     {
-        view_data->column_sizes_in_pct[0] = 1.0f/6.0f;
-        view_data->column_sizes_in_pct[1] = 1.0f/6.0f;
-        view_data->column_sizes_in_pct[2] = 1.0f/6.0f;
-        view_data->column_sizes_in_pct[3] = 1.0f/6.0f;
-        view_data->column_sizes_in_pct[4] = 1.0f/6.0f;
-        view_data->column_sizes_in_pct[5] = 1.0f/6.0f;
+        view_data->column_sizes_in_pct[0] = 0.3f;
+        view_data->column_sizes_in_pct[1] = (1 - 0.3f) / 5.0f;
+        view_data->column_sizes_in_pct[2] = (1 - 0.3f) / 5.0f;
+        view_data->column_sizes_in_pct[3] = (1 - 0.3f) / 5.0f;
+        view_data->column_sizes_in_pct[4] = (1 - 0.3f) / 5.0f;
+        view_data->column_sizes_in_pct[5] = (1 - 0.3f) / 5.0f;
 
         view_data->port_text_buffer_size = 5;
         view_data->port_text_buffer = push_array(view_info->arena, U8, view_data->port_text_buffer_size);
@@ -172,7 +172,14 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     Arena_Temporary scratch = get_scratch(0, 0);
 
+    U64 parse_start_time_ns = os_now_nanoseconds();
+
+    profiling_state->parsed_bytes += frame->zone_blocks_count * sizeof(ZoneBlock);
     ZoneNode *root = zone_node_hierarchy_from_frame(scratch.arena, frame);
+
+    U64 parse_end_time_ns = os_now_nanoseconds();
+
+    profiling_state->parsed_time_accumulator += (F64)(parse_end_time_ns - parse_start_time_ns) / (F64)billion(1);
 
     ui_row()
     {
@@ -328,27 +335,48 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             }
         }
         ui_named_row_end();
-        U16 next_port = profiling_state->port;
-        ui_row()
-        {
-            ui_text(str8_lit("Listen port:"));
-            UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state,
-                                        view_data->port_text_buffer,
-                                        view_data->port_text_buffer_size,
-                                        &view_data->port_string_length,
-                                        str8_lit("CaptureFrequencyLineEdit"));
 
-            if (!ui_box_is_focused(comm.box))
+        U16 next_port = profiling_state->port;
+        ui_column()
+        {
+            ui_row()
             {
-                U16 u16 = 0;
-                u16_from_str8(str8(view_data->port_text_buffer, view_data->port_string_length), &u16);
-                // NOTE(hampus): Ports lower than 1024 are reserved by the system and ports over 50000
-                // are used when dynamically assigning ports
-                next_port = u16_clamp(1024, u16, 50000);
-                Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, next_port);
-                view_data->port_string_length = u64_min(text_buffer_str8.size, view_data->port_text_buffer_size);
-                memory_copy_typed(view_data->port_text_buffer, text_buffer_str8.data, view_data->port_string_length);
+                ui_text(str8_lit("Listen port:"));
+                UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state,
+                                            view_data->port_text_buffer,
+                                            view_data->port_text_buffer_size,
+                                            &view_data->port_string_length,
+                                            str8_lit("CaptureFrequencyLineEdit"));
+
+                if (!ui_box_is_focused(comm.box))
+                {
+                    U16 u16 = 0;
+                    u16_from_str8(str8(view_data->port_text_buffer, view_data->port_string_length), &u16);
+                    // NOTE(hampus): Ports lower than 1024 are reserved by the system and ports over 50000
+                    // are used when dynamically assigning ports
+                    next_port = u16_clamp(1024, u16, 50000);
+                    Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, next_port);
+                    view_data->port_string_length = u64_min(text_buffer_str8.size, view_data->port_text_buffer_size);
+                    memory_copy_typed(view_data->port_text_buffer, text_buffer_str8.data, view_data->port_string_length);
+                }
             }
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            MemorySize zone_parsing_throughput = memory_size_from_bytes(profiling_state->parsed_average_rate);
+            ui_textf("Zone parsing throughput: %.2f%"PRISTR8"/s", zone_parsing_throughput.amount, str8_expand(zone_parsing_throughput.unit));
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            MemorySize zone_gathering_troughput = memory_size_from_bytes(profiling_state->gather_average_rate);
+            ui_textf("Zone gathering throughput: %.2f%"PRISTR8"/s", zone_gathering_troughput.amount, str8_expand(zone_gathering_troughput.unit));
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            MemorySize network_transfer_bandwidth = memory_size_from_bytes(profiling_state->bandwidth_average_rate);
+            ui_textf("Network transfer bandwidth: %.2f%"PRISTR8"/s", network_transfer_bandwidth.amount, str8_expand(network_transfer_bandwidth.unit));
+
+            ui_spacer(ui_em(0.25f, 1));
 
         }
 
@@ -371,6 +399,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             profiling_state->port = next_port;
         }
+
     }
 
     memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
