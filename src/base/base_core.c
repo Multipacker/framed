@@ -1,3 +1,7 @@
+// NOTE(hampus): This has to be initialized at startup
+Str8 micro_string;
+Str8 micro_seconds_string;
+
 internal OperatingSystem
 operating_system_from_context(Void)
 {
@@ -363,7 +367,7 @@ internal TimeInterval
 time_interval_from_ns(F64 ns)
 {
     Str8 units[] = {
-        str8_lit("us"),
+        micro_seconds_string,
         str8_lit("ms"),
         str8_lit("s"),
         str8_lit("min"),
@@ -405,6 +409,12 @@ struct MemorySize
     F64 amount;
     Str8 unit;
 };
+
+internal TimeInterval
+time_interval_from_ms(F64 ms)
+{
+    return(time_interval_from_ns(ms*1000000));
+}
 
 internal MemorySize
 memory_size_from_bytes(U64 bytes)

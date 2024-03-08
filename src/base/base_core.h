@@ -497,6 +497,7 @@ internal DateTime     date_time_from_dense_time(DenseTime dense_time);
 typedef struct TimeInterval TimeInterval;
 
 internal TimeInterval time_interval_from_ns(F64 ns);
+internal TimeInterval time_interval_from_ms(F64 ms);
 
 typedef struct MemorySize MemorySize;
 
