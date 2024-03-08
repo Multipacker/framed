@@ -1,4 +1,3 @@
-// [ ] @feature Choose which unit to display values with (s, ms, us, ns, or automatic)
 // [ ] @feature Sorting by column value
 
 ////////////////////////////////
@@ -89,7 +88,8 @@ display_zone_exc(ZoneNode *root)
 internal Void
 display_zone_exc_pct(ZoneNode *root, F64 total_ms)
 {
-    ui_textf("%.2f%%", (root->ms_elapsed_exc/total_ms) * 100.0);
+    F64 pct = (root->ms_elapsed_exc/total_ms);
+    ui_textf("%.2f%%", pct*100.0f);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -249,6 +249,23 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     F32 new_column_pcts[array_count(column_names)] = {0};
     memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
 
+    if (frame->tsc_frequency == 0)
+    {
+        frame->tsc_frequency = 1;
+    }
+
+    F64 total_ms = 0;
+    F64 frame_time_ms = 0;
+    if (profiling_per_frame)
+    {
+        total_ms = (F64)(frame->end_tsc - frame->begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
+        frame_time_ms = total_ms;
+    }
+    else
+    {
+        total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
+    }
+
     ui_next_height(ui_pct(1, 1));
     ui_next_width(ui_pct(1, 1));
     ui_row()
@@ -297,7 +314,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                     case 2:
                     {
-                        F64 total_ms = (F64)(frame->end_tsc - frame->begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
                         ui_text_align(UI_TextAlign_Right)
                             ui_width(ui_pct(1, 1))
                         {
@@ -410,10 +426,30 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         U16 next_port = profiling_state->port;
         ui_column()
         {
-            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame|
+            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
                          UI_BoxFlag_DrawText,
                          "Frames captured: %"PRIU64,
                          profiling_state->frame_index);
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            TimeInterval frame_time_interval = time_interval_from_ms(frame_time_ms);
+            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
+                         UI_BoxFlag_DrawText,
+                         "Frame time: %.2f%"PRISTR8,
+                         frame_time_interval.amount, str8_expand(frame_time_interval.unit));
+
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            ui_textf("Zone count: %'"PRIU64, frame->zone_blocks_count);
+
+            ui_spacer(ui_em(0.25f, 1));
+
+            F64 profiling_time = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_begin_tsc) / (F64)frame->tsc_frequency * 1000.0f;
+
+            TimeInterval profiling_time_interval = time_interval_from_ms(profiling_time);
+            ui_textf("Profiling time elapsed: %.2f%"PRISTR8, profiling_time_interval.amount, str8_expand(profiling_time_interval.unit));
 
             ui_spacer(ui_em(0.25f, 1));
 
@@ -422,7 +458,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 B32 connection_alive = net_socket_connection_is_alive(profiling_state->client_socket);
                 if (connection_alive)
                 {
-                ui_push_extra_box_flags(UI_BoxFlag_Disabled);
+                    ui_push_extra_box_flags(UI_BoxFlag_Disabled);
                 }
 
                 ui_text(str8_lit("Listen port:"));
@@ -488,7 +524,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             profiling_state->port = next_port;
         }
-
     }
 
     memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
