@@ -419,12 +419,23 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             ui_row()
             {
+                B32 connection_alive = net_socket_connection_is_alive(profiling_state->client_socket);
+                if (connection_alive)
+                {
+                ui_push_extra_box_flags(UI_BoxFlag_Disabled);
+                }
+
                 ui_text(str8_lit("Listen port:"));
+
                 UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state,
                                             view_data->port_text_buffer,
                                             view_data->port_text_buffer_size,
                                             &view_data->port_string_length,
                                             str8_lit("CaptureFrequencyLineEdit"));
+                if (connection_alive)
+                {
+                    ui_pop_extra_box_flags();
+                }
 
                 if (!ui_box_is_focused(comm.box))
                 {

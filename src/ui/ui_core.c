@@ -552,11 +552,12 @@ ui_comm_from_box(UI_Box *box)
     assert(!ui_key_is_null(box->key) && "Tried to gather input from a keyless box!");
 
     UI_Comm result = {0};
+    result.box = box;
     if (ui_box_has_flag(box, UI_BoxFlag_Disabled))
     {
         return(result);
     }
-    result.box = box;
+
     Vec2F32 mouse_pos = gfx_get_mouse_pos(ui_ctx->renderer->gfx);
 
     result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->fixed_rect.min);
