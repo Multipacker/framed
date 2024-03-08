@@ -175,11 +175,13 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
             if (node == 0)
             {
                 node = zone_node_from_id(zone->name, id);
+                node->children_count = 0;
                 node->parent = node->first = node->last = node->next = node->prev = 0;
                 node->ms_elapsed_inc = node->ms_elapsed_exc = node->ms_max_elapsed_exc = 0;
                 node->hit_count = 0;
                 node->ms_min_elapsed_exc = (F64)U64_MAX;
                 dll_push_back(parent_node->first, parent_node->last, node);
+                parent_node->children_count += 1;
                 node->parent = parent_node;
             }
 
@@ -281,4 +283,114 @@ zone_node_flatten(Arena *arena, ZoneNode *root)
     release_scratch(scratch);
 
     return(new_root);
+}
+
+int
+zone_node_compare_name(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) str8_are_codepoints_earliear(nodea->name, nodeb->name);
+    return(result);
+}
+
+int
+zone_node_compare_ms_elapsed_exc(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) (nodea->ms_elapsed_exc < nodeb->ms_elapsed_exc);
+    return(result);
+}
+
+int
+zone_node_compare_ms_elapsed_exc_pct(const Void *a, const Void *b)
+{
+    return(zone_node_compare_ms_elapsed_exc(a, b));
+}
+
+int
+zone_node_compare_ms_elapsed_inc(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) (nodea->ms_elapsed_inc < nodeb->ms_elapsed_inc);
+    return(result);
+}
+
+int
+zone_node_compare_hit_count(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) (nodea->hit_count < nodeb->hit_count);
+    return(result);
+}
+
+int
+zone_node_compare_avg_exc(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) ((nodea->ms_elapsed_exc / (F64)nodea->hit_count) < (nodeb->ms_elapsed_exc / (F64)nodeb->hit_count));
+    return(result);
+}
+
+int
+zone_node_compare_min_exc(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) (nodea->ms_min_elapsed_exc < nodeb->ms_min_elapsed_exc);
+    return(result);
+}
+
+int
+zone_node_compare_max_exc(const Void *a, const Void *b)
+{
+    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
+    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    int result = (int) (nodea->ms_max_elapsed_exc < nodeb->ms_max_elapsed_exc);
+    return(result);
+}
+
+internal ZoneNode **
+children_array_from_root(Arena *arena, ZoneNode *root)
+{
+    ZoneNode **result = push_array(arena, ZoneNode *, root->children_count);
+    ZoneNode *node = root->first;
+    for (U64 i = 0; i < root->children_count; ++i, node = node->next)
+    {
+        result[i] = node;
+    }
+    return(result);
+}
+
+internal Void
+sort_children(ZoneNode *root, B32 ascending, CompareFunc func)
+{
+    Arena_Temporary scratch = get_scratch(0, 0);
+    ZoneNode **children = children_array_from_root(scratch.arena, root);
+    qsort(children, root->children_count, ZoneNode *, func);
+    root->first = 0;
+    root->last= 0;
+    if (ascending)
+    {
+        for (U64 i = 0; i < root->children_count; ++i)
+        {
+            dll_push_back(root->first, root->last, children[i]);
+        }
+    }
+    else
+    {
+        for (U64 i = 0; i < root->children_count; ++i)
+        {
+            dll_push_front(root->first, root->last, children[i]);
+        }
+    }
+    release_scratch(scratch);
+    for (ZoneNode *node = root->first; node != 0; node = node->next)
+    {
+        sort_children(node, ascending, func);
+    }
 }

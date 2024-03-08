@@ -171,12 +171,13 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         str8_comp("Max exc."),
     };
 
-
     typedef struct TabViewData TabViewData;
     struct TabViewData
     {
         B32 flatten;
+        B32 ascending_sort;
         F32 column_sizes_in_pct[array_count(column_names)];
+        U64 column_sort_index;
 
         UI_TextEditState port_text_edit_state;
         U8 *port_text_buffer;
@@ -195,7 +196,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         for (U64 i = 1; i < (array_count(column_names)); ++i)
         {
             view_data->column_sizes_in_pct[i] = (1 - 0.3f) / (array_count(column_names) - 1);
-
         }
 
         view_data->port_text_buffer_size = 5;
@@ -266,6 +266,23 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
+    if (root->first)
+    {
+        CompareFunc *compare_func = zone_node_compare_name;
+        switch (view_data->column_sort_index)
+        {
+            case 1: { compare_func = zone_node_compare_ms_elapsed_exc; } break;
+            case 2: { compare_func = zone_node_compare_ms_elapsed_exc_pct; } break;
+            case 3: { compare_func = zone_node_compare_ms_elapsed_inc; } break;
+            case 4: { compare_func = zone_node_compare_hit_count; } break;
+            case 5: { compare_func = zone_node_compare_avg_exc; } break;
+            case 6: { compare_func = zone_node_compare_min_exc; } break;
+            case 7: { compare_func = zone_node_compare_max_exc; } break;
+        }
+
+        sort_children(root->first, view_data->ascending_sort, compare_func);
+    }
+
     ui_next_height(ui_pct(1, 1));
     ui_next_width(ui_pct(1, 1));
     ui_row()
@@ -282,9 +299,44 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 ui_named_column_beginf("ZoneColumn%"PRIU64, i);
 
                 ui_next_width(ui_pct(1, 1));
-                ui_box_make(UI_BoxFlag_DrawText |
-                            UI_BoxFlag_DrawBackground,
+                ui_next_height(ui_em(1, 1));
+                ui_next_extra_box_flags(UI_BoxFlag_DrawBackground |
+                                        UI_BoxFlag_Clickable |
+                                        UI_BoxFlag_HotAnimation |
+                                        UI_BoxFlag_ActiveAnimation);
+                UI_Box *title_box = ui_named_row_beginf("ZoneTitleRow%"PRIU64, i);
+                ui_next_width(ui_pct(1, 0));
+                ui_box_make(UI_BoxFlag_DrawText,
                             column_names[i]);
+
+                ui_next_height(ui_em(1, 1));
+                ui_next_width(ui_em(1, 1));
+                if (view_data->ascending_sort)
+                {
+                    ui_next_icon(RENDER_ICON_UP);
+                }
+                else
+                {
+                    ui_next_icon(RENDER_ICON_DOWN);
+                }
+                ui_box_make(UI_BoxFlag_DrawText * (view_data->column_sort_index == i),
+                            str8_lit(""));
+
+                ui_named_row_end();
+
+                UI_Comm title_box_comm = ui_comm_from_box(title_box);
+
+                if (title_box_comm.pressed)
+                {
+                    if (view_data->column_sort_index == i)
+                    {
+                        view_data->ascending_sort = !view_data->ascending_sort;
+                    }
+                    else
+                    {
+                        view_data->column_sort_index = i;
+                    }
+                }
 
                 ui_next_width(ui_pct(1, 1));
                 ui_next_height(ui_em(0.05f, 1));
@@ -664,14 +716,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
                 ui_next_corner_radius(5);
                 ui_next_width(ui_em(1, 1));
                 ui_next_height(ui_em(1, 1));
-                UI_Box *box = ui_box_make(
-                                          UI_BoxFlag_DrawBackground |
+                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
                                           UI_BoxFlag_DrawBorder |
                                           UI_BoxFlag_Clickable |
                                           UI_BoxFlag_HotAnimation |
                                           UI_BoxFlag_ActiveAnimation,
-                                          string
-                                          );
+                                          string);
                 UI_Comm comm = ui_comm_from_box(box);
                 if (comm.clicked)
                 {

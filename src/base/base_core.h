@@ -279,7 +279,8 @@ typedef Void VoidFunction(Void);
 
 #define stmnt(x) do {x} while(0)
 
-#define qsort(elements, elements_count, type, compare_func) qsort(elements, elements_count, sizeof(type), compare_func);
+typedef int CompareFunc(const Void *a, const Void *b);
+#define qsort(elements, elements_count, element_type, compare_func) qsort(elements, elements_count, sizeof(element_type), compare_func);
 
 #define member(t, m)        (((t*)0)->m)
 #define member_offset(t, m) offsetof(t, m)
