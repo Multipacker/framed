@@ -141,7 +141,9 @@ render_begin(Render_Context *renderer)
 internal Void
 render_end(Render_Context *renderer)
 {
+    profile_begin_function();
     render_backend_end(renderer);
     renderer->frame_index++;
     arena_pop_to(renderer->frame_arena, 0);
+    profile_end_function();
 }

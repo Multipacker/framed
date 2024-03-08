@@ -113,9 +113,8 @@ framed_show_popup(Str8 message, Framed_PopUpMessageProc *proc)
 internal Void
 framed_parse_zones(Void)
 {
+    profile_begin_function();
     ProfilingState *profiling_state = framed_state->profiling_state;
-
-    Debug_Time time = debug_function_begin();
 
     //- hampus: Check connection state
 
@@ -372,7 +371,7 @@ framed_parse_zones(Void)
 
     profiling_state->gather_time_accumulator += (F64)(gather_end_time_ns - gather_start_time_ns) / (F64)billion(1);
 
-    debug_function_end(time);
+    profile_end_function();
 }
 
 ////////////////////////////////
@@ -724,7 +723,7 @@ framed_save_current_settings_to_file(Str8 path)
 internal S32
 os_main(Str8List arguments)
 {
-    profile_init(1550);
+    profile_init(1500);
 
     debug_init();
     arena_scratch(0, 0)
@@ -774,7 +773,6 @@ os_main(Str8List arguments)
         .ip.u8[3] = 1,
         .port = profiling_state->port,
     };
-
 
     net_socket_bind(profiling_state->listen_socket , address);;
     net_socket_set_blocking_mode(profiling_state->listen_socket , false);

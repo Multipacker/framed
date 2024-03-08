@@ -1,5 +1,3 @@
-// [ ] @feature Sorting by column value
-
 ////////////////////////////////
 //~ hampus: Zones tab view
 
@@ -157,6 +155,7 @@ display_zone_name(ZoneNode *root)
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
+    profile_begin_function();
     B32 data_initialized = view_info->data != 0;
 
     local Str8 column_names[] =
@@ -240,8 +239,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     if (view_data->flatten)
     {
-        ZoneNode *new_root = zone_node_flatten(scratch.arena, root);
-        root = new_root;
+        zone_node_flatten(scratch.arena, root);
     }
 
     ui_spacer(ui_em(0.5f, 1));
@@ -266,10 +264,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
-
-        CompareFunc *compare_func = zone_node_compare_name;
+        CompareFunc *compare_func = 0;
         switch (view_data->column_sort_index)
         {
+        case 0: { compare_func = zone_node_compare_name; } break;
             case 1: { compare_func = zone_node_compare_ms_elapsed_exc; } break;
             case 2: { compare_func = zone_node_compare_ms_elapsed_exc_pct; } break;
             case 3: { compare_func = zone_node_compare_ms_elapsed_inc; } break;
@@ -581,6 +579,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     memory_copy_array(view_data->column_sizes_in_pct, new_column_pcts);
 
     release_scratch(scratch);
+
+    profile_end_function();
 }
 
 ////////////////////////////////

@@ -198,6 +198,8 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
         exc_values_stack->ms_elapsed_exc = ms_total;
         exc_values_stack->id = node->id;
 
+        assert(exc_values_stack < (exc_values_stack_base+4096));
+
         node->hit_count++;
         profile_end_block();
     }
@@ -232,12 +234,14 @@ zone_node_init(Void)
     zone_node_arena = arena_create("ZoneNodeArena");
 }
 
-internal ZoneNode *
+internal Void
 zone_node_flatten(Arena *arena, ZoneNode *root)
 {
-    Arena_Temporary scratch = get_scratch(&arena, 1);
+    profile_begin_function();
 
-    ZoneNode *new_root = push_struct_zero(arena, ZoneNode);
+    root->first = root->last = root->next = root->prev = 0;
+    root->children_count = 0;
+
     U64 map_size = 1024;
     ZoneNode **new_map = push_array_zero(arena, ZoneNode *, map_size);
 
@@ -261,14 +265,15 @@ zone_node_flatten(Arena *arena, ZoneNode *root)
 
             if (!map_entry)
             {
-                ZoneNode *new_map_entry = push_struct_zero(arena, ZoneNode);
-                new_map_entry->name = node->name;
-                new_map_entry->hash_next = new_map[slot_index];
-                new_map[slot_index] = new_map_entry;
-                new_map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
-                map_entry = new_map_entry;
-                dll_push_back(new_root->first, new_root->last, new_map_entry);
-                new_root->children_count++;
+                map_entry = push_struct_zero(arena, ZoneNode);
+                map_entry->name = node->name;
+                map_entry->hash_next = new_map[slot_index];
+                new_map[slot_index] = map_entry;
+                map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
+                map_entry = map_entry;
+                dll_push_back(root->first, root->last, map_entry);
+                root->children_count++;
+                map_entry->parent = root;
             }
 
             map_entry->ms_elapsed_inc += node->ms_elapsed_inc;
@@ -281,16 +286,14 @@ zone_node_flatten(Arena *arena, ZoneNode *root)
         }
     }
 
-    release_scratch(scratch);
-
-    return(new_root);
+    profile_end_function();
 }
 
 int
 zone_node_compare_name(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) str8_are_codepoints_earliear(nodea->name, nodeb->name);
     return(result);
 }
@@ -298,8 +301,8 @@ zone_node_compare_name(const Void *a, const Void *b)
 int
 zone_node_compare_ms_elapsed_exc(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) (nodea->ms_elapsed_exc < nodeb->ms_elapsed_exc);
     return(result);
 }
@@ -313,8 +316,8 @@ zone_node_compare_ms_elapsed_exc_pct(const Void *a, const Void *b)
 int
 zone_node_compare_ms_elapsed_inc(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) (nodea->ms_elapsed_inc < nodeb->ms_elapsed_inc);
     return(result);
 }
@@ -322,8 +325,8 @@ zone_node_compare_ms_elapsed_inc(const Void *a, const Void *b)
 int
 zone_node_compare_hit_count(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) (nodea->hit_count < nodeb->hit_count);
     return(result);
 }
@@ -331,8 +334,8 @@ zone_node_compare_hit_count(const Void *a, const Void *b)
 int
 zone_node_compare_avg_exc(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) ((nodea->ms_elapsed_exc / (F64)nodea->hit_count) < (nodeb->ms_elapsed_exc / (F64)nodeb->hit_count));
     return(result);
 }
@@ -340,8 +343,8 @@ zone_node_compare_avg_exc(const Void *a, const Void *b)
 int
 zone_node_compare_min_exc(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) (nodea->ms_min_elapsed_exc < nodeb->ms_min_elapsed_exc);
     return(result);
 }
@@ -349,8 +352,8 @@ zone_node_compare_min_exc(const Void *a, const Void *b)
 int
 zone_node_compare_max_exc(const Void *a, const Void *b)
 {
-    ZoneNode *nodea = (ZoneNode *)*(ZoneNode **)a;
-    ZoneNode *nodeb = (ZoneNode *)*(ZoneNode **)b;
+    ZoneNode *nodea = *(ZoneNode **)a;
+    ZoneNode *nodeb = *(ZoneNode **)b;
     int result = (int) (nodea->ms_max_elapsed_exc < nodeb->ms_max_elapsed_exc);
     return(result);
 }
@@ -370,11 +373,13 @@ children_array_from_root(Arena *arena, ZoneNode *root)
 internal Void
 sort_children(ZoneNode *root, B32 ascending, CompareFunc func)
 {
+    profile_begin_function();
+
     Arena_Temporary scratch = get_scratch(0, 0);
     ZoneNode **children = children_array_from_root(scratch.arena, root);
-    qsort(children, root->children_count, ZoneNode *, func);
+    qsort(children, root->children_count, sizeof(ZoneNode *), func);
     root->first = 0;
-    root->last= 0;
+    root->last = 0;
     if (ascending)
     {
         for (U64 i = 0; i < root->children_count; ++i)
@@ -394,4 +399,5 @@ sort_children(ZoneNode *root, B32 ascending, CompareFunc func)
     {
         sort_children(node, ascending, func);
     }
+    profile_end_function();
 }

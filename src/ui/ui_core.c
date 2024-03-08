@@ -549,6 +549,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 internal UI_Comm
 ui_comm_from_box(UI_Box *box)
 {
+    profile_begin_function();
     assert(!ui_key_is_null(box->key) && "Tried to gather input from a keyless box!");
 
     UI_Comm result = {0};
@@ -709,6 +710,7 @@ ui_comm_from_box(UI_Box *box)
             }
         }
     }
+    profile_end_function();
 
     return(result);
 }
@@ -807,6 +809,7 @@ ui_box_from_key(UI_Key key)
 internal UI_Box *
 ui_box_make(UI_BoxFlags flags, Str8 string)
 {
+    profile_begin_function();
     UI_Key key = ui_key_from_string(ui_top_seed(), ui_get_hash_part_from_string(string));
 
     UI_Box *result = ui_box_from_key(key);
@@ -921,6 +924,8 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
         ui_pop_layout_style();
         ui_ctx->layout_style_stack.auto_pop = false;
     }
+
+    profile_end_function();
 
     return(result);
 }
@@ -1081,6 +1086,8 @@ ui_init(Void)
 internal Void
 ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt)
 {
+    profile_begin_function();
+
     ui_ctx = ctx;
 
     ui_ctx->renderer = renderer;
@@ -1267,12 +1274,13 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     }
 
     ui_push_parent(ui_ctx->normal_root);
+    profile_end_function();
 }
 
 internal Void
 ui_end(Void)
 {
-    Debug_Time debug_time = debug_function_begin();
+    profile_begin_function();
     // NOTE(hampus): Normal root
     ui_pop_parent();
 
@@ -1325,7 +1333,7 @@ ui_end(Void)
     ui_ctx->frame_index++;
     memory_zero_struct(ui_get_current_stats());
     ui_ctx = 0;
-    debug_function_end(debug_time);
+    profile_end_function();
 }
 
 ////////////////////////////////
@@ -1334,8 +1342,7 @@ ui_end(Void)
 internal Void
 ui_layout(UI_Box *root)
 {
-    debug_function()
-    {
+    profile_begin_function();
         for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
         {
             ui_solve_independent_sizes(root, axis);
@@ -1343,13 +1350,15 @@ ui_layout(UI_Box *root)
             ui_solve_downward_dependent_sizes(root, axis);
             ui_solve_size_violations(root, axis);
             ui_calculate_final_rect(root, axis, 0);
-        }
     }
+
+    profile_end_function();
 }
 
 internal Void
 ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 {
+    profile_begin_function();
     // NOTE(hampus): UI_SizeKind_TextContent, UI_SizeKind_Pixels
 
     if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
@@ -1388,11 +1397,13 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
     {
         ui_solve_independent_sizes(child, axis);
     }
+    profile_end_function();
 }
 
 internal Void
 ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 {
+    profile_begin_function();
     // NOTE(hampus): UI_SizeKind_Pct
     UI_Size size = root->layout_style.size[axis];
     if (size.kind == UI_SizeKind_Pct)
@@ -1409,11 +1420,13 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
     {
         ui_solve_upward_dependent_sizes(child, axis);
     }
+    profile_end_function();
 }
 
 internal Void
 ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 {
+    profile_begin_function();
     // NOTE(hampus): UI_SizeKind_ChildrenSum
     for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
     {
@@ -1443,11 +1456,13 @@ ui_solve_downward_dependent_sizes(UI_Box *root, Axis2 axis)
 
         root->fixed_size.v[axis] = f32_floor(children_total_size);
     }
+    profile_end_function();
 }
 
 internal Void
 ui_solve_size_violations(UI_Box *root, Axis2 axis)
 {
+    profile_begin_function();
     F32 available_space = root->fixed_size.v[axis];
 
     F32 taken_space = 0;
@@ -1510,11 +1525,13 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
     {
         ui_solve_size_violations(child, axis);
     }
+    profile_end_function();
 }
 
 internal Void
 ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 {
+    profile_begin_function();
     if (root->first_frame_touched_index == root->last_frame_touched_index)
     {
         root->rel_pos_animated.v[axis]    = root->rel_pos.v[axis];
@@ -1606,11 +1623,13 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 
         ui_calculate_final_rect(child, axis, child_offset);
     }
+    profile_end_function();
 }
 
 internal Vec2F32
 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
 {
+    profile_begin_function();
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
@@ -1640,12 +1659,14 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 
     result = v2f32_add_v2f32(result, rect.min);
 
+    profile_end_function();
     return(result);
 }
 
 internal Vec2F32
 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
 {
+    profile_begin_function();
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
@@ -1675,6 +1696,7 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 
     result = v2f32_add_v2f32(result, rect.min);
 
+    profile_end_function();
     return(result);
 }
 
@@ -1684,6 +1706,7 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 internal Void
 ui_draw(UI_Box *root)
 {
+    profile_begin_function();
     if (ui_box_has_flag(root, UI_BoxFlag_Disabled))
     {
         // TODO(hampus): Grey out it out aswell.
@@ -1830,6 +1853,7 @@ ui_draw(UI_Box *root)
     {
         render_pop_clip(ui_ctx->renderer);
     }
+    profile_end_function();
 }
 
 ////////////////////////////////

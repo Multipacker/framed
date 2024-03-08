@@ -1749,6 +1749,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default)
 internal Void
 framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 {
+    profile_begin_function();
+
     Vec2F32 mouse_pos = ui_mouse_pos();
 
     //- hampus: Check for any interesting events
@@ -2034,6 +2036,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
     framed_ui_state->next_top_most_window = 0;
     framed_ui_state->cmd_list.first = 0;
     framed_ui_state->cmd_list.last = 0;
+
+    profile_end_function();
 }
 
 #if 0

@@ -618,6 +618,8 @@ framed_init_(Framed_B32 wait_for_connection, Framed_U16 port)
 
     framed->buffer_pos[framed->buffer_write_index] += entry_size;
 
+    framed__memory_fence();
+
     framed_flush_();
 }
 
@@ -625,11 +627,12 @@ FRAMED_DEF void
 framed_flush_(void)
 {
     Framed_ClientState *framed = &global_framed_state;
-     while ((framed->buffer_write_index+1) % FRAMED_BUFFER_COUNT == framed->buffer_send_index)
+    Framed_U64 next_write_index = (framed->buffer_write_index+1) % FRAMED_BUFFER_COUNT;
+    while (next_write_index == framed->buffer_send_index)
     {
         // NOTE(hampus): Busy wait
     }
-    framed->buffer_write_index = (framed->buffer_write_index+1) % FRAMED_BUFFER_COUNT;
+    framed->buffer_write_index = next_write_index;
 }
 
 FRAMED_DEF void

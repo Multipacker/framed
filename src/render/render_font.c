@@ -432,6 +432,7 @@ render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 internal Render_Font *
 render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 {
+    profile_begin_function();
     Vec2F32 scale = gfx_scale_from_window(renderer->gfx);
     font_key.font_size = (U32) ((F32) font_key.font_size * scale.y);
     assert(renderer);
@@ -439,8 +440,6 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
     assert(font_key.path.size > 0);
     Render_Font *result = 0;
 
-    debug_function()
-    {
         S32 unused_slot = -1;
         U64 current_frame_index = renderer->frame_index;
         for (S32 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
@@ -488,14 +487,15 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
         }
 
         result->last_frame_index_used = renderer->frame_index;
-    }
 
+    profile_end_function();
     return(result);
 }
 
 internal Void
 render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font, Vec4F32 color)
 {
+    profile_begin_function();
     Render_Glyph *glyph = font->glyphs + index;
 
     F32 xpos = min.x + glyph->bearing_in_pixels.x;
@@ -511,14 +511,14 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
         .slice = glyph->slice,
         .color = color,
         .is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING
-    );
+                );
+    profile_end_function();
 }
 
 internal Void
 render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
 {
-    debug_function()
-    {
+    profile_begin_function();
         if (render_font_is_loaded(font))
         {
             arena_scratch(0, 0)
@@ -554,8 +554,8 @@ render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Fo
                     min.x += font->glyphs[index].advance_width;
                 }
             }
-        }
     }
+    profile_end_function();
 }
 
 internal Void
@@ -622,6 +622,7 @@ render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_F
 internal Void
 render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color)
 {
+    profile_begin_function();
     if (render_font_is_loaded(font))
     {
         U32 index = render_glyph_index_from_codepoint(font, codepoint);
@@ -643,6 +644,7 @@ render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, 
             .is_subpixel_text = RENDER_USE_SUBPIXEL_RENDERING
         );
     }
+    profile_end_function();
 }
 
 internal Void
@@ -655,9 +657,8 @@ render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Fo
 internal Vec2F32
 render_measure_text(Render_Font *font, Str8 text)
 {
+    profile_begin_function();
     Vec2F32 result = { 0 };
-    debug_function()
-    {
         if (render_font_is_loaded(font))
         {
             arena_scratch(0, 0)
@@ -693,8 +694,8 @@ render_measure_text(Render_Font *font, Str8 text)
             }
 
             result.y = font->line_height;
-        }
     }
+    profile_end_function();
     return(result);
 }
 
@@ -708,6 +709,7 @@ render_measure_text_length(Render_Font *font, Str8 text, U64 length)
 internal Vec2F32
 render_measure_character(Render_Font *font, U32 codepoint)
 {
+    profile_begin_function();
     Vec2F32 result = { 0 };
     if (render_font_is_loaded(font))
     {
@@ -716,12 +718,15 @@ render_measure_character(Render_Font *font, U32 codepoint)
         result.x = (glyph->advance_width);
         result.y = font->line_height;
     }
+    profile_end_function();
     return(result);
 }
 
 internal Vec2F32
 render_measure_multiline_text(Render_Font *font, Str8 text)
 {
+    profile_begin_function();
+
     Vec2F32 result = { 0 };
     if (render_font_is_loaded(font))
     {
@@ -775,5 +780,6 @@ render_measure_multiline_text(Render_Font *font, Str8 text)
         }
 
     }
+    profile_end_function();
     return(result);
 }
