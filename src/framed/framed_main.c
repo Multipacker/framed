@@ -732,6 +732,7 @@ os_main(Str8List arguments)
         log_init(log_file, megabytes(40));
     }
 
+
     Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     Render_Context *renderer = render_init(&gfx);
     Arena *frame_arenas[2];
@@ -751,6 +752,10 @@ os_main(Str8List arguments)
     profiling_state->current_frame.arena = arena_create("CurrentZoneFrameArena");
 
     framed_state->popup_message = framed_pop_up_message_stub;
+
+    // TODO(hampus): Put this somewhere else. Maybe some kind of base layer symbol init?
+    micro_seconds_string = str8_from_str16(framed_perm_arena, (Str16){(U16 []){181, 's'}, 2});
+    micro_string = str8_chop(micro_seconds_string, 1);
 
     zone_node_init();
 
