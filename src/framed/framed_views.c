@@ -46,7 +46,7 @@ display_zone_hit_count(ZoneNode *root)
 internal Void
 display_zone_exc_avg(ZoneNode *root)
 {
-    TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc / root->hit_count);
+    TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc / (F64) root->hit_count);
     ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
