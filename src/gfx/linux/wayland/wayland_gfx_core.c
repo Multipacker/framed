@@ -42,6 +42,8 @@ wayland_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
     Gfx_Wayland_Context result = { 0 };
 
+    U64 buffer_size = 2 * 1920 * 1080 * sizeof(U32);
+
     result.display = wl_display_connect(0);
     if (!result.display)
     {
@@ -81,6 +83,30 @@ wayland_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
             if (result.surface)
             {
+                // NOTE(simon): For now we allocate a pixel buffer for CPU rendering just for testing.
+                int shared_memory = memfd_create("framed-wayland-buffers", 0);
+                if (shared_memory != -1)
+                {
+                    int ret = 0;
+                    do
+                    {
+                        ret = ftruncate(shared_memory, (off_t) buffer_size);
+                    } while (ret == -1 && errno == EINTR);
+
+                    if (ret != -1)
+                    {
+                        U8 *data = mmap(0, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, shared_memory, 0);
+                        struct wl_shm_pool *pool = wl_shm_create_pool(result.shm, shared_memory, (S32) buffer_size);
+                    }
+                    else
+                    {
+                        log_error("Could not create resize shared memory");
+                    }
+                }
+                else
+                {
+                    log_error("Could not create shared memory");
+                }
             }
             else
             {
