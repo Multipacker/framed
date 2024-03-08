@@ -188,6 +188,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         ui_check(&view_data->flatten, str8_lit("FlattenCheck"));
     }
 
+    if (view_data->flatten)
+    {
+        ZoneNode *new_root = zone_node_flatten(scratch.arena, root);
+        root = new_root;
+    }
+
     ui_spacer(ui_em(0.5f, 1));
 
     local Str8 column_names[] =

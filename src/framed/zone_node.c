@@ -230,3 +230,56 @@ zone_node_init(Void)
 {
     zone_node_arena = arena_create("ZoneNodeArena");
 }
+
+internal ZoneNode *
+zone_node_flatten(Arena *arena, ZoneNode *root)
+{
+    Arena_Temporary scratch = get_scratch(0, 0);
+
+    ZoneNode *new_root = push_struct_zero(arena, ZoneNode);
+    U64 map_size = 1024;
+    ZoneNode **new_map = push_array_zero(arena, ZoneNode *, map_size);
+
+    for (U64 i = 0; i < array_count(zone_vis_node_map); ++i)
+    {
+        ZoneNode *node = zone_vis_node_map[i];
+        while (node)
+        {
+            U64 hash = hash_str8(node->name);
+            U64 slot_index = hash % map_size;
+            ZoneNode *map_entry = new_map[slot_index];
+            while (map_entry)
+            {
+                if (memory_match(map_entry->name.data, node->name.data, u64_min(map_entry->name.size, node->name.size)) && map_entry->name.size == node->name.size)
+                {
+                    break;
+                }
+
+                map_entry = map_entry->hash_next;
+            }
+
+            if (!map_entry)
+            {
+                ZoneNode *new_map_entry = push_struct_zero(arena, ZoneNode);
+                new_map_entry->name = node->name;
+                new_map_entry->hash_next = new_map[slot_index];
+                new_map[slot_index] = new_map_entry;
+                new_map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
+                map_entry = new_map_entry;
+                dll_push_back(new_root->first, new_root->last, new_map_entry);
+            }
+
+            map_entry->ms_elapsed_inc += node->ms_elapsed_inc;
+            map_entry->ms_elapsed_exc += node->ms_elapsed_exc;
+            map_entry->hit_count += node->hit_count;
+            map_entry->ms_min_elapsed_exc = f64_min(map_entry->ms_min_elapsed_exc, node->ms_min_elapsed_exc);
+            map_entry->ms_max_elapsed_exc = f64_max(map_entry->ms_max_elapsed_exc, node->ms_max_elapsed_exc);
+
+            node = node->hash_next;
+        }
+    }
+
+    release_scratch(scratch);
+
+    return(new_root);
+}
