@@ -266,8 +266,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
-    if (root)
-    {
+
         CompareFunc *compare_func = zone_node_compare_name;
         switch (view_data->column_sort_index)
         {
@@ -280,7 +279,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             case 7: { compare_func = zone_node_compare_max_exc; } break;
         }
         sort_children(root, view_data->ascending_sort, compare_func);
-    }
 
     ui_next_height(ui_pct(1, 1));
     ui_next_width(ui_pct(1, 1));
@@ -491,7 +489,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
                          UI_BoxFlag_DrawText,
                          "Frame time: %.2f%"PRISTR8" (%"PRIU64" fps)",
-                         frame_time_interval.amount, str8_expand(frame_time_interval.unit), (U64)(1.0 / frame_time_ms));
+                         frame_time_interval.amount, str8_expand(frame_time_interval.unit), (U64)((1.0 / (frame_time_ms/1000.0)) + 0.5));
 
 
             ui_spacer(ui_em(0.25f, 1));
