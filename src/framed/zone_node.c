@@ -1,3 +1,5 @@
+#define ZONE_NODE_LOOKUP_BY_NAME 1
+
 global U64 id_stack[4096];
 global U64 id_stack_pos = 2;
 global ZoneNode *zone_vis_node_map[4096];
@@ -28,14 +30,18 @@ zone_node_free(ZoneNode *zone)
 }
 
 internal ZoneNode *
-zone_node_from_id(U64 id)
+zone_node_from_id(Str8 name, U64 id)
 {
     ZoneNode *result = 0;
     U64 slot_index = id % array_count(zone_vis_node_map);
 
     for (ZoneNode *node = zone_vis_node_map[slot_index]; node != 0; node = node->hash_next)
     {
+#if ZONE_NODE_LOOKUP_BY_NAME
+        if (memory_match(node->name.data, name.data, u64_min(node->name.size, name.size)) && node->name.size == name.size)
+#else
         if (node->id == id)
+#endif
         {
             result = node;
             break;
@@ -46,6 +52,7 @@ zone_node_from_id(U64 id)
     {
         result = zone_node_alloc();
         result->id = id;
+        result->name = name;
         result->hash_next = zone_vis_node_map[slot_index];
         zone_vis_node_map[slot_index] = result;
     }
@@ -144,15 +151,22 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
         // NOTE(hampus): Get what the id of the parent would be if
         // parent_node->name == zone->name
         U64 parent_id_if_recursive = name_hash + id_stack[id_stack_pos-2];
+#if ZONE_NODE_LOOKUP_BY_NAME
+        recursive = memory_match(zone->name.data, parent_node->name.data, u64_min(zone->name.size, parent_node->name.size)) && zone->name.size == parent_node->name.size;
+#else
         recursive = node->id == parent_id_if_recursive;
-
+#endif
         if (!recursive)
         {
             U64 id = name_hash + id_stack[id_stack_pos-1];
             node = 0;
             for (ZoneNode *n = parent_node->first; n != 0; n = n->next)
             {
+#if ZONE_NODE_LOOKUP_BY_NAME
+                if (memory_match(zone->name.data, n->name.data, u64_min(zone->name.size, n->name.size)) && zone->name.size == n->name.size)
+#else
                 if (id == n->id)
+#endif
                 {
                     node = n;
                 }
@@ -160,7 +174,7 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
 
             if (node == 0)
             {
-                node = zone_node_from_id(id);
+                node = zone_node_from_id(zone->name, id);
                 node->parent = node->first = node->last = node->next = node->prev = 0;
                 node->ms_elapsed_inc = node->ms_elapsed_exc = node->ms_max_elapsed_exc = 0;
                 node->hit_count = 0;
