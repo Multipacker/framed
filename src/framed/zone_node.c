@@ -52,7 +52,7 @@ zone_node_from_id(Str8 name, U64 id)
     {
         result = zone_node_alloc();
         result->id = id;
-        result->name = name;
+        result->name = str8_copy(zone_node_arena, name);
         result->hash_next = zone_vis_node_map[slot_index];
         zone_vis_node_map[slot_index] = result;
     }
@@ -179,7 +179,6 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
                 node->ms_elapsed_inc = node->ms_elapsed_exc = node->ms_max_elapsed_exc = 0;
                 node->hit_count = 0;
                 node->ms_min_elapsed_exc = (F64)U64_MAX;
-                node->name = zone->name;
                 dll_push_back(parent_node->first, parent_node->last, node);
                 node->parent = parent_node;
             }
