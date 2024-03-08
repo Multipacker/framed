@@ -69,6 +69,8 @@ enum UI_BoxFlags
     UI_BoxFlag_AnimateScrollX = (1 << 19),
     UI_BoxFlag_AnimateScrollY = (1 << 20),
 
+    UI_BoxFlag_Disabled        = (1 << 21),
+
     UI_BoxFlag_AnimateScroll = UI_BoxFlag_AnimateScrollX | UI_BoxFlag_AnimateScrollY,
     UI_BoxFlag_FixedPos      = UI_BoxFlag_FixedX | UI_BoxFlag_FixedY,
     UI_BoxFlag_AnimatePos    = UI_BoxFlag_AnimateX | UI_BoxFlag_AnimateY,

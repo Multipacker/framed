@@ -552,6 +552,10 @@ ui_comm_from_box(UI_Box *box)
     assert(!ui_key_is_null(box->key) && "Tried to gather input from a keyless box!");
 
     UI_Comm result = {0};
+    if (ui_box_has_flag(box, UI_BoxFlag_Disabled))
+    {
+        return(result);
+    }
     result.box = box;
     Vec2F32 mouse_pos = gfx_get_mouse_pos(ui_ctx->renderer->gfx);
 
@@ -855,28 +859,28 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
     }
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollX) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollY) &&
-                     ui_key_is_null(result->key) &&
-                     "Why would you animate a keyless box"));
+             ui_key_is_null(result->key) &&
+             "Why would you animate a keyless box"));
 
     result->last_frame_touched_index = ui_ctx->frame_index;
 
@@ -924,16 +928,11 @@ internal UI_Box *
 ui_box_makef(UI_BoxFlags flags, CStr fmt, ...)
 {
     UI_Box *result = &g_nil_box;
-    // TODO(hampus): This won't work with debug_string
-    // since it needs to be persistent across the frame
-    arena_scratch(0, 0)
-    {
-        va_list args;
-        va_start(args, fmt);
-        Str8 string = str8_pushfv(scratch, fmt, args);
-        result = ui_box_make(flags, string);
-        va_end(args);
-    }
+    va_list args;
+    va_start(args, fmt);
+    Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+    result = ui_box_make(flags, string);
+    va_end(args);
 
     return(result);
 }
@@ -978,12 +977,12 @@ ui_ctx_menu_begin(UI_Key key)
     if (is_open)
     {
         ui_next_extra_box_flags(
-            UI_BoxFlag_DrawBackground |
-            UI_BoxFlag_DrawBorder |
-            UI_BoxFlag_AnimateHeight |
-            UI_BoxFlag_DrawDropShadow |
-            UI_BoxFlag_Clip
-        );
+                                UI_BoxFlag_DrawBackground |
+                                UI_BoxFlag_DrawBorder |
+                                UI_BoxFlag_AnimateHeight |
+                                UI_BoxFlag_DrawDropShadow |
+                                UI_BoxFlag_Clip
+                                );
     }
 
     ui_push_seed(key);
@@ -1558,7 +1557,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
     if (!ui_box_has_flag(root, UI_BoxFlag_FixedRect))
     {
         if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateX << axis)) &&
-                ui_animations_enabled())
+            ui_animations_enabled())
         {
             root->fixed_rect.min.v[axis] = offset + root->rel_pos_animated.v[axis];
         }
@@ -1568,7 +1567,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
         }
 
         if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateWidth << axis)) &&
-                ui_animations_enabled())
+            ui_animations_enabled())
         {
             root->fixed_rect.max.v[axis] = root->fixed_rect.min.v[axis] + root->fixed_size_animated.v[axis];
         }
@@ -1583,7 +1582,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 
     F32 child_offset = root->fixed_rect.min.v[axis];
     if (ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AnimateScroll << axis)) &&
-            ui_animations_enabled())
+        ui_animations_enabled())
     {
         child_offset -= root->scroll_animated.v[axis];
     }
@@ -1684,10 +1683,16 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
 internal Void
 ui_draw(UI_Box *root)
 {
-    if (ui_box_has_flag(root, UI_BoxFlag_FixedRect))
+    if (ui_box_has_flag(root, UI_BoxFlag_Disabled))
     {
-        int x = 5;
+        // TODO(hampus): Grey out it out aswell.
+        root->rect_style.color[0].a *= 0.5f;
+        root->rect_style.color[1].a *= 0.5f;
+        root->rect_style.color[2].a *= 0.5f;
+        root->rect_style.color[3].a *= 0.5f;
+        root->text_style.color.a *= 0.5f;
     }
+
     if (root->custom_draw)
     {
         root->custom_draw(root);
@@ -1726,10 +1731,10 @@ ui_draw(UI_Box *root)
             Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x/5, dpi.x/5));
             // TODO(hampus): Make softness em dependent
             Render_RectInstance *instance = render_rect(
-                ui_ctx->renderer, min, max,
-                .softness = dpi.x * 0.2f,
-                .color = v4f32(0, 0, 0, 1)
-            );
+                                                        ui_ctx->renderer, min, max,
+                                                        .softness = dpi.x * 0.2f,
+                                                        .color = v4f32(0, 0, 0, 1)
+                                                        );
             memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
         }
 
@@ -1753,11 +1758,11 @@ ui_draw(UI_Box *root)
             rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
             instance = render_rect(
-                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-                .softness = rect_style->softness,
-                .slice = rect_style->slice,
-                .use_nearest = rect_style->texture_filter
-            );
+                                   ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+                                   .softness = rect_style->softness,
+                                   .slice = rect_style->slice,
+                                   .use_nearest = rect_style->texture_filter
+                                   );
             memory_copy_array(instance->colors, rect_style->color);
             memory_copy_array(instance->radies, rect_style->radies.v);
         }
@@ -1780,11 +1785,11 @@ ui_draw(UI_Box *root)
             }
 
             Render_RectInstance *instance = render_rect(
-                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-                .border_thickness = rect_style->border_thickness,
-                .color = rect_style->border_color,
-                .softness = rect_style->softness
-            );
+                                                        ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+                                                        .border_thickness = rect_style->border_thickness,
+                                                        .color = rect_style->border_color,
+                                                        .softness = rect_style->softness
+                                                        );
             memory_copy(instance->radies, rect_style->radies.v, sizeof(Vec4F32));
         }
 
