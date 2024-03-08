@@ -258,12 +258,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     F64 frame_time_ms = 0;
     if (profiling_per_frame)
     {
-        total_ms = (F64)(frame->end_tsc - frame->begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
+        total_ms = (F64)(frame->end_tsc - frame->start_tsc) / (F64)frame->tsc_frequency * 1000.0;
         frame_time_ms = total_ms;
     }
     else
     {
-        total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
+        total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
     ui_next_height(ui_pct(1, 1));
@@ -446,7 +446,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             ui_spacer(ui_em(0.25f, 1));
 
-            F64 profiling_time = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_begin_tsc) / (F64)frame->tsc_frequency * 1000.0f;
+            F64 profiling_time = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0f;
 
             TimeInterval profiling_time_interval = time_interval_from_ms(profiling_time);
             ui_textf("Profiling time elapsed: %.2f%"PRISTR8, profiling_time_interval.amount, str8_expand(profiling_time_interval.unit));

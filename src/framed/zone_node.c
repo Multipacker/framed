@@ -1,4 +1,4 @@
-#define ZONE_NODE_LOOKUP_BY_NAME 1
+#define ZONE_NODE_LOOKUP_BY_NAME 0
 
 global U64 id_stack[4096];
 global U64 id_stack_pos = 2;
@@ -87,8 +87,8 @@ struct ZoneTempValues
 {
     U64 id;
     F64 ms_elapsed_exc;
-    U64 tsc_start;
-    U64 tsc_end;
+    U64 start_tsc;
+    U64 end_tsc;
 };
 
 internal ZoneNode *
@@ -109,8 +109,8 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
     // keep around while creating the hierarchy.
     ZoneTempValues *exc_values_stack_base = push_array(scratch.arena, ZoneTempValues, 4096);
     ZoneTempValues *exc_values_stack = exc_values_stack_base;
-    exc_values_stack->tsc_end = frame->end_tsc;
-    exc_values_stack->tsc_start = 0;
+    exc_values_stack->end_tsc = U64_MAX;
+    exc_values_stack->start_tsc = 0;
 
     U64 cycles_per_second = frame->tsc_frequency;
 
@@ -125,7 +125,7 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
         }
 
         profile_begin_block("Parent stack walking");
-        while (!(zone->start_tsc >= exc_values_stack->tsc_start && zone->end_tsc <= exc_values_stack->tsc_end))
+        while (!(zone->start_tsc >= exc_values_stack->start_tsc && zone->end_tsc <= exc_values_stack->end_tsc))
         {
             parent_node->ms_min_elapsed_exc = f64_min(parent_node->ms_min_elapsed_exc, exc_values_stack->ms_elapsed_exc);
             parent_node->ms_max_elapsed_exc = f64_max(parent_node->ms_max_elapsed_exc, exc_values_stack->ms_elapsed_exc);
@@ -191,8 +191,8 @@ zone_node_hierarchy_from_frame(Arena *arena, Frame *frame)
         }
 
         exc_values_stack++;
-        exc_values_stack->tsc_start = zone->start_tsc;
-        exc_values_stack->tsc_end = zone->end_tsc;
+        exc_values_stack->start_tsc = zone->start_tsc;
+        exc_values_stack->end_tsc = zone->end_tsc;
         exc_values_stack->ms_elapsed_exc = ms_total;
         exc_values_stack->id = node->id;
 

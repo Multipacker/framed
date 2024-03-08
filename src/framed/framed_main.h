@@ -23,7 +23,7 @@ struct Frame
     Arena *arena;
     ZoneBlock *zone_blocks;
     U64 zone_blocks_count;
-    U64 begin_tsc;
+    U64 start_tsc;
     U64 end_tsc;
     U64 tsc_frequency;
 };
@@ -44,7 +44,7 @@ struct Frame
     // NOTE(hampus): Per session
 
     U64 frame_index;
-    U64 profile_begin_tsc;
+    U64 profile_start_tsc;
     U64 profile_end_tsc;
     U64 tsc_frequency;
 

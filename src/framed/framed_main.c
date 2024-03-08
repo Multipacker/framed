@@ -220,14 +220,14 @@ framed_parse_zones(Void)
                             memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
                         }
 
-                        profiling_state->profile_begin_tsc = header->tsc;
+                        profiling_state->profile_start_tsc = header->tsc;
                         profiling_state->tsc_frequency = packet->tsc_frequency;
 
                         Frame *frame = &profiling_state->current_frame;
                         arena_pop_to(frame->arena, 0);
                         frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
                         frame->tsc_frequency = profiling_state->tsc_frequency;
-                        frame->begin_tsc = header->tsc;
+                        frame->zone_blocks_count = 0;
 
                         entry_size = sizeof(Packet);
                     }
@@ -255,13 +255,11 @@ framed_parse_zones(Void)
                     frame = &profiling_state->current_frame;
                     arena_pop_to(frame->arena, 0);
                     frame->zone_blocks_count = 0;
-                    frame->begin_tsc = 0;
-                    frame->end_tsc = 0;
                     frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
                     frame->tsc_frequency = profiling_state->tsc_frequency;
                     profiling_state->zone_stack_pos = 0;
 
-                    frame->begin_tsc = header->tsc;
+                    frame->start_tsc = header->tsc;
 
                     profiling_state->frame_index++;
 
@@ -350,7 +348,6 @@ framed_parse_zones(Void)
                     entry_size = sizeof(Packet);
 
                     profiling_state->profile_end_tsc = header->tsc;
-                    frame->end_tsc = header->tsc;
                 } break;
                 default:
                 {
@@ -364,6 +361,11 @@ framed_parse_zones(Void)
         }
         release_scratch(scratch);
         size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+    }
+
+    if (terminate_connection)
+    {
+        memory_zero_struct(&profiling_state->client_socket);
     }
 
     U64 gather_end_time_ns = os_now_nanoseconds();
