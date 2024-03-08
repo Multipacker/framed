@@ -266,7 +266,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
-    if (root->first)
+    if (root)
     {
         CompareFunc *compare_func = zone_node_compare_name;
         switch (view_data->column_sort_index)
@@ -279,8 +279,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             case 6: { compare_func = zone_node_compare_min_exc; } break;
             case 7: { compare_func = zone_node_compare_max_exc; } break;
         }
-
-        sort_children(root->first, view_data->ascending_sort, compare_func);
+            sort_children(root, view_data->ascending_sort, compare_func);
     }
 
     ui_next_height(ui_pct(1, 1));

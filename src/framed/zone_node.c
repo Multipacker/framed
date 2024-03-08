@@ -235,7 +235,7 @@ zone_node_init(Void)
 internal ZoneNode *
 zone_node_flatten(Arena *arena, ZoneNode *root)
 {
-    Arena_Temporary scratch = get_scratch(0, 0);
+    Arena_Temporary scratch = get_scratch(&arena, 1);
 
     ZoneNode *new_root = push_struct_zero(arena, ZoneNode);
     U64 map_size = 1024;
@@ -268,6 +268,7 @@ zone_node_flatten(Arena *arena, ZoneNode *root)
                 new_map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
                 map_entry = new_map_entry;
                 dll_push_back(new_root->first, new_root->last, new_map_entry);
+                new_root->children_count++;
             }
 
             map_entry->ms_elapsed_inc += node->ms_elapsed_inc;
