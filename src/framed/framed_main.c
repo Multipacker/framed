@@ -212,7 +212,7 @@ framed_parse_zones(Void)
 
                         if (profiling_state->current_frame.zone_blocks)
                         {
-                        memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
+                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
                         }
 
                         if (profiling_state->current_frame.zone_blocks)
@@ -998,8 +998,21 @@ os_main(Str8List arguments)
                         }
                         else
                         {
+                            FramedUI_Panel *panel = master_window->root_panel;
+                            for (;;)
+                            {
+                                if (!framed_ui_panel_is_nil(panel->children[0]))
+                                {
+                                    panel = panel->children[0];
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
                             framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
-                            framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
+
+                            framed_ui_panel_insert_tab(panel, framed_ui_state->tab_view_table[i]);
                         }
                     }
                     if (row_comm.hovering)
