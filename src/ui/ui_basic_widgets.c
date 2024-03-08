@@ -775,7 +775,7 @@ ui_get_codepoint_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
         result = S64_MIN;
     }
 
-    F32 x = -box->scroll.x;
+    F32 x = -box->scroll.x + box->fixed_rect.x0;
     for (U64 i = 0; i < edit_str.size;)
     {
         StringDecode decode = string_decode_utf8(&edit_str.data[i], edit_str.size - i);
