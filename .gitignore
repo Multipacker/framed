@@ -13,3 +13,4 @@ framed_log.txt
 /examples/build
 **/*.embed
 /framed.framed_settings
+**/*.generated.*

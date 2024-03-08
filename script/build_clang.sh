@@ -6,6 +6,9 @@ mkdir -p build
 
 errors="-Werror -Wall -Wno-missing-braces -Wno-newline-eof -Wno-unused-variable -Wno-unused-function -Wconversion -Wno-initializer-overrides -Wno-unused-but-set-variable -Wshadow -Wsign-compare -Wsign-conversion -Wtautological-compare -Wtype-limits"
 
+wayland-scanner client-header /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml src/gfx/linux/wayland/wayland_xdg_shell.generated.h
+wayland-scanner private-code  /usr/share/wayland-protocols/stable/xdg-shell/xdg-shell.xml src/gfx/linux/wayland/wayland_xdg_shell.generated.c
+
 clang -Isrc -Ivendor $errors -lm src/meta/meta.c -o build/meta
 
 build/meta

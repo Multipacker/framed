@@ -1,3 +1,15 @@
+#include "wayland_xdg_shell.generated.c"
+
+internal Void
+wayland_xdg_wm_base_handle_ping(Void *data, struct xdg_wm_base *xdg_wm_base, U32 serial)
+{
+    xdg_wm_base_pong(xdg_wm_base, serial);
+}
+
+global struct xdg_wm_base_listener wayland_xdg_wm_base_listener = {
+    .ping = wayland_xdg_wm_base_handle_ping,
+};
+
 internal Void
 wayland_registry_handle_global(Void *data,
                                struct wl_registry *registry,
@@ -10,9 +22,14 @@ wayland_registry_handle_global(Void *data,
     {
         gfx->compositor = wl_registry_bind(gfx->registry, name, &wl_compositor_interface, 4);
     }
-    if (strcmp(interface, wl_shm_interface.name) == 0)
+    else if (strcmp(interface, wl_shm_interface.name) == 0)
     {
         gfx->shm = wl_registry_bind(gfx->registry, name, &wl_shm_interface, 1);
+    }
+    else if (strcmp(interface, xdg_wm_base_interface.name) == 0)
+    {
+        gfx->xdg_wm_base = wl_registry_bind(gfx->registry, name, &xdg_wm_base_interface, 1);
+        xdg_wm_base_add_listener(gfx->xdg_wm_base, &wayland_xdg_wm_base_listener, gfx);
     }
     else
     {
@@ -37,12 +54,55 @@ global struct wl_registry_listener wayland_registry_listener = {
     .global_remove = wayland_registry_handle_global_remove,
 };
 
+internal Void
+wayland_xdg_surface_handle_configure(Void *data, struct xdg_surface *xdg_surface, U32 serial)
+{
+    Gfx_Wayland_Context *gfx = (Gfx_Wayland_Context *) data;
+    xdg_surface_ack_configure(xdg_surface, serial);
+
+    U64 buffer_size = 2 * 1920 * 1080 * sizeof(U32);
+
+    // NOTE(simon): For now we allocate a pixel buffer for CPU rendering just for testing.
+    int shared_memory = memfd_create("framed-wayland-buffers", 0);
+    if (shared_memory != -1)
+    {
+        int ret = 0;
+        do
+        {
+            ret = ftruncate(shared_memory, (off_t) buffer_size);
+        } while (ret == -1 && errno == EINTR);
+
+        if (ret != -1)
+        {
+            U8 *buffer_data = mmap(0, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, shared_memory, 0);
+            struct wl_shm_pool *pool = wl_shm_create_pool(gfx->shm, shared_memory, (S32) buffer_size);
+            struct wl_buffer *buffer = wl_shm_pool_create_buffer(pool, 0, 1920, 1080, 1920 * sizeof(U32), WL_SHM_FORMAT_XRGB8888);
+
+            memory_set(buffer_data, 0, buffer_size);
+
+            wl_surface_attach(gfx->surface, buffer, 0, 0);
+            wl_surface_damage(gfx->surface, 0, 0, (S32) U32_MAX, (S32) U32_MAX);
+            wl_surface_commit(gfx->surface);
+        }
+        else
+        {
+            log_error("Could not create resize shared memory");
+        }
+    }
+    else
+    {
+        log_error("Could not create shared memory");
+    }
+}
+
+global struct xdg_surface_listener wayland_xdg_surface_listener = {
+    .configure = wayland_xdg_surface_handle_configure,
+};
+
 internal Gfx_Wayland_Context
 wayland_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
     Gfx_Wayland_Context result = { 0 };
-
-    U64 buffer_size = 2 * 1920 * 1080 * sizeof(U32);
 
     result.display = wl_display_connect(0);
     if (!result.display)
@@ -61,10 +121,12 @@ wayland_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
         Void *objects[] = {
             result.compositor,
             result.shm,
+            result.xdg_wm_base,
         };
         CStr messages[] = {
             "Could not bind to wl_compositor",
             "Could not bind to wl_shm",
+            "Could not bind to xdg_wm_base",
         };
 
         B32 has_all_globals = true;
@@ -83,29 +145,34 @@ wayland_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
             if (result.surface)
             {
-                // NOTE(simon): For now we allocate a pixel buffer for CPU rendering just for testing.
-                int shared_memory = memfd_create("framed-wayland-buffers", 0);
-                if (shared_memory != -1)
-                {
-                    int ret = 0;
-                    do
-                    {
-                        ret = ftruncate(shared_memory, (off_t) buffer_size);
-                    } while (ret == -1 && errno == EINTR);
+                result.xdg_surface = xdg_wm_base_get_xdg_surface(result.xdg_wm_base, result.surface);
 
-                    if (ret != -1)
+                if (result.xdg_surface)
+                {
+                    xdg_surface_add_listener(result.xdg_surface, &wayland_xdg_surface_listener, &result);
+                    result.xdg_toplevel = xdg_surface_get_toplevel(result.xdg_surface);
+                    if (result.xdg_toplevel)
                     {
-                        U8 *data = mmap(0, buffer_size, PROT_READ | PROT_WRITE, MAP_SHARED, shared_memory, 0);
-                        struct wl_shm_pool *pool = wl_shm_create_pool(result.shm, shared_memory, (S32) buffer_size);
+                        arena_scratch(0, 0)
+                        {
+                            CStr cstr_title = cstr_from_str8(scratch, title);
+                            xdg_toplevel_set_title(result.xdg_toplevel, cstr_title);
+                        }
+
+                        wl_surface_commit(result.surface);
+
+                        while (wl_display_dispatch(result.display))
+                        {
+                        }
                     }
                     else
                     {
-                        log_error("Could not create resize shared memory");
+                        log_error("Could not create XDG toplevel");
                     }
                 }
                 else
                 {
-                    log_error("Could not create shared memory");
+                    log_error("Could not create XDG surface");
                 }
             }
             else
