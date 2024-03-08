@@ -220,13 +220,14 @@ framed_parse_zones(Void)
                             memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
                         }
 
-                        profiling_state->profile_begin_tsc = packet->header.tsc;
+                        profiling_state->profile_begin_tsc = header->tsc;
                         profiling_state->tsc_frequency = packet->tsc_frequency;
 
                         Frame *frame = &profiling_state->current_frame;
                         arena_pop_to(frame->arena, 0);
                         frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
                         frame->tsc_frequency = profiling_state->tsc_frequency;
+                        frame->begin_tsc = header->tsc;
 
                         entry_size = sizeof(Packet);
                     }
@@ -310,7 +311,7 @@ framed_parse_zones(Void)
                         ZoneBlock *zone = frame->zone_blocks + frame->zone_blocks_count;
 
                         zone->name = str8_copy(frame->arena, name);
-                        zone->start_tsc = packet->header.tsc;
+                        zone->start_tsc = header->tsc;
 
                         ZoneStackEntry *stack_entry = profiling_state->zone_stack + profiling_state->zone_stack_pos;
                         stack_entry->zone_block = zone;
