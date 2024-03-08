@@ -1,10 +1,13 @@
+// [ ] @feature Choose which unit to display values with (s, ms, us, ns, or automatic)
+// [ ] @feature Sorting by column value
+
 ////////////////////////////////
 //~ hampus: Zones tab view
 
 internal Void
 display_zone_min_exc(ZoneNode *root)
 {
-    ui_textf("%.2f", root->ms_min_elapsed_exc);
+    ui_textf("%'.2f", root->ms_min_elapsed_exc);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -17,7 +20,7 @@ display_zone_min_exc(ZoneNode *root)
 internal Void
 display_zone_max_exc(ZoneNode *root)
 {
-    ui_textf("%.2f", root->ms_max_elapsed_exc);
+    ui_textf("%'.2f", root->ms_max_elapsed_exc);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -30,7 +33,7 @@ display_zone_max_exc(ZoneNode *root)
 internal Void
 display_zone_hit_count(ZoneNode *root)
 {
-    ui_textf("%"PRIU64, root->hit_count);if (!(root->flags & ZoneNodeFlag_Collapsed))
+    ui_textf("%'"PRIU64, root->hit_count);if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
         {
@@ -40,9 +43,22 @@ display_zone_hit_count(ZoneNode *root)
 }
 
 internal Void
+display_zone_exc_avg(ZoneNode *root)
+{
+    ui_textf("%'.2f", root->ms_elapsed_exc / root->hit_count);
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
+    {
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_exc_avg(node);
+        }
+    }
+}
+
+internal Void
 display_zone_inc(ZoneNode *root)
 {
-    ui_textf("%.2f", root->ms_elapsed_inc);
+    ui_textf("%'.2f", root->ms_elapsed_inc);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -55,12 +71,25 @@ display_zone_inc(ZoneNode *root)
 internal Void
 display_zone_exc(ZoneNode *root)
 {
-    ui_textf("%.2f", root->ms_elapsed_exc);
+    ui_textf("%'.2f", root->ms_elapsed_exc);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
         {
             display_zone_exc(node);
+        }
+    }
+}
+
+internal Void
+display_zone_exc_pct(ZoneNode *root, F64 total_ms)
+{
+    ui_textf("%.2f%%", (root->ms_elapsed_exc/total_ms) * 100.0);
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
+    {
+        for (ZoneNode *node = root->first; node != 0; node = node->next)
+        {
+            display_zone_exc_pct(node, total_ms);
         }
     }
 }
@@ -124,11 +153,25 @@ display_zone_name(ZoneNode *root)
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
     B32 data_initialized = view_info->data != 0;
+
+    local Str8 column_names[] =
+    {
+        str8_comp("Name"),
+        str8_comp("Exc. (ms)"),
+        str8_comp("Exc. (%)"),
+        str8_comp("Inc. (ms)"),
+        str8_comp("Hit count"),
+        str8_comp("Avg. Exc. (ms)"),
+        str8_comp("Min exc. (ms)"),
+        str8_comp("Max exc. (ms)"),
+    };
+
+
     typedef struct TabViewData TabViewData;
     struct TabViewData
     {
         B32 flatten;
-        F32 column_sizes_in_pct[6];
+        F32 column_sizes_in_pct[array_count(column_names)];
 
         UI_TextEditState port_text_edit_state;
         U8 *port_text_buffer;
@@ -143,11 +186,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     if (!data_initialized)
     {
         view_data->column_sizes_in_pct[0] = 0.3f;
-        view_data->column_sizes_in_pct[1] = (1 - 0.3f) / 5.0f;
-        view_data->column_sizes_in_pct[2] = (1 - 0.3f) / 5.0f;
-        view_data->column_sizes_in_pct[3] = (1 - 0.3f) / 5.0f;
-        view_data->column_sizes_in_pct[4] = (1 - 0.3f) / 5.0f;
-        view_data->column_sizes_in_pct[5] = (1 - 0.3f) / 5.0f;
+
+        for (U64 i = 1; i < (array_count(column_names)); ++i)
+        {
+            view_data->column_sizes_in_pct[i] = (1 - 0.3f) / (array_count(column_names) - 1);
+
+        }
 
         view_data->port_text_buffer_size = 5;
         view_data->port_text_buffer = push_array(view_info->arena, U8, view_data->port_text_buffer_size);
@@ -161,7 +205,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     }
 
     Frame *frame = 0;
-    if (profiling_state->frame_index)
+    B32 profiling_per_frame = profiling_state->frame_index != 0;
+    if (profiling_per_frame)
     {
         frame = &profiling_state->finished_frame;
     }
@@ -196,17 +241,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     ui_spacer(ui_em(0.5f, 1));
 
-    local Str8 column_names[] =
-    {
-        str8_comp("Name"),
-        str8_comp("Exc. (ms)"),
-        str8_comp("Inc. (ms)"),
-        str8_comp("Hit count"),
-        str8_comp("Min exc. (ms)"),
-        str8_comp("Max exc. (ms)"),
-    };
-
-    F32 new_column_pcts[6] = {0};
+    F32 new_column_pcts[array_count(column_names)] = {0};
     memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
 
     ui_next_height(ui_pct(1, 1));
@@ -214,7 +249,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     ui_row()
     {
         ui_next_height(ui_pct(1, 1));
-        ui_next_width(ui_pct(0.5f, 1));
+        ui_next_width(ui_pct(0.75f, 1));
         UI_Box *row_parent = ui_named_row_begin(str8_lit("ZoneDisplayContainer"));
         ui_corner_radius(0)
         {
@@ -254,7 +289,20 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                             }
                         }
                     } break;
+
                     case 2:
+                    {
+                        F64 total_ms = (F64)(frame->end_tsc - frame->begin_tsc) / (F64)frame->tsc_frequency * 1000.0;
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_exc_pct(node, total_ms);
+                            }
+                        }
+                    } break;
+                    case 3:
                     {
                         ui_text_align(UI_TextAlign_Right)
                             ui_width(ui_pct(1, 1))
@@ -265,7 +313,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                             }
                         }
                     } break;
-                    case 3:
+                    case 4:
                     {
 
                         ui_text_align(UI_TextAlign_Right)
@@ -277,7 +325,19 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                             }
                         }
                     } break;
-                    case 4:
+                    case 5:
+                    {
+
+                        ui_text_align(UI_TextAlign_Right)
+                            ui_width(ui_pct(1, 1))
+                        {
+                            for (ZoneNode *node = root->first; node != 0; node = node->next)
+                            {
+                                display_zone_exc_avg(node);
+                            }
+                        }
+                    } break;
+                    case 6:
                     {
                         ui_text_align(UI_TextAlign_Right)
                             ui_width(ui_pct(1, 1))
@@ -288,7 +348,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                             }
                         }
                     } break;
-                    case 5:
+                    case 7:
                     {
                         ui_text_align(UI_TextAlign_Right)
                             ui_width(ui_pct(1, 1))
@@ -345,6 +405,13 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         U16 next_port = profiling_state->port;
         ui_column()
         {
+            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame|
+                         UI_BoxFlag_DrawText,
+                         "Frames captured: %"PRIU64,
+                         profiling_state->frame_index);
+
+            ui_spacer(ui_em(0.25f, 1));
+
             ui_row()
             {
                 ui_text(str8_lit("Listen port:"));
