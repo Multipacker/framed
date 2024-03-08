@@ -7,7 +7,8 @@
 internal Void
 display_zone_min_exc(ZoneNode *root)
 {
-    ui_textf("%'.2f", root->ms_min_elapsed_exc);
+    TimeInterval time = time_interval_from_ms(root->ms_min_elapsed_exc);
+    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -20,7 +21,8 @@ display_zone_min_exc(ZoneNode *root)
 internal Void
 display_zone_max_exc(ZoneNode *root)
 {
-    ui_textf("%'.2f", root->ms_max_elapsed_exc);
+    TimeInterval time = time_interval_from_ms(root->ms_max_elapsed_exc);
+    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -45,7 +47,8 @@ display_zone_hit_count(ZoneNode *root)
 internal Void
 display_zone_exc_avg(ZoneNode *root)
 {
-    ui_textf("%'.2f", root->ms_elapsed_exc / root->hit_count);
+    TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc / root->hit_count);
+    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -58,7 +61,8 @@ display_zone_exc_avg(ZoneNode *root)
 internal Void
 display_zone_inc(ZoneNode *root)
 {
-    ui_textf("%'.2f", root->ms_elapsed_inc);
+    TimeInterval time = time_interval_from_ms(root->ms_elapsed_inc);
+    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -71,7 +75,8 @@ display_zone_inc(ZoneNode *root)
 internal Void
 display_zone_exc(ZoneNode *root)
 {
-    ui_textf("%'.2f", root->ms_elapsed_exc);
+    TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc);
+    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -157,13 +162,13 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     local Str8 column_names[] =
     {
         str8_comp("Name"),
-        str8_comp("Exc. (ms)"),
+        str8_comp("Exc."),
         str8_comp("Exc. (%)"),
-        str8_comp("Inc. (ms)"),
+        str8_comp("Inc."),
         str8_comp("Hit count"),
-        str8_comp("Avg. Exc. (ms)"),
-        str8_comp("Min exc. (ms)"),
-        str8_comp("Max exc. (ms)"),
+        str8_comp("Avg. Exc."),
+        str8_comp("Min exc."),
+        str8_comp("Max exc."),
     };
 
 
