@@ -436,11 +436,11 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
     }
     else
     {
-        if (-delta >= (S64) edit_str.size)
+        if (delta == S64_MIN)
         {
             result.new_cursor = 0;
         }
-        else if (delta >= (S64) edit_str.size)
+        else if (delta == S64_MAX)
         {
             result.new_cursor = (S64) edit_str.size + 1;
         }
