@@ -625,6 +625,10 @@ FRAMED_DEF void
 framed_flush_(void)
 {
     Framed_ClientState *framed = &global_framed_state;
+     while ((framed->buffer_write_index+1) % FRAMED_BUFFER_COUNT == framed->buffer_send_index)
+    {
+        // NOTE(hampus): Busy wait
+    }
     framed->buffer_write_index = (framed->buffer_write_index+1) % FRAMED_BUFFER_COUNT;
 }
 
