@@ -279,7 +279,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             case 6: { compare_func = zone_node_compare_min_exc; } break;
             case 7: { compare_func = zone_node_compare_max_exc; } break;
         }
-            sort_children(root, view_data->ascending_sort, compare_func);
+        sort_children(root, view_data->ascending_sort, compare_func);
     }
 
     ui_next_height(ui_pct(1, 1));
@@ -299,29 +299,32 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_next_width(ui_pct(1, 1));
                 ui_next_height(ui_em(1, 1));
-                ui_next_extra_box_flags(UI_BoxFlag_DrawBackground |
-                                        UI_BoxFlag_Clickable |
-                                        UI_BoxFlag_HotAnimation |
-                                        UI_BoxFlag_ActiveAnimation);
-                UI_Box *title_box = ui_named_row_beginf("ZoneTitleRow%"PRIU64, i);
-                ui_next_width(ui_pct(1, 0));
-                ui_box_make(UI_BoxFlag_DrawText,
-                            column_names[i]);
+                ui_next_child_layout_axis(Axis2_X);
+                UI_Box *title_box = ui_box_makef(UI_BoxFlag_DrawText |
+                                                 UI_BoxFlag_DrawBackground |
+                                                 UI_BoxFlag_Clickable |
+                                                 UI_BoxFlag_HotAnimation |
+                                                 UI_BoxFlag_ActiveAnimation,
+                                                 "ZoneTitleRow%"PRIU64, i);
+                ui_box_equip_display_string(title_box, column_names[i]);
 
-                ui_next_height(ui_em(1, 1));
-                ui_next_width(ui_em(1, 1));
-                if (view_data->ascending_sort)
+                ui_parent(title_box)
                 {
-                    ui_next_icon(RENDER_ICON_UP);
-                }
-                else
-                {
-                    ui_next_icon(RENDER_ICON_DOWN);
-                }
-                ui_box_make(UI_BoxFlag_DrawText * (view_data->column_sort_index == i),
-                            str8_lit(""));
+                    ui_spacer(ui_fill());
 
-                ui_named_row_end();
+                    ui_next_height(ui_em(1, 1));
+                    ui_next_width(ui_em(1, 1));
+                    if (view_data->ascending_sort)
+                    {
+                        ui_next_icon(RENDER_ICON_UP);
+                    }
+                    else
+                    {
+                        ui_next_icon(RENDER_ICON_DOWN);
+                    }
+                    ui_box_make(UI_BoxFlag_DrawText * (view_data->column_sort_index == i),
+                                str8_lit(""));
+                }
 
                 UI_Comm title_box_comm = ui_comm_from_box(title_box);
 
@@ -487,8 +490,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             TimeInterval frame_time_interval = time_interval_from_ms(frame_time_ms);
             ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
                          UI_BoxFlag_DrawText,
-                         "Frame time: %.2f%"PRISTR8,
-                         frame_time_interval.amount, str8_expand(frame_time_interval.unit));
+                         "Frame time: %.2f%"PRISTR8" (%"PRIU64" fps)",
+                         frame_time_interval.amount, str8_expand(frame_time_interval.unit), (U64)(1.0 / frame_time_ms));
 
 
             ui_spacer(ui_em(0.25f, 1));
