@@ -2,23 +2,17 @@
 // hampus: Short term
 //
 // [ ] @bug The user can drop a panel on the menu bar which will hide the tab bar
-// [ ] @polish Dragging by a tab bar should not offset the new window at (0, 0)
-// [ ] @polish Memory leak when closing/opening a window due to new view data is
-//             is pushed every time the window opens again
 // [ ] @polish Simplify memory management of panels, tabs & windows
 
 ////////////////////////////////
 // hampus: Medium term
 //
 // [ ] @code @feature UI startup builder
-// [ ] @polish Resizing panels with tab animation doesn't look that good right now.
 // [ ] @feature Tab reordering again
-// [ ] @polish Tab dragging new window offset should be relative to where you began to drag the tab
 
 ////////////////////////////////
 // hampus: Long term
 //
-// [ ] @feature Move around windows that have multiple panels
 // [ ] @feature Be able to pin windows which disables closing
 // [ ] @feature Scroll tabs horizontally if there are too many to fit
 //                 - Partially fixed. You can navigate tabs by pressing the arrows to the right
