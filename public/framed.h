@@ -295,8 +295,8 @@ typedef struct Framed_ClientState Framed_ClientState;
 struct Framed_ClientState
 {
     Framed_Socket socket;
-    Framed_U8 volatile *buffer[FRAMED_BUFFER_COUNT];
-    Framed_U64 volatile buffer_pos[FRAMED_BUFFER_COUNT];
+    Framed_U8 *buffer[FRAMED_BUFFER_COUNT];
+    Framed_U64 buffer_pos[FRAMED_BUFFER_COUNT];
 
     Framed_U64 volatile buffer_write_index;
     Framed_U64 volatile buffer_send_index;
@@ -354,8 +354,6 @@ framed__rdtsc(void)
 static void
 framed__ensure_space(Framed_U64 size)
 {
-    framed__assert(size <= FRAMED_BUFFER_CAPACITY);
-
     Framed_ClientState *framed = &global_framed_state;
     if ((framed->buffer_pos[framed->buffer_write_index] + size) > FRAMED_BUFFER_CAPACITY)
     {
@@ -584,9 +582,11 @@ framed_init_(Framed_B32 wait_for_connection, Framed_U16 port)
 
     framed__socket_init(wait_for_connection, port);
 
+    Framed_U8 *buffer = (Framed_U8 *) malloc(FRAMED_BUFFER_COUNT*FRAMED_BUFFER_CAPACITY);
+
     for (Framed_U64 i = 0; i < FRAMED_BUFFER_COUNT; ++i)
     {
-        framed->buffer[i]     = (Framed_U8 *) malloc(FRAMED_BUFFER_CAPACITY);
+        framed->buffer[i]     = buffer + i*FRAMED_BUFFER_CAPACITY;
         framed->buffer_pos[i] = sizeof(Framed_U16);
     }
     // NOTE(hampus): First two bytes are the size of the packet
@@ -676,23 +676,28 @@ framed_zone_begin_(char *name)
     // TODO(hampus): Check that strlen(name) <= 255.
     // But please don't have a name longer than this :)
     Framed_U8 length = (Framed_U8)strlen(name);
-    framed__assert(length != 0);
 
     Framed_U64 entry_size = sizeof(Packet) + length;
     framed__ensure_space(entry_size);
 
-    Packet *packet = (Packet *)(framed->buffer[framed->buffer_write_index] + framed->buffer_pos[framed->buffer_write_index]);
+    Framed_U64 index = framed->buffer_write_index;
+    Framed_U8 *buffer = framed->buffer[index];
+    Framed_U64 pos = framed->buffer_pos[index];
+
+    Packet *packet = (Packet *)(buffer + pos);
     packet->header.kind = Framed_PacketKind_ZoneBegin;
-    packet->header.tsc = framed__rdtsc();
     packet->name_length = length;
     framed_memory_copy(packet->name, name, length);
+    framed->buffer_pos[index] += entry_size;
 
-    framed->buffer_pos[framed->buffer_write_index] += entry_size;
+    packet->header.tsc = framed__rdtsc();
 }
 
 FRAMED_DEF void
 framed_zone_end_(void)
 {
+    Framed_U64 tsc = framed__rdtsc();
+
     Framed_ClientState *framed = &global_framed_state;
 
 #pragma pack(push, 1)
@@ -707,11 +712,15 @@ framed_zone_end_(void)
     Framed_U64 entry_size = sizeof(Packet);
     framed__ensure_space(entry_size);
 
-    Packet *packet = (Packet *)(framed->buffer[framed->buffer_write_index] + framed->buffer_pos[framed->buffer_write_index]);
-    packet->header.kind = Framed_PacketKind_ZoneEnd;
-    packet->header.tsc = framed__rdtsc();
+    Framed_U64 index = framed->buffer_write_index;
+    Framed_U8 *buffer = framed->buffer[index];
+    Framed_U64 pos = framed->buffer_pos[index];
 
-    framed->buffer_pos[framed->buffer_write_index] += entry_size;
+    Packet *packet = (Packet *)(buffer + pos);
+    packet->header.kind = Framed_PacketKind_ZoneEnd;
+    packet->header.tsc = tsc;
+
+    framed->buffer_pos[index] += entry_size;
 }
 
 #endif // FRAMED_IMPLEMENTATION
