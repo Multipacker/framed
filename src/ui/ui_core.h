@@ -215,6 +215,7 @@ struct UI_Box
     UI_LayoutStyle layout_style;
 
     UI_CustomDrawProc *custom_draw;
+    Void *data;
 
     F32 hot_t;
     F32 active_t;
@@ -671,8 +672,8 @@ internal UI_LayoutStyle *ui_get_auto_pop_layout_style(Void);
 #define ui_pop_child_layout_axis()      ui_pop_layout_style()
 #define ui_child_layout_axis(axis)      defer_loop(ui_push_child_layout_axis(axis), ui_pop_child_layout_axis());
 
-#define ui_next_extra_box_flags(x) ui_get_auto_pop_layout_style()->box_flags = x
-#define ui_push_extra_box_flags(x) ui_push_layout_style()->box_flags = x
+#define ui_next_extra_box_flags(x) ui_get_auto_pop_layout_style()->box_flags |= (x)
+#define ui_push_extra_box_flags(x) ui_push_layout_style()->box_flags |= (x)
 #define ui_pop_extra_box_flags()   ui_pop_layout_style()
 #define ui_extra_box_flags(x)      defer_loop(ui_push_extra_box_flags(x), ui_pop_extra_box_flags());
 

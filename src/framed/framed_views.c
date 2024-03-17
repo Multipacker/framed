@@ -97,9 +97,83 @@ display_zone_exc_pct(ZoneNode *root, F64 total_ms)
     }
 }
 
-internal Void
-display_zone_name(ZoneNode *root)
+////////////////////////////////
+//~ hampus: Custom draw function for the names column
+
+UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
 {
+    F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+    if (ui_box_is_active(root))
+    {
+        root->active_t += (1.0f - root->active_t) * animation_delta;
+    }
+    else
+    {
+        root->active_t += (0.0f - root->active_t) * animation_delta;
+    }
+
+    if (ui_box_is_hot(root))
+    {
+        root->hot_t += (1.0f - root->hot_t) * animation_delta;
+    }
+    else
+    {
+        root->hot_t += (0.0f - root->hot_t) * animation_delta;
+    }
+
+    root->active_t = f32_clamp(0, root->active_t, 1.0f);
+    root->hot_t    = f32_clamp(0, root->hot_t, 1.0f);
+
+    UI_RectStyle *rect_style = &root->rect_style;
+    UI_TextStyle *text_style = &root->text_style;
+
+    if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
+    {
+        // TODO(hampus): Correct darkening/lightening
+        Render_RectInstance *instance = 0;
+
+        F32 d = 0;
+        if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
+        {
+            d += 0.2f * root->active_t;
+        }
+
+        if (ui_box_has_flag(root, UI_BoxFlag_HotAnimation))
+        {
+            d += 0.2f * root->hot_t;
+        }
+
+        rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
+        rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
+
+        instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+                               .softness = rect_style->softness,
+                               .slice = rect_style->slice,
+                               .use_nearest = rect_style->texture_filter);
+        memory_copy_array(instance->colors, rect_style->color);
+        memory_copy_array(instance->radies, rect_style->radies.v);
+    }
+
+    UI_Box *box_to_clip_to = root->data;
+
+    render_push_clip(ui_ctx->renderer, box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max, false);
+
+    Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(text_style));
+    Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
+
+    render_rect(ui_ctx->renderer,
+                v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y-1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y),
+                .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
+
+    render_pop_clip(ui_ctx->renderer);
+
+            render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+}
+
+internal Void
+display_zone_name(ZoneNode *root, UI_Box *container)
+{
+    UI_Box *box = &g_nil_box;
     if (root->first)
     {
         ui_next_extra_box_flags(UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation);
@@ -127,13 +201,20 @@ display_zone_name(ZoneNode *root)
         }
         ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
         ui_next_text_padding(Axis2_X, ui_top_font_line_height()*0.2f);
-        ui_text(root->name);
+        box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
         ui_named_row_end();
     }
     else
     {
-        ui_text(root->name);
+        box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
     }
+
+    // NOTE(hampus): This is a kinda ugly way to draw lines across
+    // the whole table. But it works. The container is the box rect
+    // that the lines will clip to
+    ui_box_equip_custom_draw_proc(box, ui_column_draw_custom_draw);
+    ui_box_equip_display_string(box, root->name);
+    box->data = container;
 
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
@@ -146,12 +227,15 @@ display_zone_name(ZoneNode *root)
             {
                 for (ZoneNode *node = root->first; node != 0; node = node->next)
                 {
-                    display_zone_name(node);
+                    display_zone_name(node, container);
                 }
             }
         }
     }
 }
+
+////////////////////////////////
+//~ hampus: Zones tab view
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 {
@@ -184,6 +268,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         U64 port_string_length;
     };
 
+    //- hampus: Initialize view data
+
     TabViewData *view_data = framed_ui_get_view_data(view_info, TabViewData);
 
     ProfilingState *profiling_state = framed_state->profiling_state;
@@ -208,6 +294,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         }
     }
 
+    //- hampus: Gather frame
+
     Frame *frame = 0;
     B32 profiling_per_frame = profiling_state->frame_index != 0;
     if (profiling_per_frame)
@@ -219,6 +307,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         frame = &profiling_state->current_frame;
     }
 
+    //- hampus: Parse frame into a zone node hierarchy
+
     Arena_Temporary scratch = get_scratch(0, 0);
 
     U64 parse_start_time_ns = os_now_nanoseconds();
@@ -229,6 +319,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     U64 parse_end_time_ns = os_now_nanoseconds();
 
     profiling_state->parsed_time_accumulator += (F64)(parse_end_time_ns - parse_start_time_ns) / (F64)billion(1);
+
+    //- hampus: Flatten hierarchy
 
     ui_row()
     {
@@ -244,8 +336,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     ui_spacer(ui_em(0.5f, 1));
 
-    F32 new_column_pcts[array_count(column_names)] = {0};
-    memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
+    //- hampus: Calculate total ms for frame
 
     if (frame->tsc_frequency == 0)
     {
@@ -264,6 +355,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
     }
 
+    //- hampus: Sort column
+
         CompareFunc *compare_func = 0;
         switch (view_data->column_sort_index)
         {
@@ -278,6 +371,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         }
         sort_children(root, view_data->ascending_sort, compare_func);
 
+    //- hampus: Values display
+
+    F32 new_column_pcts[array_count(column_names)] = {0};
+    memory_copy_array(new_column_pcts, view_data->column_sizes_in_pct);
     ui_next_height(ui_pct(1, 1));
     ui_next_width(ui_pct(1, 1));
     ui_row()
@@ -289,6 +386,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         {
             for (U64 i = 0; i < array_count(column_names); ++i)
             {
+                //- hampus: Header
+
                 ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 0));
                 ui_next_extra_box_flags(UI_BoxFlag_Clip);
                 ui_named_column_beginf("ZoneColumn%"PRIU64, i);
@@ -306,6 +405,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_parent(title_box)
                 {
+                    //- hampus: Sort button
+
                     ui_spacer(ui_fill());
 
                     ui_next_height(ui_em(1, 1));
@@ -336,10 +437,14 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     }
                 }
 
+                //- hampus: Divider between header and values
+
                 ui_next_width(ui_pct(1, 1));
                 ui_next_height(ui_em(0.05f, 1));
-                ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1.0f));
+                ui_next_color(v4f32(0.5f, 0.5f, 0.5f, 1.0f));
                 ui_box_make(UI_BoxFlag_DrawBackground, str8_lit(""));
+
+                //- hampus: Display values for this column
 
                 switch (i)
                 {
@@ -347,7 +452,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     {
                         for (ZoneNode *node = root->first; node != 0; node = node->next)
                         {
-                            display_zone_name(node);
+                            display_zone_name(node, row_parent);
                         }
                     } break;
                     case 1:
@@ -398,7 +503,6 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     } break;
                     case 5:
                     {
-
                         ui_text_align(UI_TextAlign_Right)
                             ui_width(ui_pct(1, 1))
                         {
@@ -435,12 +539,18 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_named_column_end();
 
-                ui_next_width(ui_em(0.3f, 1));
+                //- hampus: Divider between columns
+
+                ui_next_width(ui_em(0.05f, 1));
                 ui_next_height(ui_pct(1, 1));
                 ui_next_hover_cursor(Gfx_Cursor_SizeWE);
                 ui_next_child_layout_axis(Axis2_X);
-                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable,
+                ui_next_color(v4f32(0.5f, 0.5f, 0.5f, 1.0f));
+                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable |
+                                                             UI_BoxFlag_DrawBackground,
                                                              "ColumnSplit%"PRIU64, i);
+
+                //- hampus: Divider dragging
 
                 UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
                 F32 drag_delta = column_comm.drag_delta.x;
@@ -449,29 +559,15 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     F32 pct_delta = drag_delta / row_parent->fixed_size.x;
                     F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
                     F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
-
                     pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
-
                     new_column_pcts[i] -= pct_delta;
                     new_column_pcts[i+1] += pct_delta;
-                }
-
-                ui_parent(column_divider_hitbox)
-                {
-                    ui_spacer(ui_fill());
-
-                    ui_next_width(ui_pixels(1, 1));
-                    ui_next_height(ui_pct(1, 1));
-                    ui_next_corner_radius(0);
-                    ui_next_color(v4f32(0.9f, 0.9f, 0.9f, 1));
-                    UI_Box *column_divider = ui_box_make(UI_BoxFlag_DrawBackground,
-                                                         str8_lit(""));
-
-                    ui_spacer(ui_fill());
                 }
             }
         }
         ui_named_row_end();
+
+        //- hampus: Extra stats
 
         U16 next_port = profiling_state->port;
         ui_column()
@@ -503,8 +599,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             ui_spacer(ui_em(0.25f, 1));
 
+            //- hampus: Listen port line edit
+
             ui_row()
             {
+
                 B32 connection_alive = net_socket_connection_is_alive(profiling_state->client_socket);
                 if (connection_alive)
                 {
@@ -536,6 +635,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 }
             }
 
+            //- hampus: Performance stats
+
             ui_spacer(ui_em(0.25f, 1));
 
             MemorySize zone_parsing_throughput = memory_size_from_bytes(profiling_state->parsed_average_rate);
@@ -552,8 +653,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             ui_textf("Network transfer bandwidth: %.2f%"PRISTR8"/s", network_transfer_bandwidth.amount, str8_expand(network_transfer_bandwidth.unit));
 
             ui_spacer(ui_em(0.25f, 1));
-
         }
+
+        //- hampus: Update port
 
         if (next_port != profiling_state->port)
         {

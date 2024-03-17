@@ -951,6 +951,17 @@ ui_box_equip_display_string(UI_Box *box, Str8 string)
 }
 
 internal Void
+ui_box_equip_display_stringf(UI_Box *box, CStr fmt, ...)
+{
+    UI_Comm comm = {0};
+    va_list args;
+    va_start(args, fmt);
+    Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
+    ui_box_equip_display_string(box, string);
+    va_end(args);
+}
+
+internal Void
 ui_box_equip_custom_draw_proc(UI_Box *box, UI_CustomDrawProc *proc)
 {
     box->custom_draw = proc;
@@ -1787,6 +1798,7 @@ ui_draw(UI_Box *root)
                                    .slice = rect_style->slice,
                                    .use_nearest = rect_style->texture_filter
                                    );
+
             memory_copy_array(instance->colors, rect_style->color);
             memory_copy_array(instance->radies, rect_style->radies.v);
         }
@@ -1832,6 +1844,7 @@ ui_draw(UI_Box *root)
                 render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
             }
         }
+
     }
 
     if (ui_ctx->show_debug_lines)
