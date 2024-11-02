@@ -6,9 +6,9 @@ IndentPPDirectives: AfterHash
 BreakBeforeBraces: Allman
 SpaceBeforeParens: Custom
 SpaceBeforeParensOptions:
-  AfterControlStatements: false
+  AfterControlStatements: true
 AlwaysBreakAfterDefinitionReturnType: true
 ContinuationIndentWidth: 0
-BracedInitializerIndentWidth: 2
+BracedInitializerIndentWidth: 4
 AllowAllParametersOfDeclarationOnNextLine: false
 AlignAfterOpenBracket: true
