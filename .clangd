@@ -42,7 +42,6 @@ CompileFlags:
     -Wno-format,
     -Wno-writable-strings,
     -Wno-c99-designator,
-    -I!**/generated/.*,
     -ferror-limit=0,
     -I,
     src,
@@ -50,7 +49,6 @@ CompileFlags:
     .,
     -I,
     vendor,
-    -DOS_FEATURE_GRAPHICAL,
     -Wmissing-prototypes,
   ]
   Compiler: clang
