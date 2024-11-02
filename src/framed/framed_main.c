@@ -25,9 +25,7 @@
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
 
-#include "framed/framed_ui.h"
-#include "framed/framed_main.h"
-#include "framed/zone_node.h"
+#include "framed/framed_inc.h"
 
 global U64 framed_frame_counter;
 Framed_State *framed_state;
@@ -643,14 +641,14 @@ SettingValKind_Color, \
                         {
                             case SettingValKind_U32:
                             {
-                                U32 *dst = entry->dst;
+                                U32 *dst = (U32 *)entry->dst;
                                 u32_from_str8(setting_value, dst);
                                 valid_value = true;
                             } break;
 
                             case SettingValKind_Color:
                             {
-                                Vec4F32 *dst = entry->dst;
+                                Vec4F32 *dst = (Vec4F32 *)entry->dst;
                                 U32 color = 0;
                                 u32hex_from_str8(setting_value, &color);
                                 *dst = rgba_from_u32(color);

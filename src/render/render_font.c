@@ -305,7 +305,7 @@ render_unload_font(Render_Context *renderer, Render_Font *font)
     arena_pop_to(font->arena, 0);
     memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
-
+internal B32 render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params);
 internal Void
 render_font_stream_thread(Void *data)
 {

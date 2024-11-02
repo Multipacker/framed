@@ -1,0 +1,14 @@
+IndentWidth: 4
+SortIncludes: false
+ColumnLimit: 0
+IndentCaseLabels: true
+IndentPPDirectives: AfterHash
+BreakBeforeBraces: Allman
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: false
+AlwaysBreakAfterDefinitionReturnType: true
+ContinuationIndentWidth: 0
+BracedInitializerIndentWidth: 2
+AllowAllParametersOfDeclarationOnNextLine: false
+AlignAfterOpenBracket: true

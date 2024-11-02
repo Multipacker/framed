@@ -76,24 +76,24 @@ struct Render_BackendContext
 
     Render_Texture white_texture;
 
-    ID3D11Device        *device;
+    ID3D11Device *device;
     ID3D11DeviceContext *context;
-    IDXGISwapChain1     *swap_chain;
+    IDXGISwapChain1 *swap_chain;
 
-    ID3D11Buffer        *vertex_buffer;
-    ID3D11Buffer        *uniform_buffer;
+    ID3D11Buffer *vertex_buffer;
+    ID3D11Buffer *uniform_buffer;
 
-    ID3D11InputLayout  *input_layout;
+    ID3D11InputLayout *input_layout;
     ID3D11VertexShader *vertex_shader;
-    ID3D11PixelShader  *pixel_shader;
+    ID3D11PixelShader *pixel_shader;
 
-    ID3D11BlendState        *blend_state;
-    ID3D11SamplerState      *sampler;
-    ID3D11RasterizerState   *rasterizer_state;
+    ID3D11BlendState *blend_state;
+    ID3D11SamplerState *sampler;
+    ID3D11RasterizerState *rasterizer_state;
     ID3D11DepthStencilState *depth_state;
 
-    ID3D11RenderTargetView  *render_target_view;
-    ID3D11DepthStencilView  *depth_stencil_view;
+    ID3D11RenderTargetView *render_target_view;
+    ID3D11DepthStencilView *depth_stencil_view;
 
     DWORD current_width;
     DWORD current_height;
@@ -105,4 +105,15 @@ struct Render_BackendContext
 
 internal Render_BackendContext *render_backend_init(Render_Context *renderer);
 
-#endif //RENDED3D11_H
+internal Void render_backend_begin(Render_Context *renderer);
+internal Void render_backend_end(Render_Context *renderer);
+internal Render_Texture render_create_texture(Render_Context *renderer, Str8 path);
+internal Render_Texture render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 width, U32 height, Render_ColorSpace color_space);
+internal Void render_destroy_texture(Render_Context *renderer, Render_Texture texture);
+internal Void render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
+
+internal Render_RectInstance *render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params);
+internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
+internal Void render_pop_clip(Render_Context *renderer);
+
+#endif // RENDED3D11_H

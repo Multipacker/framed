@@ -4,12 +4,12 @@
 #define FRAMED_SETTINGS_VERSION (1)
 
 typedef struct ZoneBlock ZoneBlock;
-    struct ZoneBlock
+struct ZoneBlock
 {
-        Str8 name;
-        U64 start_tsc;
-        U64 end_tsc;
-    };
+    Str8 name;
+    U64 start_tsc;
+    U64 end_tsc;
+};
 
 typedef struct ZoneStackEntry ZoneStackEntry;
 struct ZoneStackEntry
@@ -28,10 +28,10 @@ struct Frame
     U64 tsc_frequency;
 };
 
-    typedef struct ProfilingState ProfilingState;
-    struct ProfilingState
+typedef struct ProfilingState ProfilingState;
+struct ProfilingState
 {
-        // NOTE(hampus): Finished sample
+    // NOTE(hampus): Finished sample
 
     Frame finished_frame;
 
@@ -112,4 +112,4 @@ internal Void framed_save_current_settings_to_file(Str8 path);
 
 internal S32 os_main(Str8List arguments);
 
-#endif //FRAMED_MAIN_H
+#endif // FRAMED_MAIN_H

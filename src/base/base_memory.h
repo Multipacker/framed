@@ -1,6 +1,16 @@
 #ifndef BASE_MEMORY_H
 #define BASE_MEMORY_H
 
+#if COMPILER_CL
+// NOTE(hampus): Compiler warning 4255 complains that functions
+// from this header doesn't have void in empty function paramters
+#    pragma warning(push, 0)
+#    include <sanitizer/asan_interface.h>
+#    pragma warning(pop)
+#else
+#    include <sanitizer/asan_interface.h>
+#endif
+
 typedef char *CStr;
 
 typedef struct Arena Arena;

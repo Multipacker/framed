@@ -87,14 +87,6 @@ render_get_stats(Render_Context *renderer)
     return(renderer->render_stats[1]);
 }
 
-typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
-struct Render_FontLoaderThreadData
-{
-    Render_Context *renderer;
-    U32 id;
-    Str8 name;
-};
-
 internal Render_Context *
 render_init(Gfx_Context *gfx)
 {

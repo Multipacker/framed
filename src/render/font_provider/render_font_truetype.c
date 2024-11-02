@@ -16,7 +16,6 @@
 #define STBTT_memcpy       memory_copy
 #define STBTT_memset       memory_set
 #define STBTT_STATIC
-#define STB_TRUETYPE_IMPLEMENTATION
 
 #if COMPILER_CLANG
 #    pragma clang diagnostic push
@@ -28,6 +27,7 @@
 #    pragma GCC diagnostic ignored "-Wsign-compare"
 #endif
 
+#define STB_TRUETYPE_IMPLEMENTATION
 #include "stb_truetype.h"
 
 #if COMPILER_CLANG
@@ -183,8 +183,8 @@ render_make_glyph(Render_Context *renderer, Render_Font *font, stbtt_fontinfo st
     release_scratch(scratch);
 }
 
-internal B32
-render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params)
+    internal B32
+    render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params)
 {
     assert(font);
     Arena_Temporary scratch = get_scratch(0, 0);

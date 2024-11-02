@@ -1,0 +1,59 @@
+If:
+  PathExclude: src/base/base_core.h
+
+CompileFlags:
+  Add: [-include=src/base/base_inc.h, -include=src/os/os_inc.h, -include=src/gfx/gfx_inc.h, -include=src/net/net_inc.h]
+
+---
+If:
+  PathMatch: src/render/.*
+
+CompileFlags:
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/log/log_inc.h, -include=src/image/image_inc.h, -include=src/meta/embed_inc.h]
+
+---
+If:
+  PathMatch: src/font/.*
+
+CompileFlags:
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h]
+
+---
+If:
+  PathMatch: src/ui/.*
+
+CompileFlags:
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h]
+
+---
+If:
+  PathMatch: src/framed/.*
+
+CompileFlags:
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h, -include=src/framed/framed_inc.h]
+
+---
+
+CompileFlags:
+  Add: 
+  [
+    -Wno-microsoft-enum-forward-reference, 
+    -Wno-initializer-overrides,
+    -Wno-format,
+    -Wno-writable-strings,
+    -Wno-c99-designator,
+    -I!**/generated/.*,
+    -ferror-limit=0,
+    -I,
+    src,
+    -I,
+    .,
+    -I,
+    vendor,
+    -DOS_FEATURE_GRAPHICAL,
+    -Wmissing-prototypes,
+  ]
+  Compiler: clang
+
+Diagnostics:
+  UnusedIncludes: None

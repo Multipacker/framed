@@ -1,6 +1,7 @@
 #ifndef UI_CORE_H
 #define UI_CORE_H
 
+#include "base/base_core.h"
 #define UI_ICON_FONT_PATH "data/fonts/fontello.ttf"
 
 #define UI_GATHER_STATS 1
@@ -436,6 +437,8 @@ internal UI_Size ui_fill(Void);
 // hampus: Text editing
 
 internal UI_TextAction ui_text_action_from_event(Gfx_Event *event);
+internal UI_TextActionList ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list);
+internal UI_TextOp ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *state, UI_TextAction *action);
 
 ////////////////////////////////
 // hampus: Box
