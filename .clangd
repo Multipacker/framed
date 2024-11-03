@@ -30,14 +30,14 @@ If:
   PathMatch: src/framed/.*
 
 CompileFlags:
-  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h, -include=src/framed/framed_inc.h]
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h, -include=src/framed/framed_inc.h, -include=src/log/log_inc.h]
 
 ---
 
 CompileFlags:
   Add: 
   [
-    -Wno-microsoft-enum-forward-reference, 
+    -Wno-microsoft-enum-forward-reference,
     -Wno-initializer-overrides,
     -Wno-format,
     -Wno-writable-strings,
