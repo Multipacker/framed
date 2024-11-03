@@ -2,55 +2,85 @@
 #include "src/render/opengl/opengl_frag.glsl.embed"
 
 internal Void
-opengl_debug_output(GLenum source,
-                   GLenum type,
-                   U32 id,
-                   GLenum severity,
-                   GLsizei length,
-                   const char *message,
-                   const Void *userParam)
+opengl_debug_output(GLenum source, GLenum type, U32 id, GLenum severity, GLsizei length, const char *message, const Void *userParam)
 {
     // NOTE(hampus): We do not care about these warnings
-    if (id == 131169 || id == 131185 || id == 131218 || id == 131204) return;
+    if (id == 131169 || id == 131185 || id == 131218 || id == 131204)
+        return;
 
     Str8 source_string = {0};
     switch (source)
     {
-        case GL_DEBUG_SOURCE_API:             source_string = str8_lit("Source: API"); break;
-        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:   source_string = str8_lit("Source: Window System"); break;
-        case GL_DEBUG_SOURCE_SHADER_COMPILER: source_string = str8_lit("Source: Shader Compiler"); break;
-        case GL_DEBUG_SOURCE_THIRD_PARTY:     source_string = str8_lit("Source: Third Party"); break;
-        case GL_DEBUG_SOURCE_APPLICATION:     source_string = str8_lit("Source: Application"); break;
-        case GL_DEBUG_SOURCE_OTHER:           source_string = str8_lit("Source: Other"); break;
+        case GL_DEBUG_SOURCE_API:
+            source_string = str8_lit("Source: API");
+            break;
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+            source_string = str8_lit("Source: Window System");
+            break;
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+            source_string = str8_lit("Source: Shader Compiler");
+            break;
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+            source_string = str8_lit("Source: Third Party");
+            break;
+        case GL_DEBUG_SOURCE_APPLICATION:
+            source_string = str8_lit("Source: Application");
+            break;
+        case GL_DEBUG_SOURCE_OTHER:
+            source_string = str8_lit("Source: Other");
+            break;
     }
 
     Str8 type_string = {0};
     switch (type)
     {
-        case GL_DEBUG_TYPE_ERROR:               type_string = str8_lit("Type: Error"); break;
-        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: type_string = str8_lit("Type: Deprecated Behaviour"); break;
-        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:  type_string = str8_lit("Type: Undefined Behaviour"); break;
-        case GL_DEBUG_TYPE_PORTABILITY:         type_string = str8_lit("Type: Portability"); break;
-        case GL_DEBUG_TYPE_PERFORMANCE:         type_string = str8_lit("Type: Performance"); break;
-        case GL_DEBUG_TYPE_MARKER:              type_string = str8_lit("Type: Marker"); break;
-        case GL_DEBUG_TYPE_PUSH_GROUP:          type_string = str8_lit("Type: Push Group"); break;
-        case GL_DEBUG_TYPE_POP_GROUP:           type_string = str8_lit("Type: Pop Group"); break;
-        case GL_DEBUG_TYPE_OTHER:               type_string = str8_lit("Type: Other"); break;
+        case GL_DEBUG_TYPE_ERROR:
+            type_string = str8_lit("Type: Error");
+            break;
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+            type_string = str8_lit("Type: Deprecated Behaviour");
+            break;
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+            type_string = str8_lit("Type: Undefined Behaviour");
+            break;
+        case GL_DEBUG_TYPE_PORTABILITY:
+            type_string = str8_lit("Type: Portability");
+            break;
+        case GL_DEBUG_TYPE_PERFORMANCE:
+            type_string = str8_lit("Type: Performance");
+            break;
+        case GL_DEBUG_TYPE_MARKER:
+            type_string = str8_lit("Type: Marker");
+            break;
+        case GL_DEBUG_TYPE_PUSH_GROUP:
+            type_string = str8_lit("Type: Push Group");
+            break;
+        case GL_DEBUG_TYPE_POP_GROUP:
+            type_string = str8_lit("Type: Pop Group");
+            break;
+        case GL_DEBUG_TYPE_OTHER:
+            type_string = str8_lit("Type: Other");
+            break;
     }
 
     Str8 severity_string = {0};
     switch (severity)
     {
-        case GL_DEBUG_SEVERITY_HIGH:         severity_string = str8_lit("Severity: high"); break;
-        case GL_DEBUG_SEVERITY_MEDIUM:       severity_string = str8_lit("Severity: medium"); break;
-        case GL_DEBUG_SEVERITY_LOW:          severity_string = str8_lit("Severity: low"); break;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: severity_string = str8_lit("Severity: notification"); break;
+        case GL_DEBUG_SEVERITY_HIGH:
+            severity_string = str8_lit("Severity: high");
+            break;
+        case GL_DEBUG_SEVERITY_MEDIUM:
+            severity_string = str8_lit("Severity: medium");
+            break;
+        case GL_DEBUG_SEVERITY_LOW:
+            severity_string = str8_lit("Severity: low");
+            break;
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+            severity_string = str8_lit("Severity: notification");
+            break;
     }
 
-    log_error("OpenGL: Debug message (%d): %s. %"PRISTR8", %"PRISTR8", %"PRISTR8, id, message,
-              str8_expand(source_string),
-              str8_expand(type_string),
-              str8_expand(severity_string));
+    log_error("OpenGL: Debug message (%d): %s. %" PRISTR8 ", %" PRISTR8 ", %" PRISTR8, id, message, str8_expand(source_string), str8_expand(type_string), str8_expand(severity_string));
 
     if (severity == GL_DEBUG_SEVERITY_HIGH)
     {
@@ -61,11 +91,11 @@ opengl_debug_output(GLenum source,
 internal GLuint
 opengl_create_shader(Str8 source, GLenum shader_type)
 {
-    GLuint shader = glCreateShader(shader_type);
+    GLuint shader           = glCreateShader(shader_type);
     Arena_Temporary scratch = get_scratch(0, 0);
 
     const GLchar *source_data = (const GLchar *) source.data;
-    GLint         source_size = (GLint) source.size;
+    GLint source_size         = (GLint) source.size;
 
     glShaderSource(shader, 1, &source_data, &source_size);
 
@@ -90,7 +120,7 @@ opengl_create_shader(Str8 source, GLenum shader_type)
     }
 
     release_scratch(scratch);
-    return(shader);
+    return (shader);
 }
 
 internal GLuint
@@ -139,10 +169,10 @@ opengl_create_program(GLuint *shaders, U32 shader_count)
 internal Void
 opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint size, GLenum type, GLboolean normalized, GLuint relativeoffset, GLuint bindingindex)
 {
-    glVertexArrayAttribFormat(vaobj,   attribindex, size, type, normalized, relativeoffset);
-    glVertexArrayAttribBinding(vaobj,  attribindex, bindingindex);
+    glVertexArrayAttribFormat(vaobj, attribindex, size, type, normalized, relativeoffset);
+    glVertexArrayAttribBinding(vaobj, attribindex, bindingindex);
     glVertexArrayBindingDivisor(vaobj, attribindex, 1);
-    glEnableVertexArrayAttrib(vaobj,   attribindex);
+    glEnableVertexArrayAttrib(vaobj, attribindex);
 }
 
 internal Render_BackendContext *
@@ -156,9 +186,9 @@ render_backend_init(Render_Context *renderer)
 
     // NOTE(simon): The alignment is needed for atomic access within the struct.
     arena_align(renderer->permanent_arena, 8);
-    renderer->backend = push_struct(renderer->permanent_arena, Render_BackendContext);
+    renderer->backend              = push_struct(renderer->permanent_arena, Render_BackendContext);
     Render_BackendContext *backend = renderer->backend;
-    backend->texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
+    backend->texture_update_queue  = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 
     glCreateBuffers(1, &backend->vbo);
     glNamedBufferData(backend->vbo, OPENGL_BATCH_SIZE * sizeof(Render_RectInstance), 0, GL_DYNAMIC_DRAW);
@@ -205,14 +235,14 @@ render_backend_init(Render_Context *renderer)
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-    return(backend);
+    return (backend);
 }
 
 internal Void
 render_backend_begin(Render_Context *renderer)
 {
     Render_BackendContext *backend = renderer->backend;
-    backend->client_area = gfx_get_window_client_area(renderer->gfx);
+    backend->client_area           = gfx_get_window_client_area();
 
     glViewport(0, 0, (GLsizei) backend->client_area.width, (GLsizei) backend->client_area.height);
 
@@ -238,7 +268,7 @@ render_backend_end(Render_Context *renderer)
         {
             // NOTE(simon): Busy wait for the entry to become valid.
         }
-        waiting_update->is_valid = false;
+        waiting_update->is_valid    = false;
         OpenGL_TextureUpdate update = *waiting_update;
         memory_fence();
         ++backend->texture_update_read_index;
@@ -294,7 +324,7 @@ render_backend_end(Render_Context *renderer)
 
     swap(renderer->render_stats[0], renderer->render_stats[1], Render_RenderStats);
     memory_zero_struct(&renderer->render_stats[0]);
-    gfx_swap_buffers(renderer->gfx);
+    gfx_swap_buffers();
 }
 
 internal OpenGL_Batch *
@@ -307,11 +337,11 @@ opengl_create_batch(Render_Context *renderer)
 
     result->size      = 0;
     result->clip_node = backend->clip_stack;
-    result->texture   = (Render_Texture) { 0 };
+    result->texture   = (Render_Texture){0};
     dll_push_back(backend->batches.first, backend->batches.last, result);
     ++backend->batches.batch_count;
 
-    return(result);
+    return (result);
 }
 
 // TODO(simon): Test performance without pruning batches and rectangles once we
@@ -333,7 +363,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
     // NOTE(simon): Is the rectangle completly outside of the current clip rect?
     if (!rectf32_overlaps(expanded_area, backend->clip_stack->rect))
     {
-        return(result);
+        return (result);
     }
 
     OpenGL_Batch *batch = backend->batches.last;
@@ -371,7 +401,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
     max.x = f32_round(max.x);
     max.y = f32_round(max.y);
 
-    result = &batch->rects[batch->size++];
+    result                   = &batch->rects[batch->size++];
     result->min              = min;
     result->max              = max;
     result->min_uv           = params->slice.region.min;
@@ -392,14 +422,14 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 
     ++backend->batches.rect_count;
 
-    return(result);
+    return (result);
 }
 
 internal Void
 render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     Render_BackendContext *backend = renderer->backend;
-    OpenGL_ClipNode *node = push_struct(renderer->frame_arena, OpenGL_ClipNode);
+    OpenGL_ClipNode *node          = push_struct(renderer->frame_arena, OpenGL_ClipNode);
 
     if (clip_to_parent)
     {
@@ -428,14 +458,14 @@ render_pop_clip(Render_Context *renderer)
 internal Render_Texture
 render_create_texture(Render_Context *renderer, Str8 path)
 {
-    Render_Texture result = { 0 };
+    Render_Texture result = {0};
 
     Arena_Temporary scratch = get_scratch(0, 0);
 
-    Str8 contents = { 0 };
+    Str8 contents = {0};
     if (os_file_read(scratch.arena, path, &contents))
     {
-        Image image = { 0 };
+        Image image = {0};
         if (image_load(scratch.arena, contents, &image))
         {
             result = render_create_texture_from_bitmap(
@@ -449,23 +479,23 @@ render_create_texture(Render_Context *renderer, Str8 path)
         else
         {
             // TODO(simon): Could not load image data.
-            log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
+            log_error("Could not load image '%" PRISTR8 "'", str8_expand(path));
         }
     }
     else
     {
         // TODO(simon): Could not read file.
-        log_error("Could not load image '%"PRISTR8"'", str8_expand(path));
+        log_error("Could not load image '%" PRISTR8 "'", str8_expand(path));
     }
 
     release_scratch(scratch);
-    return(result);
+    return (result);
 }
 
 internal Render_Texture
 render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space)
 {
-    Render_Texture result = { 0 };
+    Render_Texture result = {0};
 
     GLuint texture = 0;
     glCreateTextures(GL_TEXTURE_2D, 1, &texture);
@@ -473,9 +503,13 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
     GLenum internalformat = 0;
     switch (color_space)
     {
-        case Render_ColorSpace_sRGB:   internalformat = GL_RGBA8;        break;
-        case Render_ColorSpace_Linear: internalformat = GL_SRGB8_ALPHA8; break;
-        invalid_case;
+        case Render_ColorSpace_sRGB:
+            internalformat = GL_RGBA8;
+            break;
+        case Render_ColorSpace_Linear:
+            internalformat = GL_SRGB8_ALPHA8;
+            break;
+            invalid_case;
     }
     glTextureStorage2D(texture, 1, internalformat, (GLsizei) width, (GLsizei) height);
     glTextureParameteri(texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
@@ -495,7 +529,7 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
     result.u64[1] = (U64) width;
     result.u64[2] = (U64) height;
 
-    return(result);
+    return (result);
 }
 
 internal Void

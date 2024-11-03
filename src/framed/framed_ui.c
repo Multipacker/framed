@@ -25,18 +25,18 @@ extern FramedUI_Tab g_nil_tab;
 global FramedUI_State *framed_ui_state;
 
 read_only FramedUI_Panel g_nil_panel =
-{
-    {&g_nil_panel, &g_nil_panel},
-    &g_nil_panel,
-    &g_nil_panel,
-    {&g_nil_tab, &g_nil_tab, &g_nil_tab},
+    {
+        {&g_nil_panel, &g_nil_panel},
+        &g_nil_panel,
+        &g_nil_panel,
+        {&g_nil_tab, &g_nil_tab, &g_nil_tab},
 };
 
 read_only FramedUI_Tab g_nil_tab =
-{
-    &g_nil_tab,
-    &g_nil_tab,
-    &g_nil_panel,
+    {
+        &g_nil_tab,
+        &g_nil_tab,
+        &g_nil_panel,
 };
 
 ////////////////////////////////
@@ -47,31 +47,34 @@ framed_ui_font_size_from_scale(FramedUI_FontScale scale)
 {
     U32 result = 0;
 
-    switch(scale)
+    switch (scale)
     {
         case FramedUI_FontScale_Smaller:
         {
             result = (U32) f32_round((F32) framed_ui_state->settings.font_size * 0.75f);
-        } break;
+        }
+        break;
         case FramedUI_FontScale_Normal:
         {
             result = framed_ui_state->settings.font_size;
-        } break;
+        }
+        break;
         case FramedUI_FontScale_Larger:
         {
             result = (U32) f32_round((F32) framed_ui_state->settings.font_size * 1.25f);
-        } break;
-        invalid_case;
+        }
+        break;
+            invalid_case;
     }
 
-    return(result);
+    return (result);
 }
 
 internal Vec4F32
 framed_ui_color_from_theme(FramedUI_Color color)
 {
     Vec4F32 result = framed_ui_state->settings.theme_colors[color];
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -87,8 +90,8 @@ internal Void
 framed_ui_command_push(FramedUI_CommandKind kind, FramedUI_CommandParams params)
 {
     FramedUI_CommandNode *node = push_struct(framed_ui_state->frame_arena, FramedUI_CommandNode);
-    node->command.kind = kind;
-    node->command.params = params;
+    node->command.kind         = kind;
+    node->command.params       = params;
     dll_push_back(framed_ui_state->cmd_list.first, framed_ui_state->cmd_list.last, node);
 }
 
@@ -107,14 +110,14 @@ framed_ui_drag_begin_reordering(FramedUI_Tab *tab, B32 drag_whole_tab_group, Vec
         }
         else
         {
-            drag_data->tab_group.last = &g_nil_tab;
+            drag_data->tab_group.last       = &g_nil_tab;
             drag_data->tab_group.active_tab = tab;
-            drag_data->tab_group.first = tab;
-            drag_data->tab_group.count = 1;
+            drag_data->tab_group.first      = tab;
+            drag_data->tab_group.count      = 1;
         }
-        drag_data->offset = offset;
+        drag_data->offset                      = offset;
         framed_ui_state->drag_data.drag_origin = ui_mouse_pos();
-        framed_ui_state->drag_status = FramedUI_DragStatus_Reordering;
+        framed_ui_state->drag_status           = FramedUI_DragStatus_Reordering;
         // NOTE(hampus): Null the active key so the split previews
         // can take input. This is needed because else the box will
         // persist as the active & hot box
@@ -150,28 +153,28 @@ internal B32
 framed_ui_is_dragging(Void)
 {
     B32 result = framed_ui_state->drag_status == FramedUI_DragStatus_Dragging;
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_is_tab_reordering(Void)
 {
     B32 result = framed_ui_state->drag_status == FramedUI_DragStatus_Reordering;
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_is_waiting_for_drag_threshold(Void)
 {
     B32 result = framed_ui_state->drag_status == FramedUI_DragStatus_WaitingForDragThreshold;
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_drag_is_inactive(Void)
 {
     B32 result = framed_ui_state->drag_status == FramedUI_DragStatus_Inactive;
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -181,14 +184,14 @@ internal B32
 framed_ui_tab_has_flag(FramedUI_Tab *tab, FramedUI_TabFlag flag)
 {
     B32 result = (tab->flags & flag) != 0;
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_tab_is_nil(FramedUI_Tab *tab)
 {
     B32 result = (!tab || tab == &g_nil_tab);
-    return(result);
+    return (result);
 }
 
 internal FramedUI_Tab *
@@ -207,8 +210,8 @@ framed_ui_tab_alloc(Void)
     }
     memory_zero_struct(result);
     result->next = result->prev = &g_nil_tab;
-    result->panel = &g_nil_panel;
-    return(result);
+    result->panel               = &g_nil_panel;
+    return (result);
 }
 
 internal Void
@@ -217,8 +220,8 @@ framed_ui_tab_free(FramedUI_Tab *tab)
     arena_destroy(tab->view_info.arena);
     arena_destroy(tab->arena);
     assert(!framed_ui_tab_is_nil(tab));
-    FramedUI_FreeTab *free_tab = (FramedUI_FreeTab *) tab;
-    free_tab->next = framed_ui_state->first_free_tab;
+    FramedUI_FreeTab *free_tab      = (FramedUI_FreeTab *) tab;
+    free_tab->next                  = framed_ui_state->first_free_tab;
     framed_ui_state->first_free_tab = free_tab;
     ASAN_POISON_MEMORY_REGION(tab, sizeof(FramedUI_Tab));
 }
@@ -227,7 +230,7 @@ internal Void
 framed_ui_tab_equip_view_info(FramedUI_Tab *tab, FramedUI_TabViewInfo view_info)
 {
     tab->view_info.function = view_info.function;
-    tab->view_info.data = view_info.data;
+    tab->view_info.data     = view_info.data;
     arena_pop_to(tab->view_info.arena, 0);
 }
 
@@ -239,14 +242,14 @@ framed_ui_tab_make(FramedUI_TabViewProc *function, Void *data, Str8 display_stri
     //- hampus: Allocate tab
 
     FramedUI_Tab *result = framed_ui_tab_alloc();
-    result->arena = arena_create("%"PRISTR8, str8_expand(display_string));
+    result->arena        = arena_create("%" PRISTR8, str8_expand(display_string));
     arena_scratch(0, 0)
     {
         Str8List string_list = {0};
         str8_list_push(scratch, &string_list, display_string);
         str8_list_push(scratch, &string_list, str8_lit("ViewInfo"));
         Str8 view_info_arena_string = str8_join(result->arena, &string_list);
-        result->view_info.arena = arena_create("%"PRISTR8, str8_expand(view_info_arena_string));
+        result->view_info.arena     = arena_create("%" PRISTR8, str8_expand(view_info_arena_string));
     }
 
     //- hampus: Equip with display string
@@ -255,18 +258,17 @@ framed_ui_tab_make(FramedUI_TabViewProc *function, Void *data, Str8 display_stri
     {
         // NOTE(hampus): We probably won't do this in the future because
         // you won't probably be able to have unnamed tabs.
-        result->display_string = str8_pushf(result->arena, "Tab%"PRIS32, framed_ui_state->num_tabs);
+        result->display_string = str8_pushf(result->arena, "Tab%" PRIS32, framed_ui_state->num_tabs);
     }
     else
     {
         result->display_string = str8_copy(result->arena, display_string);
     }
 
-
     //- hampus: Equip with view info
 
     result->view_info.function = framed_ui_tab_view_default;
-    result->view_info.data = result;
+    result->view_info.data     = result;
 
     if (function)
     {
@@ -275,14 +277,14 @@ framed_ui_tab_make(FramedUI_TabViewProc *function, Void *data, Str8 display_stri
     }
 
     framed_ui_state->num_tabs++;
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_tab_is_active(FramedUI_Tab *tab)
 {
     B32 result = tab->panel->tab_group.active_tab == tab;
-    return(result);
+    return (result);
 }
 
 internal B32
@@ -301,7 +303,7 @@ framed_ui_tab_is_dragged(FramedUI_Tab *tab)
             }
         }
     }
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
@@ -311,12 +313,10 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 
     B32 active = framed_ui_tab_is_active(tab);
 
-    F32 height_em = 1.2f;
+    F32 height_em     = 1.2f;
     F32 corner_radius = (F32) ui_top_font_line_height() * 0.2f;
 
-    Vec4F32 color = active ?
-        framed_ui_color_from_theme(FramedUI_Color_TabBackgroundActive) :
-    framed_ui_color_from_theme(FramedUI_Color_TabBackgroundInactive);
+    Vec4F32 color = active ? framed_ui_color_from_theme(FramedUI_Color_TabBackgroundActive) : framed_ui_color_from_theme(FramedUI_Color_TabBackgroundInactive);
     ui_next_color(color);
     ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_TabBorder));
     ui_next_vert_corner_radius(corner_radius, 0);
@@ -324,13 +324,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
     ui_next_width(ui_children_sum(1));
     ui_next_height(ui_em(height_em, 1));
     ui_next_hover_cursor(Gfx_Cursor_Hand);
-    UI_Box *title_container = ui_box_make(UI_BoxFlag_DrawBackground |
-                                          UI_BoxFlag_HotAnimation |
-                                          UI_BoxFlag_ActiveAnimation |
-                                          UI_BoxFlag_Clickable  |
-                                          UI_BoxFlag_DrawBorder |
-                                          UI_BoxFlag_AnimateY,
-                                          str8_lit("TitleContainer"));
+    UI_Box *title_container = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_Clickable | UI_BoxFlag_DrawBorder | UI_BoxFlag_AnimateY, str8_lit("TitleContainer"));
 
     B32 pinned = framed_ui_tab_has_flag(tab, FramedUI_TabFlag_Pinned);
 
@@ -388,7 +382,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
 
         if (framed_ui_drag_is_inactive())
         {
-            UI_Comm pin_box_comm = ui_comm_from_box(pin_box);
+            UI_Comm pin_box_comm   = ui_comm_from_box(pin_box);
             UI_Comm close_box_comm = {0};
             if (!pinned)
             {
@@ -399,7 +393,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
             if (title_comm.pressed)
             {
                 FramedUI_CommandParams params = {0};
-                params.tab = tab;
+                params.tab                    = tab;
                 framed_ui_command_push(FramedUI_CommandKind_SetTabActive, params);
             }
 
@@ -445,7 +439,7 @@ framed_ui_tab_button(FramedUI_Tab *tab)
         }
     }
     ui_pop_string();
-    return(title_container);
+    return (title_container);
 }
 
 ////////////////////////////////
@@ -461,7 +455,7 @@ internal B32
 framed_ui_panel_has_flag(FramedUI_Panel *panel, FramedUI_PanelFlag flag)
 {
     B32 result = (panel->flags & flag) != 0;
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -516,14 +510,14 @@ framed_ui_panel_split(FramedUI_Panel *panel, Axis2 axis)
     //             a   b
     //
     // where c is ´new_parent´, and b is ´child1´
-    Axis2 split_axis  = axis;
-    FramedUI_Panel *child0     = panel;
-    FramedUI_Panel *child1     = framed_ui_panel_make();
-    child1->window = child0->window;
-    FramedUI_Panel *new_parent = framed_ui_panel_make();
-    new_parent->window = child0->window;
-    new_parent->pct_of_parent = child0->pct_of_parent;
-    new_parent->split_axis = split_axis;
+    Axis2 split_axis                     = axis;
+    FramedUI_Panel *child0               = panel;
+    FramedUI_Panel *child1               = framed_ui_panel_make();
+    child1->window                       = child0->window;
+    FramedUI_Panel *new_parent           = framed_ui_panel_make();
+    new_parent->window                   = child0->window;
+    new_parent->pct_of_parent            = child0->pct_of_parent;
+    new_parent->split_axis               = split_axis;
     FramedUI_Panel *children[Side_COUNT] = {child0, child1};
 
     // NOTE(hampus): Hook the new parent as a sibling
@@ -538,7 +532,7 @@ framed_ui_panel_split(FramedUI_Panel *panel, Axis2 axis)
     // to the panels parent
     if (!framed_ui_panel_is_nil(child0->parent))
     {
-        Side side = framed_ui_panel_get_side(child0);
+        Side side                      = framed_ui_panel_get_side(child0);
         child0->parent->children[side] = new_parent;
     }
     new_parent->parent = child0->parent;
@@ -547,10 +541,10 @@ framed_ui_panel_split(FramedUI_Panel *panel, Axis2 axis)
     // and hook them into the new parent
     for (Side side = (Side) 0; side < Side_COUNT; side++)
     {
-        children[side]->sibling = children[side_flip(side)];
-        children[side]->parent = new_parent;
+        children[side]->sibling       = children[side_flip(side)];
+        children[side]->parent        = new_parent;
         children[side]->pct_of_parent = 0.5f;
-        new_parent->children[side] = children[side];
+        new_parent->children[side]    = children[side];
         memory_zero_array(children[side]->children);
     }
 
@@ -566,7 +560,7 @@ framed_ui_panel_close(FramedUI_Panel *panel)
     FramedUI_Panel *root = panel;
     if (!framed_ui_panel_is_nil(root->parent))
     {
-        B32 is_first       = root->parent->children[0] == root;
+        B32 is_first                = root->parent->children[0] == root;
         FramedUI_Panel *replacement = root->sibling;
         if (!framed_ui_panel_is_nil(root->parent->parent))
         {
@@ -581,14 +575,14 @@ framed_ui_panel_close(FramedUI_Panel *panel)
                     framed_ui_state->next_focused_panel = root->parent;
                 }
             }
-            Side parent_side = framed_ui_panel_get_side(root->parent);
+            Side parent_side         = framed_ui_panel_get_side(root->parent);
             Side flipped_parent_side = side_flip(parent_side);
 
-            root->parent->parent->children[parent_side] = replacement;
+            root->parent->parent->children[parent_side]                  = replacement;
             root->parent->parent->children[flipped_parent_side]->sibling = replacement;
-            replacement->sibling = root->parent->parent->children[flipped_parent_side];
-            replacement->pct_of_parent = 1.0f - replacement->sibling->pct_of_parent;
-            replacement->parent = root->parent->parent;
+            replacement->sibling                                         = root->parent->parent->children[flipped_parent_side];
+            replacement->pct_of_parent                                   = 1.0f - replacement->sibling->pct_of_parent;
+            replacement->parent                                          = root->parent->parent;
         }
         else if (!framed_ui_panel_is_nil(root->parent))
         {
@@ -597,9 +591,9 @@ framed_ui_panel_close(FramedUI_Panel *panel)
                 framed_ui_state->next_focused_panel = root->sibling;
             }
             // NOTE(hampus): We closed one of the root's children
-            root->window->root_panel = replacement;
+            root->window->root_panel          = replacement;
             root->window->root_panel->sibling = &g_nil_panel;
-            root->window->root_panel->parent = &g_nil_panel;
+            root->window->root_panel->parent  = &g_nil_panel;
         }
         framed_ui_panel_free(panel);
     }
@@ -618,7 +612,7 @@ internal B32
 framed_ui_panel_is_nil(FramedUI_Panel *panel)
 {
     B32 result = (!panel || panel == &g_nil_panel);
-    return(result);
+    return (result);
 }
 
 internal FramedUI_Panel *
@@ -638,15 +632,15 @@ framed_ui_panel_alloc(Void)
     memory_zero_struct(result);
     result->children[Side_Min] = result->children[Side_Max] = result->sibling = result->parent = &g_nil_panel;
     result->tab_group.first = result->tab_group.active_tab = result->tab_group.last = &g_nil_tab;
-    return(result);
+    return (result);
 }
 
 internal Void
 framed_ui_panel_free(FramedUI_Panel *panel)
 {
     assert(!framed_ui_panel_is_nil(panel));
-    FramedUI_FreePanel *free_panel = (FramedUI_FreePanel *) panel;
-    free_panel->next = framed_ui_state->first_free_panel;
+    FramedUI_FreePanel *free_panel    = (FramedUI_FreePanel *) panel;
+    free_panel->next                  = framed_ui_state->first_free_panel;
     framed_ui_state->first_free_panel = free_panel;
     ASAN_POISON_MEMORY_REGION(panel, sizeof(FramedUI_Panel));
 }
@@ -676,7 +670,7 @@ framed_ui_panel_make(Void)
 {
     FramedUI_Panel *result = framed_ui_panel_alloc();
     framed_ui_state->num_panels++;
-    return(result);
+    return (result);
 }
 
 internal Side
@@ -685,14 +679,14 @@ framed_ui_panel_get_side(FramedUI_Panel *panel)
     assert(panel->parent);
     Side result = panel->parent->children[Side_Min] == panel ? Side_Min : Side_Max;
     assert(panel->parent->children[result] == panel);
-    return(result);
+    return (result);
 }
 
 internal B32
 framed_ui_panel_is_leaf(FramedUI_Panel *panel)
 {
     B32 result = (framed_ui_panel_is_nil(panel->children[0]) || framed_ui_panel_is_nil(panel->children[1]));
-    return(result);
+    return (result);
 }
 
 internal UI_Comm
@@ -702,9 +696,7 @@ framed_ui_panel_hover_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, A
     ui_next_height(ui_em(width_in_em, 1));
     ui_next_color(ui_top_text_style()->color);
 
-    UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-                              UI_BoxFlag_Clickable,
-                              string);
+    UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_Clickable, string);
 
     if (!center)
     {
@@ -714,24 +706,20 @@ framed_ui_panel_hover_type(Str8 string, F32 width_in_em, FramedUI_Panel *root, A
             {
                 ui_size(!axis, ui_fill())
                     ui_size(axis, ui_pct(0.5f, 1))
-                    ui_border_color(ui_top_rect_style()->color[0])
+                        ui_border_color(ui_top_rect_style()->color[0])
                 {
                     ui_next_border_thickness(2);
-                    ui_box_make(UI_BoxFlag_DrawBorder |
-                                UI_BoxFlag_HotAnimation,
-                                str8_lit("LeftLeft"));
+                    ui_box_make(UI_BoxFlag_DrawBorder | UI_BoxFlag_HotAnimation, str8_lit("LeftLeft"));
 
                     ui_next_border_thickness(2);
-                    ui_box_make(UI_BoxFlag_DrawBorder |
-                                UI_BoxFlag_HotAnimation,
-                                str8_lit("LeftRight"));
+                    ui_box_make(UI_BoxFlag_DrawBorder | UI_BoxFlag_HotAnimation, str8_lit("LeftRight"));
                 }
             }
         }
     }
 
     UI_Comm comm = ui_comm_from_box(box);
-    return(comm);
+    return (comm);
 }
 
 internal Void
@@ -740,15 +728,19 @@ framed_ui_panel_update(FramedUI_Panel *root)
     if (framed_ui_panel_has_flag(root, FramedUI_PanelFlag_MarkedForDeletion))
     {
         FramedUI_CommandParams params = {0};
-        params.panel = root;
+        params.panel                  = root;
         framed_ui_command_push(FramedUI_CommandKind_ClosePanel, params);
     }
 
     switch (root->split_axis)
     {
-        case Axis2_X: ui_next_child_layout_axis(Axis2_X); break;
-        case Axis2_Y: ui_next_child_layout_axis(Axis2_Y); break;
-        invalid_case;
+        case Axis2_X:
+            ui_next_child_layout_axis(Axis2_X);
+            break;
+        case Axis2_Y:
+            ui_next_child_layout_axis(Axis2_Y);
+            break;
+            invalid_case;
     }
 
     FramedUI_Panel *parent = root->parent;
@@ -772,10 +764,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
     // it to take them.
     Str8 root_string = str8_pushf(framed_ui_state->frame_arena, "PanelRoot%p", root);
     ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
-    UI_Box *box = ui_box_make(UI_BoxFlag_Clip |
-                              UI_BoxFlag_Clickable |
-                              UI_BoxFlag_ViewScroll,
-                              root_string);
+    UI_Box *box = ui_box_make(UI_BoxFlag_Clip | UI_BoxFlag_Clickable | UI_BoxFlag_ViewScroll, root_string);
 
     ui_push_parent(box);
 #if 1
@@ -788,7 +777,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
 
         framed_ui_panel_update(child0);
 
-        B32 dragging = false;
+        B32 dragging   = false;
         F32 drag_delta = 0;
         ui_seed(root_string)
         {
@@ -797,13 +786,11 @@ framed_ui_panel_update(FramedUI_Panel *root)
             ui_next_corner_radius(0);
             ui_next_hover_cursor(root->split_axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
-            UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable |
-                                                UI_BoxFlag_DrawBackground,
-                                                str8_lit("DraggableBox"));
-            UI_Comm comm = ui_comm_from_box(draggable_box);
+            UI_Box *draggable_box = ui_box_make(UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, str8_lit("DraggableBox"));
+            UI_Comm comm          = ui_comm_from_box(draggable_box);
             if (comm.dragging)
             {
-                dragging = true;
+                dragging   = true;
                 drag_delta = comm.drag_delta.v[root->split_axis];
             }
         }
@@ -843,7 +830,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     if (root->window != framed_ui_state->master_window)
                     {
                         FramedUI_CommandParams params = {0};
-                        params.window = root->window;
+                        params.window                 = root->window;
                         framed_ui_command_push(FramedUI_CommandKind_PushWindowToFront, params);
                     }
                 }
@@ -851,10 +838,10 @@ framed_ui_panel_update(FramedUI_Panel *root)
         }
 
         // NOTE(hampus): Axis2_COUNT is the center
-        Axis2 hover_axis = Axis2_COUNT;
-        Side hover_side = 0;
+        Axis2 hover_axis                                         = Axis2_COUNT;
+        Side hover_side                                          = 0;
         UI_Comm tab_release_comms[FramedUI_TabReleaseKind_COUNT] = {0};
-        B32 hovering_any_symbols = false;
+        B32 hovering_any_symbols                                 = false;
 
         //- hampus: Drag & split symbols
 
@@ -877,7 +864,8 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     {
                         ui_spacer(ui_fill());
                         tab_release_comms[FramedUI_TabReleaseKind_Top] = framed_ui_panel_hover_type(
-                                                                                                    str8_lit("TabReleaseTop"), size, root, Axis2_Y, false, Side_Min);
+                            str8_lit("TabReleaseTop"), size, root, Axis2_Y, false, Side_Min
+                        );
 
                         ui_spacer(ui_fill());
                     }
@@ -938,23 +926,26 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         case FramedUI_TabReleaseKind_Center:
                         {
                             hover_axis = Axis2_COUNT;
-                        } break;
+                        }
+                        break;
 
                         case FramedUI_TabReleaseKind_Left:
                         case FramedUI_TabReleaseKind_Right:
                         {
                             hover_axis = Axis2_X;
                             hover_side = i == FramedUI_TabReleaseKind_Left ? Side_Min : Side_Max;
-                        } break;
+                        }
+                        break;
 
                         case FramedUI_TabReleaseKind_Top:
                         case FramedUI_TabReleaseKind_Bottom:
                         {
                             hover_axis = Axis2_Y;
                             hover_side = i == FramedUI_TabReleaseKind_Top ? Side_Min : Side_Max;
-                        } break;
+                        }
+                        break;
 
-                        invalid_case;
+                            invalid_case;
                     }
                 }
                 if (comm->released)
@@ -968,19 +959,18 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                  t = t->next)
                             {
                                 FramedUI_CommandParams params = {0};
-                                params.panel = root;
-                                params.tab = t;
-                                params.set_active = true;
+                                params.panel                  = root;
+                                params.tab                    = t;
+                                params.set_active             = true;
                                 framed_ui_command_push(FramedUI_CommandKind_InsertTab, params);
                             }
 
                             // TODO(hampus): Memory leak?
-                            dll_remove(framed_ui_state->open_windows.first,
-                                       framed_ui_state->open_windows.last,
-                                       drag_data->tab_group.first->panel->window);
+                            dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, drag_data->tab_group.first->panel->window);
 
                             framed_ui_state->drag_status = FramedUI_DragStatus_Released;
-                        } break;
+                        }
+                        break;
 
                         case FramedUI_TabReleaseKind_Left:
                         case FramedUI_TabReleaseKind_Right:
@@ -989,21 +979,20 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         {
                             {
                                 FramedUI_CommandParams params = {0};
-                                params.tab_group = drag_data->tab_group;
-                                params.panel = root;
-                                params.axis = hover_axis;
-                                params.side = hover_side;
+                                params.tab_group              = drag_data->tab_group;
+                                params.panel                  = root;
+                                params.axis                   = hover_axis;
+                                params.side                   = hover_side;
                                 framed_ui_command_push(FramedUI_CommandKind_SplitPanelAndInsertTabGroup, params);
                             }
 
                             // TODO(hampus): Memory leak?
-                            dll_remove(framed_ui_state->open_windows.first,
-                                       framed_ui_state->open_windows.last,
-                                       drag_data->tab_group.first->panel->window);
+                            dll_remove(framed_ui_state->open_windows.first, framed_ui_state->open_windows.last, drag_data->tab_group.first->panel->window);
                             framed_ui_state->drag_status = FramedUI_DragStatus_Released;
-                        } break;
+                        }
+                        break;
 
-                        invalid_case;
+                            invalid_case;
                     }
                     framed_ui_drag_release();
                 }
@@ -1049,11 +1038,12 @@ framed_ui_panel_update(FramedUI_Panel *root)
 
         //- hampus: Tab bar
 
-        F32 title_bar_height_em = 1.2f;
-        F32 tab_spacing_em = 0.2f;
-        F32 tab_button_height_em = title_bar_height_em - 0.2f;;
+        F32 title_bar_height_em  = 1.2f;
+        F32 tab_spacing_em       = 0.2f;
+        F32 tab_button_height_em = title_bar_height_em - 0.2f;
+        ;
 
-        UI_Box *title_bar = &g_nil_box;
+        UI_Box *title_bar      = &g_nil_box;
         UI_Box *tabs_container = &g_nil_box;
         ui_next_width(ui_fill());
         ui_row()
@@ -1062,11 +1052,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
             ui_next_width(ui_fill());
             ui_next_height(ui_em(title_bar_height_em, 1));
             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarBackground));
-            title_bar = ui_box_make(UI_BoxFlag_DrawBackground |
-                                    UI_BoxFlag_Clickable |
-                                    UI_BoxFlag_HotAnimation |
-                                    UI_BoxFlag_ActiveAnimation,
-                                    str8_lit("TitleBar"));
+            title_bar = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation, str8_lit("TitleBar"));
             ui_parent(title_bar)
             {
                 // NOTE(hampus): Tab dropdown menu
@@ -1085,12 +1071,12 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     {
                         for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
                         {
-                            Vec2F32 dim = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), tab->display_string);
+                            Vec2F32 dim   = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), tab->display_string);
                             largest_dim.x = f32_max(largest_dim.x, dim.x);
                             largest_dim.y = f32_max(largest_dim.y, dim.y);
                         }
 
-                        largest_dim.x += ui_top_font_line_height()*0.5f;
+                        largest_dim.x += ui_top_font_line_height() * 0.5f;
                         ui_ctx_menu(tab_dropown_menu_key)
                         {
                             ui_corner_radius(0)
@@ -1098,9 +1084,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                 for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
                                 {
                                     ui_next_hover_cursor(Gfx_Cursor_Hand);
-                                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation |
-                                                            UI_BoxFlag_HotAnimation |
-                                                            UI_BoxFlag_Clickable);
+                                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation | UI_BoxFlag_HotAnimation | UI_BoxFlag_Clickable);
                                     ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
                                     UI_Box *row_box = ui_named_row_beginf("TabDropDownListEntry%p", tab);
 
@@ -1115,16 +1099,11 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                     ui_next_icon(RENDER_ICON_CROSS);
                                     ui_next_hover_cursor(Gfx_Cursor_Hand);
                                     ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
-                                    UI_Box *close_box = ui_box_makef(UI_BoxFlag_Clickable |
-                                                                     UI_BoxFlag_DrawText |
-                                                                     UI_BoxFlag_HotAnimation |
-                                                                     UI_BoxFlag_ActiveAnimation,
-                                                                     "CloseTabButton%p", tab);
+                                    UI_Box *close_box  = ui_box_makef(UI_BoxFlag_Clickable | UI_BoxFlag_DrawText | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation, "CloseTabButton%p", tab);
                                     UI_Comm close_comm = ui_comm_from_box(close_box);
                                     if (close_comm.hovering)
                                     {
                                         close_box->flags |= UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder;
-
                                     }
                                     if (close_comm.clicked && !framed_ui_tab_has_flag(tab, FramedUI_TabFlag_Pinned))
                                     {
@@ -1135,7 +1114,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                                     if (row_comm.pressed)
                                     {
                                         FramedUI_CommandParams params = {0};
-                                        params.tab = tab;
+                                        params.tab                    = tab;
                                         framed_ui_command_push(FramedUI_CommandKind_SetTabActive, params);
                                     }
                                     if (row_comm.hovering)
@@ -1153,23 +1132,16 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             F32 corner_radius = (F32) ui_top_font_line_height() * 0.25f;
                             ui_spacer(ui_em(0.2f, 1));
                             ui_next_icon(RENDER_ICON_LIST);
-                            ui_next_width(ui_em(title_bar_height_em+0.3f, 1));
-                            ui_next_height(ui_em(title_bar_height_em+0.3f, 1));
+                            ui_next_width(ui_em(title_bar_height_em + 0.3f, 1));
+                            ui_next_height(ui_em(title_bar_height_em + 0.3f, 1));
                             ui_next_hover_cursor(Gfx_Cursor_Hand);
                             ui_next_vert_corner_radius(corner_radius, 0);
                             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
-                            UI_Box *tab_dropdown_list_box = ui_box_make(UI_BoxFlag_DrawBackground |
-                                                                        UI_BoxFlag_DrawBorder |
-                                                                        UI_BoxFlag_HotAnimation |
-                                                                        UI_BoxFlag_ActiveAnimation |
-                                                                        UI_BoxFlag_Clickable |
-                                                                        UI_BoxFlag_DrawText,
-                                                                        str8_lit("TabDropdownList"));
+                            UI_Box *tab_dropdown_list_box  = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_Clickable | UI_BoxFlag_DrawText, str8_lit("TabDropdownList"));
                             UI_Comm tab_dropdown_list_comm = ui_comm_from_box(tab_dropdown_list_box);
                             if (tab_dropdown_list_comm.pressed)
                             {
-                                ui_ctx_menu_open(tab_dropdown_list_comm.box->key,
-                                                 v2f32(0, -ui_em(0.1f, 1).value), tab_dropown_menu_key);
+                                ui_ctx_menu_open(tab_dropdown_list_comm.box->key, v2f32(0, -ui_em(0.1f, 1).value), tab_dropown_menu_key);
                             }
                         }
                     }
@@ -1190,8 +1162,8 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     };
 
                     UI_Box *active_box = &g_nil_box;
-                    Task *first_task = 0;
-                    Task *last_task = 0;
+                    Task *first_task   = 0;
+                    Task *last_task    = 0;
 
                     B32 tab_overflow = false;
                     ui_next_width(ui_fill());
@@ -1203,7 +1175,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         if (framed_ui_tab_has_flag(tab, FramedUI_TabFlag_MarkedForDeletion))
                         {
                             FramedUI_CommandParams params = {0};
-                            params.tab = tab;
+                            params.tab                    = tab;
                             framed_ui_command_push(FramedUI_CommandKind_CloseTab, params);
                         }
                         ui_next_height(ui_pct(1, 1));
@@ -1222,9 +1194,9 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             }
                             ui_spacer(ui_em(0.1f, 1));
                             UI_Box *tab_box = framed_ui_tab_button(tab);
-                            Task *task = push_struct(scratch.arena, Task);
-                            task->tab = tab;
-                            task->box = tab_column;
+                            Task *task      = push_struct(scratch.arena, Task);
+                            task->tab       = tab;
+                            task->box       = tab_column;
                             dll_push_back(first_task, last_task, task);
                         }
                         ui_spacer(ui_em(tab_spacing_em, 1));
@@ -1237,7 +1209,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     if (root->tab_group.count > 0)
                     {
                         FramedUI_Tab *active_tab = root->tab_group.active_tab;
-                        UI_Box *last_box = &g_nil_box;
+                        UI_Box *last_box         = &g_nil_box;
                         for (Task *task = last_task; task; task = task->prev)
                         {
                             last_box = task->box;
@@ -1247,21 +1219,19 @@ framed_ui_panel_update(FramedUI_Panel *root)
                             }
                         }
 
-                        tab_overflow = root->tab_group.count > 1 && (tabs_container->scroll.x != 0 || (last_box->rel_pos.x+last_box->fixed_size.x) > tabs_container->fixed_size.x);
+                        tab_overflow = root->tab_group.count > 1 && (tabs_container->scroll.x != 0 || (last_box->rel_pos.x + last_box->fixed_size.x) > tabs_container->fixed_size.x);
 
-                        Vec2F32 tab_visiblity_range = v2f32(active_box->rel_pos.x,
-                                                            active_box->rel_pos.x + active_box->fixed_size.x);
+                        Vec2F32 tab_visiblity_range = v2f32(active_box->rel_pos.x, active_box->rel_pos.x + active_box->fixed_size.x);
 
                         tab_visiblity_range.x = f32_max(0, tab_visiblity_range.x);
                         tab_visiblity_range.y = f32_max(0, tab_visiblity_range.y);
 
-                        Vec2F32 tab_bar_visiblity_range = v2f32(tabs_container->scroll.x,
-                                                                tabs_container->scroll.x + tabs_container->fixed_size.x);
+                        Vec2F32 tab_bar_visiblity_range = v2f32(tabs_container->scroll.x, tabs_container->scroll.x + tabs_container->fixed_size.x);
 
-                        F32 delta_left = tab_visiblity_range.x - tab_bar_visiblity_range.x ;
+                        F32 delta_left  = tab_visiblity_range.x - tab_bar_visiblity_range.x;
                         F32 delta_right = tab_visiblity_range.y - tab_bar_visiblity_range.y;
-                        delta_left = f32_min(delta_left, 0);
-                        delta_right = f32_max(delta_right, 0);
+                        delta_left      = f32_min(delta_left, 0);
+                        delta_right     = f32_max(delta_right, 0);
 
                         if (tabs_container->fixed_size.x > active_box->fixed_size.x)
                         {
@@ -1286,12 +1256,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_next_icon(RENDER_ICON_LEFT_OPEN);
                         ui_next_hover_cursor(Gfx_Cursor_Hand);
                         ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
-                        UI_Box *prev_tab_button = ui_box_make(UI_BoxFlag_Clickable |
-                                                              UI_BoxFlag_DrawText |
-                                                              UI_BoxFlag_HotAnimation |
-                                                              UI_BoxFlag_ActiveAnimation |
-                                                              UI_BoxFlag_DrawBackground,
-                                                              str8_lit("PrevTabButton"));
+                        UI_Box *prev_tab_button = ui_box_make(UI_BoxFlag_Clickable | UI_BoxFlag_DrawText | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawBackground, str8_lit("PrevTabButton"));
 
                         UI_Comm prev_tab_comm = ui_comm_from_box(prev_tab_button);
                         if (prev_tab_comm.pressed)
@@ -1313,12 +1278,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                         ui_next_icon(RENDER_ICON_RIGHT_OPEN);
                         ui_next_hover_cursor(Gfx_Cursor_Hand);
                         ui_next_color(framed_ui_color_from_theme(FramedUI_Color_TabBarButtonsBackground));
-                        UI_Box *next_tab_button = ui_box_make(UI_BoxFlag_Clickable |
-                                                              UI_BoxFlag_DrawText |
-                                                              UI_BoxFlag_HotAnimation |
-                                                              UI_BoxFlag_ActiveAnimation |
-                                                              UI_BoxFlag_DrawBackground,
-                                                              str8_lit("NextTabButton"));
+                        UI_Box *next_tab_button = ui_box_make(UI_BoxFlag_Clickable | UI_BoxFlag_DrawText | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawBackground, str8_lit("NextTabButton"));
 
                         UI_Comm next_tab_comm = ui_comm_from_box(next_tab_button);
                         if (next_tab_comm.pressed)
@@ -1343,22 +1303,13 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     ui_next_icon(RENDER_ICON_CROSS);
                     ui_next_hover_cursor(Gfx_Cursor_Hand);
                     ui_next_color(v4f32(0.6f, 0.1f, 0.1f, 1.0f));
-                    UI_Box *close_box = ui_box_make(UI_BoxFlag_Clickable |
-                                                    UI_BoxFlag_DrawText |
-                                                    UI_BoxFlag_HotAnimation |
-                                                    UI_BoxFlag_ActiveAnimation |
-                                                    UI_BoxFlag_DrawBackground,
-                                                    str8_lit("CloseButton"));
+                    UI_Box *close_box  = ui_box_make(UI_BoxFlag_Clickable | UI_BoxFlag_DrawText | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation | UI_BoxFlag_DrawBackground, str8_lit("CloseButton"));
                     UI_Comm close_comm = ui_comm_from_box(close_box);
                     if (close_comm.hovering)
                     {
                         ui_tooltip()
                         {
-                            UI_Box *tooltip = ui_box_make(UI_BoxFlag_DrawBackground |
-                                                          UI_BoxFlag_DrawBorder |
-                                                          UI_BoxFlag_DrawDropShadow |
-                                                          UI_BoxFlag_DrawText,
-                                                          str8_lit(""));
+                            UI_Box *tooltip = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_DrawDropShadow | UI_BoxFlag_DrawText, str8_lit(""));
                             ui_box_equip_display_string(tooltip, str8_lit("Close panel"));
                         }
                     }
@@ -1399,7 +1350,6 @@ framed_ui_panel_update(FramedUI_Panel *root)
             framed_ui_wait_for_drag_threshold();
         }
 
-
         ui_next_width(ui_fill());
         ui_next_height(ui_fill());
         UI_Box *content_box_container = ui_box_make(0, str8_lit("ContentBoxContainer"));
@@ -1418,10 +1368,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
             ui_next_child_layout_axis(Axis2_Y);
             // TODO(hampus): Should this actually be called panel color...
             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
-            UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground |
-                                              UI_BoxFlag_DrawBorder |
-                                              UI_BoxFlag_Clip,
-                                              str8_lit("ContentBox"));
+            UI_Box *content_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_Clip, str8_lit("ContentBox"));
 
             ui_parent(content_box)
             {
@@ -1501,7 +1448,7 @@ framed_ui_window_close(FramedUI_Window *window)
 internal Void
 framed_ui_window_set_pos(FramedUI_Window *window, Vec2F32 pos)
 {
-    Vec2F32 dim = rectf32_dim(window->rect);
+    Vec2F32 dim      = rectf32_dim(window->rect);
     window->rect.min = pos;
     window->rect.max = v2f32_add_v2f32(pos, dim);
 }
@@ -1522,15 +1469,15 @@ framed_ui_window_alloc(Void)
     }
     memory_zero_struct(result);
     result->root_panel = &g_nil_panel;
-    return(result);
+    return (result);
 }
 
 internal Void
 framed_ui_window_free(FramedUI_Window *window)
 {
     arena_destroy(window->arena);
-    FramedUI_FreeWindow *free_window = (FramedUI_FreeWindow *) window;
-    free_window->next = framed_ui_state->first_free_window;
+    FramedUI_FreeWindow *free_window   = (FramedUI_FreeWindow *) window;
+    free_window->next                  = framed_ui_state->first_free_window;
     framed_ui_state->first_free_window = free_window;
     ASAN_POISON_MEMORY_REGION(window, sizeof(FramedUI_Window));
 }
@@ -1539,15 +1486,15 @@ internal FramedUI_Window *
 framed_ui_window_make(Vec2F32 min, Vec2F32 max)
 {
     FramedUI_Window *result = framed_ui_window_alloc();
-    result->arena = arena_create("Window%dArena", framed_ui_state->num_windows);
-    result->string = str8_pushf(result->arena, "Window%d", framed_ui_state->num_windows);
-    FramedUI_Panel *panel = framed_ui_panel_make();
-    panel->window = result;
-    result->rect.min = min;
-    result->rect.max = max;
-    result->root_panel = panel;
+    result->arena           = arena_create("Window%dArena", framed_ui_state->num_windows);
+    result->string          = str8_pushf(result->arena, "Window%d", framed_ui_state->num_windows);
+    FramedUI_Panel *panel   = framed_ui_panel_make();
+    panel->window           = result;
+    result->rect.min        = min;
+    result->rect.max        = max;
+    result->root_panel      = panel;
     framed_ui_state->num_windows++;
-    return(result);
+    return (result);
 }
 
 internal UI_Comm
@@ -1558,8 +1505,8 @@ framed_ui_window_edge_resizer(FramedUI_Window *window, Str8 string, Axis2 axis, 
     ui_next_hover_cursor(axis == Axis2_X ? Gfx_Cursor_SizeWE : Gfx_Cursor_SizeNS);
     UI_Box *box = ui_box_make(UI_BoxFlag_Clickable, string);
 
-    Vec2U32 screen_size = gfx_get_window_client_area(ui_renderer()->gfx);
-    UI_Comm comm = {0};
+    Vec2U32 screen_size = gfx_get_window_client_area();
+    UI_Comm comm        = {0};
     if (!framed_ui_is_dragging())
     {
         comm = ui_comm_from_box(box);
@@ -1569,7 +1516,7 @@ framed_ui_window_edge_resizer(FramedUI_Window *window, Str8 string, Axis2 axis, 
             window->rect.s[side].v[axis] -= drag_delta;
         }
     }
-    return(comm);
+    return (comm);
 }
 
 internal UI_Comm
@@ -1577,15 +1524,13 @@ framed_ui_window_corner_resizer(FramedUI_Window *window, Str8 string, Corner cor
 {
     ui_next_width(ui_em(size_in_em, 1));
     ui_next_height(ui_em(size_in_em, 1));
-    ui_next_hover_cursor(corner == Corner_TopLeft || corner == Corner_BottomRight ?
-                         Gfx_Cursor_SizeNWSE :
-                         Gfx_Cursor_SizeNESW);
-    UI_Box *box = ui_box_make(UI_BoxFlag_Clickable, string);
+    ui_next_hover_cursor(corner == Corner_TopLeft || corner == Corner_BottomRight ? Gfx_Cursor_SizeNWSE : Gfx_Cursor_SizeNESW);
+    UI_Box *box  = ui_box_make(UI_BoxFlag_Clickable, string);
     UI_Comm comm = {0};
     if (framed_ui_drag_is_inactive())
     {
-        comm = ui_comm_from_box(box);
-        Vec2F32 screen_size = v2f32_from_v2u32(gfx_get_window_area(ui_renderer()->gfx));
+        comm                = ui_comm_from_box(box);
+        Vec2F32 screen_size = v2f32_from_v2u32(gfx_get_window_area());
         if (comm.dragging)
         {
             switch (corner)
@@ -1593,31 +1538,35 @@ framed_ui_window_corner_resizer(FramedUI_Window *window, Str8 string, Corner cor
                 case Corner_TopLeft:
                 {
                     window->rect.min = v2f32_sub_v2f32(window->rect.min, comm.drag_delta);
-                } break;
+                }
+                break;
 
                 case Corner_BottomLeft:
                 {
                     window->rect.min.x -= comm.drag_delta.v[Axis2_X];
                     window->rect.max.y -= comm.drag_delta.v[Axis2_Y];
-                } break;
+                }
+                break;
 
                 case Corner_TopRight:
                 {
                     window->rect.min.y -= comm.drag_delta.v[Axis2_Y];
                     window->rect.max.x -= comm.drag_delta.v[Axis2_X];
-                } break;
+                }
+                break;
 
                 case Corner_BottomRight:
                 {
                     window->rect.max = v2f32_sub_v2f32(window->rect.max, comm.drag_delta);
-                } break;
+                }
+                break;
 
-                invalid_case;
+                    invalid_case;
             }
         }
     }
 
-    return(comm);
+    return (comm);
 }
 
 internal Void
@@ -1639,9 +1588,7 @@ framed_ui_window_update(FramedUI_Window *window)
             ui_next_fixed_rect(rect);
             ui_next_child_layout_axis(Axis2_X);
             ui_next_color(framed_ui_color_from_theme(FramedUI_Color_PanelBackground));
-            UI_Box *window_container = ui_box_make(UI_BoxFlag_FixedRect |
-                                                   UI_BoxFlag_DrawDropShadow,
-                                                   str8_lit(""));
+            UI_Box *window_container = ui_box_make(UI_BoxFlag_FixedRect | UI_BoxFlag_DrawDropShadow, str8_lit(""));
             ui_parent(window_container)
             {
                 ui_next_height(ui_fill());
@@ -1684,13 +1631,13 @@ framed_ui_get_or_push_view_data_(FramedUI_TabViewInfo *view_info, U64 size)
         view_info->data = push_array(view_info->arena, U8, size);
     }
     Void *result = view_info->data;
-    return(result);
+    return (result);
 }
 
 FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default)
 {
-    FramedUI_Tab *tab = view_info->data;
-    FramedUI_Panel *panel = tab->panel;
+    FramedUI_Tab *tab       = view_info->data;
+    FramedUI_Panel *panel   = tab->panel;
     FramedUI_Window *window = panel->window;
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
@@ -1717,11 +1664,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default)
             ui_spacer(ui_em(0.5f, 1));
             if (ui_button(str8_lit("Add tab")).pressed)
             {
-                FramedUI_Tab *new_tab = framed_ui_tab_make(0, 0, str8_lit(""));
+                FramedUI_Tab *new_tab         = framed_ui_tab_make(0, 0, str8_lit(""));
                 FramedUI_CommandParams params = {0};
-                params.tab = new_tab;
-                params.panel = panel;
-                params.set_active = true;
+                params.tab                    = new_tab;
+                params.panel                  = panel;
+                params.set_active             = true;
                 framed_ui_command_push(FramedUI_CommandKind_InsertTab, params);
             }
             ui_spacer(ui_em(0.5f, 1));
@@ -1766,13 +1713,15 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 {
                     left_mouse_released = true;
                 }
-            } break;
+            }
+            break;
 
-            default: break;
+            default:
+                break;
         }
     }
 
-    framed_ui_state->focused_panel = framed_ui_state->next_focused_panel;
+    framed_ui_state->focused_panel      = framed_ui_state->next_focused_panel;
     framed_ui_state->next_focused_panel = &g_nil_panel;
 
     //- hampus: Update windows
@@ -1798,21 +1747,21 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
     FramedUI_DragData *drag_data = &framed_ui_state->drag_data;
     switch (framed_ui_state->drag_status)
     {
-        case FramedUI_DragStatus_Inactive: break;
-        case FramedUI_DragStatus_Reordering: break;
+        case FramedUI_DragStatus_Inactive:
+            break;
+        case FramedUI_DragStatus_Reordering:
+            break;
         case FramedUI_DragStatus_WaitingForDragThreshold:
         {
             F32 drag_threshold = ui_top_font_line_height() * 3;
-            Vec2F32 delta = v2f32_sub_v2f32(mouse_pos, drag_data->drag_origin);
+            Vec2F32 delta      = v2f32_sub_v2f32(mouse_pos, drag_data->drag_origin);
             if (f32_abs(delta.x) > drag_threshold || f32_abs(delta.y) > drag_threshold)
             {
                 FramedUI_Tab *tab = drag_data->tab_group.first;
 
                 FramedUI_Panel *tab_panel = tab->panel;
 
-                B32 create_new_window = !(tab->panel == tab->panel->window->root_panel &&
-                                          tab_panel->tab_group.count == 1 &&
-                                          tab_panel->window != framed_ui_state->master_window);
+                B32 create_new_window = !(tab->panel == tab->panel->window->root_panel && tab_panel->tab_group.count == 1 && tab_panel->window != framed_ui_state->master_window);
 
                 FramedUI_Window *window = drag_data->tab_group.first->panel->window;
 
@@ -1861,23 +1810,26 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 framed_ui_window_push_to_front(window);
                 framed_ui_window_set_pos(window, v2f32_sub_v2f32(ui_mouse_pos(), drag_data->offset));
                 framed_ui_state->next_focused_panel = tab_panel;
-                framed_ui_state->drag_status = FramedUI_DragStatus_Dragging;
+                framed_ui_state->drag_status        = FramedUI_DragStatus_Dragging;
                 log_info("Drag: dragging");
             }
-        } break;
+        }
+        break;
         case FramedUI_DragStatus_Dragging:
         {
             FramedUI_Window *window = drag_data->tab_group.first->panel->window;
-            Vec2F32 mouse_delta = v2f32_sub_v2f32(mouse_pos, ui_prev_mouse_pos());
-            Vec2F32 new_pos = v2f32_sub_v2f32(ui_mouse_pos(), drag_data->offset);
+            Vec2F32 mouse_delta     = v2f32_sub_v2f32(mouse_pos, ui_prev_mouse_pos());
+            Vec2F32 new_pos         = v2f32_sub_v2f32(ui_mouse_pos(), drag_data->offset);
             framed_ui_window_set_pos(drag_data->tab_group.first->panel->window, new_pos);
-        } break;
+        }
+        break;
         case FramedUI_DragStatus_Released:
         {
             memory_zero_struct(&framed_ui_state->drag_data);
             framed_ui_state->drag_status = FramedUI_DragStatus_Inactive;
-        } break;
-        invalid_case;
+        }
+        break;
+            invalid_case;
     }
 
     if (left_mouse_released && framed_ui_state->drag_status != FramedUI_DragStatus_Inactive)
@@ -1889,23 +1841,25 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
 
     for (FramedUI_CommandNode *node = framed_ui_state->cmd_list.first; node; node = node->next)
     {
-        FramedUI_Command *cmd = &node->command;
+        FramedUI_Command *cmd          = &node->command;
         FramedUI_CommandParams *params = &cmd->params;
         switch (cmd->kind)
         {
             case FramedUI_CommandKind_RemoveTab:
             {
-                log_info("Executed command: tab_deattach (%"PRISTR8")", str8_expand(params->tab->display_string));
+                log_info("Executed command: tab_deattach (%" PRISTR8 ")", str8_expand(params->tab->display_string));
                 framed_ui_panel_remove_tab(params->tab);
-            } break;
+            }
+            break;
             case FramedUI_CommandKind_InsertTab:
             {
                 framed_ui_panel_insert_tab(params->panel, params->tab);
                 log_info("Executed command: tab_attach");
-            } break;
+            }
+            break;
             case FramedUI_CommandKind_CloseTab:
             {
-                log_info("Executed command: tab_close (%"PRISTR8")", str8_expand(params->tab->display_string));
+                log_info("Executed command: tab_close (%" PRISTR8 ")", str8_expand(params->tab->display_string));
                 for (U64 i = 0; i < array_count(framed_ui_state->tab_view_table); ++i)
                 {
                     if (params->tab == framed_ui_state->tab_view_table[i])
@@ -1915,12 +1869,14 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 }
                 framed_ui_panel_remove_tab(params->tab);
                 framed_ui_tab_free(params->tab);
-            }; break;
+            };
+            break;
             case FramedUI_CommandKind_SplitPanel:
             {
                 framed_ui_panel_split(params->panel, params->axis);
                 log_info("Executed command: panel_split");
-            } break;
+            }
+            break;
 
             case FramedUI_CommandKind_SplitPanelAndInsertTab:
             {
@@ -1956,7 +1912,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                 }
                 framed_ui_panel_insert_tab(panel, params->tab);
                 log_info("Executed command: panel_split_and_attach");
-            } break;
+            }
+            break;
 
             case FramedUI_CommandKind_SplitPanelAndInsertTabGroup:
             {
@@ -2000,29 +1957,34 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
                     log_info("Executed command: panel_split_and_attach");
                 }
                 framed_ui_panel_set_active_tab(panel, params->tab_group.active_tab);
-            } break;
+            }
+            break;
 
             case FramedUI_CommandKind_SetTabActive:
             {
                 framed_ui_panel_set_active_tab(params->tab->panel, params->tab);
                 log_info("Executed command: panel_set_active_tab");
-            }break;
+            }
+            break;
             case FramedUI_CommandKind_ClosePanel:
             {
                 framed_ui_panel_close(params->panel);
                 log_info("Executed command: panel_close");
-            } break;
+            }
+            break;
             case FramedUI_CommandKind_CloseWindow:
             {
                 framed_ui_window_close(params->window);
                 log_info("Executed command: window_close");
-            }break;
+            }
+            break;
             case FramedUI_CommandKind_PushWindowToFront:
             {
                 framed_ui_window_push_to_front(params->window);
                 log_info("Executed command: window_set_top_most");
-            }break;
-            invalid_case;
+            }
+            break;
+                invalid_case;
         }
     }
 
@@ -2034,8 +1996,8 @@ framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
     }
 
     framed_ui_state->next_top_most_window = 0;
-    framed_ui_state->cmd_list.first = 0;
-    framed_ui_state->cmd_list.last = 0;
+    framed_ui_state->cmd_list.first       = 0;
+    framed_ui_state->cmd_list.last        = 0;
 
     profile_end_function();
 }

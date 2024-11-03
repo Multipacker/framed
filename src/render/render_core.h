@@ -70,7 +70,6 @@ struct Render_Context
 {
   Arena *permanent_arena;
   Arena *frame_arena;
-  Gfx_Context *gfx;
   Render_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
 
   Render_FontAtlas *font_atlas;
@@ -122,7 +121,7 @@ internal F32 f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 internal Render_RenderStats render_get_stats(Render_Context *renderer);
 internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Render_Context *render_init(Gfx_Context *gfx);
+internal Render_Context *render_init(Void);
 internal Void render_begin(Render_Context *renderer);
 internal Void render_end(Render_Context *renderer);
 

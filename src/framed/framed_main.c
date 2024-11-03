@@ -45,10 +45,7 @@ FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
         ui_next_width(ui_fill());
         ui_next_height(ui_fill());
         ui_next_color(v4f32(0, 0, 0, 0.5f));
-        UI_Box *parent_box = ui_box_make(UI_BoxFlag_DrawBackground |
-                                         UI_BoxFlag_FixedPos |
-                                         UI_BoxFlag_Clickable,
-                                         str8_lit("ParentPopup"));
+        UI_Box *parent_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_FixedPos | UI_BoxFlag_Clickable, str8_lit("ParentPopup"));
         ui_parent(parent_box)
         {
             ui_spacer(ui_fill());
@@ -60,11 +57,7 @@ FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
                 ui_next_width(ui_em(20, 1));
                 ui_next_height(ui_em(10, 1));
                 ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_PanelBorderActive));
-                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-                                          UI_BoxFlag_DrawBorder |
-                                          UI_BoxFlag_DrawDropShadow |
-                                          UI_BoxFlag_AnimateDim,
-                                          str8_lit("PopupMessageBackground"));
+                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_DrawDropShadow | UI_BoxFlag_AnimateDim, str8_lit("PopupMessageBackground"));
                 ui_parent(box)
                 {
                     ui_spacer(ui_fill());
@@ -83,7 +76,7 @@ FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
                         if (ui_button(str8_lit("OK")).pressed)
                         {
                             framed_state->popup_message = framed_pop_up_message_stub;
-                            framed_state->popup_string = str8_lit("");
+                            framed_state->popup_string  = str8_lit("");
                         }
                         ui_spacer(ui_em(1, 1));
                         ui_button(str8_lit("Show log"));
@@ -118,8 +111,8 @@ framed_parse_zones(Void)
 
     if (!net_socket_connection_is_alive(profiling_state->client_socket))
     {
-        Net_AcceptResult accept_result = {0};
-        accept_result = net_socket_accept(profiling_state->listen_socket);
+        Net_AcceptResult accept_result    = {0};
+        accept_result                     = net_socket_accept(profiling_state->listen_socket);
         profiling_state->found_connection = accept_result.succeeded;
         if (profiling_state->found_connection)
         {
@@ -133,13 +126,13 @@ framed_parse_zones(Void)
 
     //- hampus: Gather & process data from client
 
-    B32 terminate_connection = false;
-    U16 buffer_size = 0;
-    Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+    B32 terminate_connection      = false;
+    U16 buffer_size               = 0;
+    Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
     while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
     {
-        Arena_Temporary scratch = get_scratch(0, 0);
-        U8 *buffer = push_array(scratch.arena, U8, buffer_size);
+        Arena_Temporary scratch          = get_scratch(0, 0);
+        U8 *buffer                       = push_array(scratch.arena, U8, buffer_size);
         Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
 
         if (recieve_result.bytes_recieved != buffer_size)
@@ -155,18 +148,18 @@ framed_parse_zones(Void)
 
         // NOTE(hampus): First two bytes are the size of the packet
         U8 *buffer_pointer = buffer + sizeof(U16);
-        U8 *buffer_opl = buffer + recieve_result.bytes_recieved;
+        U8 *buffer_opl     = buffer + recieve_result.bytes_recieved;
         while (buffer_pointer < buffer_opl && !terminate_connection)
         {
             if ((U64) (buffer_opl - buffer_pointer) < sizeof(PacketHeader))
             {
                 log_error("Not enough data for packet header, terminating connection");
-                terminate_connection = true;
+                terminate_connection       = true;
                 framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
                 break;
             }
 
-            U64 entry_size = 0;
+            U64 entry_size       = 0;
             PacketHeader *header = (PacketHeader *) buffer_pointer;
             switch (header->kind)
             {
@@ -187,16 +180,16 @@ framed_parse_zones(Void)
                     if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                     {
                         log_error("Not enough data for zone packet, terminating connection");
-                        terminate_connection = true;
+                        terminate_connection        = true;
                         framed_state->popup_message = framed_pop_up_message;
-                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                        framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
                     }
                     else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                     {
                         log_error("Not enough data for zone name, terminating connection");
-                        terminate_connection = true;
+                        terminate_connection        = true;
                         framed_state->popup_message = framed_pop_up_message;
-                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                        framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
                     }
                     else
                     {
@@ -209,26 +202,27 @@ framed_parse_zones(Void)
 
                         if (profiling_state->current_frame.zone_blocks)
                         {
-                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
+                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096 * 4096);
                         }
 
                         if (profiling_state->current_frame.zone_blocks)
                         {
-                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096*4096);
+                            memory_zero_typed(profiling_state->current_frame.zone_blocks, 4096 * 4096);
                         }
 
                         profiling_state->profile_start_tsc = header->tsc;
-                        profiling_state->tsc_frequency = packet->tsc_frequency;
+                        profiling_state->tsc_frequency     = packet->tsc_frequency;
 
                         Frame *frame = &profiling_state->current_frame;
                         arena_pop_to(frame->arena, 0);
-                        frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
-                        frame->tsc_frequency = profiling_state->tsc_frequency;
+                        frame->zone_blocks       = push_array(frame->arena, ZoneBlock, 4096 * 4096);
+                        frame->tsc_frequency     = profiling_state->tsc_frequency;
                         frame->zone_blocks_count = 0;
 
                         entry_size = sizeof(Packet);
                     }
-                } break;
+                }
+                break;
                 case Framed_PacketKind_FrameStart:
                 {
 #pragma pack(push, 1)
@@ -251,9 +245,9 @@ framed_parse_zones(Void)
                     swap(profiling_state->current_frame, profiling_state->finished_frame, Frame);
                     frame = &profiling_state->current_frame;
                     arena_pop_to(frame->arena, 0);
-                    frame->zone_blocks_count = 0;
-                    frame->zone_blocks = push_array(frame->arena, ZoneBlock, 4096*4096);
-                    frame->tsc_frequency = profiling_state->tsc_frequency;
+                    frame->zone_blocks_count        = 0;
+                    frame->zone_blocks              = push_array(frame->arena, ZoneBlock, 4096 * 4096);
+                    frame->tsc_frequency            = profiling_state->tsc_frequency;
                     profiling_state->zone_stack_pos = 0;
 
                     frame->start_tsc = header->tsc;
@@ -261,7 +255,8 @@ framed_parse_zones(Void)
                     profiling_state->frame_index++;
 
                     entry_size = sizeof(Packet);
-                } break;
+                }
+                break;
                 case Framed_PacketKind_ZoneBegin:
                 {
 #pragma pack(push, 1)
@@ -281,23 +276,23 @@ framed_parse_zones(Void)
                     if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet))
                     {
                         log_error("Not enough data for zone packet, terminating connection");
-                        terminate_connection = true;
+                        terminate_connection        = true;
                         framed_state->popup_message = framed_pop_up_message;
-                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                        framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
                     }
                     else if ((U64) (buffer_opl - buffer_pointer) < sizeof(Packet) + packet->name_length)
                     {
                         log_error("Not enough data for zone name, terminating connection");
-                        terminate_connection = true;
+                        terminate_connection        = true;
                         framed_state->popup_message = framed_pop_up_message;
-                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                        framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
                     }
-                    else if (frame->zone_blocks_count >= 4096*4096)
+                    else if (frame->zone_blocks_count >= 4096 * 4096)
                     {
                         log_error("Zone limit was exceeded");
-                        terminate_connection = true;
+                        terminate_connection        = true;
                         framed_state->popup_message = framed_pop_up_message;
-                        framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
+                        framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
                     }
                     else
                     {
@@ -305,11 +300,11 @@ framed_parse_zones(Void)
 
                         ZoneBlock *zone = frame->zone_blocks + frame->zone_blocks_count;
 
-                        zone->name = str8_copy(frame->arena, name);
+                        zone->name      = str8_copy(frame->arena, name);
                         zone->start_tsc = header->tsc;
 
                         ZoneStackEntry *stack_entry = profiling_state->zone_stack + profiling_state->zone_stack_pos;
-                        stack_entry->zone_block = zone;
+                        stack_entry->zone_block     = zone;
 
                         frame->zone_blocks_count++;
 
@@ -319,7 +314,8 @@ framed_parse_zones(Void)
 
                         entry_size = sizeof(Packet) + packet->name_length;
                     }
-                } break;
+                }
+                break;
                 case Framed_PacketKind_ZoneEnd:
                 {
 #pragma pack(push, 1)
@@ -338,26 +334,28 @@ framed_parse_zones(Void)
                     profiling_state->zone_stack_pos--;
 
                     ZoneStackEntry *stack_entry = profiling_state->zone_stack + profiling_state->zone_stack_pos;
-                    ZoneBlock *zone = stack_entry->zone_block;
+                    ZoneBlock *zone             = stack_entry->zone_block;
 
                     zone->end_tsc = header->tsc;
 
                     entry_size = sizeof(Packet);
 
                     profiling_state->profile_end_tsc = header->tsc;
-                } break;
+                }
+                break;
                 default:
                 {
-                    log_error("Unknown profiling event id (%"PRIS32"), terminating connection", header->kind);
-                    terminate_connection = true;
+                    log_error("Unknown profiling event id (%" PRIS32 "), terminating connection", header->kind);
+                    terminate_connection        = true;
                     framed_state->popup_message = framed_pop_up_message;
-                    framed_state->popup_string = str8_lit("Parsing failed! Terminating connection");
-                } break;
+                    framed_state->popup_string  = str8_lit("Parsing failed! Terminating connection");
+                }
+                break;
             }
             buffer_pointer += entry_size;
         }
         release_scratch(scratch);
-        size_result = net_socket_peek(profiling_state->client_socket, (U8 *)&buffer_size, sizeof(buffer_size));
+        size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
     }
 
     if (terminate_connection)
@@ -367,7 +365,7 @@ framed_parse_zones(Void)
 
     U64 gather_end_time_ns = os_now_nanoseconds();
 
-    profiling_state->gather_time_accumulator += (F64)(gather_end_time_ns - gather_start_time_ns) / (F64)billion(1);
+    profiling_state->gather_time_accumulator += (F64) (gather_end_time_ns - gather_start_time_ns) / (F64) billion(1);
 
     profile_end_function();
 }
@@ -380,7 +378,7 @@ framed_get_data_folder_path(Void)
 {
     if (framed_state->data_folder_path.data == 0)
     {
-        Arena_Temporary scratch = get_scratch(0, 0);
+        Arena_Temporary scratch        = get_scratch(0, 0);
         Str8List data_folder_path_list = {0};
         str8_list_push(scratch.arena, &data_folder_path_list, os_push_system_path(scratch.arena, OS_SystemPath_UserData));
         str8_list_push(scratch.arena, &data_folder_path_list, str8_lit("/framed/"));
@@ -389,7 +387,7 @@ framed_get_data_folder_path(Void)
         os_file_create_directory(framed_state->data_folder_path);
     }
     Str8 result = framed_state->data_folder_path;
-    return(result);
+    return (result);
 }
 
 internal Str8
@@ -397,7 +395,7 @@ framed_get_default_user_settings_file_path(Void)
 {
     if (framed_state->default_user_settings_file_path.data == 0)
     {
-        Arena_Temporary scratch = get_scratch(0, 0);
+        Arena_Temporary scratch          = get_scratch(0, 0);
         Str8List user_settings_file_path = {0};
         str8_list_push(scratch.arena, &user_settings_file_path, framed_get_data_folder_path());
         str8_list_push(scratch.arena, &user_settings_file_path, str8_lit("default.framed_settings"));
@@ -405,7 +403,7 @@ framed_get_default_user_settings_file_path(Void)
         release_scratch(scratch);
     }
     Str8 result = framed_state->default_user_settings_file_path;
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -414,17 +412,17 @@ framed_get_default_user_settings_file_path(Void)
 internal Str8
 framed_get_next_line(Str8 string, U64 *bytes_parsed)
 {
-    Str8 result = string;
-    U8 *string_end = string.data + string.size;
-    U8 *at = string.data;
+    Str8 result       = string;
+    U8 *string_end    = string.data + string.size;
+    U8 *at            = string.data;
     U8 *comment_start = 0;
-    for (;at < string_end;)
+    for (; at < string_end;)
     {
         if (at[0] == '\n')
         {
             break;
         }
-        if ((at+1) < string_end)
+        if ((at + 1) < string_end)
         {
             if (at[0] == '/' && at[1] == '/')
             {
@@ -439,15 +437,15 @@ framed_get_next_line(Str8 string, U64 *bytes_parsed)
         at = comment_start;
     }
     result.size = int_from_ptr(at) - int_from_ptr(string.data);
-    return(result);
+    return (result);
 }
 
 internal Str8
 framed_get_next_setting_name_or_value(Str8 string, U64 *bytes_parsed)
 {
-    Str8 result = {0};
+    Str8 result    = {0};
     U8 *string_end = string.data + string.size;
-    U8 *data = string.data;
+    U8 *data       = string.data;
     while (data < string_end &&
            data[0] != '=' &&
            (data[0] == ' ' ||
@@ -478,16 +476,16 @@ framed_get_next_setting_name_or_value(Str8 string, U64 *bytes_parsed)
         data++;
     }
     *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
-    result = str8_range(start, end+1);
-    return(result);
+    result        = str8_range(start, end + 1);
+    return (result);
 }
 
 internal Str8
 framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
 {
-    Str8 result = {0};
+    Str8 result    = {0};
     U8 *string_end = string.data + string.size;
-    U8 *data = string.data;
+    U8 *data       = string.data;
     while (data < string_end &&
            data[0] != '=' &&
            (data[0] == ' ' ||
@@ -512,22 +510,22 @@ framed_get_next_settings_word(Str8 string, U64 *bytes_parsed)
         data++;
     }
     *bytes_parsed = int_from_ptr(data) - int_from_ptr(string.data);
-    result = str8_range(start, data);
-    return(result);
+    result        = str8_range(start, data);
+    return (result);
 }
 
 internal Str8List
 framed_lines_from_user_settings(Arena *arena, Str8 data)
 {
-    Str8List result = {0};
+    Str8List result  = {0};
     U64 bytes_parsed = 0;
-    for (;data.size > 0;)
+    for (; data.size > 0;)
     {
         Str8 line = framed_get_next_line(data, &bytes_parsed);
-        data = str8_skip(data, bytes_parsed+1);
+        data      = str8_skip(data, bytes_parsed + 1);
         str8_list_push(arena, &result, line);
     }
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -538,7 +536,7 @@ framed_load_user_settings_from_memory(Str8 data_string)
     Arena_Temporary scratch = get_scratch(0, 0);
     //- hampus: Get the version number
 
-    U64 line_index = 0;
+    U64 line_index   = 0;
     U64 bytes_parsed = 0;
 
     U64 version = 0;
@@ -547,11 +545,11 @@ framed_load_user_settings_from_memory(Str8 data_string)
         if (line.size != 0)
         {
             line_index++;
-            data_string = str8_skip(data_string, bytes_parsed+1);
+            data_string     = str8_skip(data_string, bytes_parsed + 1);
             Str8 first_word = framed_get_next_settings_word(line, &bytes_parsed);
             if (str8_equal(first_word, str8_lit("version")))
             {
-                line = str8_skip(line, bytes_parsed);
+                line                = str8_skip(line, bytes_parsed);
                 Str8 version_string = framed_get_next_settings_word(line, &bytes_parsed);
                 u64_from_str8(version_string, &version);
             }
@@ -582,29 +580,29 @@ framed_load_user_settings_from_memory(Str8 data_string)
             B32 found;
         };
 
-#define SETTING_THEME_COLOR(i) \
-{ \
-framed_ui_string_color_table[i], \
-SettingValKind_Color, \
-&framed_ui_state->settings.theme_colors[i] \
-}
+#define SETTING_THEME_COLOR(i)                     \
+    {                                              \
+        framed_ui_string_color_table[i],           \
+        SettingValKind_Color,                      \
+        &framed_ui_state->settings.theme_colors[i] \
+    }
 
         SettingEntry setting_entries_table[] =
-        {
-            {str8_lit("Font size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
+            {
+                {str8_lit("Font size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
 
-            SETTING_THEME_COLOR(FramedUI_Color_PanelBackground),
-            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderActive),
-            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
-            SETTING_THEME_COLOR(FramedUI_Color_PanelOverlayInactive),
-            SETTING_THEME_COLOR(FramedUI_Color_TabBarBackground),
-            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundActive),
-            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundInactive),
-            SETTING_THEME_COLOR(FramedUI_Color_TabForeground),
-            SETTING_THEME_COLOR(FramedUI_Color_TabBorder),
-            SETTING_THEME_COLOR(FramedUI_Color_TabBarButtonsBackground),
-            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
-        };
+                SETTING_THEME_COLOR(FramedUI_Color_PanelBackground),
+                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderActive),
+                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+                SETTING_THEME_COLOR(FramedUI_Color_PanelOverlayInactive),
+                SETTING_THEME_COLOR(FramedUI_Color_TabBarBackground),
+                SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundActive),
+                SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundInactive),
+                SETTING_THEME_COLOR(FramedUI_Color_TabForeground),
+                SETTING_THEME_COLOR(FramedUI_Color_TabBorder),
+                SETTING_THEME_COLOR(FramedUI_Color_TabBarButtonsBackground),
+                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+            };
 
         Str8List lines = framed_lines_from_user_settings(scratch.arena, data_string);
 
@@ -619,8 +617,8 @@ SettingValKind_Color, \
 
             //- hampus: Setting name
 
-            Str8 setting_name = framed_get_next_setting_name_or_value(line, &bytes_parsed);
-            line = str8_skip(line, bytes_parsed);
+            Str8 setting_name    = framed_get_next_setting_name_or_value(line, &bytes_parsed);
+            line                 = str8_skip(line, bytes_parsed);
             U64 equal_sign_index = 0;
             if (str8_first_index_of(line, '=', &equal_sign_index))
             {
@@ -628,9 +626,9 @@ SettingValKind_Color, \
 
                 // TODO(hampus): Check that the setting is an appropiate value
 
-                line = str8_skip(line, equal_sign_index+1);
+                line               = str8_skip(line, equal_sign_index + 1);
                 Str8 setting_value = framed_get_next_setting_name_or_value(line, &bytes_parsed);
-                B32 valid_value = false;
+                B32 valid_value    = false;
 
                 for (U64 i = 0; i < array_count(setting_entries_table); ++i)
                 {
@@ -641,21 +639,23 @@ SettingValKind_Color, \
                         {
                             case SettingValKind_U32:
                             {
-                                U32 *dst = (U32 *)entry->dst;
+                                U32 *dst = (U32 *) entry->dst;
                                 u32_from_str8(setting_value, dst);
                                 valid_value = true;
-                            } break;
+                            }
+                            break;
 
                             case SettingValKind_Color:
                             {
-                                Vec4F32 *dst = (Vec4F32 *)entry->dst;
-                                U32 color = 0;
+                                Vec4F32 *dst = (Vec4F32 *) entry->dst;
+                                U32 color    = 0;
                                 u32hex_from_str8(setting_value, &color);
-                                *dst = rgba_from_u32(color);
+                                *dst        = rgba_from_u32(color);
                                 valid_value = true;
-                            } break;
+                            }
+                            break;
 
-                            invalid_case;
+                                invalid_case;
                         }
                         entry->found = true;
                         break;
@@ -664,13 +664,13 @@ SettingValKind_Color, \
 
                 if (!valid_value)
                 {
-                    log_error("User settings line %"PRIU64": bad value (%"PRISTR8") for '%"PRISTR8"'", line_index, str8_expand(setting_value), str8_expand(setting_name));
+                    log_error("User settings line %" PRIU64 ": bad value (%" PRISTR8 ") for '%" PRISTR8 "'", line_index, str8_expand(setting_value), str8_expand(setting_name));
                 }
                 line = str8_skip(line, bytes_parsed);
             }
             else
             {
-                log_error("User settings line %"PRIU64": missing '=' for '%"PRISTR8"'", line_index, str8_expand(setting_name));
+                log_error("User settings line %" PRIU64 ": missing '=' for '%" PRISTR8 "'", line_index, str8_expand(setting_name));
             }
 
             ++line_index;
@@ -688,7 +688,7 @@ SettingValKind_Color, \
     }
     else
     {
-        log_error("User settings: bad version: %"PRIU32, version);
+        log_error("User settings: bad version: %" PRIU32, version);
     }
     release_scratch(scratch);
 }
@@ -700,15 +700,17 @@ framed_save_current_settings_to_file(Str8 path)
     // the ones that have actually changed
 
     log_info("Saving settings to file...");
-    Arena_Temporary scratch = get_scratch(0, 0);
+    Arena_Temporary scratch     = get_scratch(0, 0);
     Str8List settings_file_data = {0};
-    str8_list_pushf(scratch.arena, &settings_file_data, "version %"PRIU32"\n\n", FRAMED_SETTINGS_VERSION);
+    str8_list_pushf(scratch.arena, &settings_file_data, "version %" PRIU32 "\n\n", FRAMED_SETTINGS_VERSION);
     str8_list_pushf(scratch.arena, &settings_file_data, "// General settings\n\n");
-    str8_list_pushf(scratch.arena, &settings_file_data, "Font size = %"PRIU32"\n\n", framed_ui_state->settings.font_size);
+    str8_list_pushf(scratch.arena, &settings_file_data, "Font size = %" PRIU32 "\n\n", framed_ui_state->settings.font_size);
     str8_list_pushf(scratch.arena, &settings_file_data, "// Colors\n\n");
     for (U64 i = 0; i < FramedUI_Color_TabBarButtonsBackground; ++i)
     {
-        str8_list_pushf(scratch.arena, &settings_file_data, "%"PRISTR8" = ""0x%08x\n", str8_expand(framed_ui_string_color_table[i]), u32_from_rgba(framed_ui_state->settings.theme_colors[i]));
+        str8_list_pushf(scratch.arena, &settings_file_data, "%" PRISTR8 " = "
+                                                            "0x%08x\n",
+                        str8_expand(framed_ui_string_color_table[i]), u32_from_rgba(framed_ui_state->settings.theme_colors[i]));
     }
     Str8 data = str8_join(scratch.arena, &settings_file_data);
     os_file_write(path, data, OS_FileMode_Replace);
@@ -727,13 +729,12 @@ os_main(Str8List arguments)
     arena_scratch(0, 0)
     {
         Str8 binary_path = os_push_system_path(scratch, OS_SystemPath_Binary);
-        Str8 log_file = str8_pushf(scratch, "%"PRISTR8"%cframed_log.txt", str8_expand(binary_path), PATH_SEPARATOR);
+        Str8 log_file    = str8_pushf(scratch, "%" PRISTR8 "%cframed_log.txt", str8_expand(binary_path), PATH_SEPARATOR);
         log_init(log_file, megabytes(40));
     }
 
-
-    Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
-    Render_Context *renderer = render_init(&gfx);
+    gfx_init(0, 0, 720, 480, str8_lit("Framed"));
+    Render_Context *renderer = render_init();
     Arena *frame_arenas[2];
     frame_arenas[0] = arena_create("MainFrame0");
     frame_arenas[1] = arena_create("MainFrame1");
@@ -741,20 +742,20 @@ os_main(Str8List arguments)
     ////////////////////////////////
     //- hampus: Initialize Framed state
 
-    Arena *framed_perm_arena = arena_create("FramedPerm");
-    framed_state = push_struct(framed_perm_arena, Framed_State);
-    framed_state->perm_arena = framed_perm_arena;
+    Arena *framed_perm_arena      = arena_create("FramedPerm");
+    framed_state                  = push_struct(framed_perm_arena, Framed_State);
+    framed_state->perm_arena      = framed_perm_arena;
     framed_state->profiling_state = push_struct(framed_perm_arena, ProfilingState);
 
-    ProfilingState *profiling_state = framed_state->profiling_state;
+    ProfilingState *profiling_state       = framed_state->profiling_state;
     profiling_state->finished_frame.arena = arena_create("FinishedZoneFrameArena");
-    profiling_state->current_frame.arena = arena_create("CurrentZoneFrameArena");
+    profiling_state->current_frame.arena  = arena_create("CurrentZoneFrameArena");
 
     framed_state->popup_message = framed_pop_up_message_stub;
 
     // TODO(hampus): Put this somewhere else. Maybe some kind of base layer symbol init?
-    micro_seconds_string = str8_from_str16(framed_perm_arena, (Str16){(U16 []){181, 's'}, 2});
-    micro_string = str8_chop(micro_seconds_string, 1);
+    micro_seconds_string = str8_from_str16(framed_perm_arena, (Str16){(U16[]){181, 's'}, 2});
+    micro_string         = str8_chop(micro_seconds_string, 1);
 
     zone_node_init();
 
@@ -762,24 +763,25 @@ os_main(Str8List arguments)
 
     net_socket_init();
     profiling_state->listen_socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
-    profiling_state->port = FRAMED_DEFAULT_PORT;
+    profiling_state->port          = FRAMED_DEFAULT_PORT;
     Net_Address address =
-    {
-        .ip.u8[0] = 127,
-        .ip.u8[1] = 0,
-        .ip.u8[2] = 0,
-        .ip.u8[3] = 1,
-        .port = profiling_state->port,
-    };
+        {
+            .ip.u8[0] = 127,
+            .ip.u8[1] = 0,
+            .ip.u8[2] = 0,
+            .ip.u8[3] = 1,
+            .port     = profiling_state->port,
+        };
 
-    net_socket_bind(profiling_state->listen_socket , address);;
-    net_socket_set_blocking_mode(profiling_state->listen_socket , false);
+    net_socket_bind(profiling_state->listen_socket, address);
+    ;
+    net_socket_set_blocking_mode(profiling_state->listen_socket, false);
 
     ////////////////////////////////
     //- hampus: Initialize UI
 
     Arena *framed_ui_perm_arena = arena_create("FramedUIPerm");
-    framed_ui_state = push_struct(framed_ui_perm_arena, FramedUI_State);
+    framed_ui_state             = push_struct(framed_ui_perm_arena, FramedUI_State);
     framed_ui_state->perm_arena = framed_ui_perm_arena;
 
     framed_ui_state->settings.font_size = 12;
@@ -795,10 +797,10 @@ os_main(Str8List arguments)
     framed_ui_set_color(FramedUI_Color_TabBarButtonsBackground, v4f32(0.1f, 0.1f, 0.1f, 1.0f));
 
     Arena_Temporary scratch = get_scratch(0, 0);
-    Str8 settings_path = framed_get_default_user_settings_file_path();
+    Str8 settings_path      = framed_get_default_user_settings_file_path();
     for (Str8Node *node = arguments.first; node != 0; node = node->next)
     {
-        U64 equal_sign_index = 0;
+        U64 equal_sign_index      = 0;
         Str8 first_two_characters = str8_substring(node->string, 0, 2);
         if (str8_equal(first_two_characters, str8_lit("--")))
         {
@@ -809,7 +811,7 @@ os_main(Str8List arguments)
                 if (str8_equal(option_name, str8_lit("settings")))
                 {
                     // TODO(hampus): Check that it actually is a valid settings file path.
-                    settings_path = str8_substring(node->string, equal_sign_index+1, node->string.size);
+                    settings_path = str8_substring(node->string, equal_sign_index + 1, node->string.size);
                 }
             }
         }
@@ -839,8 +841,8 @@ os_main(Str8List arguments)
     framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
     framed_ui_state->tab_view_string_table[FramedUI_TabView_About]    = str8_lit("About");
 
-    Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
-    Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
+    Gfx_Monitor monitor            = gfx_monitor_from_window();
+    Vec2F32 monitor_dim            = gfx_dim_from_monitor(monitor);
     FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
     framed_ui_window_push_to_front(master_window);
 
@@ -856,18 +858,18 @@ os_main(Str8List arguments)
 
     framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Zones]);
 
-    framed_ui_state->master_window = master_window;
+    framed_ui_state->master_window      = master_window;
     framed_ui_state->next_focused_panel = master_window->root_panel;
 
-    gfx_set_window_maximized(&gfx);
-    gfx_show_window(&gfx);
+    gfx_set_window_maximized();
+    gfx_show_window();
 
     ////////////////////////////////
     //- hampus: Main loop
 
-    U64 start_counter = os_now_nanoseconds();
-    F64 dt = 0;
-    B32 running = true;
+    U64 start_counter             = os_now_nanoseconds();
+    F64 dt                        = 0;
+    B32 running                   = true;
     FramedUI_Window *debug_window = 0;
     while (running)
     {
@@ -875,7 +877,7 @@ os_main(Str8List arguments)
 
         profile_begin_block("Main loop");
 
-        Vec2F32 mouse_pos = gfx_get_mouse_pos(&gfx);
+        Vec2F32 mouse_pos     = gfx_get_mouse_pos();
         Arena *current_arena  = frame_arenas[0];
         Arena *previous_arena = frame_arenas[1];
 
@@ -883,7 +885,7 @@ os_main(Str8List arguments)
 
         //- hampus: Gather events
 
-        Gfx_EventList events = gfx_get_events(current_arena, &gfx);
+        Gfx_EventList events = gfx_get_events(current_arena);
         for (Gfx_Event *event = events.first; event != 0; event = event->next)
         {
             if (event->kind == Gfx_EventKind_Quit)
@@ -894,7 +896,7 @@ os_main(Str8List arguments)
             {
                 if (event->key == Gfx_Key_F11)
                 {
-                    gfx_toggle_fullscreen(&gfx);
+                    gfx_toggle_fullscreen();
                 }
                 else if (event->key == Gfx_Key_F1)
                 {
@@ -919,7 +921,7 @@ os_main(Str8List arguments)
                             FramedUI_Tab *log_tab = framed_ui_tab_make(framed_ui_tab_view_logger, 0, str8_lit("Log"));
                             framed_ui_panel_insert_tab(debug_window->root_panel, log_tab);
 
-                            FramedUI_Tab *texture_viewer_tab= framed_ui_tab_make(framed_ui_tab_view_texture_viewer, 0, str8_lit("Texture Viewer"));
+                            FramedUI_Tab *texture_viewer_tab = framed_ui_tab_make(framed_ui_tab_view_texture_viewer, 0, str8_lit("Texture Viewer"));
                             framed_ui_panel_insert_tab(debug_window->root_panel, texture_viewer_tab);
 
                             framed_ui_panel_set_active_tab(debug_window->root_panel, debug_tab);
@@ -956,14 +958,12 @@ os_main(Str8List arguments)
                 for (U64 i = 0; i < array_count(framed_ui_state->tab_view_table); ++i)
                 {
                     Str8 string = framed_ui_state->tab_view_string_table[i];
-                    B32 active = !framed_ui_tab_is_nil(framed_ui_state->tab_view_table[i]);
+                    B32 active  = !framed_ui_tab_is_nil(framed_ui_state->tab_view_table[i]);
                     ui_next_hover_cursor(Gfx_Cursor_Hand);
-                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation |
-                                            UI_BoxFlag_HotAnimation |
-                                            UI_BoxFlag_Clickable);
+                    ui_next_extra_box_flags(UI_BoxFlag_ActiveAnimation | UI_BoxFlag_HotAnimation | UI_BoxFlag_Clickable);
                     ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
                     ui_next_height(ui_em(1, 1));
-                    UI_Box *row_box = ui_named_row_beginf("TabViewDropdownListEntry%"PRIU64, i);
+                    UI_Box *row_box = ui_named_row_beginf("TabViewDropdownListEntry%" PRIU64, i);
 
                     ui_next_height(ui_em(1, 0.0f));
                     ui_next_width(ui_em(5, 1));
@@ -989,7 +989,7 @@ os_main(Str8List arguments)
                         if (active)
                         {
                             FramedUI_CommandParams params = {0};
-                            params.tab = framed_ui_state->tab_view_table[i];
+                            params.tab                    = framed_ui_state->tab_view_table[i];
                             framed_ui_command_push(FramedUI_CommandKind_CloseTab, params);
                         }
                         else
@@ -1067,21 +1067,21 @@ os_main(Str8List arguments)
         swap(frame_arenas[0], frame_arenas[1], Arena *);
 
         U64 end_counter = os_now_nanoseconds();
-        dt = (F64) (end_counter - start_counter) / (F64) billion(1);
+        dt              = (F64) (end_counter - start_counter) / (F64) billion(1);
 
         profiling_state->stats_seconds_accumulator += dt;
 
         if (profiling_state->stats_seconds_accumulator >= 0.5f)
         {
-            profiling_state->bandwidth_average_rate = (U64)((F64) profiling_state->bytes_from_client / 0.5);
-            profiling_state->bytes_from_client = 0;
+            profiling_state->bandwidth_average_rate = (U64) ((F64) profiling_state->bytes_from_client / 0.5);
+            profiling_state->bytes_from_client      = 0;
 
-            profiling_state->gather_average_rate = (U64)((F64)profiling_state->gather_bytes / (F64)profiling_state->gather_time_accumulator);
-            profiling_state->gather_bytes = 0;
+            profiling_state->gather_average_rate     = (U64) ((F64) profiling_state->gather_bytes / (F64) profiling_state->gather_time_accumulator);
+            profiling_state->gather_bytes            = 0;
             profiling_state->gather_time_accumulator = 0;
 
-            profiling_state->parsed_average_rate = (U64)((F64)profiling_state->parsed_bytes / (F64)profiling_state->parsed_time_accumulator);
-            profiling_state->parsed_bytes = 0;
+            profiling_state->parsed_average_rate     = (U64) ((F64) profiling_state->parsed_bytes / (F64) profiling_state->parsed_time_accumulator);
+            profiling_state->parsed_bytes            = 0;
             profiling_state->parsed_time_accumulator = 0;
 
             profiling_state->stats_seconds_accumulator = 0;
@@ -1093,5 +1093,5 @@ os_main(Str8List arguments)
         profile_end_block();
     }
 
-    return(0);
+    return (0);
 }

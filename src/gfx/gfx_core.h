@@ -1,8 +1,6 @@
 #ifndef GFX_ESSENTIAL_H
 #define GFX_ESSENTIAL_H
 
-typedef struct Gfx_Context Gfx_Context;
-
 typedef enum Gfx_EventKind Gfx_EventKind;
 enum Gfx_EventKind
 {
@@ -152,23 +150,23 @@ struct Gfx_Monitor
 internal B32 gfx_key_pressed(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
 internal B32 gfx_key_released(Gfx_EventList *event_list, Gfx_Key key, B32 eat_event, Gfx_KeyModifier modifiers);
 
-internal Gfx_Context   gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title);
-internal Void          gfx_show_window(Gfx_Context *gfx);
-internal Gfx_EventList gfx_get_events(Arena *arena, Gfx_Context *gfx);
-internal Vec2F32       gfx_get_mouse_pos(Gfx_Context *gfx);
-internal Vec2U32       gfx_get_window_area(Gfx_Context *gfx);
-internal Vec2U32       gfx_get_window_client_area(Gfx_Context *gfx);
-internal Void          gfx_toggle_fullscreen(Gfx_Context *gfx);
-internal Void          gfx_swap_buffers(Gfx_Context *gfx);
-internal Vec2F32       gfx_get_dpi(Gfx_Context *ctx);
-internal Void          gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor);
-internal Void          gfx_set_window_maximized(Gfx_Context *ctx);
-internal Gfx_Monitor   gfx_monitor_from_window(Gfx_Context *ctx);
+internal Void   gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title);
+internal Void          gfx_show_window(Void);
+internal Gfx_EventList gfx_get_events(Arena *arena);
+internal Vec2F32       gfx_get_mouse_pos(Void);
+internal Vec2U32       gfx_get_window_area(Void);
+internal Vec2U32       gfx_get_window_client_area(Void);
+internal Void          gfx_toggle_fullscreen(Void);
+internal Void          gfx_swap_buffers(Void);
+internal Vec2F32       gfx_get_dpi(Void);
+internal Void          gfx_set_cursor(Gfx_Cursor cursor);
+internal Void          gfx_set_window_maximized(Void);
+internal Gfx_Monitor   gfx_monitor_from_window(Void);
 internal Vec2F32       gfx_dim_from_monitor(Gfx_Monitor monitor);
 
 internal Void gfx_set_clipboard(Str8 data);
 internal Str8 gfx_push_clipboard(Arena *arena);
 
-internal Vec2F32 gfx_scale_from_window(Gfx_Context *gfx);
+internal Vec2F32 gfx_scale_from_window(Void);
 
 #endif //GFX_ESSENTIAL_H

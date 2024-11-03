@@ -15,7 +15,7 @@ global SDL_State sdl_state;
 
 global Gfx_Key linux_sdl_to_gfx_keycode[128];
 
-internal Gfx_Context
+internal Void
 gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
     Arena_Temporary scratch = get_scratch(0, 0);
@@ -89,19 +89,16 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
     }
 
     release_scratch(scratch);
-
-    Gfx_Context gfx = {0};
-    return (gfx);
 }
 
 internal Void
-gfx_show_window(Gfx_Context *gfx)
+gfx_show_window(Void)
 {
     SDL_ShowWindow(sdl_state.window);
 }
 
 internal Gfx_EventList
-gfx_get_events(Arena *arena, Gfx_Context *gfx)
+gfx_get_events(Arena *arena)
 {
     Gfx_EventList events = {0};
 
@@ -322,7 +319,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 }
 
 internal Vec2F32
-gfx_get_mouse_pos(Gfx_Context *gfx)
+gfx_get_mouse_pos(Void)
 {
     int x = 0;
     int y = 0;
@@ -333,7 +330,7 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
 }
 
 internal Vec2U32
-gfx_get_window_area(Gfx_Context *gfx)
+gfx_get_window_area(Void)
 {
     int top = 0, left = 0, bottom = 0, right = 0;
     SDL_GetWindowBordersSize(sdl_state.window, &top, &left, &bottom, &right);
@@ -346,7 +343,7 @@ gfx_get_window_area(Gfx_Context *gfx)
 }
 
 internal Vec2U32
-gfx_get_window_client_area(Gfx_Context *gfx)
+gfx_get_window_client_area(Void)
 {
     int width  = 0;
     int height = 0;
@@ -356,7 +353,7 @@ gfx_get_window_client_area(Gfx_Context *gfx)
 }
 
 internal Void
-gfx_toggle_fullscreen(Gfx_Context *gfx)
+gfx_toggle_fullscreen(Void)
 {
     // TODO(simon): This de-synchs when fullscreening in any other way than
     // calling this functions because we cannot query the state.
@@ -365,13 +362,13 @@ gfx_toggle_fullscreen(Gfx_Context *gfx)
 }
 
 internal Void
-gfx_swap_buffers(Gfx_Context *gfx)
+gfx_swap_buffers(Void)
 {
     SDL_GL_SwapWindow(sdl_state.window);
 }
 
 internal Vec2F32
-gfx_get_dpi(Gfx_Context *ctx)
+gfx_get_dpi(Void)
 {
     Vec2F32 dpi       = {0};
     int display_index = SDL_GetWindowDisplayIndex(sdl_state.window);
@@ -380,20 +377,20 @@ gfx_get_dpi(Gfx_Context *ctx)
 }
 
 internal Void
-gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
+gfx_set_cursor(Gfx_Cursor cursor)
 {
     SDL_SetCursor(sdl_state.cursors[cursor]);
     SDL_ShowCursor(SDL_TRUE);
 }
 
 internal Void
-gfx_set_window_maximized(Gfx_Context *ctx)
+gfx_set_window_maximized(Void)
 {
     SDL_MaximizeWindow(sdl_state.window);
 }
 
 internal Gfx_Monitor
-gfx_monitor_from_window(Gfx_Context *ctx)
+gfx_monitor_from_window(Void)
 {
     Gfx_Monitor result = {0};
     int display_index  = SDL_GetWindowDisplayIndex(sdl_state.window);
@@ -413,7 +410,7 @@ gfx_dim_from_monitor(Gfx_Monitor monitor)
 }
 
 internal Vec2F32
-gfx_scale_from_window(Gfx_Context *gfx)
+gfx_scale_from_window(Void)
 {
     Vec2F32 dpi       = {0};
     int display_index = SDL_GetWindowDisplayIndex(sdl_state.window);
