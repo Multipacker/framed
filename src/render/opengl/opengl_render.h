@@ -54,20 +54,7 @@ struct OpenGL_TextureUpdate
 
 struct Render_BackendContext
 {
-    OpenGL_BatchList batches;
-    Vec2U32 client_area;
-
-    GLuint program;
-    GLuint vbo;
-    GLuint vao;
-    GLint uniform_projection_location;
-    GLint uniform_sampler_location;
-
-    OpenGL_ClipNode *clip_stack;
-
-    OpenGL_TextureUpdate *texture_update_queue;
-    U32 volatile texture_update_write_index;
-    U32 volatile texture_update_read_index;
+    U8 temp;
 };
 
 internal Render_BackendContext *render_backend_init(Render_Context *renderer);

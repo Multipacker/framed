@@ -13,6 +13,13 @@ CompileFlags:
 
 ---
 If:
+  PathMatch: src/render/opengl/.*
+
+CompileFlags:
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/log/log_inc.h, -include=src/image/image_inc.h, -include=src/meta/embed_inc.h, -include=src/render/opengl/opengl_render.h]
+
+---
+If:
   PathMatch: src/font/.*
 
 CompileFlags:
