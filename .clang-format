@@ -9,7 +9,8 @@ SpaceBeforeParensOptions:
   AfterControlStatements: true
 SpaceAfterCStyleCast: true
 AlwaysBreakAfterDefinitionReturnType: true
-ContinuationIndentWidth: 0
+ContinuationIndentWidth: 4
 BracedInitializerIndentWidth: 4
 AllowAllParametersOfDeclarationOnNextLine: false
-AlignAfterOpenBracket: true
+AlignAfterOpenBracket: BlockIndent
+AlignConsecutiveAssignments: true
