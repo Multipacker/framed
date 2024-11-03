@@ -1,12 +1,23 @@
 #include "render/opengl/opengl.h"
 
+#include <SDL2/SDL.h>
+
+typedef struct SDL_State SDL_State;
+struct SDL_State
+{
+    B32 is_fullscreen;
+    SDL_Window *window;
+    SDL_GLContext gl_context;
+    SDL_Cursor *cursors[Gfx_Cursor_COUNT];
+};
+
+global SDL_State sdl_state;
+
 global Gfx_Key linux_sdl_to_gfx_keycode[128];
 
 internal Gfx_Context
 gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 {
-    Gfx_Context gfx = {0};
-
     Arena_Temporary scratch = get_scratch(0, 0);
 
     CStr cstr_title = cstr_from_str8(scratch.arena, title);
@@ -29,14 +40,14 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
 
     if (SDL_Init(SDL_INIT_VIDEO) == 0)
     {
-        gfx.cursors[Gfx_Cursor_Arrow]    = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
-        gfx.cursors[Gfx_Cursor_Hand]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
-        gfx.cursors[Gfx_Cursor_Beam]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
-        gfx.cursors[Gfx_Cursor_SizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
-        gfx.cursors[Gfx_Cursor_SizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
-        gfx.cursors[Gfx_Cursor_SizeWE]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
-        gfx.cursors[Gfx_Cursor_SizeNS]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
-        gfx.cursors[Gfx_Cursor_SizeAll]  = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
+        sdl_state.cursors[Gfx_Cursor_Arrow]    = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_ARROW);
+        sdl_state.cursors[Gfx_Cursor_Hand]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_HAND);
+        sdl_state.cursors[Gfx_Cursor_Beam]     = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_IBEAM);
+        sdl_state.cursors[Gfx_Cursor_SizeNWSE] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENWSE);
+        sdl_state.cursors[Gfx_Cursor_SizeNESW] = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENESW);
+        sdl_state.cursors[Gfx_Cursor_SizeWE]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEWE);
+        sdl_state.cursors[Gfx_Cursor_SizeNS]   = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZENS);
+        sdl_state.cursors[Gfx_Cursor_SizeAll]  = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_SIZEALL);
 
         SDL_GL_SetAttribute(SDL_GL_RED_SIZE, 8);
         SDL_GL_SetAttribute(SDL_GL_GREEN_SIZE, 8);
@@ -47,19 +58,21 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 5);
         SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 
-        gfx.window = SDL_CreateWindow(
+        sdl_state.window = SDL_CreateWindow(
             cstr_title,
             (int) x, (int) y,
             (int) width, (int) height,
             SDL_WINDOW_HIDDEN | SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI
         );
 
-        if (gfx.window)
+        if (sdl_state.window)
         {
-            gfx.gl_context = SDL_GL_CreateContext(gfx.window);
-            SDL_GL_MakeCurrent(gfx.window, gfx.gl_context);
+            sdl_state.gl_context = SDL_GL_CreateContext(sdl_state.window);
+            SDL_GL_MakeCurrent(sdl_state.window, sdl_state.gl_context);
 
-#define X(type, name) name = (type) SDL_GL_GetProcAddress(#name); assert(name);
+#define X(type, name)                           \
+    name = (type) SDL_GL_GetProcAddress(#name); \
+    assert(name);
             GL_LINUX_FUNCTION(X)
             GL_FUNCTIONS(X)
 #undef X
@@ -76,13 +89,15 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
     }
 
     release_scratch(scratch);
-    return(gfx);
+
+    Gfx_Context gfx = {0};
+    return (gfx);
 }
 
 internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
-    SDL_ShowWindow(gfx->window);
+    SDL_ShowWindow(sdl_state.window);
 }
 
 internal Gfx_EventList
@@ -99,7 +114,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
             case SDL_QUIT:
             {
                 event->kind = Gfx_EventKind_Quit;
-            } break;
+            }
+            break;
 
             case SDL_WINDOWEVENT:
             {
@@ -107,7 +123,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                 {
                     event->kind = Gfx_EventKind_Resize;
                 }
-            } break;
+            }
+            break;
 
             case SDL_KEYDOWN:
             case SDL_KEYUP:
@@ -125,22 +142,54 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 
                 switch (sdl_keycode)
                 {
-                    case SDLK_PAGEUP:   event->key = Gfx_Key_PageUp;   break;
-                    case SDLK_PAGEDOWN: event->key = Gfx_Key_PageDown; break;
-                    case SDLK_LEFT:     event->key = Gfx_Key_Left;     break;
-                    case SDLK_RIGHT:    event->key = Gfx_Key_Right;    break;
-                    case SDLK_UP:       event->key = Gfx_Key_Up;       break;
-                    case SDLK_DOWN:     event->key = Gfx_Key_Down;     break;
-                    case SDLK_LSHIFT:   event->key = Gfx_Key_Shift;    break;
-                    case SDLK_RSHIFT:   event->key = Gfx_Key_Shift;    break;
-                    case SDLK_END:      event->key = Gfx_Key_End;      break;
-                    case SDLK_HOME:     event->key = Gfx_Key_Home;     break;
-                    case SDLK_LCTRL:    event->key = Gfx_Key_Control;  break;
-                    case SDLK_RCTRL:    event->key = Gfx_Key_Control;  break;
-                    case SDLK_LALT:     event->key = Gfx_Key_Alt;      break;
-                    case SDLK_RALT:     event->key = Gfx_Key_Alt;      break;
-                    case SDLK_LGUI:     event->key = Gfx_Key_OS;       break;
-                    case SDLK_RGUI:     event->key = Gfx_Key_OS;       break;
+                    case SDLK_PAGEUP:
+                        event->key = Gfx_Key_PageUp;
+                        break;
+                    case SDLK_PAGEDOWN:
+                        event->key = Gfx_Key_PageDown;
+                        break;
+                    case SDLK_LEFT:
+                        event->key = Gfx_Key_Left;
+                        break;
+                    case SDLK_RIGHT:
+                        event->key = Gfx_Key_Right;
+                        break;
+                    case SDLK_UP:
+                        event->key = Gfx_Key_Up;
+                        break;
+                    case SDLK_DOWN:
+                        event->key = Gfx_Key_Down;
+                        break;
+                    case SDLK_LSHIFT:
+                        event->key = Gfx_Key_Shift;
+                        break;
+                    case SDLK_RSHIFT:
+                        event->key = Gfx_Key_Shift;
+                        break;
+                    case SDLK_END:
+                        event->key = Gfx_Key_End;
+                        break;
+                    case SDLK_HOME:
+                        event->key = Gfx_Key_Home;
+                        break;
+                    case SDLK_LCTRL:
+                        event->key = Gfx_Key_Control;
+                        break;
+                    case SDLK_RCTRL:
+                        event->key = Gfx_Key_Control;
+                        break;
+                    case SDLK_LALT:
+                        event->key = Gfx_Key_Alt;
+                        break;
+                    case SDLK_RALT:
+                        event->key = Gfx_Key_Alt;
+                        break;
+                    case SDLK_LGUI:
+                        event->key = Gfx_Key_OS;
+                        break;
+                    case SDLK_RGUI:
+                        event->key = Gfx_Key_OS;
+                        break;
                     default:
                     {
                         if (SDLK_F1 <= sdl_keycode && sdl_keycode <= SDLK_F12)
@@ -151,7 +200,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                         {
                             event->key = linux_sdl_to_gfx_keycode[sdl_keycode];
                         }
-                    } break;
+                    }
+                    break;
                 }
 
                 if (event->key == Gfx_Key_Null)
@@ -161,21 +211,23 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                 else
                 {
                     SDL_Keymod modifiers = SDL_GetModState();
-                    event->key_modifiers |= (modifiers & KMOD_SHIFT ? Gfx_KeyModifier_Shift   : 0);
-                    event->key_modifiers |= (modifiers & KMOD_CTRL  ? Gfx_KeyModifier_Control : 0);
+                    event->key_modifiers |= (modifiers & KMOD_SHIFT ? Gfx_KeyModifier_Shift : 0);
+                    event->key_modifiers |= (modifiers & KMOD_CTRL ? Gfx_KeyModifier_Control : 0);
                 }
-            } break;
+            }
+            break;
 
             // TODO(simon): We might want to use this event for candidate text.
             case SDL_TEXTEDITING:
             {
-            } break;
+            }
+            break;
 
             case SDL_TEXTINPUT:
             {
                 Str8 input = str8_cstr(sdl_event.text.text);
-                U8 *ptr = input.data;
-                U8 *opl = input.data + input.size;
+                U8 *ptr    = input.data;
+                U8 *opl    = input.data + input.size;
 
                 while (ptr < opl)
                 {
@@ -190,7 +242,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
 
                     event = push_struct_zero(arena, Gfx_Event);
                 }
-            } break;
+            }
+            break;
 
             case SDL_MOUSEBUTTONDOWN:
             case SDL_MOUSEBUTTONUP:
@@ -216,7 +269,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                         {
                             event->key = Gfx_Key_MouseLeftDouble;
                         }
-                    } break;
+                    }
+                    break;
                     case SDL_BUTTON_MIDDLE:
                     {
                         if (sdl_event.button.clicks == 1)
@@ -227,7 +281,8 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                         {
                             event->key = Gfx_Key_MouseMiddleDouble;
                         }
-                    } break;
+                    }
+                    break;
                     case SDL_BUTTON_RIGHT:
                     {
                         if (sdl_event.button.clicks == 1)
@@ -238,18 +293,22 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
                         {
                             event->key = Gfx_Key_MouseRightDouble;
                         }
-                    } break;
+                    }
+                    break;
                     default:
                     {
-                    } break;
+                    }
+                    break;
                 }
-            } break;
+            }
+            break;
 
             case SDL_MOUSEWHEEL:
             {
                 event->kind   = Gfx_EventKind_Scroll;
                 event->scroll = v2f32(-sdl_event.wheel.preciseX, sdl_event.wheel.preciseY);
-            } break;
+            }
+            break;
         }
 
         if (event->kind != Gfx_EventKind_Null)
@@ -259,7 +318,7 @@ gfx_get_events(Arena *arena, Gfx_Context *gfx)
         }
     }
 
-    return(events);
+    return (events);
 }
 
 internal Vec2F32
@@ -270,20 +329,20 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
     SDL_GetMouseState(&x, &y);
 
     Vec2F32 result = v2f32((F32) x, (F32) y);
-    return(result);
+    return (result);
 }
 
 internal Vec2U32
 gfx_get_window_area(Gfx_Context *gfx)
 {
     int top = 0, left = 0, bottom = 0, right = 0;
-    SDL_GetWindowBordersSize(gfx->window, &top, &left, &bottom, &right);
+    SDL_GetWindowBordersSize(sdl_state.window, &top, &left, &bottom, &right);
 
     int width = 0, height = 0;
-    SDL_GetWindowSize(gfx->window, &width, &height);
+    SDL_GetWindowSize(sdl_state.window, &width, &height);
 
     Vec2U32 result = v2u32((U32) (left + width + right), (U32) (top + height + bottom));
-    return(result);
+    return (result);
 }
 
 internal Vec2U32
@@ -291,9 +350,9 @@ gfx_get_window_client_area(Gfx_Context *gfx)
 {
     int width  = 0;
     int height = 0;
-    SDL_GL_GetDrawableSize(gfx->window, &width, &height);
+    SDL_GL_GetDrawableSize(sdl_state.window, &width, &height);
     Vec2U32 result = v2u32((U32) width, (U32) height);
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -301,67 +360,67 @@ gfx_toggle_fullscreen(Gfx_Context *gfx)
 {
     // TODO(simon): This de-synchs when fullscreening in any other way than
     // calling this functions because we cannot query the state.
-    gfx->is_fullscreen = !gfx->is_fullscreen;
-    SDL_SetWindowFullscreen(gfx->window, gfx->is_fullscreen);
+    sdl_state.is_fullscreen = !sdl_state.is_fullscreen;
+    SDL_SetWindowFullscreen(sdl_state.window, sdl_state.is_fullscreen);
 }
 
 internal Void
 gfx_swap_buffers(Gfx_Context *gfx)
 {
-    SDL_GL_SwapWindow(gfx->window);
+    SDL_GL_SwapWindow(sdl_state.window);
 }
 
 internal Vec2F32
 gfx_get_dpi(Gfx_Context *ctx)
 {
-    Vec2F32 dpi = {0};
-    int display_index = SDL_GetWindowDisplayIndex(ctx->window);
+    Vec2F32 dpi       = {0};
+    int display_index = SDL_GetWindowDisplayIndex(sdl_state.window);
     SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
-    return(dpi);
+    return (dpi);
 }
 
 internal Void
 gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 {
-    SDL_SetCursor(ctx->cursors[cursor]);
+    SDL_SetCursor(sdl_state.cursors[cursor]);
     SDL_ShowCursor(SDL_TRUE);
 }
 
 internal Void
 gfx_set_window_maximized(Gfx_Context *ctx)
 {
-    SDL_MaximizeWindow(ctx->window);
+    SDL_MaximizeWindow(sdl_state.window);
 }
 
 internal Gfx_Monitor
 gfx_monitor_from_window(Gfx_Context *ctx)
 {
     Gfx_Monitor result = {0};
-    int display_index = SDL_GetWindowDisplayIndex(ctx->window);
-    result.u64[0] = (U64) display_index;
-    return(result);
+    int display_index  = SDL_GetWindowDisplayIndex(sdl_state.window);
+    result.u64[0]      = (U64) display_index;
+    return (result);
 }
 
 internal Vec2F32
 gfx_dim_from_monitor(Gfx_Monitor monitor)
 {
-    Vec2F32 result = {0};
+    Vec2F32 result               = {0};
     SDL_DisplayMode display_mode = {0};
     SDL_GetCurrentDisplayMode((int) monitor.u64[0], &display_mode);
     result.x = (F32) display_mode.w;
     result.y = (F32) display_mode.h;
-    return(result);
+    return (result);
 }
 
 internal Vec2F32
 gfx_scale_from_window(Gfx_Context *gfx)
 {
-    Vec2F32 dpi = {0};
-    int display_index = SDL_GetWindowDisplayIndex(gfx->window);
+    Vec2F32 dpi       = {0};
+    int display_index = SDL_GetWindowDisplayIndex(sdl_state.window);
     SDL_GetDisplayDPI(display_index, 0, &dpi.x, &dpi.y);
 
     Vec2F32 result = v2f32(dpi.x / 96.0f, dpi.y / 96.0f);
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -378,7 +437,7 @@ internal Str8
 gfx_push_clipboard(Arena *arena)
 {
     CStr clipboard = SDL_GetClipboardText();
-    Str8 result = str8_copy(arena, str8_cstr(clipboard));
+    Str8 result    = str8_copy(arena, str8_cstr(clipboard));
     SDL_free(clipboard);
-    return(result);
+    return (result);
 }
