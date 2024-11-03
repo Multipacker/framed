@@ -223,7 +223,6 @@ render_backend_init(Render_Context *renderer)
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 
-    // NOTE(simon): The alignment is needed for atomic access within the struct.
     opengl_state.texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 
     glCreateBuffers(1, &opengl_state.vbo);
