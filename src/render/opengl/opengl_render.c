@@ -112,6 +112,23 @@ opengl_debug_output(GLenum source, GLenum type, U32 id, GLenum severity, GLsizei
 }
 
 internal GLuint
+opengl_texture_id_from_handle(Render_Texture handle)
+{
+    GLuint result = handle.u64[0];
+    return result;
+}
+
+internal Vec2S32
+opengl_texture_size_from_handle(Render_Texture handle)
+{
+    Vec2S32 result = v2s32(
+        handle.u64[1],
+        handle.u64[2]
+    );
+    return result;
+}
+
+internal GLuint
 opengl_create_shader(Str8 source, GLenum shader_type)
 {
     GLuint shader           = glCreateShader(shader_type);
@@ -201,7 +218,6 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 internal Render_BackendContext *
 render_backend_init(Render_Context *renderer)
 {
-
 #if !BUILD_MODE_RELEASE
     glDebugMessageCallback(&opengl_debug_output, NULL);
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
@@ -320,10 +336,10 @@ render_backend_end(Render_Context *renderer)
             (GLsizei) (clip_rect.max.y - clip_rect.min.y)
         );
 
-        if (batch->texture.u64[0])
+        GLuint texture = opengl_texture_id_from_handle(batch->texture);
+        if (texture)
         {
-            GLuint opengl_texture = (GLuint) batch->texture.u64[0];
-            glBindTextureUnit(0, opengl_texture);
+            glBindTextureUnit(0, texture);
         }
 
         glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->size);
@@ -547,19 +563,20 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 widt
 }
 
 internal Void
-render_destroy_texture(Render_Context *renderer, Render_Texture texture)
+render_destroy_texture(Render_Context *renderer, Render_Texture handle)
 {
-    if (texture.u64[0])
+    GLuint texture = opengl_texture_id_from_handle(handle);
+    if (texture)
     {
-        GLuint opengl_texture = (GLuint) texture.u64[0];
-        glDeleteTextures(1, &opengl_texture);
+        glDeleteTextures(1, &texture);
     }
 }
 
 internal Void
-render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
+render_update_texture(Render_Context *renderer, Render_Texture handle, Void *memory, U32 width, U32 height, U32 offset)
 {
-    if (texture.u64[0])
+    GLuint texture = opengl_texture_id_from_handle(handle);
+    if (texture)
     {
         U32 queue_index = u32_atomic_add(&opengl_state.texture_update_write_index, 1);
         while (queue_index - opengl_state.texture_update_read_index >= OPENGL_TEXTURE_UPDATE_QUEUE_SIZE)
@@ -570,9 +587,11 @@ render_update_texture(Render_Context *renderer, Render_Texture texture, Void *me
 
         OpenGL_TextureUpdate *update = &opengl_state.texture_update_queue[queue_index & OPENGL_TEXTURE_UPDATE_QUEUE_MASK];
 
-        update->texture = (GLuint) texture.u64[0];
-        update->x       = (GLint) (offset % texture.u64[1]);
-        update->y       = (GLint) (offset / texture.u64[1]);
+        Vec2S32 size = opengl_texture_size_from_handle(handle);
+
+        update->texture = texture;
+        update->x       = (GLint) (offset % size.width);
+        update->y       = (GLint) (offset / size.width);
         update->width   = (GLsizei) width;
         update->height  = (GLsizei) height;
         update->data    = memory;
