@@ -561,12 +561,12 @@ framed__socket_send(void)
 {
     Framed_ClientState *framed = &global_framed_state;
     int linux_socket = (int) framed->socket.u64[0];
-    Framed_U16 *packet_size = (Framed_U16 *)framed->buffer;
-    *packet_size = (Framed_U16)framed->buffer_pos;
+    Framed_U16 *packet_size = (Framed_U16 *)framed->buffer[framed->buffer_send_index];
+    *packet_size = (Framed_U16)framed->buffer_pos[framed->buffer_send_index];
     ssize_t error = 0;
     do
     {
-        error = send(linux_socket, framed->buffer, (size_t) framed->buffer_pos, 0);
+        error = send(linux_socket, framed->buffer[framed->buffer_send_index], (size_t) framed->buffer_pos[framed->buffer_send_index], 0);
     } while (error == -1 && (errno == EAGAIN || errno == EWOULDBLOCK));
 }
 

@@ -270,7 +270,6 @@ zone_node_flatten(Arena *arena, ZoneNode *root)
                 map_entry->hash_next = new_map[slot_index];
                 new_map[slot_index] = map_entry;
                 map_entry->ms_min_elapsed_exc = (F64)U64_MAX;
-                map_entry = map_entry;
                 dll_push_back(root->first, root->last, map_entry);
                 root->children_count++;
                 map_entry->parent = root;

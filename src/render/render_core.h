@@ -108,16 +108,25 @@ global Render_RectInstance render_rect_instance_null;
 #define render_rect(renderer, min, max, ...) render_rect_(renderer, min, max, &(Render_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
 #define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Render_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
+internal Render_RectInstance *render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params);
+
 internal Render_TextureSlice render_slice_from_texture(Render_Texture texture, RectF32 uv);
 internal Render_TextureSlice render_slice_from_texture_region(Render_Texture texture, RectU32 region);
 internal Render_TextureSlice render_create_texture_slice(Render_Context *renderer, Str8 path);
+internal Render_Texture      render_create_texture(Render_Context *renderer, Str8 path);
+internal Render_Texture      render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space);
+internal Void render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
 internal F32 f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
 internal F32 f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 internal Render_RenderStats render_get_stats(Render_Context *renderer);
+internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
 internal Render_Context *render_init(Gfx_Context *gfx);
 internal Void render_begin(Render_Context *renderer);
 internal Void render_end(Render_Context *renderer);
+
+internal Void render_backend_begin(Render_Context *renderer);
+internal Void render_backend_end(Render_Context *renderer);
 
 #endif // RENDER_CORE_H
