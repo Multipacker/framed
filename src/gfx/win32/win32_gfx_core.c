@@ -1,5 +1,3 @@
-global volatile Win32_Gfx_State win32_gfx_state;
-
 internal LRESULT CALLBACK
 win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 {
@@ -30,10 +28,10 @@ win32_window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
         if (message == WM_SETCURSOR)
         {
             RECT rect = {0};
-            GetClientRect(win32_gfx_state.context.hwnd, &rect);
+            GetClientRect(win32_gfx_state.hwnd, &rect);
             POINT point = {0};
             GetCursorPos(&point);
-            ScreenToClient(win32_gfx_state.context.hwnd, &point);
+            ScreenToClient(win32_gfx_state.hwnd, &point);
             B32 mouse_is_hover_window =
                 point.x >= rect.left && point.x < rect.right &&
                 point.y >= rect.top  && point.y < rect.bottom;
@@ -91,7 +89,6 @@ win32_gfx_startup_thread(Void *data)
 
     ThreadContext *context = thread_ctx_init(str8_lit("Events"));
 
-    Gfx_Context result = {0};
     Arena_Temporary scratch = get_scratch(0, 0);
 
     win32_gfx_state.cursors[Gfx_Cursor_Arrow]    = LoadCursor(0, IDC_ARROW);
@@ -120,16 +117,16 @@ win32_gfx_startup_thread(Void *data)
         DWORD create_window_flags = WS_OVERLAPPEDWINDOW;
 
         CStr16 title_s16 = cstr16_from_str8(scratch.arena, window_creation_data->title);
-        result.hwnd = CreateWindow(
+        win32_gfx_state.hwnd = CreateWindow(
                                    window_class.lpszClassName, (LPCWSTR) title_s16,
                                    create_window_flags,
                                    window_creation_data->x, window_creation_data->y,
                                    window_creation_data->width, window_creation_data->height,
                                    0, 0, instance, 0
                                    );
-        if (result.hwnd)
+        if (win32_gfx_state.hwnd)
         {
-            result.hdc = GetDC(result.hwnd);
+            win32_gfx_state.hdc = GetDC(win32_gfx_state.hwnd);
         }
         else
         {
@@ -144,8 +141,6 @@ win32_gfx_startup_thread(Void *data)
     release_scratch(scratch);
 
     memory_fence();
-
-    win32_gfx_state.context = result;
 
     for (MSG message; GetMessage(&message, 0, 0, 0);)
     {
@@ -162,19 +157,19 @@ gfx_init(U32 x, U32 y, U32 width, U32 height, Str8 title)
     win32_gfx_state.main_thread_id = GetThreadId(GetCurrentThread());
     Win32_WindowCreationData data = {x, y, width, height, title};
     CreateThread(0, 0, win32_gfx_startup_thread, &data, 0, 0);
-    while (!win32_gfx_state.context.hwnd && !win32_gfx_state.context.hdc);
-    Gfx_Context result = win32_gfx_state.context;
+    while (!win32_gfx_state.hwnd && !win32_gfx_state.hdc);
 #if defined(RENDERER_OPENGL)
     win32_init_opengl(&result);
 #endif
+    Gfx_Context result = { 0 };
     return(result);
 }
 
 internal Void
 gfx_show_window(Gfx_Context *gfx)
 {
-    ShowWindow(gfx->hwnd, SW_SHOW);
-    UpdateWindow(gfx->hwnd);
+    ShowWindow(win32_gfx_state.hwnd, SW_SHOW);
+    UpdateWindow(win32_gfx_state.hwnd);
 }
 
 internal Gfx_EventList
@@ -347,7 +342,7 @@ gfx_get_mouse_pos(Gfx_Context *gfx)
     Vec2F32 result = {0};
     POINT point = {0};
     GetCursorPos(&point);
-    ScreenToClient(gfx->hwnd, &point);
+    ScreenToClient(win32_gfx_state.hwnd, &point);
     result.x = (F32) point.x;
     result.y = (F32) point.y;
     return(result);
@@ -358,7 +353,7 @@ gfx_get_window_area(Gfx_Context *gfx)
 {
     Vec2U32 result = {0};
     RECT rect = {0};
-    GetWindowRect(gfx->hwnd, &rect);
+    GetWindowRect(win32_gfx_state.hwnd, &rect);
     result.x = rect.right - rect.left;
     result.y = rect.bottom - rect.top;
     return(result);
@@ -369,7 +364,7 @@ gfx_get_window_client_area(Gfx_Context *gfx)
 {
     Vec2U32 result = {0};
     RECT rect = {0};
-    GetClientRect(gfx->hwnd, &rect);
+    GetClientRect(win32_gfx_state.hwnd, &rect);
     result.x = rect.right - rect.left;
     result.y = rect.bottom - rect.top;
     return(result);
@@ -379,16 +374,16 @@ internal Void
 gfx_toggle_fullscreen(Gfx_Context *context)
 {
     local WINDOWPLACEMENT prev_placement = {sizeof(prev_placement)};
-    DWORD window_style = GetWindowLong(context->hwnd, GWL_STYLE);
+    DWORD window_style = GetWindowLong(win32_gfx_state.hwnd, GWL_STYLE);
     if (window_style & WS_OVERLAPPEDWINDOW)
     {
         MONITORINFO monitor_info = {sizeof(monitor_info)};
-        if (GetWindowPlacement(context->hwnd, &prev_placement) &&
-            GetMonitorInfo(MonitorFromWindow(context->hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info))
+        if (GetWindowPlacement(win32_gfx_state.hwnd, &prev_placement) &&
+            GetMonitorInfo(MonitorFromWindow(win32_gfx_state.hwnd, MONITOR_DEFAULTTOPRIMARY), &monitor_info))
         {
-            SetWindowLong(context->hwnd, GWL_STYLE, window_style & ~WS_OVERLAPPEDWINDOW);
+            SetWindowLong(win32_gfx_state.hwnd, GWL_STYLE, window_style & ~WS_OVERLAPPEDWINDOW);
 
-            SetWindowPos(context->hwnd, HWND_TOP,
+            SetWindowPos(win32_gfx_state.hwnd, HWND_TOP,
                          monitor_info.rcMonitor.left, monitor_info.rcMonitor.top,
                          monitor_info.rcMonitor.right - monitor_info.rcMonitor.left,
                          monitor_info.rcMonitor.bottom - monitor_info.rcMonitor.top,
@@ -397,9 +392,9 @@ gfx_toggle_fullscreen(Gfx_Context *context)
     }
     else
     {
-        SetWindowLong(context->hwnd, GWL_STYLE, window_style | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(context->hwnd, &prev_placement);
-        SetWindowPos(context->hwnd, NULL, 0, 0, 0, 0,
+        SetWindowLong(win32_gfx_state.hwnd, GWL_STYLE, window_style | WS_OVERLAPPEDWINDOW);
+        SetWindowPlacement(win32_gfx_state.hwnd, &prev_placement);
+        SetWindowPos(win32_gfx_state.hwnd, NULL, 0, 0, 0, 0,
                      SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
                      SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
     }
@@ -408,7 +403,7 @@ gfx_toggle_fullscreen(Gfx_Context *context)
 internal Vec2F32
 gfx_get_dpi(Gfx_Context *gfx)
 {
-    UINT dpi = GetDpiForWindow(gfx->hwnd);
+    UINT dpi = GetDpiForWindow(win32_gfx_state.hwnd);
     Vec2F32 result;
     result.x = (F32) dpi;
     result.y = (F32) dpi;
@@ -422,7 +417,7 @@ gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
     if (!win32_gfx_state.resizing && win32_gfx_state.cursor != win32_cursor)
     {
         win32_gfx_state.cursor = win32_cursor;
-        PostMessage(ctx->hwnd, WM_SETCURSOR, 0, 0);
+        PostMessage(win32_gfx_state.hwnd, WM_SETCURSOR, 0, 0);
         POINT p = {0};
         GetCursorPos(&p);
         SetCursorPos(p.x, p.y);
@@ -432,14 +427,14 @@ gfx_set_cursor(Gfx_Context *ctx, Gfx_Cursor cursor)
 internal void
 gfx_set_window_maximized(Gfx_Context *ctx)
 {
-    ShowWindow(ctx->hwnd, SW_MAXIMIZE);
+    ShowWindow(win32_gfx_state.hwnd, SW_MAXIMIZE);
 }
 
 internal Gfx_Monitor
 gfx_monitor_from_window(Gfx_Context *ctx)
 {
     Gfx_Monitor result = {0};
-    result.u64[0] = int_from_ptr(MonitorFromWindow(ctx->hwnd, MONITOR_DEFAULTTOPRIMARY));
+    result.u64[0] = int_from_ptr(MonitorFromWindow(win32_gfx_state.hwnd, MONITOR_DEFAULTTOPRIMARY));
     return(result);
 }
 
@@ -482,7 +477,7 @@ internal Vec2F32
 gfx_scale_from_window(Gfx_Context *gfx)
 {
     Vec2F32 result = {1, 1};
-    UINT dpi_for_window = GetDpiForWindow(gfx->hwnd);
+    UINT dpi_for_window = GetDpiForWindow(win32_gfx_state.hwnd);
     if (dpi_for_window)
     {
         result.x = (F32)dpi_for_window / 96.0f;

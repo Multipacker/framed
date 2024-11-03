@@ -152,10 +152,10 @@ render_backend_init(Render_Context *renderer)
             .SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD,
         };
 
-        hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*) backend->device, gfx->hwnd, &desc, 0, 0, &backend->swap_chain);
+        hr = IDXGIFactory2_CreateSwapChainForHwnd(factory, (IUnknown*) backend->device, win32_gfx_state.hwnd, &desc, 0, 0, &backend->swap_chain);
         assert_hr(hr);
 
-        IDXGIFactory_MakeWindowAssociation(factory, gfx->hwnd, DXGI_MWA_NO_ALT_ENTER);
+        IDXGIFactory_MakeWindowAssociation(factory, win32_gfx_state.hwnd, DXGI_MWA_NO_ALT_ENTER);
 
         IDXGIFactory2_Release(factory);
         IDXGIAdapter_Release(dxgi_adapter);
