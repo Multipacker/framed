@@ -138,3 +138,34 @@ render_end(Render_Context *renderer)
     arena_pop_to(renderer->frame_arena, 0);
     profile_end_function();
 }
+
+internal Render_Texture
+render_create_texture(Render_Context *renderer, Str8 path)
+{
+    Render_Texture result = {0};
+    Str8 contents         = {0};
+
+    Arena_Temporary scratch = get_scratch(0, 0);
+
+    if (os_file_read(scratch.arena, path, &contents))
+    {
+        Image image = {0};
+        if (image_load(scratch.arena, contents, &image))
+        {
+            result = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
+        }
+        else
+        {
+            // TODO(simon): Could not load image data.
+            log_error("Could not load image '%" PRISTR8 "'", str8_expand(path));
+        }
+    }
+    else
+    {
+        // TODO(simon): Could not read file.
+        log_error("Could not load image '%" PRISTR8 "'", str8_expand(path));
+    }
+
+    release_scratch(scratch);
+    return (result);
+}

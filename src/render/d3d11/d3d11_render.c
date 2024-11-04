@@ -119,7 +119,7 @@ d3d11_load_shaders(Void)
 internal Void
 render_backend_init(Render_Context *renderer)
 {
-    d3d11_state.texture_update_queue  = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
+    d3d11_state.texture_update_queue = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
 
     HRESULT hr;
 
@@ -727,32 +727,6 @@ render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 wi
     result.u64[1] = (U64) width;
     result.u64[2] = (U64) height;
     result.u64[3] = int_from_ptr(texture);
-    return (result);
-}
-
-internal Render_Texture
-render_create_texture(Render_Context *renderer, Str8 path)
-{
-    Render_Texture result   = {0};
-    Str8 file               = {0};
-    Arena_Temporary scratch = get_scratch(0, 0);
-    if (os_file_read(scratch.arena, path, &file))
-    {
-        Image image = {0};
-        if (image_load(scratch.arena, file, &image))
-        {
-            result = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
-        }
-        else
-        {
-            // TODO(hampus): Logging
-        }
-    }
-    else
-    {
-        // TODO(hampus): Logging
-    }
-    release_scratch(scratch);
     return (result);
 }
 

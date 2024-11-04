@@ -112,11 +112,13 @@ internal Render_TextureSlice render_slice_from_texture_region(Render_Texture tex
 internal Render_TextureSlice render_create_texture_slice(Render_Context *renderer, Str8 path);
 internal Render_Texture      render_create_texture(Render_Context *renderer, Str8 path);
 internal Render_Texture      render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space);
-internal Void render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
-internal F32 f32_srgb_to_linear(F32 value);
+internal Void                render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
+
+internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
-internal F32 f32_linear_to_srgb(F32 value);
+internal F32     f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
+
 internal Render_RenderStats render_get_stats(Render_Context *renderer);
 internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
 internal Render_Context *render_init(Void);
