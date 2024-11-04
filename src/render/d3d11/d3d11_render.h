@@ -70,37 +70,7 @@ struct D3D11_TextureUpdate
 typedef struct Render_BackendContext Render_BackendContext;
 struct Render_BackendContext
 {
-    D3D11_BatchList batch_list;
-
-    D3D11_ClipRectStack clip_rect_stack;
-
-    Render_Texture white_texture;
-
-    ID3D11Device *device;
-    ID3D11DeviceContext *context;
-    IDXGISwapChain1 *swap_chain;
-
-    ID3D11Buffer *vertex_buffer;
-    ID3D11Buffer *uniform_buffer;
-
-    ID3D11InputLayout *input_layout;
-    ID3D11VertexShader *vertex_shader;
-    ID3D11PixelShader *pixel_shader;
-
-    ID3D11BlendState *blend_state;
-    ID3D11SamplerState *sampler;
-    ID3D11RasterizerState *rasterizer_state;
-    ID3D11DepthStencilState *depth_state;
-
-    ID3D11RenderTargetView *render_target_view;
-    ID3D11DepthStencilView *depth_stencil_view;
-
-    DWORD current_width;
-    DWORD current_height;
-
-    D3D11_TextureUpdate *texture_update_queue;
-    U32 volatile texture_update_write_index;
-    U32 volatile texture_update_read_index;
+    U8 temp;
 };
 
 internal Render_BackendContext *render_backend_init(Render_Context *renderer);
