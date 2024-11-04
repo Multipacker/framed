@@ -114,16 +114,16 @@ opengl_debug_output(GLenum source, GLenum type, U32 id, GLenum severity, GLsizei
 internal GLuint
 opengl_texture_id_from_handle(Render_Texture handle)
 {
-    GLuint result = handle.u64[0];
+    GLuint result = (GLuint) handle.u64[0];
     return result;
 }
 
-internal Vec2S32
+internal Vec2U32
 opengl_texture_size_from_handle(Render_Texture handle)
 {
-    Vec2S32 result = v2s32(
-        handle.u64[1],
-        handle.u64[2]
+    Vec2U32 result = v2u32(
+        (U32) handle.u64[1],
+        (U32) handle.u64[2]
     );
     return result;
 }
@@ -584,7 +584,7 @@ render_update_texture(Render_Context *renderer, Render_Texture handle, Void *mem
 
         OpenGL_TextureUpdate *update = &opengl_state.texture_update_queue[queue_index & OPENGL_TEXTURE_UPDATE_QUEUE_MASK];
 
-        Vec2S32 size = opengl_texture_size_from_handle(handle);
+        Vec2U32 size = opengl_texture_size_from_handle(handle);
 
         update->texture = texture;
         update->x       = (GLint) (offset % size.width);
