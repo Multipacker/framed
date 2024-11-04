@@ -94,7 +94,7 @@ render_init(Void)
     Render_Context *renderer  = push_struct(arena, Render_Context);
     renderer->permanent_arena = arena;
     renderer->frame_arena     = arena_create("RenderFrame");
-    renderer->backend         = render_backend_init(renderer);
+    render_backend_init(renderer);
 
     renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
     renderer->font_cache = push_struct(arena, Render_FontCache);

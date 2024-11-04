@@ -215,7 +215,7 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
     glEnableVertexArrayAttrib(vaobj, attribindex);
 }
 
-internal Render_BackendContext *
+internal Void
 render_backend_init(Render_Context *renderer)
 {
 #if !BUILD_MODE_RELEASE
@@ -269,8 +269,6 @@ render_backend_init(Render_Context *renderer)
     glBindVertexArray(opengl_state.vao);
     glEnable(GL_BLEND);
     glBlendFuncSeparate(GL_SRC1_COLOR, GL_ONE_MINUS_SRC1_COLOR, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    return 0;
 }
 
 internal Void

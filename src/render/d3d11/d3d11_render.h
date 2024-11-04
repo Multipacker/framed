@@ -67,13 +67,7 @@ struct D3D11_TextureUpdate
     Void *data;
 };
 
-typedef struct Render_BackendContext Render_BackendContext;
-struct Render_BackendContext
-{
-    U8 temp;
-};
-
-internal Render_BackendContext *render_backend_init(Render_Context *renderer);
+internal Void render_backend_init(Render_Context *renderer);
 
 internal Void render_backend_begin(Render_Context *renderer);
 internal Void render_backend_end(Render_Context *renderer);

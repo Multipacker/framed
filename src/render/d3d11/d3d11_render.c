@@ -116,7 +116,7 @@ d3d11_load_shaders(Void)
 
 #pragma optimize("", on)
 
-internal Render_BackendContext *
+internal Void
 render_backend_init(Render_Context *renderer)
 {
     d3d11_state.texture_update_queue  = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
@@ -325,8 +325,6 @@ render_backend_init(Render_Context *renderer)
             };
         ID3D11Device_CreateDepthStencilState(d3d11_state.device, &desc, &d3d11_state.depth_state);
     }
-
-    return 0;
 }
 
 internal D3D11_Batch *

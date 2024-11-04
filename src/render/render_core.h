@@ -60,7 +60,6 @@ enum Render_TextureFilter
   Render_TextureFilter_COUNT
 };
 
-typedef struct Render_BackendContext Render_BackendContext;
 typedef struct Render_FontAtlas Render_FontAtlas;
 typedef struct Render_FontCache Render_FontCache;
 typedef struct Render_FontQueue Render_FontQueue;
@@ -78,7 +77,6 @@ struct Render_Context
   OS_Mutex font_atlas_mutex;
 
   U64 frame_index;
-  Render_BackendContext *backend;
 };
 
 typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;

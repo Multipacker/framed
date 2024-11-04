@@ -52,11 +52,6 @@ struct OpenGL_TextureUpdate
     Void *data;
 };
 
-struct Render_BackendContext
-{
-    U8 temp;
-};
-
-internal Render_BackendContext *render_backend_init(Render_Context *renderer);
+internal Void render_backend_init(Render_Context *renderer);
 
 #endif // OPENGL_RENDER_H
