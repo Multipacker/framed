@@ -105,7 +105,7 @@ internal Str8 framed_get_default_user_settings_file_path(Void);
 
 internal Str8 framed_get_next_settings_word(Str8 string, U64 *bytes_parsed);
 internal Void framed_load_user_settings_from_memory(Str8 data_string);
-internal Void framed_save_current_settings_to_file(Str8 path);
+// internal Void framed_save_current_settings_to_file(Str8 path);
 
 ////////////////////////////////
 //~ hampus: Main
