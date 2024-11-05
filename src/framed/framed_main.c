@@ -1,5 +1,3 @@
-#include "base/base_math.h"
-#include "gfx/gfx_core.h"
 #define MEMORY_DEBUG 1
 
 #include "base/base_inc.h"
@@ -787,7 +785,12 @@ os_main(Str8List arguments)
 
     UI_Context *ui = ui_init();
 
-    FUI_Panel *root_panel = 0;
+    FUI_Window *first_fui_window = 0;
+    FUI_Window *last_fui_window  = 0;
+
+    FUI_Window fui_window = {0};
+
+    dll_push_back(first_fui_window, last_fui_window, &fui_window);
 
 #if 0
     Arena *framed_ui_perm_arena = arena_create("FramedUIPerm");
@@ -950,12 +953,6 @@ os_main(Str8List arguments)
         ////////////////////////////////
         //- hampus: UI pass
 
-        render_begin(renderer);
-
-        ui_begin(ui, &events, renderer, dt);
-        ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
-        // ui_push_font_size(framed_ui_state->settings.font_size);
-
         framed_state->popup_message(framed_state->popup_string);
 #if 0
         //- hampus: Menu bar
@@ -1030,63 +1027,54 @@ os_main(Str8List arguments)
             }
         }
 #endif
-        Vec2U32 window_client_area_px = gfx_get_window_client_area(gfx);
-
-        RectF32 nav_bar_rect_px     = {0};
-        nav_bar_rect_px.y1          = ui_em(2, 1).value;
-        nav_bar_rect_px.x1          = window_client_area_px.x;
-        Vec2F32 nav_bar_rect_dim_px = rectf32_dim(nav_bar_rect_px);
-
-        ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
-        ui_next_width(ui_pixels(nav_bar_rect_dim_px.x, 1));
-        ui_next_height(ui_pixels(nav_bar_rect_dim_px.y, 1));
-        ui_corner_radius(ui_top_font_line_height() * 0.1f)
-            ui_row()
+        for (FUI_Window *window = first_fui_window; window != 0; window = window->next)
         {
+            render_begin(renderer);
 
-        for(FUI_Panel *panel = root_panel; panel != 0; panel = fui_panel_rec_depth_first_pre_order(panel).next)
-        {
+            ui_begin(ui, &events, renderer, dt);
+            ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
 
-        }
 
-#if 0
-            UI_Comm comm = ui_button(str8_lit("View"));
-            if (comm.clicked)
+            Vec2U32 window_client_area_px = gfx_get_window_client_area(&gfx);
+
+            RectF32 nav_bar_rect_px     = {0};
+            nav_bar_rect_px.y1          = ui_em(1, 1).value;
+            nav_bar_rect_px.x1          = (F32) window_client_area_px.x;
+            Vec2F32 nav_bar_rect_dim_px = rectf32_dim(nav_bar_rect_px);
+            ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
+            ui_next_width(ui_pixels(nav_bar_rect_dim_px.x, 1));
+            ui_next_height(ui_pixels(nav_bar_rect_dim_px.y, 1));
+            ui_corner_radius(ui_top_font_line_height() * 0.1f)
+                ui_row()
             {
-                ui_ctx_menu_open(comm.box->key, v2f32(0, 0), view_dropdown_key);
+                ui_button(str8_lit("Nav bar button"));
             }
-#endif
+
+            for (FUI_Panel *panel = window->root_panel; panel != 0; panel = fui_panel_rec_depth_first_pre_order(panel).next)
+            {
+            }
+
+            Str8 status_text = str8_lit("Not connected");
+            if (net_socket_connection_is_alive(profiling_state->client_socket))
+            {
+                ui_next_color(v4f32(0, 0.3f, 0, 1));
+                status_text = str8_lit("Connected");
+            }
+            else
+            {
+                ui_next_color(v4f32(0.8f, 0.3f, 0, 1));
+            }
+            ui_next_corner_radius(0);
+            ui_next_width(ui_pct(1, 1));
+            ui_next_height(ui_em(1.2f, 1));
+            ui_next_text_align(UI_TextAlign_Left);
+            UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
+            ui_box_equip_display_string(status_bar_box, status_text);
+
+            ui_end();
+
+            render_end(renderer);
         }
-
-        //- hampus: Update panels
-
-        //        framed_ui_update(renderer, &events);
-
-        //- hampus: Status bar
-
-        Str8 status_text = str8_lit("Not connected");
-        if (net_socket_connection_is_alive(profiling_state->client_socket))
-        {
-            ui_next_color(v4f32(0, 0.3f, 0, 1));
-            status_text = str8_lit("Connected");
-        }
-        else
-        {
-            ui_next_color(v4f32(0.8f, 0.3f, 0, 1));
-        }
-        ui_next_corner_radius(0);
-        ui_next_width(ui_pct(1, 1));
-        ui_next_height(ui_em(1.2f, 1));
-        ui_next_text_align(UI_TextAlign_Left);
-        UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
-        ui_box_equip_display_string(status_bar_box, status_text);
-
-        ////////////////////////////////
-        //- hampus: Frame end
-
-        ui_end();
-
-        render_end(renderer);
 
         ui_debug_keep_alive((U32) framed_frame_counter);
 

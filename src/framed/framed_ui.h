@@ -21,4 +21,14 @@ struct FUI_PanelRec
     S32 pop_count;
 };
 
+typedef struct FUI_Window FUI_Window;
+struct FUI_Window
+{
+    FUI_Window *next;
+    FUI_Window *prev;
+
+    FUI_Panel *root_panel;
+    FUI_Panel *first_free_panel;
+};
+
 #endif // FRAMED_UI_H
