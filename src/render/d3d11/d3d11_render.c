@@ -763,3 +763,9 @@ render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 heigh
 
     update->is_valid = true;
 }
+
+internal Render_RenderStats
+render_get_stats(Render_Context *renderer)
+{
+    return (renderer->render_stats[1]);
+}

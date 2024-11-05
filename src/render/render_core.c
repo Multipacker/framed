@@ -81,12 +81,6 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
     return (result);
 }
 
-internal Render_RenderStats
-render_get_stats(Render_Context *renderer)
-{
-    return (renderer->render_stats[1]);
-}
-
 internal Render_Context *
 render_init(Void)
 {

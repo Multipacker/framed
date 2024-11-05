@@ -4,6 +4,11 @@
 typedef struct OpenGL_State OpenGL_State;
 struct OpenGL_State
 {
+    Arena *permanent_arena;
+    Arena *frame_arena;
+
+    Render_RenderStats stats;
+
     OpenGL_BatchList batches;
     Vec2U32 client_area;
 
@@ -223,7 +228,10 @@ render_backend_init(Render_Context *renderer)
     glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 #endif
 
-    opengl_state.texture_update_queue = push_array_zero(renderer->permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
+    opengl_state.permanent_arena = arena_create("OpenGLPerm");
+    opengl_state.frame_arena     = arena_create("OpenGLFrame");
+
+    opengl_state.texture_update_queue = push_array_zero(opengl_state.permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 
     glCreateBuffers(1, &opengl_state.vbo);
     glNamedBufferData(opengl_state.vbo, OPENGL_BATCH_SIZE * sizeof(Render_RectInstance), 0, GL_DYNAMIC_DRAW);
@@ -343,8 +351,8 @@ render_backend_end(Render_Context *renderer)
     }
 
     // NOTE(simon): Update stats
-    renderer->render_stats[0].rect_count  = opengl_state.batches.rect_count;
-    renderer->render_stats[0].batch_count = opengl_state.batches.batch_count;
+    opengl_state.stats.rect_count  = opengl_state.batches.rect_count;
+    opengl_state.stats.batch_count = opengl_state.batches.batch_count;
 
     opengl_state.batches.first       = 0;
     opengl_state.batches.last        = 0;
@@ -352,17 +360,16 @@ render_backend_end(Render_Context *renderer)
     opengl_state.batches.batch_count = 0;
     opengl_state.clip_stack          = 0;
 
-    swap(renderer->render_stats[0], renderer->render_stats[1], Render_RenderStats);
-    memory_zero_struct(&renderer->render_stats[0]);
+    arena_pop_to(opengl_state.frame_arena, 0);
     gfx_swap_buffers();
 }
 
 internal OpenGL_Batch *
-opengl_create_batch(Render_Context *renderer)
+opengl_create_batch(Void)
 {
     // NOTE(simon): No need to clear everything to zero, manually set the
     // parameters we care about.
-    OpenGL_Batch *result = push_struct(renderer->frame_arena, OpenGL_Batch);
+    OpenGL_Batch *result = push_struct(opengl_state.frame_arena, OpenGL_Batch);
 
     result->size      = 0;
     result->clip_node = opengl_state.clip_stack;
@@ -398,7 +405,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 
     if (!batch || batch->size >= OPENGL_BATCH_SIZE)
     {
-        batch = opengl_create_batch(renderer);
+        batch = opengl_create_batch();
     }
 
     B32 is_different_clip   = (batch->clip_node != opengl_state.clip_stack);
@@ -406,7 +413,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
     B32 inside_batch_clip   = rectf32_contains_rectf32(batch->clip_node->rect, expanded_area);
     if (is_different_clip && !(inside_current_clip && inside_batch_clip))
     {
-        batch = opengl_create_batch(renderer);
+        batch = opengl_create_batch();
     }
 
     if (
@@ -415,7 +422,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
         batch->texture.u64[0] != params->slice.texture.u64[0]
     )
     {
-        batch = opengl_create_batch(renderer);
+        batch = opengl_create_batch();
     }
 
     // NOTE(simon): The batch either has the same texture, or none at all.
@@ -456,7 +463,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 internal Void
 render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
-    OpenGL_ClipNode *node = push_struct(renderer->frame_arena, OpenGL_ClipNode);
+    OpenGL_ClipNode *node = push_struct(opengl_state.frame_arena, OpenGL_ClipNode);
 
     if (clip_to_parent)
     {
@@ -560,4 +567,10 @@ render_update_texture(Render_Texture handle, Void *memory, U32 width, U32 height
 
         update->is_valid = true;
     }
+}
+
+internal Render_RenderStats
+render_get_stats(Render_Context *renderer)
+{
+    return opengl_state.stats;
 }
