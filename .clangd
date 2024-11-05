@@ -25,6 +25,13 @@ If:
 CompileFlags:
   Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h]
 
+
+---
+If:
+  PathMatch: src/draw/.*
+
+CompileFlags:
+  Add: [-include=src/draw/draw_inc.h, -include=src/render/render_inc.h]
 ---
 If:
   PathMatch: src/ui/.*
