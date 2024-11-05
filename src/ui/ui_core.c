@@ -47,13 +47,6 @@ ui_dt(Void)
     return (result);
 }
 
-internal Render_Context *
-ui_renderer(Void)
-{
-    Render_Context *result = ui_ctx->renderer;
-    return (result);
-}
-
 internal Gfx_EventList *
 ui_events(Void)
 {
@@ -1107,13 +1100,12 @@ ui_init(Void)
 }
 
 internal Void
-ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt)
+ui_begin(UI_Context *ctx, Gfx_EventList *event_list, F64 dt)
 {
     profile_begin_function();
 
     ui_ctx = ctx;
 
-    ui_ctx->renderer   = renderer;
     ui_ctx->event_list = event_list;
     ui_ctx->dt         = dt;
 

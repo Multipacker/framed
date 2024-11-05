@@ -945,7 +945,7 @@ os_main(Str8List arguments)
         render_begin(renderer);
         draw_begin_frame();
 
-        ui_begin(ui, &events, renderer, dt);
+        ui_begin(ui, &events, dt);
         ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
         ui_push_font_size(framed_ui_state->settings.font_size);
 

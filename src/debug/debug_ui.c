@@ -489,8 +489,6 @@ framed_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box 
 
 UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 {
-    Render_Context *renderer = ui_renderer();
-
     UI_RectStyle *rect_style = &root->rect_style;
     UI_TextStyle *text_style = &root->text_style;
 

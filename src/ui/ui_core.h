@@ -382,7 +382,6 @@ struct UI_Context
     UI_Key prev_active_key;
 
     Gfx_EventList *event_list;
-    Render_Context *renderer;
 
     UI_Config config;
 
@@ -401,7 +400,6 @@ struct UI_Context
 // hampus: Accessor functions
 
 internal F64             ui_dt(Void);
-internal Render_Context *ui_renderer(Void);
 internal Gfx_EventList  *ui_events(Void);
 internal UI_Stats       *ui_get_current_stats(Void);
 internal UI_Stats       *ui_get_prev_stats(Void);
@@ -478,7 +476,7 @@ internal Void ui_tooltip_end(Void);
 // hampus: Init, begin end
 
 internal UI_Context *ui_init(Void);
-internal Void        ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F64 dt);
+internal Void        ui_begin(UI_Context *ctx, Gfx_EventList *event_list, F64 dt);
 internal Void        ui_end(Void);
 
 ////////////////////////////////
