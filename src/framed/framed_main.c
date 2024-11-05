@@ -585,12 +585,12 @@ framed_load_user_settings_from_memory(Str8 data_string)
             B32 found;
         };
 
-#define SETTING_THEME_COLOR(i) \
-{ \
-framed_ui_string_color_table[i], \
-SettingValKind_Color, \
-&framed_ui_state->settings.theme_colors[i] \
-}
+#    define SETTING_THEME_COLOR(i)                     \
+        {                                              \
+            framed_ui_string_color_table[i],           \
+            SettingValKind_Color,                      \
+            &framed_ui_state->settings.theme_colors[i] \
+        }
 
         SettingEntry setting_entries_table[] =
             {
@@ -739,7 +739,6 @@ os_main(Str8List arguments)
         log_init(log_file, megabytes(40));
     }
 
-
     gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     Render_Context *renderer = render_init();
     Arena *frame_arenas[2];
@@ -791,9 +790,25 @@ os_main(Str8List arguments)
     FUI_Window *first_fui_window = 0;
     FUI_Window *last_fui_window  = 0;
 
-    FUI_Window fui_window = {0};
+    {
+        FUI_Window fui_window                = {0};
+        fui_window.arena                     = arena_create("FUIWindowArena");
+        fui_window.root_panel                = push_array(fui_window.arena, FUI_Panel, 1);
+        fui_window.root_panel->pct_of_parent = 1;
+        fui_window.root_panel->split_axis    = Axis2_X;
+        dll_push_back(first_fui_window, last_fui_window, &fui_window);
 
-    dll_push_back(first_fui_window, last_fui_window, &fui_window);
+        {
+            FUI_Panel *left  = push_array(fui_window.arena, FUI_Panel, 1);
+            FUI_Panel *right = push_array(fui_window.arena, FUI_Panel, 1);
+
+            left->pct_of_parent = right->pct_of_parent = 0.5f;
+            left->parent = right->parent = fui_window.root_panel;
+
+            dll_push_back(fui_window.root_panel->first, fui_window.root_panel->last, left);
+            dll_push_back(fui_window.root_panel->first, fui_window.root_panel->last, right);
+        }
+    }
 
 #if 0
     Arena *framed_ui_perm_arena = arena_create("FramedUIPerm");
@@ -841,40 +856,43 @@ os_main(Str8List arguments)
     framed_ui_state->next_focused_panel = master_window->root_panel;
 
 #endif
-    Arena_Temporary scratch = get_scratch(0, 0);
-    Str8 settings_path      = framed_get_default_user_settings_file_path();
-    for (Str8Node *node = arguments.first; node != 0; node = node->next)
+
     {
-        U64 equal_sign_index      = 0;
-        Str8 first_two_characters = str8_substring(node->string, 0, 2);
-        if (str8_equal(first_two_characters, str8_lit("--")))
+        Arena_Temporary scratch = get_scratch(0, 0);
+        Str8 settings_path      = framed_get_default_user_settings_file_path();
+        for (Str8Node *node = arguments.first; node != 0; node = node->next)
         {
-            node->string = str8_skip(node->string, 2);
-            if (str8_first_index_of(node->string, '=', &equal_sign_index))
+            U64 equal_sign_index      = 0;
+            Str8 first_two_characters = str8_substring(node->string, 0, 2);
+            if (str8_equal(first_two_characters, str8_lit("--")))
             {
-                Str8 option_name = str8_prefix(node->string, equal_sign_index);
-                if (str8_equal(option_name, str8_lit("settings")))
+                node->string = str8_skip(node->string, 2);
+                if (str8_first_index_of(node->string, '=', &equal_sign_index))
                 {
-                    // TODO(hampus): Check that it actually is a valid settings file path.
-                    settings_path = str8_substring(node->string, equal_sign_index + 1, node->string.size);
+                    Str8 option_name = str8_prefix(node->string, equal_sign_index);
+                    if (str8_equal(option_name, str8_lit("settings")))
+                    {
+                        // TODO(hampus): Check that it actually is a valid settings file path.
+                        settings_path = str8_substring(node->string, equal_sign_index + 1, node->string.size);
+                    }
                 }
             }
         }
-    }
 
-    framed_state->current_user_settings_file_path = settings_path;
+        framed_state->current_user_settings_file_path = settings_path;
 
-    Str8 user_settings_data = {0};
-    if (os_file_read(scratch.arena, settings_path, &user_settings_data))
-    {
-        framed_load_user_settings_from_memory(user_settings_data);
-    }
-    else
-    {
-        // framed_save_current_settings_to_file(settings_path);
-    }
+        Str8 user_settings_data = {0};
+        if (os_file_read(scratch.arena, settings_path, &user_settings_data))
+        {
+            framed_load_user_settings_from_memory(user_settings_data);
+        }
+        else
+        {
+            // framed_save_current_settings_to_file(settings_path);
+        }
 
-    release_scratch(scratch);
+        release_scratch(scratch);
+    }
 
     gfx_set_window_maximized();
     gfx_show_window();
@@ -1032,18 +1050,34 @@ os_main(Str8List arguments)
 #endif
         for (FUI_Window *window = first_fui_window; window != 0; window = window->next)
         {
+            Arena_Temporary scratch = get_scratch(0, 0);
             render_begin(renderer);
 
             ui_begin(ui, &events, renderer, dt);
             ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
 
-
             Vec2U32 window_client_area_px = gfx_get_window_client_area();
 
+            F32 nav_bar_height_px    = ui_top_font_line_height();
+            F32 status_bar_height_px = ui_top_font_line_height() * 1.2f;
+
             RectF32 nav_bar_rect_px     = {0};
-            nav_bar_rect_px.y1          = ui_em(1, 1).value;
+            nav_bar_rect_px.y1          = nav_bar_height_px;
             nav_bar_rect_px.x1          = (F32) window_client_area_px.x;
             Vec2F32 nav_bar_rect_dim_px = rectf32_dim(nav_bar_rect_px);
+
+            RectF32 status_bar_rect_px     = {0};
+            status_bar_rect_px.y1          = (F32) window_client_area_px.y;
+            status_bar_rect_px.y0          = status_bar_rect_px.y1 - status_bar_height_px;
+            status_bar_rect_px.x1          = (F32) window_client_area_px.x;
+            Vec2F32 status_bar_rect_dim_px = rectf32_dim(status_bar_rect_px);
+
+            RectF32 root_panel_rect_px     = {0};
+            root_panel_rect_px.y0          = nav_bar_rect_px.y1;
+            root_panel_rect_px.y1          = status_bar_rect_px.y0;
+            root_panel_rect_px.x1          = (F32) window_client_area_px.x;
+            Vec2F32 root_panel_rect_dim_px = rectf32_dim(root_panel_rect_px);
+
             ui_next_extra_box_flags(UI_BoxFlag_DrawBackground);
             ui_next_width(ui_pixels(nav_bar_rect_dim_px.x, 1));
             ui_next_height(ui_pixels(nav_bar_rect_dim_px.y, 1));
@@ -1053,8 +1087,75 @@ os_main(Str8List arguments)
                 ui_button(str8_lit("Nav bar button"));
             }
 
-            for (FUI_Panel *panel = window->root_panel; panel != 0; panel = fui_panel_rec_depth_first_pre_order(panel).next)
+            ui_next_width(ui_pixels(root_panel_rect_dim_px.x, 1));
+            ui_next_height(ui_pixels(root_panel_rect_dim_px.y, 1));
+            UI_Box *panel_container = ui_box_make(0, str8_lit(""));
+            ui_parent(panel_container)
             {
+                typedef struct RectNode RectNode;
+                struct RectNode
+                {
+                    RectNode *next;
+                    RectF32 rect;
+                };
+
+                RectNode start_parent_rect = {0, root_panel_rect_px};
+                RectNode *top_parent_rect  = &start_parent_rect;
+                RectNode *free_parent_rect = 0;
+                FUI_PanelRec rec           = {0};
+                for (FUI_Panel *panel = window->root_panel; panel != 0; panel = rec.next)
+                {
+                    // hampus: calculate rectangles
+                    RectF32 parent_rect_px = top_parent_rect->rect;
+                    RectF32 panel_rect_px  = fui_child_rect_from_parent_rect(panel, parent_rect_px);
+
+                    // hampus: build panel UI
+                    B32 is_leaf = panel->first == 0;
+                    if (is_leaf)
+                    {
+                        ui_next_fixed_rect(panel_rect_px);
+                        ui_next_child_layout_axis(Axis2_Y);
+                        UI_Box *panel_box = ui_box_makef(
+                            UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_Clickable | UI_BoxFlag_FixedRect,
+                            "###panel_box_%p", panel
+                        );
+
+                        ui_parent(panel_box)
+                        {
+                            ui_text(str8_lit("Here is a panel"));
+                            ui_buttonf("Hello world!###%p", panel_box);
+                        }
+                    }
+
+                    // hampus: iterate
+                    rec = fui_panel_rec_depth_first_pre_order(panel);
+                    if (rec.push_count != 0)
+                    {
+                        RectNode *node = free_parent_rect;
+                        if (node != 0)
+                        {
+                            stack_pop(top_parent_rect);
+                        }
+                        else
+                        {
+                            node = push_array(scratch.arena, RectNode, 1);
+                        }
+                        node->rect = panel_rect_px;
+                        stack_push(top_parent_rect, node);
+                    }
+                    else
+                    {
+                        for (S32 idx = 0; idx < rec.pop_count; idx += 1)
+                        {
+                            RectNode *popped = top_parent_rect;
+                            if (popped != 0)
+                            {
+                                stack_pop(top_parent_rect);
+                                stack_push(free_parent_rect, popped);
+                            }
+                        }
+                    }
+                }
             }
 
             Str8 status_text = str8_lit("Not connected");
@@ -1068,8 +1169,8 @@ os_main(Str8List arguments)
                 ui_next_color(v4f32(0.8f, 0.3f, 0, 1));
             }
             ui_next_corner_radius(0);
-            ui_next_width(ui_pct(1, 1));
-            ui_next_height(ui_em(1.2f, 1));
+            ui_next_width(ui_pixels(status_bar_rect_dim_px.x, 1));
+            ui_next_height(ui_pixels(status_bar_rect_dim_px.y, 1));
             ui_next_text_align(UI_TextAlign_Left);
             UI_Box *status_bar_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawText, str8_lit(""));
             ui_box_equip_display_string(status_bar_box, status_text);
@@ -1077,6 +1178,8 @@ os_main(Str8List arguments)
             ui_end();
 
             render_end(renderer);
+
+            release_scratch(scratch);
         }
 
         ui_debug_keep_alive((U32) framed_frame_counter);

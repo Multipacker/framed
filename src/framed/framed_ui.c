@@ -23,16 +23,20 @@ fui_panel_rec_depth_first_pre_order(FUI_Panel *panel)
 }
 
 internal RectF32
-fui_rect_from_panel_child_rect(FUI_Panel *child, RectF32 rect)
+fui_child_rect_from_parent_rect(FUI_Panel *child, RectF32 parent_rect)
 {
-    RectF32 result    = {0};
+    RectF32 result    = parent_rect;
     FUI_Panel *parent = child->parent;
     if (parent != 0)
     {
-        result.s[parent->split_axis];
-        for (FUI_Panel *p = parent->first; p != 0; p = p->next)
+        Vec2F32 parent_rect_dim         = rectf32_dim(parent_rect);
+        result.p1.v[parent->split_axis] = result.p0.v[parent->split_axis];
+        for (FUI_Panel *p = parent->first; p != child && p != 0; p = p->next)
         {
+            result.p0.v[parent->split_axis] += p->pct_of_parent * parent_rect_dim.v[parent->split_axis];
+            result.p1.v[parent->split_axis] = result.p0.v[parent->split_axis];
         }
+        result.p1.v[parent->split_axis] += child->pct_of_parent * parent_rect_dim.v[parent->split_axis];
     }
     return result;
 }
