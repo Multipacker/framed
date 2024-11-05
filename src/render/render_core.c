@@ -81,28 +81,6 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
     return (result);
 }
 
-internal Void
-render_init(Void)
-{
-    render_backend_init();
-    render_font_init();
-}
-
-internal Void
-render_begin(Void)
-{
-    render_backend_begin();
-}
-
-internal Void
-render_end(Void)
-{
-    profile_begin_function();
-    render_backend_end();
-    render_font_end_frame();
-    profile_end_function();
-}
-
 internal Render_Texture
 render_create_texture(Str8 path)
 {

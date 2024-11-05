@@ -60,17 +60,6 @@ enum Render_TextureFilter
     Render_TextureFilter_COUNT
 };
 
-typedef struct Render_FontAtlas Render_FontAtlas;
-typedef struct Render_FontCache Render_FontCache;
-typedef struct Render_FontQueue Render_FontQueue;
-
-typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
-struct Render_FontLoaderThreadData
-{
-    U32 id;
-    Str8 name;
-};
-
 typedef struct Render_RectParams Render_RectParams;
 struct Render_RectParams
 {
@@ -85,9 +74,6 @@ struct Render_RectParams
 
 // NOTE(simon): This might not always be fully cleared to 0.
 global Render_RectInstance render_rect_instance_null;
-
-#define render_rect(renderer, min, max, ...) render_rect_(renderer, min, max, &(Render_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
-#define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Render_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
 internal Render_RectInstance *render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params);
 
@@ -111,8 +97,5 @@ internal Void render_pop_clip(Void);
 internal Void render_init(Void);
 internal Void render_begin(Void);
 internal Void render_end(Void);
-
-internal Void render_backend_begin(Void);
-internal Void render_backend_end(Void);
 
 #endif // RENDER_CORE_H

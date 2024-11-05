@@ -221,7 +221,7 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 }
 
 internal Void
-render_backend_init(Void)
+render_init(Void)
 {
 #if !BUILD_MODE_RELEASE
     glDebugMessageCallback(&opengl_debug_output, NULL);
@@ -280,7 +280,7 @@ render_backend_init(Void)
 }
 
 internal Void
-render_backend_begin(Void)
+render_begin(Void)
 {
     opengl_state.client_area = gfx_get_window_client_area();
 
@@ -295,8 +295,10 @@ render_backend_begin(Void)
 }
 
 internal Void
-render_backend_end(Void)
+render_end(Void)
 {
+    profile_begin_function();
+
     // NOTE(simon): Perform texture updates.
     while (opengl_state.texture_update_write_index - opengl_state.texture_update_read_index != 0)
     {
@@ -362,6 +364,8 @@ render_backend_end(Void)
 
     arena_pop_to(opengl_state.frame_arena, 0);
     gfx_swap_buffers();
+
+    profile_end_function();
 }
 
 internal OpenGL_Batch *

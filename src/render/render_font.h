@@ -1,6 +1,13 @@
 #ifndef RENDER_FONT_H
 #define RENDER_FONT_H
 
+typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
+struct Render_FontLoaderThreadData
+{
+    U32 id;
+    Str8 name;
+};
+
 typedef enum Render_FontRenderMode Render_FontRenderMode;
 enum Render_FontRenderMode
 {

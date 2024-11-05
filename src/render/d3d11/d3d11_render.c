@@ -122,7 +122,7 @@ d3d11_load_shaders(Void)
 #pragma optimize("", on)
 
 internal Void
-render_backend_init(Void)
+render_init(Void)
 {
     d3d11_state.permanent_arena = arena_create("D3D11Perm");
     d3d11_state.frame_arena     = arena_create("D3D11Frame");
@@ -349,7 +349,7 @@ d3d11_push_batch(Void)
 }
 
 internal Void
-render_backend_begin(Void)
+render_begin(Void)
 {
     // NOTE(hampus): Push clip rect
     Vec2U32 client_area = gfx_get_window_client_area();
@@ -364,8 +364,10 @@ render_backend_begin(Void)
 }
 
 internal Void
-render_backend_end(Void)
+render_end(Void)
 {
+    profile_begin_function();
+
     // NOTE(simon): Perform texture updates.
     while (d3d11_state.texture_update_write_index - d3d11_state.texture_update_read_index != 0)
     {
@@ -562,6 +564,8 @@ render_backend_end(Void)
     d3d11_state.batch_list.first       = 0;
     d3d11_state.batch_list.last        = 0;
     d3d11_state.batch_list.batch_count = 0;
+
+    profile_end_function();
 }
 
 internal Render_RectInstance *

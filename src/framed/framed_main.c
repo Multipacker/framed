@@ -737,6 +737,7 @@ os_main(Str8List arguments)
 
     gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     render_init();
+    render_font_init();
     draw_init();
     Arena *frame_arenas[2];
     frame_arenas[0] = arena_create("MainFrame0");
@@ -1064,6 +1065,7 @@ os_main(Str8List arguments)
         ui_end();
 
         draw_submit();
+        render_font_end_frame();
         render_end();
 
         ui_debug_keep_alive((U32) framed_frame_counter);
