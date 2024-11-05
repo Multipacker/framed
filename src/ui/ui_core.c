@@ -1406,7 +1406,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
         case UI_SizeKind_TextContent:
         {
-            Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(&root->text_style));
+            Render_Font *font = render_font_from_key(ui_font_key_from_text_style(&root->text_style));
             Vec2F32 text_dim  = {0};
             if (root->text_style.icon)
             {
@@ -1857,7 +1857,7 @@ ui_draw(UI_Box *root)
 
         if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
         {
-            Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(text_style));
+            Render_Font *font = render_font_from_key(ui_font_key_from_text_style(text_style));
 
             if (text_style->icon)
             {
@@ -1901,7 +1901,7 @@ internal F32
 ui_top_font_line_height(Void)
 {
     UI_TextStyle *text_style = ui_top_text_style();
-    Render_Font *font        = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
+    Render_Font *font        = render_font_from_key(ui_font_key_from_text_style(ui_top_text_style()));
     F32 result               = 0;
     if (render_font_is_loaded(font))
     {

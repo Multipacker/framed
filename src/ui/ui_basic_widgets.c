@@ -458,7 +458,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
     if (params->item_size.kind == UI_SizeKind_Null)
     {
         F32 largest_width = 0.0f;
-        Render_Font *font = render_font_from_key(ui_renderer(), ui_font_key_from_text_style(ui_top_text_style()));
+        Render_Font *font = render_font_from_key(ui_font_key_from_text_style(ui_top_text_style()));
         for (U32 i = 0; i < item_count; ++i)
         {
             Vec2F32 size  = render_measure_text(font, item_names[i]);
@@ -544,8 +544,7 @@ ui_combo_box_internal(Str8 name, U32 *selected_index, Str8 *item_names, U32 item
 internal Void
 ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 {
-    Render_Context *renderer = ui_renderer();
-    Vec3F32 rgb              = rgb_from_hsv(v3f32(hue, 1, 1));
+    Vec3F32 rgb = rgb_from_hsv(v3f32(hue, 1, 1));
     ui_next_colors(
         v4f32(1, 1, 1, 1),
         v4f32(rgb.x, rgb.y, rgb.z, 1),
@@ -591,12 +590,10 @@ ui_sat_val_picker(F32 hue, F32 *out_sat, F32 *out_val, Str8 string)
 
 UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 {
-    Render_Context *renderer = ui_renderer();
-
     UI_RectStyle *rect_style = &root->rect_style;
     UI_TextStyle *text_style = &root->text_style;
 
-    Render_Font *font = render_font_from_key(renderer, ui_font_key_from_text_style(text_style));
+    Render_Font *font = render_font_from_key(ui_font_key_from_text_style(text_style));
 
     if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
     {
@@ -780,7 +777,7 @@ ui_get_codepoint_index_from_mouse_pos(UI_Box *box, Str8 edit_str)
     {
         StringDecode decode = string_decode_utf8(&edit_str.data[i], edit_str.size - i);
 
-        Vec2F32 dim            = render_measure_character(render_font_from_key(ui_renderer(), ui_top_font_key()), decode.codepoint);
+        Vec2F32 dim            = render_measure_character(render_font_from_key(ui_top_font_key()), decode.codepoint);
         RectF32 character_rect = box->fixed_rect;
         character_rect.min.x   = x;
         character_rect.max.x   = character_rect.min.x + dim.x;
@@ -857,7 +854,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
             ui_parent(box)
             {
-                Vec2F32 cursor_offset   = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->cursor);
+                Vec2F32 cursor_offset   = render_measure_text_length(render_font_from_key(ui_top_font_key()), buffer_str8, (U64) edit_state->cursor);
                 F32 cursor_extra_offset = ui_em(0.1f, 1).value;
                 ui_next_relative_pos(Axis2_X, cursor_offset.x + cursor_extra_offset);
                 ui_next_height(ui_pct(1, 1));
@@ -870,7 +867,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
                 );
 
                 {
-                    Vec2F32 mark_offset = render_measure_text_length(render_font_from_key(ui_renderer(), ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
+                    Vec2F32 mark_offset = render_measure_text_length(render_font_from_key(ui_top_font_key()), buffer_str8, (U64) edit_state->mark);
                     if (edit_state->mark < edit_state->cursor)
                     {
                         ui_next_relative_pos(Axis2_X, mark_offset.x + cursor_extra_offset);
@@ -892,7 +889,7 @@ ui_line_edit(UI_TextEditState *edit_state, U8 *buffer, U64 buffer_size, U64 *str
 
                 // NOTE(hampus): Make sure the cursor is in view
 
-                Vec2F32 text_size = render_measure_text(render_font_from_key(ui_renderer(), ui_top_font_key()), edit_str);
+                Vec2F32 text_size = render_measure_text(render_font_from_key(ui_top_font_key()), edit_str);
                 F32 padding       = ui_em(0.5f, 1).value;
 
                 // NOTE(hampus): Scroll to the left if there is empty

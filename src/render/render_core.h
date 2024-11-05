@@ -71,18 +71,12 @@ struct Render_Context
   Arena *frame_arena;
   Render_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
 
-  Render_FontAtlas *font_atlas;
-  Render_FontCache *font_cache;
-  Render_FontQueue *font_queue;
-  OS_Mutex font_atlas_mutex;
-
   U64 frame_index;
 };
 
 typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
 struct Render_FontLoaderThreadData
 {
-  Render_Context *renderer;
   U32 id;
   Str8 name;
 };

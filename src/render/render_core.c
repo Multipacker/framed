@@ -96,31 +96,9 @@ render_init(Void)
     renderer->frame_arena     = arena_create("RenderFrame");
     render_backend_init(renderer);
 
-    renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
-    renderer->font_cache = push_struct(arena, Render_FontCache);
-    for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
-    {
-        renderer->font_cache->entries[i].arena = arena_create("FontCacheEntry%" PRIU64, i);
-    }
+    render_font_init();
 
-    // NOTE(simon): This is needed for atomic reads.
-    arena_align(arena, 8);
-    renderer->font_queue        = push_struct(arena, Render_FontQueue);
-    renderer->font_queue->queue = push_array(arena, Render_FontQueueEntry, FONT_QUEUE_SIZE);
-    os_semaphore_create(&renderer->font_queue->semaphore, 0);
-
-    os_mutex_create(&renderer->font_atlas_mutex);
-
-    for (U32 i = 0; i < 4; ++i)
-    {
-        Render_FontLoaderThreadData *data = push_struct(renderer->permanent_arena, Render_FontLoaderThreadData);
-        data->id                          = i;
-        data->renderer                    = renderer;
-        data->name                        = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
-        os_thread_create(render_font_stream_thread, data);
-    }
-
-    return (renderer);
+    return renderer;
 }
 
 internal Void
@@ -135,6 +113,7 @@ render_end(Render_Context *renderer)
     profile_begin_function();
     render_backend_end(renderer);
     renderer->frame_index++;
+    render_font_end_frame();
     arena_pop_to(renderer->frame_arena, 0);
     profile_end_function();
 }

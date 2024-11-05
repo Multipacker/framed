@@ -10,6 +10,43 @@
 // [ ] - Subpixel positioning
 // [ ] - Underline & strikethrough
 
+internal Void
+render_font_init(Void)
+{
+    Arena *arena = arena_create("FontPerm");
+
+    render_font_context.permanent_arena = arena;
+
+    render_font_context.font_atlas = render_make_font_atlas(v2u32(2048, 2048));
+    render_font_context.font_cache = push_struct(arena, Render_FontCache);
+    for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
+    {
+        render_font_context.font_cache->entries[i].arena = arena_create("FontCacheEntry%" PRIU64, i);
+    }
+
+    // NOTE(simon): This is needed for atomic reads.
+    arena_align(arena, 8);
+    render_font_context.font_queue        = push_struct(arena, Render_FontQueue);
+    render_font_context.font_queue->queue = push_array(arena, Render_FontQueueEntry, FONT_QUEUE_SIZE);
+    os_semaphore_create(&render_font_context.font_queue->semaphore, 0);
+
+    os_mutex_create(&render_font_context.font_atlas_mutex);
+
+    for (U32 i = 0; i < 4; ++i)
+    {
+        Render_FontLoaderThreadData *data = push_struct(arena, Render_FontLoaderThreadData);
+        data->id                          = i;
+        data->name                        = str8_pushf(arena, "FontLoader%d", i);
+        os_thread_create(render_font_stream_thread, data);
+    }
+}
+
+internal Void
+render_font_end_frame(Void)
+{
+    ++render_font_context.frame_index;
+}
+
 internal B32
 render_font_valid_load_params(Render_FontLoadParams params)
 {
@@ -71,14 +108,14 @@ render_kern_pair_from_glyph_indicies(Render_Font *font, U32 index0, U32 index1)
 }
 
 internal Render_FontAtlas *
-render_make_font_atlas(Render_Context *renderer, Vec2U32 dim)
+render_make_font_atlas(Vec2U32 dim)
 {
-    Render_FontAtlas *result                      = push_struct(renderer->permanent_arena, Render_FontAtlas);
+    Render_FontAtlas *result                      = push_struct(render_font_context.permanent_arena, Render_FontAtlas);
     result->dim                                   = dim;
-    Render_FontAtlasRegionNode *first_free_region = push_struct(renderer->permanent_arena, Render_FontAtlasRegionNode);
+    Render_FontAtlasRegionNode *first_free_region = push_struct(render_font_context.permanent_arena, Render_FontAtlasRegionNode);
     first_free_region->region.min                 = v2u32(0, 0);
     first_free_region->region.max                 = v2u32(dim.x, dim.x);
-    result->memory                                = push_array(renderer->permanent_arena, U8, dim.x * dim.y * 4);
+    result->memory                                = push_array(render_font_context.permanent_arena, U8, dim.x * dim.y * 4);
     render_push_free_region_to_atlas(result, first_free_region);
     result->texture = render_create_texture_from_bitmap(result->memory, result->dim.x, result->dim.y, Render_ColorSpace_Linear);
     return (result);
@@ -133,7 +170,7 @@ render_remove_free_region_from_atlas(Render_FontAtlas *atlas, Render_FontAtlasRe
 }
 
 internal Render_FontAtlasRegion
-render_alloc_font_atlas_region(Render_Context *renderer, Render_FontAtlas *atlas, Vec2U32 dim)
+render_alloc_font_atlas_region(Render_FontAtlas *atlas, Vec2U32 dim)
 {
     assert(atlas->num_free_regions > 0);
     // TODO(hampus): Benchmark and eventually optimize.
@@ -198,7 +235,7 @@ render_alloc_font_atlas_region(Render_Context *renderer, Render_FontAtlas *atlas
 
         if (!node->children[0])
         {
-            Render_FontAtlasRegionNode *children = push_array(renderer->permanent_arena, Render_FontAtlasRegionNode, Corner_COUNT);
+            Render_FontAtlasRegionNode *children = push_array(render_font_context.permanent_arena, Render_FontAtlasRegionNode, Corner_COUNT);
 
             {
                 Vec2U32 bbox[Corner_COUNT] =
@@ -289,31 +326,29 @@ render_free_atlas_region(Render_FontAtlas *atlas, Render_FontAtlasRegion region)
 }
 
 internal Void
-render_unload_font(Render_Context *renderer, Render_Font *font)
+render_unload_font(Render_Font *font)
 {
     assert(font);
-    assert(renderer);
 
-    os_mutex(&renderer->font_atlas_mutex)
+    os_mutex(&render_font_context.font_atlas_mutex)
     {
         for (U64 i = 0; i < font->num_font_atlas_regions; ++i)
         {
             Render_FontAtlasRegion font_atlas_region = font->font_atlas_regions[i];
-            render_free_atlas_region(renderer->font_atlas, font_atlas_region);
+            render_free_atlas_region(render_font_context.font_atlas, font_atlas_region);
         }
     }
     arena_pop_to(font->arena, 0);
     memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
 
-internal B32 render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params);
+internal B32 render_load_font_truetype(Render_Font *font, Render_FontLoadParams params);
 
 internal Void
 render_font_stream_thread(Void *data)
 {
     Render_FontLoaderThreadData *thread_data = data;
-    Render_Context *renderer                 = (Render_Context *) thread_data->renderer;
-    Render_FontQueue *font_queue             = renderer->font_queue;
+    Render_FontQueue *font_queue             = render_font_context.font_queue;
 
     thread_ctx_init(thread_data->name);
 
@@ -341,11 +376,11 @@ render_font_stream_thread(Void *data)
                 log_info("Starting to load in font: %" PRISTR8, str8_expand(entry.params.path));
                 font->state = Render_FontState_Loading;
 
-                render_unload_font(renderer, font);
+                render_unload_font(font);
 
                 U64 start_timer = os_now_nanoseconds();
 
-                B32 success = render_load_font_truetype(renderer, font, entry.params);
+                B32 success = render_load_font_truetype(font, entry.params);
 
                 if (success)
                 {
@@ -356,16 +391,16 @@ render_font_stream_thread(Void *data)
                 else
                 {
                     log_warning("Failed to load font `%" PRISTR8 "`", str8_expand(entry.params.path));
-                    render_unload_font(renderer, font);
+                    render_unload_font(font);
                 }
 
                 memory_fence();
 
                 render_update_texture(
-                    renderer->font_atlas->texture,
-                    renderer->font_atlas->memory,
-                    renderer->font_atlas->dim.width,
-                    renderer->font_atlas->dim.height,
+                    render_font_context.font_atlas->texture,
+                    render_font_context.font_atlas->memory,
+                    render_font_context.font_atlas->dim.width,
+                    render_font_context.font_atlas->dim.height,
                     0
                 );
 
@@ -383,13 +418,12 @@ render_font_stream_thread(Void *data)
 }
 
 internal Void
-render_push_font_to_queue(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params)
+render_push_font_to_queue(Render_Font *font, Render_FontLoadParams params)
 {
     // TODO(hampus): Check the pixel orientation of the monitor.
-    assert(renderer);
     assert(render_font_valid_load_params(params));
 
-    Render_FontQueue *font_queue = renderer->font_queue;
+    Render_FontQueue *font_queue = render_font_context.font_queue;
 
     // NOTE(hampus): This is so that we can recongnize that the font
     // is in the queue when we are looking in the cache
@@ -431,21 +465,20 @@ render_glyph_index_from_codepoint(Render_Font *font, U32 codepoint)
 }
 
 internal Render_Font *
-render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
+render_font_from_key(Render_FontKey font_key)
 {
     profile_begin_function();
     Vec2F32 scale      = gfx_scale_from_window();
     font_key.font_size = (U32) ((F32) font_key.font_size * scale.y);
-    assert(renderer);
     assert(font_key.font_size > 0);
     assert(font_key.path.size > 0);
     Render_Font *result = 0;
 
     S32 unused_slot         = -1;
-    U64 current_frame_index = renderer->frame_index;
+    U64 current_frame_index = render_font_context.frame_index;
     for (S32 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
     {
-        Render_Font *font = renderer->font_cache->entries + i;
+        Render_Font *font = render_font_context.font_cache->entries + i;
         if (str8_equal(font->load_params.path, font_key.path) &&
             font->load_params.size == font_key.font_size)
         {
@@ -476,18 +509,18 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
     if (!result)
     {
         assert(unused_slot != -1 && "Cache is hot and full");
-        Render_Font *empty_entry = renderer->font_cache->entries + unused_slot;
+        Render_Font *empty_entry = render_font_context.font_cache->entries + unused_slot;
         Render_FontLoadParams params =
             {
                 .render_mode = Render_FontRenderMode_LCD,
                 .size        = font_key.font_size,
                 .path        = font_key.path,
             };
-        render_push_font_to_queue(renderer, empty_entry, params);
+        render_push_font_to_queue(empty_entry, params);
         result = empty_entry;
     }
 
-    result->last_frame_index_used = renderer->frame_index;
+    result->last_frame_index_used = render_font_context.frame_index;
 
     profile_end_function();
     return (result);
@@ -559,16 +592,16 @@ render_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
 }
 
 internal Void
-render_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
+render_text(Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
 {
-    Render_Font *font = render_font_from_key(renderer, font_key);
+    Render_Font *font = render_font_from_key(font_key);
     render_text_internal(min, text, font, color);
 }
 
 internal Void
-render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
+render_multiline_text(Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
 {
-    Render_Font *font = render_font_from_key(renderer, font_key);
+    Render_Font *font = render_font_from_key(font_key);
 
     if (render_font_is_loaded(font))
     {
@@ -647,9 +680,9 @@ render_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32
 }
 
 internal Void
-render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_FontKey font_key, Vec4F32 color)
+render_character(Vec2F32 min, U32 codepoint, Render_FontKey font_key, Vec4F32 color)
 {
-    Render_Font *font = render_font_from_key(renderer, font_key);
+    Render_Font *font = render_font_from_key(font_key);
     render_character_internal(min, codepoint, font, color);
 }
 

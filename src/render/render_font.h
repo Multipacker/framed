@@ -150,13 +150,31 @@ struct Render_FontQueue
     OS_Semaphore semaphore;
 };
 
-internal Render_FontAtlas      *render_make_font_atlas(Render_Context *renderer, Vec2U32 dim);
+typedef struct Render_FontContext Render_FontContext;
+struct Render_FontContext
+{
+    Arena *permanent_arena;
+
+    Render_FontAtlas *font_atlas;
+    Render_FontCache *font_cache;
+    Render_FontQueue *font_queue;
+    OS_Mutex font_atlas_mutex;
+
+    U64 frame_index;
+};
+
+global Render_FontContext render_font_context;
+
+internal Void render_font_init(Void);
+internal Void render_font_end_frame(Void);
+
+internal Render_FontAtlas      *render_make_font_atlas(Vec2U32 dim);
 internal Void                   render_push_free_region_to_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node);
 internal Void                   render_remove_free_region_from_atlas(Render_FontAtlas *atlas, Render_FontAtlasRegionNode *node);
-internal Render_FontAtlasRegion render_alloc_font_atlas_region(Render_Context *renderer, Render_FontAtlas *atlas, Vec2U32 dim);
+internal Render_FontAtlasRegion render_alloc_font_atlas_region(Render_FontAtlas *atlas, Vec2U32 dim);
 internal Void                   render_free_atlas_region(Render_FontAtlas *atlas, Render_FontAtlasRegion region);
 
-internal Render_Font *render_font_from_key(Render_Context *renderer, Render_FontKey font_key);
+internal Render_Font *render_font_from_key(Render_FontKey font_key);
 internal Vec2F32 render_measure_character(Render_Font *font, U32 codepoint);
 internal Vec2F32 render_measure_text(Render_Font *font, Str8 text);
 internal Vec2F32 render_measure_text_length(Render_Font *font, Str8 text, U64 length);
