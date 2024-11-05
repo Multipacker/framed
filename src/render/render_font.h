@@ -163,8 +163,8 @@ internal Vec2F32 render_measure_text_length(Render_Font *font, Str8 text, U64 le
 
 internal Void render_font_stream_thread(Void *data);
 
-internal Void render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color);
-internal Void render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color);
+internal Void render_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color);
+internal Void render_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color);
 
 internal B32 render_font_is_loaded(Render_Font *font);
 

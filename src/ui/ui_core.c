@@ -1862,12 +1862,12 @@ ui_draw(UI_Box *root)
             if (text_style->icon)
             {
                 Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->fixed_rect, text_style->align);
-                render_character_internal(ui_ctx->renderer, text_pos, text_style->icon, font, text_style->color);
+                render_character_internal(text_pos, text_style->icon, font, text_style->color);
             }
             else
             {
                 Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
-                render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+                render_text_internal(text_pos, root->string, font, text_style->color);
             }
         }
     }

@@ -305,7 +305,9 @@ render_unload_font(Render_Context *renderer, Render_Font *font)
     arena_pop_to(font->arena, 0);
     memory_zero((U8 *) font + sizeof(Arena *), member_offset(Render_Font, state) - sizeof(Arena *));
 }
+
 internal B32 render_load_font_truetype(Render_Context *renderer, Render_Font *font, Render_FontLoadParams params);
+
 internal Void
 render_font_stream_thread(Void *data)
 {
@@ -493,7 +495,7 @@ render_font_from_key(Render_Context *renderer, Render_FontKey font_key)
 }
 
 internal Void
-render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font, Vec4F32 color)
+render_glyph(Vec2F32 min, U32 index, Render_Font *font, Vec4F32 color)
 {
     profile_begin_function();
     Render_Glyph *glyph = font->glyphs + index;
@@ -515,7 +517,7 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
 }
 
 internal Void
-render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
+render_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
 {
     profile_begin_function();
     if (render_font_is_loaded(font))
@@ -549,7 +551,7 @@ render_text_internal(Render_Context *renderer, Vec2F32 min, Str8 text, Render_Fo
                     min.x += kerning_pair.value;
                 }
 
-                render_glyph(renderer, min, index, font, color);
+                render_glyph(min, index, font, color);
                 min.x += font->glyphs[index].advance_width;
             }
         }
@@ -561,7 +563,7 @@ internal Void
 render_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_FontKey font_key, Vec4F32 color)
 {
     Render_Font *font = render_font_from_key(renderer, font_key);
-    render_text_internal(renderer, min, text, font, color);
+    render_text_internal(min, text, font, color);
 }
 
 internal Void
@@ -610,7 +612,7 @@ render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_F
                         min.x += kerning_pair.value;
                     }
 
-                    render_glyph(renderer, min, index, font, color);
+                    render_glyph(min, index, font, color);
                     min.x += font->glyphs[index].advance_width;
                 }
             }
@@ -619,7 +621,7 @@ render_multiline_text(Render_Context *renderer, Vec2F32 min, Str8 text, Render_F
 }
 
 internal Void
-render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color)
+render_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color)
 {
     profile_begin_function();
     if (render_font_is_loaded(font))
@@ -649,7 +651,7 @@ internal Void
 render_character(Render_Context *renderer, Vec2F32 min, U32 codepoint, Render_FontKey font_key, Vec4F32 color)
 {
     Render_Font *font = render_font_from_key(renderer, font_key);
-    render_character_internal(renderer, min, codepoint, font, color);
+    render_character_internal(min, codepoint, font, color);
 }
 
 internal Vec2F32
