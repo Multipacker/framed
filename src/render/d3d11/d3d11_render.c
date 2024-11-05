@@ -9,6 +9,11 @@
 typedef struct D3D11_State D3D11_State;
 struct D3D11_State
 {
+    Arena *permanent_arena;
+    Arena *frame_arena;
+
+    Render_RenderStats stats[2];
+
     D3D11_BatchList batch_list;
 
     D3D11_ClipRectStack clip_rect_stack;
@@ -45,15 +50,15 @@ struct D3D11_State
 global D3D11_State d3d11_state;
 
 internal D3D11_ClipRect *
-d3d11_top_clip(Render_Context *renderer)
+d3d11_top_clip(Void)
 {
-    return (d3d11_state.clip_rect_stack.first);
+    return d3d11_state.clip_rect_stack.first;
 }
 
 internal Render_RenderStats *
-d3d11_get_current_stats(Render_Context *renderer)
+d3d11_get_current_stats(Void)
 {
-    return (&renderer->render_stats[1]);
+    return &d3d11_state.stats[0];
 }
 
 #pragma optimize("", off)
@@ -117,9 +122,12 @@ d3d11_load_shaders(Void)
 #pragma optimize("", on)
 
 internal Void
-render_backend_init(Render_Context *renderer)
+render_backend_init(Void)
 {
-    d3d11_state.texture_update_queue = push_array_zero(renderer->permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
+    d3d11_state.permanent_arena = arena_create("D3D11Perm");
+    d3d11_state.frame_arena     = arena_create("D3D11Frame");
+
+    d3d11_state.texture_update_queue = push_array_zero(d3d11_state.permanent_arena, D3D11_TextureUpdate, D3D11_TEXTURE_UPDATE_QUEUE_SIZE);
 
     HRESULT hr;
 
@@ -328,35 +336,35 @@ render_backend_init(Render_Context *renderer)
 }
 
 internal D3D11_Batch *
-d3d11_push_batch(Render_Context *renderer)
+d3d11_push_batch(Void)
 {
-    D3D11_Batch *result = push_struct_zero(renderer->frame_arena, D3D11_Batch);
-    result->instances   = push_array(renderer->frame_arena, Render_RectInstance, D3D11_BATCH_SIZE);
+    D3D11_Batch *result = push_struct_zero(d3d11_state.frame_arena, D3D11_Batch);
+    result->instances   = push_array(d3d11_state.frame_arena, Render_RectInstance, D3D11_BATCH_SIZE);
     dll_push_back(d3d11_state.batch_list.first, d3d11_state.batch_list.last, result);
-    result->params.clip_rect = d3d11_top_clip(renderer);
+    result->params.clip_rect = d3d11_top_clip();
     d3d11_state.batch_list.batch_count++;
-    Render_RenderStats *stats = d3d11_get_current_stats(renderer);
+    Render_RenderStats *stats = d3d11_get_current_stats();
     stats->batch_count++;
     return (result);
 }
 
 internal Void
-render_backend_begin(Render_Context *renderer)
+render_backend_begin(Void)
 {
     // NOTE(hampus): Push clip rect
     Vec2U32 client_area = gfx_get_window_client_area();
     Vec2F32 max_clip;
     max_clip.x = (F32) client_area.x;
     max_clip.y = (F32) client_area.y;
-    render_push_clip(renderer, v2f32(0, 0), max_clip, false);
+    render_push_clip(v2f32(0, 0), max_clip, false);
 
     // NOTE(hampus): First batch
-    D3D11_Batch *first_batch    = d3d11_push_batch(renderer);
+    D3D11_Batch *first_batch    = d3d11_push_batch();
     first_batch->params.texture = d3d11_state.white_texture;
 }
 
 internal Void
-render_backend_end(Render_Context *renderer)
+render_backend_end(Void)
 {
     // NOTE(simon): Perform texture updates.
     while (d3d11_state.texture_update_write_index - d3d11_state.texture_update_read_index != 0)
@@ -461,7 +469,7 @@ render_backend_end(Render_Context *renderer)
                 .MaxDepth = 1,
             };
 
-        Render_RenderStats *stats = d3d11_get_current_stats(renderer);
+        Render_RenderStats *stats = d3d11_get_current_stats();
         Vec4F32 clear_color       = vec4f32_srgb_to_linear(v4f32(0, 0, 0, 1.f));
 
         FLOAT color[] = {clear_color.r, clear_color.g, clear_color.b, clear_color.a};
@@ -548,16 +556,16 @@ render_backend_end(Render_Context *renderer)
     }
 
     // NOTE(hampus): Reset state
-    render_pop_clip(renderer);
-    swap(renderer->render_stats[0], renderer->render_stats[1], Render_RenderStats);
-    memory_zero_struct(&renderer->render_stats[0]);
+    render_pop_clip();
+    d3d11_state.stats[1] = d3d11_state.stats[0];
+    memory_zero_struct(&d3d11_state.stats[0]);
     d3d11_state.batch_list.first       = 0;
     d3d11_state.batch_list.last        = 0;
     d3d11_state.batch_list.batch_count = 0;
 }
 
 internal Render_RectInstance *
-render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params)
+render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 {
     if (params->slice.texture.u64[0] == 0)
     {
@@ -574,13 +582,13 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
         v2f32_add_f32(max, params->softness)
     );
 
-    if (!rectf32_overlaps(expanded_area, d3d11_top_clip(renderer)->rect))
+    if (!rectf32_overlaps(expanded_area, d3d11_top_clip()->rect))
     {
         return (instance);
     }
 
     B32 is_different_clip   = (batch->params.clip_rect != d3d11_state.clip_rect_stack.first);
-    B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip(renderer)->rect, expanded_area);
+    B32 inside_current_clip = rectf32_contains_rectf32(d3d11_top_clip()->rect, expanded_area);
     B32 inside_batch_clip   = rectf32_contains_rectf32(batch->params.clip_rect->rect, expanded_area);
     if ((is_different_clip && !(inside_current_clip && inside_batch_clip)) ||
         batch->instance_count >= D3D11_BATCH_SIZE)
@@ -614,7 +622,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 
     if (!batch)
     {
-        batch                 = d3d11_push_batch(renderer);
+        batch                 = d3d11_push_batch();
         batch->params.texture = params->slice.texture;
     }
 
@@ -645,31 +653,31 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 
     batch->instance_count++;
 
-    Render_RenderStats *stats = d3d11_get_current_stats(renderer);
+    Render_RenderStats *stats = d3d11_get_current_stats();
     stats->rect_count++;
 
     return (instance);
 }
 
 internal Void
-render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     RectF32 rect = {min, max};
     if (clip_to_parent)
     {
-        RectF32 top_clip_rect = d3d11_top_clip(renderer)->rect;
+        RectF32 top_clip_rect = d3d11_top_clip()->rect;
         rect.x0               = f32_clamp(top_clip_rect.x0, rect.x0, top_clip_rect.x1);
         rect.y0               = f32_clamp(top_clip_rect.y0, rect.y0, top_clip_rect.y1);
         rect.x1               = f32_clamp(top_clip_rect.x0, rect.x1, top_clip_rect.x1);
         rect.y1               = f32_clamp(top_clip_rect.y0, rect.y1, top_clip_rect.y1);
     }
-    D3D11_ClipRect *node = push_struct(renderer->frame_arena, D3D11_ClipRect);
+    D3D11_ClipRect *node = push_struct(d3d11_state.frame_arena, D3D11_ClipRect);
     node->rect           = rect;
     stack_push(d3d11_state.clip_rect_stack.first, node);
 }
 
 internal Void
-render_pop_clip(Render_Context *renderer)
+render_pop_clip(Void)
 {
     stack_pop(d3d11_state.clip_rect_stack.first);
 }
@@ -731,7 +739,7 @@ render_create_texture_from_bitmap(Void *memory, U32 width, U32 height, Render_Co
 }
 
 internal Void
-render_destroy_texture(Render_Context *renderer, Render_Texture texture)
+render_destroy_texture(Render_Texture texture)
 {
     Render_D3D11_Texture *d3d11_texture = (Render_D3D11_Texture *) texture.u64;
     // TODO(hampus): How to release texture view?
@@ -765,7 +773,7 @@ render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 heigh
 }
 
 internal Render_RenderStats
-render_get_stats(Render_Context *renderer)
+render_get_stats(Void)
 {
-    return (renderer->render_stats[1]);
+    return d3d11_state.stats[1];
 }

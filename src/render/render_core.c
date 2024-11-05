@@ -81,33 +81,25 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
     return (result);
 }
 
-internal Render_Context *
+internal Void
 render_init(Void)
 {
-    Arena *arena              = arena_create("RenderPerm");
-    Render_Context *renderer  = push_struct(arena, Render_Context);
-    renderer->permanent_arena = arena;
-    renderer->frame_arena     = arena_create("RenderFrame");
-    render_backend_init(renderer);
-
+    render_backend_init();
     render_font_init();
-
-    return renderer;
 }
 
 internal Void
-render_begin(Render_Context *renderer)
+render_begin(Void)
 {
-    render_backend_begin(renderer);
+    render_backend_begin();
 }
 
 internal Void
-render_end(Render_Context *renderer)
+render_end(Void)
 {
     profile_begin_function();
-    render_backend_end(renderer);
+    render_backend_end();
     render_font_end_frame();
-    arena_pop_to(renderer->frame_arena, 0);
     profile_end_function();
 }
 

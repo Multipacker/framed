@@ -2,7 +2,7 @@
 #define DRAW_CORE_H
 
 // NOTE(simon): Initialization
-internal Void draw_init(Render_Context *renderer);
+internal Void draw_init(Void);
 
 // NOTE(simon): Frame markers
 internal Void draw_begin_frame(Void);

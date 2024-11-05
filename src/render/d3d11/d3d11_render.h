@@ -67,17 +67,17 @@ struct D3D11_TextureUpdate
     Void *data;
 };
 
-internal Void render_backend_init(Render_Context *renderer);
+internal Void render_backend_init(Void);
 
-internal Void render_backend_begin(Render_Context *renderer);
-internal Void render_backend_end(Render_Context *renderer);
-internal Render_Texture render_create_texture(Render_Context *renderer, Str8 path);
-internal Render_Texture render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 width, U32 height, Render_ColorSpace color_space);
-internal Void render_destroy_texture(Render_Context *renderer, Render_Texture texture);
-internal Void render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
+internal Void render_backend_begin(Void);
+internal Void render_backend_end(Void);
+internal Render_Texture render_create_texture(Str8 path);
+internal Render_Texture render_create_texture_from_bitmap(Void *memory, U32 width, U32 height, Render_ColorSpace color_space);
+internal Void render_destroy_texture(Render_Texture texture);
+internal Void render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
 
-internal Render_RectInstance *render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params);
-internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void render_pop_clip(Render_Context *renderer);
+internal Render_RectInstance *render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params);
+internal Void render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
+internal Void render_pop_clip(Void);
 
 #endif // RENDED3D11_H

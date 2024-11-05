@@ -52,6 +52,6 @@ struct OpenGL_TextureUpdate
     Void *data;
 };
 
-internal Void render_backend_init(Render_Context *renderer);
+internal Void render_backend_init(Void);
 
 #endif // OPENGL_RENDER_H

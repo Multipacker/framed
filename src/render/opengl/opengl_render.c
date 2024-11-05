@@ -221,7 +221,7 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 }
 
 internal Void
-render_backend_init(Render_Context *renderer)
+render_backend_init(Void)
 {
 #if !BUILD_MODE_RELEASE
     glDebugMessageCallback(&opengl_debug_output, NULL);
@@ -280,7 +280,7 @@ render_backend_init(Render_Context *renderer)
 }
 
 internal Void
-render_backend_begin(Render_Context *renderer)
+render_backend_begin(Void)
 {
     opengl_state.client_area = gfx_get_window_client_area();
 
@@ -291,11 +291,11 @@ render_backend_begin(Render_Context *renderer)
 
     // NOTE(simon): Push a clip rect for the entire screen so that there is
     // always at least on clip rect in the stack.
-    render_push_clip(renderer, v2f32(0.0f, 0.0f), v2f32((F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height), false);
+    render_push_clip(v2f32(0.0f, 0.0f), v2f32((F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height), false);
 }
 
 internal Void
-render_backend_end(Render_Context *renderer)
+render_backend_end(Void)
 {
     // NOTE(simon): Perform texture updates.
     while (opengl_state.texture_update_write_index - opengl_state.texture_update_read_index != 0)
@@ -383,7 +383,7 @@ opengl_create_batch(Void)
 // TODO(simon): Test performance without pruning batches and rectangles once we
 // are rendering more complicated scenes.
 internal Render_RectInstance *
-render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params)
+render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 {
     assert(opengl_state.clip_stack);
 
@@ -461,7 +461,7 @@ render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectPara
 }
 
 internal Void
-render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     OpenGL_ClipNode *node = push_struct(opengl_state.frame_arena, OpenGL_ClipNode);
 
@@ -484,7 +484,7 @@ render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to
 }
 
 internal Void
-render_pop_clip(Render_Context *renderer)
+render_pop_clip(Void)
 {
     stack_pop(opengl_state.clip_stack);
 }
@@ -530,7 +530,7 @@ render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_Colo
 }
 
 internal Void
-render_destroy_texture(Render_Context *renderer, Render_Texture handle)
+render_destroy_texture(Render_Texture handle)
 {
     GLuint texture = opengl_texture_id_from_handle(handle);
     if (texture)
@@ -570,7 +570,7 @@ render_update_texture(Render_Texture handle, Void *memory, U32 width, U32 height
 }
 
 internal Render_RenderStats
-render_get_stats(Render_Context *renderer)
+render_get_stats(Void)
 {
     return opengl_state.stats;
 }

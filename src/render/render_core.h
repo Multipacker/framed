@@ -64,14 +64,6 @@ typedef struct Render_FontAtlas Render_FontAtlas;
 typedef struct Render_FontCache Render_FontCache;
 typedef struct Render_FontQueue Render_FontQueue;
 
-typedef struct Render_Context Render_Context;
-struct Render_Context
-{
-    Arena *permanent_arena;
-    Arena *frame_arena;
-    Render_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
-};
-
 typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
 struct Render_FontLoaderThreadData
 {
@@ -97,7 +89,7 @@ global Render_RectInstance render_rect_instance_null;
 #define render_rect(renderer, min, max, ...) render_rect_(renderer, min, max, &(Render_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
 #define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Render_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
-internal Render_RectInstance *render_rect_(Render_Context *renderer, Vec2F32 min, Vec2F32 max, Render_RectParams *params);
+internal Render_RectInstance *render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params);
 
 internal Render_TextureSlice render_slice_from_texture(Render_Texture texture, RectF32 uv);
 internal Render_TextureSlice render_slice_from_texture_region(Render_Texture texture, RectU32 region);
@@ -111,16 +103,16 @@ internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
 internal F32     f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 
-internal Render_RenderStats render_get_stats(Render_Context *renderer);
+internal Render_RenderStats render_get_stats(Void);
 
-internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void render_pop_clip(Render_Context *renderer);
+internal Void render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
+internal Void render_pop_clip(Void);
 
-internal Render_Context *render_init(Void);
-internal Void render_begin(Render_Context *renderer);
-internal Void render_end(Render_Context *renderer);
+internal Void render_init(Void);
+internal Void render_begin(Void);
+internal Void render_end(Void);
 
-internal Void render_backend_begin(Render_Context *renderer);
-internal Void render_backend_end(Render_Context *renderer);
+internal Void render_backend_begin(Void);
+internal Void render_backend_end(Void);
 
 #endif // RENDER_CORE_H

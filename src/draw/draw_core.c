@@ -1,17 +1,8 @@
-typedef struct Draw_State Draw_State;
-struct Draw_State
-{
-    Render_Context *renderer;
-};
-
-global Draw_State draw_state;
-
 // NOTE(simon): Initialization
 
 internal Void
-draw_init(Render_Context *renderer)
+draw_init(Void)
 {
-    draw_state.renderer = renderer;
 }
 
 // NOTE(simon): Frame markers
@@ -43,18 +34,18 @@ draw_rect_(Vec2F32 min, Vec2F32 max, Draw_RectParams *parameters)
         .use_nearest      = parameters->use_nearest,
     };
 
-    Render_RectInstance *result = render_rect_(draw_state.renderer, min, max, &render_params);
+    Render_RectInstance *result = render_rect_(min, max, &render_params);
     return result;
 }
 
 internal Void
 draw_push_clip(Vec2F32 min, Vec2F32 max)
 {
-    render_push_clip(draw_state.renderer, min, max, true);
+    render_push_clip(min, max, true);
 }
 
 internal Void
 draw_pop_clip(Void)
 {
-    render_pop_clip(draw_state.renderer);
+    render_pop_clip();
 }
