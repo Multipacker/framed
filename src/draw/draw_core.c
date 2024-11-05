@@ -49,3 +49,33 @@ draw_pop_clip(Void)
 {
     render_pop_clip();
 }
+
+internal Void
+draw_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color)
+{
+    render_character_internal(min, codepoint, font, color);
+}
+
+internal Void
+draw_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color)
+{
+    render_text_internal(min, text, font, color);
+}
+
+internal Vec2F32
+draw_measure_character(Render_Font *font, U32 codepoint)
+{
+    return render_measure_character(font, codepoint);
+}
+
+internal Vec2F32
+draw_measure_text(Render_Font *font, Str8 text)
+{
+    return render_measure_text(font, text);
+}
+
+internal Vec2F32
+draw_measure_text_length(Render_Font *font, Str8 text, U64 length)
+{
+    return draw_measure_text(font, str8_prefix(text, length));
+}

@@ -164,7 +164,7 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
 
     draw_pop_clip();
 
-    render_text_internal(text_pos, root->string, font, text_style->color);
+    draw_text_internal(text_pos, root->string, font, text_style->color);
 }
 
 internal Void

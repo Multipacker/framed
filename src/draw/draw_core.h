@@ -29,4 +29,11 @@ internal Render_RectInstance *draw_rect_(Vec2F32 min, Vec2F32 max, Draw_RectPara
 internal Void draw_push_clip(Vec2F32 min, Vec2F32 max);
 internal Void draw_pop_clip(Void);
 
+internal Void draw_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color);
+internal Void draw_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color);
+
+internal Vec2F32 draw_measure_character(Render_Font *font, U32 codepoint);
+internal Vec2F32 draw_measure_text(Render_Font *font, Str8 text);
+internal Vec2F32 draw_measure_text_length(Render_Font *font, Str8 text, U64 length);
+
 #endif // DRAW_CORE_H

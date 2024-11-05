@@ -732,13 +732,6 @@ render_measure_text(Render_Font *font, Str8 text)
 }
 
 internal Vec2F32
-render_measure_text_length(Render_Font *font, Str8 text, U64 length)
-{
-    Vec2F32 result = render_measure_text(font, str8_prefix(text, length));
-    return (result);
-}
-
-internal Vec2F32
 render_measure_character(Render_Font *font, U32 codepoint)
 {
     profile_begin_function();

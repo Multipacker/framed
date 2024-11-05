@@ -175,15 +175,14 @@ internal Render_FontAtlasRegion render_alloc_font_atlas_region(Render_FontAtlas 
 internal Void                   render_free_atlas_region(Render_FontAtlas *atlas, Render_FontAtlasRegion region);
 
 internal Render_Font *render_font_from_key(Render_FontKey font_key);
-internal Vec2F32 render_measure_character(Render_Font *font, U32 codepoint);
-internal Vec2F32 render_measure_text(Render_Font *font, Str8 text);
-internal Vec2F32 render_measure_text_length(Render_Font *font, Str8 text, U64 length);
-
-internal Void render_font_stream_thread(Void *data);
+internal B32 render_font_is_loaded(Render_Font *font);
 
 internal Void render_character_internal(Vec2F32 min, U32 codepoint, Render_Font *font, Vec4F32 color);
 internal Void render_text_internal(Vec2F32 min, Str8 text, Render_Font *font, Vec4F32 color);
 
-internal B32 render_font_is_loaded(Render_Font *font);
+internal Vec2F32 render_measure_character(Render_Font *font, U32 codepoint);
+internal Vec2F32 render_measure_text(Render_Font *font, Str8 text);
+
+internal Void render_font_stream_thread(Void *data);
 
 #endif

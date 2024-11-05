@@ -1402,11 +1402,11 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
             Vec2F32 text_dim  = {0};
             if (root->text_style.icon)
             {
-                text_dim = render_measure_character(font, root->text_style.icon);
+                text_dim = draw_measure_character(font, root->text_style.icon);
             }
             else
             {
-                text_dim = render_measure_text(font, root->string);
+                text_dim = draw_measure_text(font, root->string);
             }
             root->fixed_size.v[axis] = f32_floor(text_dim.v[axis] + root->text_style.padding.v[axis]);
         }
@@ -1656,7 +1656,7 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-    Vec2F32 text_dim = render_measure_text(font, string);
+    Vec2F32 text_dim = draw_measure_text(font, string);
 
     switch (align)
     {
@@ -1696,7 +1696,7 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-    Vec2F32 text_dim = render_measure_character(font, codepoint);
+    Vec2F32 text_dim = draw_measure_character(font, codepoint);
 
     switch (align)
     {
@@ -1854,12 +1854,12 @@ ui_draw(UI_Box *root)
             if (text_style->icon)
             {
                 Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->fixed_rect, text_style->align);
-                render_character_internal(text_pos, text_style->icon, font, text_style->color);
+                draw_character_internal(text_pos, text_style->icon, font, text_style->color);
             }
             else
             {
                 Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
-                render_text_internal(text_pos, root->string, font, text_style->color);
+                draw_text_internal(text_pos, root->string, font, text_style->color);
             }
         }
     }
