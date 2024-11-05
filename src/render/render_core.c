@@ -1,8 +1,8 @@
 internal Render_TextureSlice
 render_slice_from_texture(Render_Texture texture, RectF32 uv)
 {
-    Render_TextureSlice result = { uv, texture };
-    return(result);
+    Render_TextureSlice result = {uv, texture};
+    return (result);
 }
 
 internal Render_TextureSlice
@@ -13,18 +13,18 @@ render_slice_from_texture_region(Render_Texture texture, RectU32 region)
     Render_TextureSlice result = { region, texture };
     return(result);
 #endif
-    Render_TextureSlice result = { 0 };
-    return(result);
+    Render_TextureSlice result = {0};
+    return (result);
 }
 
 internal Render_TextureSlice
 render_create_texture_slice(Render_Context *renderer, Str8 path)
 {
     Render_TextureSlice result;
-    result.texture = render_create_texture(renderer, path);
+    result.texture    = render_create_texture(renderer, path);
     result.region.min = v2f32(0, 0);
     result.region.max = v2f32(1, 1);
-    return(result);
+    return (result);
 }
 
 internal F32
@@ -39,7 +39,7 @@ f32_srgb_to_linear(F32 value)
     {
         result = f32_pow((value + 0.055f) / 1.055f, 2.4f);
     }
-    return(result);
+    return (result);
 }
 
 internal Vec4F32
@@ -51,7 +51,7 @@ vec4f32_srgb_to_linear(Vec4F32 srgb)
         f32_srgb_to_linear(srgb.b),
         srgb.a
     );
-    return(result);
+    return (result);
 }
 
 internal F32
@@ -60,13 +60,13 @@ f32_linear_to_srgb(F32 value)
     F32 result = 0.0f;
     if (value < 0.0031308f)
     {
-        result  = value * 12.92f;
+        result = value * 12.92f;
     }
     else
     {
         result = 1.055f * f32_pow(value, 1.0f / 2.4f) - 0.055f;
     }
-    return(result);
+    return (result);
 }
 
 internal Vec4F32
@@ -78,35 +78,34 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
         f32_linear_to_srgb(linear.b),
         linear.a
     );
-    return(result);
+    return (result);
 }
 
 internal Render_RenderStats
 render_get_stats(Render_Context *renderer)
 {
-    return(renderer->render_stats[1]);
+    return (renderer->render_stats[1]);
 }
 
 internal Render_Context *
-render_init(Gfx_Context *gfx)
+render_init(Void)
 {
-    Arena *arena = arena_create("RenderPerm");
-    Render_Context *renderer = push_struct(arena, Render_Context);
-    renderer->gfx             = gfx;
+    Arena *arena              = arena_create("RenderPerm");
+    Render_Context *renderer  = push_struct(arena, Render_Context);
     renderer->permanent_arena = arena;
     renderer->frame_arena     = arena_create("RenderFrame");
-    renderer->backend         = render_backend_init(renderer);
+    render_backend_init(renderer);
 
     renderer->font_atlas = render_make_font_atlas(renderer, v2u32(2048, 2048));
     renderer->font_cache = push_struct(arena, Render_FontCache);
     for (U64 i = 0; i < RENDER_FONT_CACHE_SIZE; ++i)
     {
-        renderer->font_cache->entries[i].arena = arena_create("FontCacheEntry%"PRIU64, i);
+        renderer->font_cache->entries[i].arena = arena_create("FontCacheEntry%" PRIU64, i);
     }
 
     // NOTE(simon): This is needed for atomic reads.
     arena_align(arena, 8);
-    renderer->font_queue = push_struct(arena, Render_FontQueue);
+    renderer->font_queue        = push_struct(arena, Render_FontQueue);
     renderer->font_queue->queue = push_array(arena, Render_FontQueueEntry, FONT_QUEUE_SIZE);
     os_semaphore_create(&renderer->font_queue->semaphore, 0);
 
@@ -115,13 +114,13 @@ render_init(Gfx_Context *gfx)
     for (U32 i = 0; i < 4; ++i)
     {
         Render_FontLoaderThreadData *data = push_struct(renderer->permanent_arena, Render_FontLoaderThreadData);
-        data->id = i;
-        data->renderer = renderer;
-        data->name = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
+        data->id                          = i;
+        data->renderer                    = renderer;
+        data->name                        = str8_pushf(renderer->permanent_arena, "FontLoader%d", i);
         os_thread_create(render_font_stream_thread, data);
     }
 
-    return(renderer);
+    return (renderer);
 }
 
 internal Void

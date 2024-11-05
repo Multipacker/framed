@@ -60,7 +60,6 @@ enum Render_TextureFilter
   Render_TextureFilter_COUNT
 };
 
-typedef struct Render_BackendContext Render_BackendContext;
 typedef struct Render_FontAtlas Render_FontAtlas;
 typedef struct Render_FontCache Render_FontCache;
 typedef struct Render_FontQueue Render_FontQueue;
@@ -70,7 +69,6 @@ struct Render_Context
 {
   Arena *permanent_arena;
   Arena *frame_arena;
-  Gfx_Context *gfx;
   Render_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
 
   Render_FontAtlas *font_atlas;
@@ -79,7 +77,6 @@ struct Render_Context
   OS_Mutex font_atlas_mutex;
 
   U64 frame_index;
-  Render_BackendContext *backend;
 };
 
 typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
@@ -122,7 +119,7 @@ internal F32 f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 internal Render_RenderStats render_get_stats(Render_Context *renderer);
 internal Void render_push_clip(Render_Context *renderer, Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Render_Context *render_init(Gfx_Context *gfx);
+internal Render_Context *render_init(Void);
 internal Void render_begin(Render_Context *renderer);
 internal Void render_end(Render_Context *renderer);
 

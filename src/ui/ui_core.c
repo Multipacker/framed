@@ -20,14 +20,14 @@
 
 global UI_Context *ui_ctx;
 read_only UI_Box g_nil_box =
-{
-    &g_nil_box,
-    &g_nil_box,
-    &g_nil_box,
-    &g_nil_box,
-    &g_nil_box,
-    &g_nil_box,
-    &g_nil_box,
+    {
+        &g_nil_box,
+        &g_nil_box,
+        &g_nil_box,
+        &g_nil_box,
+        &g_nil_box,
+        &g_nil_box,
+        &g_nil_box,
 };
 
 ////////////////////////////////
@@ -37,82 +37,82 @@ internal B32
 ui_box_is_nil(UI_Box *box)
 {
     B32 result = (!box || box == &g_nil_box);
-    return(result);
+    return (result);
 }
 
 internal F64
 ui_dt(Void)
 {
     F64 result = ui_ctx->dt;
-    return(result);
+    return (result);
 }
 
 internal Render_Context *
 ui_renderer(Void)
 {
     Render_Context *result = ui_ctx->renderer;
-    return(result);
+    return (result);
 }
 
 internal Gfx_EventList *
 ui_events(Void)
 {
     Gfx_EventList *result = ui_ctx->event_list;
-    return(result);
+    return (result);
 }
 
 internal UI_Stats *
 ui_get_current_stats(Void)
 {
-    UI_Stats *result = ui_ctx->stats + (ui_ctx->frame_index%2);
-    return(result);
+    UI_Stats *result = ui_ctx->stats + (ui_ctx->frame_index % 2);
+    return (result);
 }
 
 internal UI_Stats *
 ui_get_prev_stats(Void)
 {
-    UI_Stats *result = ui_ctx->stats + ((ui_ctx->frame_index+1)%2);
-    return(result);
+    UI_Stats *result = ui_ctx->stats + ((ui_ctx->frame_index + 1) % 2);
+    return (result);
 }
 
 internal Vec2F32
 ui_mouse_pos(Void)
 {
-    return(ui_ctx->mouse_pos);
+    return (ui_ctx->mouse_pos);
 }
 
 internal Vec2F32
 ui_prev_mouse_pos(Void)
 {
-    return(ui_ctx->prev_mouse_pos);
+    return (ui_ctx->prev_mouse_pos);
 }
 
 internal Arena *
 ui_permanent_arena(Void)
 {
     Arena *result = ui_ctx->permanent_arena;
-    return(result);
+    return (result);
 }
 
 internal Arena *
 ui_frame_arena(Void)
 {
     Arena *result = ui_ctx->frame_arena;
-    return(result);
+    return (result);
 }
 
 internal B32
 ui_animations_enabled(Void)
 {
     B32 result = ui_ctx->config.animations;
-    return(result);
+    return (result);
 }
 
 internal F32
 ui_animation_speed(Void)
 {
     F32 result = ui_ctx->config.animation_speed;
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -122,21 +122,21 @@ internal UI_Key
 ui_key_null(Void)
 {
     UI_Key result = {0};
-    return(result);
+    return (result);
 }
 
 internal B32
 ui_key_is_null(UI_Key key)
 {
     B32 result = ui_key_match(key, ui_key_null());
-    return(result);
+    return (result);
 }
 
 internal B32
 ui_key_match(UI_Key a, UI_Key b)
 {
     B32 result = a.value == b.value;
-    return(result);
+    return (result);
 }
 
 // TODO(simon): Switch to hash_str8 and hash_combine.
@@ -154,7 +154,7 @@ ui_key_from_string(UI_Key seed, Str8 string)
         }
     }
 
-    return(result);
+    return (result);
 }
 
 internal UI_Key
@@ -166,34 +166,34 @@ ui_key_from_stringf(UI_Key seed, CStr fmt, ...)
         va_list args;
         va_start(args, fmt);
         Str8 string = str8_pushfv(scratch, fmt, args);
-        result = ui_key_from_string(seed, string);
+        result      = ui_key_from_string(seed, string);
         va_end(args);
     }
-    return(result);
+    return (result);
 }
 
 internal Str8
 ui_get_hash_part_from_string(Str8 string)
 {
     Str8 result = string;
-    U64 index = 0;
+    U64 index   = 0;
     if (str8_find_substr8(string, str8_lit("###"), &index))
     {
         result = str8_skip(string, index + 3);
     }
-    return(result);
+    return (result);
 }
 
 internal Str8
 ui_get_display_part_from_string(Str8 string)
 {
     Str8 result = string;
-    U64 index = 0;
+    U64 index   = 0;
     if (str8_find_substr8(string, str8_lit("##"), &index))
     {
         result = str8_chop(string, string.size - index);
     }
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -202,56 +202,56 @@ ui_get_display_part_from_string(Str8 string)
 internal UI_Size
 ui_pixels(F32 value, F32 strictness)
 {
-    UI_Size result = {0};
-    result.kind = UI_SizeKind_Pixels;
-    result.value = value;
+    UI_Size result    = {0};
+    result.kind       = UI_SizeKind_Pixels;
+    result.value      = value;
     result.strictness = strictness;
-    return(result);
+    return (result);
 }
 
 internal UI_Size
 ui_text_content(F32 strictness)
 {
-    UI_Size result = {0};
-    result.kind = UI_SizeKind_TextContent;
+    UI_Size result    = {0};
+    result.kind       = UI_SizeKind_TextContent;
     result.strictness = strictness;
-    return(result);
+    return (result);
 }
 
 internal UI_Size
 ui_pct(F32 value, F32 strictness)
 {
-    UI_Size result = {0};
-    result.kind = UI_SizeKind_Pct;
-    result.value = value;
+    UI_Size result    = {0};
+    result.kind       = UI_SizeKind_Pct;
+    result.value      = value;
     result.strictness = strictness;
-    return(result);
+    return (result);
 }
 
 internal UI_Size
 ui_children_sum(F32 strictness)
 {
-    UI_Size result = {0};
-    result.kind = UI_SizeKind_ChildrenSum;
+    UI_Size result    = {0};
+    result.kind       = UI_SizeKind_ChildrenSum;
     result.strictness = strictness;
-    return(result);
+    return (result);
 }
 
 internal UI_Size
 ui_em(F32 value, F32 strictness)
 {
-    UI_Size result = {0};
-    result.kind = UI_SizeKind_Pixels;
-    result.value = ui_top_font_line_height() * value;
+    UI_Size result    = {0};
+    result.kind       = UI_SizeKind_Pixels;
+    result.value      = ui_top_font_line_height() * value;
     result.strictness = strictness;
-    return(result);
+    return (result);
 }
 
 internal UI_Size
 ui_fill(Void)
 {
     UI_Size result = ui_pct(1, 0);
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -280,23 +280,27 @@ ui_text_action_from_event(Gfx_Event *event)
             {
                 result.delta = -1;
                 result.flags |= UI_TextActionFlag_DeltaPicksSelectionSide;
-            } break;
+            }
+            break;
 
             case Gfx_Key_Right:
             {
                 result.delta = 1;
                 result.flags |= UI_TextActionFlag_DeltaPicksSelectionSide;
-            } break;
+            }
+            break;
 
             case Gfx_Key_Home:
             {
                 result.delta = S64_MIN;
-            } break;
+            }
+            break;
 
             case Gfx_Key_End:
             {
                 result.delta = S64_MAX;
-            } break;
+            }
+            break;
 
             case Gfx_Key_A:
             {
@@ -304,7 +308,8 @@ ui_text_action_from_event(Gfx_Event *event)
                 {
                     result.flags |= UI_TextActionFlag_SelectAll;
                 }
-            } break;
+            }
+            break;
 
             case Gfx_Key_C:
             {
@@ -312,7 +317,8 @@ ui_text_action_from_event(Gfx_Event *event)
                 {
                     result.flags |= UI_TextActionFlag_Copy;
                 }
-            } break;
+            }
+            break;
 
             case Gfx_Key_X:
             {
@@ -320,26 +326,31 @@ ui_text_action_from_event(Gfx_Event *event)
                 {
                     result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_Copy;
                 }
-            } break;
+            }
+            break;
 
             case Gfx_Key_V:
             {
                 result.flags |= UI_TextActionFlag_Paste;
-            } break;
+            }
+            break;
 
             case Gfx_Key_Backspace:
             {
                 result.delta = -1;
                 result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_ZeroDeltaWithSelection;
-            } break;
+            }
+            break;
 
             case Gfx_Key_Delete:
             {
                 result.delta = +1;
                 result.flags |= UI_TextActionFlag_Delete | UI_TextActionFlag_ZeroDeltaWithSelection;
-            } break;
+            }
+            break;
 
-            default: break;
+            default:
+                break;
         }
     }
     else if (event->kind == Gfx_EventKind_Char)
@@ -347,7 +358,7 @@ ui_text_action_from_event(Gfx_Event *event)
         result.codepoint = event->character;
     }
 
-    return(result);
+    return (result);
 }
 
 internal UI_TextActionList
@@ -360,17 +371,17 @@ ui_text_action_list_from_events(Arena *arena, Gfx_EventList *event_list)
         if (!type_is_zero(text_action))
         {
             UI_TextActionNode *node = push_struct(arena, UI_TextActionNode);
-            node->action = text_action;
+            node->action            = text_action;
             dll_push_back(result.first, result.last, node);
         }
     }
-    return(result);
+    return (result);
 }
 
 internal UI_TextOp
 ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *state, UI_TextAction *action)
 {
-    UI_TextOp result = { 0 };
+    UI_TextOp result = {0};
 
     result.new_cursor = state->cursor;
     result.new_mark   = state->mark;
@@ -385,7 +396,8 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
     if (
         action->flags & UI_TextActionFlag_DeltaPicksSelectionSide &&
         !(action->flags & UI_TextActionFlag_KeepMark) &&
-        state->cursor != state->mark)
+        state->cursor != state->mark
+    )
     {
         if (delta < 0)
         {
@@ -483,14 +495,14 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
     if (action->flags & UI_TextActionFlag_Copy)
     {
-        U64 min = (U64) s64_min(result.new_cursor, result.new_mark);
-        U64 max = (U64) s64_max(result.new_cursor, result.new_mark);
+        U64 min            = (U64) s64_min(result.new_cursor, result.new_mark);
+        U64 max            = (U64) s64_max(result.new_cursor, result.new_mark);
         result.copy_string = str8_substring(edit_str, min, max - min);
     }
 
     if (action->flags & UI_TextActionFlag_Delete)
     {
-        result.range = v2s64(result.new_cursor, result.new_mark);
+        result.range      = v2s64(result.new_cursor, result.new_mark);
         result.new_cursor = s64_min(result.new_cursor, result.new_mark);
     }
 
@@ -507,7 +519,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
         // NOTE(simon): Allocate enough space for encoding the longest Unicode codepoint in UTF-8.
         result.replace_string.data = push_array(arena, U8, 4);
         result.replace_string.size = string_encode_utf8(result.replace_string.data, action->codepoint);
-        result.range = v2s64(result.new_cursor, result.new_mark);
+        result.range               = v2s64(result.new_cursor, result.new_mark);
         if (state->cursor > state->mark)
         {
             result.new_cursor = result.new_mark + (S64) result.replace_string.size;
@@ -522,7 +534,7 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
     if (action->flags & UI_TextActionFlag_Paste)
     {
         result.replace_string = gfx_push_clipboard(arena);
-        result.range = v2s64(result.new_cursor, result.new_mark);
+        result.range          = v2s64(result.new_cursor, result.new_mark);
         if (result.new_cursor > result.new_mark)
         {
             result.new_cursor = result.new_mark + (S64) result.replace_string.size;
@@ -536,11 +548,11 @@ ui_text_op_from_state_and_action(Arena *arena, Str8 edit_str, UI_TextEditState *
 
     if (action->flags & UI_TextActionFlag_SelectAll)
     {
-        result.new_mark = 0;
+        result.new_mark   = 0;
         result.new_cursor = S64_MAX;
     }
 
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -553,13 +565,13 @@ ui_comm_from_box(UI_Box *box)
     assert(!ui_key_is_null(box->key) && "Tried to gather input from a keyless box!");
 
     UI_Comm result = {0};
-    result.box = box;
+    result.box     = box;
     if (ui_box_has_flag(box, UI_BoxFlag_Disabled))
     {
-        return(result);
+        return (result);
     }
 
-    Vec2F32 mouse_pos = gfx_get_mouse_pos(ui_ctx->renderer->gfx);
+    Vec2F32 mouse_pos = gfx_get_mouse_pos();
 
     result.rel_mouse = v2f32_sub_v2f32(mouse_pos, box->fixed_rect.min);
 
@@ -598,9 +610,9 @@ ui_comm_from_box(UI_Box *box)
     {
         if (ui_box_is_active(box))
         {
-            result.dragging = true;
+            result.dragging   = true;
             result.drag_delta = v2f32_sub_v2f32(ui_ctx->prev_mouse_pos, ui_ctx->mouse_pos);
-            ui_ctx->hot_key = box->key;
+            ui_ctx->hot_key   = box->key;
         }
 
         B32 mouse_over = rectf32_contains_v2f32(hover_region, mouse_pos);
@@ -633,24 +645,29 @@ ui_comm_from_box(UI_Box *box)
                                 {
                                     result.clicked = true;
                                 }
-                            } break;
+                            }
+                            break;
 
                             case Gfx_Key_MouseLeftDouble:
                             {
                                 dll_remove(event_list->first, event_list->last, node);
-                            } break;
+                            }
+                            break;
 
                             case Gfx_Key_MouseRight:
                             {
                                 result.right_released = true;
                                 dll_remove(event_list->first, event_list->last, node);
-                            } break;
+                            }
+                            break;
 
                             default:
                             {
-                            } break;
+                            }
+                            break;
                         }
-                    } break;
+                    }
+                    break;
 
                     case Gfx_EventKind_KeyPress:
                     {
@@ -660,12 +677,13 @@ ui_comm_from_box(UI_Box *box)
                             {
                                 if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
                                 {
-                                    result.pressed = true;
+                                    result.pressed     = true;
                                     ui_ctx->active_key = box->key;
                                     dll_remove(event_list->first, event_list->last, node);
                                     ui_ctx->focus_key = box->key;
                                 }
-                            } break;
+                            }
+                            break;
 
                             case Gfx_Key_MouseRight:
                             {
@@ -674,24 +692,28 @@ ui_comm_from_box(UI_Box *box)
                                     dll_remove(event_list->first, event_list->last, node);
                                     ui_ctx->focus_key = box->key;
                                 }
-                            } break;
+                            }
+                            break;
 
                             case Gfx_Key_MouseLeftDouble:
                             {
                                 if (ui_box_has_flag(box, UI_BoxFlag_Clickable))
                                 {
                                     result.double_clicked = true;
-                                    ui_ctx->active_key = box->key;
+                                    ui_ctx->active_key    = box->key;
                                     dll_remove(event_list->first, event_list->last, node);
                                     ui_ctx->focus_key = box->key;
                                 }
-                            } break;
+                            }
+                            break;
 
                             default:
                             {
-                            } break;
+                            }
+                            break;
                         }
-                    } break;
+                    }
+                    break;
 
                     case Gfx_EventKind_Scroll:
                     {
@@ -701,18 +723,20 @@ ui_comm_from_box(UI_Box *box)
                             result.scroll.y = -node->scroll.y;
                             dll_remove(event_list->first, event_list->last, node);
                         }
-                    } break;
+                    }
+                    break;
 
                     default:
                     {
-                    } break;
+                    }
+                    break;
                 }
             }
         }
     }
     profile_end_function();
 
-    return(result);
+    return (result);
 }
 
 internal B32
@@ -723,14 +747,14 @@ ui_box_is_active(UI_Box *box)
     {
         result = ui_key_match(ui_ctx->active_key, box->key);
     }
-    return(result);
+    return (result);
 }
 
 internal B32
 ui_box_is_hot(UI_Box *box)
 {
     B32 result = ui_key_match(ui_ctx->hot_key, box->key);
-    return(result);
+    return (result);
 }
 
 internal B32
@@ -741,7 +765,7 @@ ui_box_is_focused(UI_Box *box)
     {
         result = ui_key_match(ui_ctx->focus_key, box->key);
     }
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
@@ -755,14 +779,14 @@ ui_box_alloc(Void)
     memory_zero_struct(result);
     ui_ctx->box_storage.num_free_boxes--;
 
-    return(result);
+    return (result);
 }
 
 internal Void
 ui_box_free(UI_Box *box)
 {
-    UI_FreeBox *free_box = (UI_FreeBox *) box;
-    free_box->next = ui_ctx->box_storage.first_free_box;
+    UI_FreeBox *free_box               = (UI_FreeBox *) box;
+    free_box->next                     = ui_ctx->box_storage.first_free_box;
     ui_ctx->box_storage.first_free_box = free_box;
     ui_ctx->box_storage.num_free_boxes++;
 
@@ -773,7 +797,7 @@ internal B32
 ui_box_has_flag(UI_Box *box, UI_BoxFlags flag)
 {
     B32 result = (box->flags & flag) != 0;
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
@@ -783,7 +807,7 @@ ui_box_from_key(UI_Key key)
 
     if (!ui_key_is_null(key))
     {
-        U64 count = 0;
+        U64 count      = 0;
         U64 slot_index = key.value % ui_ctx->box_hash_map_count;
         for (result = ui_ctx->box_hash_map[slot_index]; !ui_box_is_nil(result); result = result->hash_next)
         {
@@ -803,7 +827,7 @@ ui_box_from_key(UI_Key key)
         }
     }
 
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
@@ -818,15 +842,15 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
     {
         if (!ui_key_is_null(key))
         {
-            result = ui_box_alloc();
-            result->key = key;
+            result                            = ui_box_alloc();
+            result->key                       = key;
             result->first_frame_touched_index = ui_ctx->frame_index;
 
             U64 slot_index = result->key.value % ui_ctx->box_hash_map_count;
-            UI_Box *box = ui_ctx->box_hash_map[slot_index];
+            UI_Box *box    = ui_ctx->box_hash_map[slot_index];
             if (!ui_box_is_nil(box))
             {
-                box->hash_prev = result;
+                box->hash_prev    = result;
                 result->hash_next = box;
             }
 
@@ -834,9 +858,9 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
         }
         else
         {
-            result = push_struct_zero(ui_frame_arena(), UI_Box);
+            result                            = push_struct_zero(ui_frame_arena(), UI_Box);
             result->first_frame_touched_index = ui_ctx->frame_index;
-            result->key = key;
+            result->key                       = key;
 
             ui_stats_inc_val(num_transient_boxes);
         }
@@ -850,41 +874,29 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
     UI_Box *parent = ui_top_parent();
 
     result->first = result->last = result->next = result->prev = result->parent = &g_nil_box;
-    result->string = string;
-    result->rect_style   = *ui_top_rect_style();
-    result->text_style   = *ui_top_text_style();
-    result->layout_style = *ui_top_layout_style();
-    result->parent = parent;
-    result->flags = flags | result->layout_style.box_flags;
+    result->string                                                              = string;
+    result->rect_style                                                          = *ui_top_rect_style();
+    result->text_style                                                          = *ui_top_text_style();
+    result->layout_style                                                        = *ui_top_layout_style();
+    result->parent                                                              = parent;
+    result->flags                                                               = flags | result->layout_style.box_flags;
 
     if (!ui_box_is_nil(parent))
     {
         dll_push_back_npz(parent->first, parent->last, result, next, prev, &g_nil_box);
     }
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateX) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateY) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateWidth) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateHeight) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollX) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollX) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
-    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollY) &&
-             ui_key_is_null(result->key) &&
-             "Why would you animate a keyless box"));
+    assert(!(ui_box_has_flag(result, UI_BoxFlag_AnimateScrollY) && ui_key_is_null(result->key) && "Why would you animate a keyless box"));
 
     result->last_frame_touched_index = ui_ctx->frame_index;
 
@@ -892,7 +904,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
     {
         result->fixed_rect = result->layout_style.fixed_rect;
         result->flags |= UI_BoxFlag_FixedPos;
-        Vec2F32 fixed_rect_dim = rectf32_dim(result->fixed_rect);
+        Vec2F32 fixed_rect_dim             = rectf32_dim(result->fixed_rect);
         result->layout_style.size[Axis2_X] = ui_pixels(fixed_rect_dim.x, 1);
         result->layout_style.size[Axis2_Y] = ui_pixels(fixed_rect_dim.y, 1);
     }
@@ -927,7 +939,7 @@ ui_box_make(UI_BoxFlags flags, Str8 string)
 
     profile_end_function();
 
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
@@ -937,17 +949,17 @@ ui_box_makef(UI_BoxFlags flags, CStr fmt, ...)
     va_list args;
     va_start(args, fmt);
     Str8 string = str8_pushfv(ui_frame_arena(), fmt, args);
-    result = ui_box_make(flags, string);
+    result      = ui_box_make(flags, string);
     va_end(args);
 
-    return(result);
+    return (result);
 }
 
 internal Void
 ui_box_equip_display_string(UI_Box *box, Str8 string)
 {
     Str8 display_string = ui_get_display_part_from_string(string);
-    box->string = str8_copy(ui_frame_arena(), string);
+    box->string         = str8_copy(ui_frame_arena(), string);
 }
 
 internal Void
@@ -971,14 +983,14 @@ internal B32
 ui_box_was_created_this_frame(UI_Box *box)
 {
     B32 result = box->first_frame_touched_index == box->last_frame_touched_index;
-    return(result);
+    return (result);
 }
 
 internal B32
 ui_mouse_is_inside_box(UI_Box *box)
 {
     B32 result = rectf32_contains_v2f32(box->fixed_rect, ui_ctx->mouse_pos);
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -994,19 +1006,19 @@ ui_ctx_menu_begin(UI_Key key)
     if (is_open)
     {
         ui_next_extra_box_flags(
-                                UI_BoxFlag_DrawBackground |
-                                UI_BoxFlag_DrawBorder |
-                                UI_BoxFlag_AnimateHeight |
-                                UI_BoxFlag_DrawDropShadow |
-                                UI_BoxFlag_Clip
-                                );
+            UI_BoxFlag_DrawBackground |
+            UI_BoxFlag_DrawBorder |
+            UI_BoxFlag_AnimateHeight |
+            UI_BoxFlag_DrawDropShadow |
+            UI_BoxFlag_Clip
+        );
     }
 
     ui_push_seed(key);
     ui_next_corner_radius(ui_top_font_line_height() * 0.1f);
     ui_named_column_begin(str8_lit("CtxMenuColumn"));
 
-    return(is_open);
+    return (is_open);
 }
 
 internal Void
@@ -1020,9 +1032,9 @@ ui_ctx_menu_end(Void)
 internal Void
 ui_ctx_menu_open(UI_Key anchor, Vec2F32 offset, UI_Key menu)
 {
-    ui_ctx->next_ctx_menu_key = menu;
+    ui_ctx->next_ctx_menu_key        = menu;
     ui_ctx->next_ctx_menu_anchor_key = anchor;
-    ui_ctx->next_anchor_offset = offset;
+    ui_ctx->next_anchor_offset       = offset;
 }
 
 internal Void
@@ -1036,14 +1048,14 @@ internal B32
 ui_ctx_menu_is_open(Void)
 {
     B32 result = !ui_key_is_null(ui_ctx->ctx_menu_key);
-    return(result);
+    return (result);
 }
 
 internal UI_Key
 ui_ctx_menu_key(Void)
 {
     UI_Key result = ui_ctx->ctx_menu_key;
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -1070,16 +1082,16 @@ ui_init(Void)
     UI_Context *result = 0;
 
     Arena *permanent_arena = arena_create("UIPerm");
-    Arena *frame_arena = arena_create("UIFrame");
+    Arena *frame_arena     = arena_create("UIFrame");
 
     result = push_struct(permanent_arena, UI_Context);
     ui_ctx = result;
 
     result->permanent_arena = permanent_arena;
-    result->frame_arena = frame_arena;
+    result->frame_arena     = frame_arena;
 
     result->box_storage.storage_count = 512;
-    result->box_storage.boxes = push_array(permanent_arena, UI_Box, result->box_storage.storage_count);
+    result->box_storage.boxes         = push_array(permanent_arena, UI_Box, result->box_storage.storage_count);
 
     for (U64 i = 0; i < result->box_storage.storage_count; ++i)
     {
@@ -1087,11 +1099,11 @@ ui_init(Void)
     }
 
     result->box_hash_map_count = 1024;
-    result->box_hash_map = push_array(permanent_arena, UI_Box *, result->box_hash_map_count);
+    result->box_hash_map       = push_array(permanent_arena, UI_Box *, result->box_hash_map_count);
 
     ui_ctx = 0;
 
-    return(result);
+    return (result);
 }
 
 internal Void
@@ -1101,13 +1113,13 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 
     ui_ctx = ctx;
 
-    ui_ctx->renderer = renderer;
+    ui_ctx->renderer   = renderer;
     ui_ctx->event_list = event_list;
-    ui_ctx->dt = dt;
+    ui_ctx->dt         = dt;
 
     ui_ctx->prev_active_key = ui_ctx->active_key;
 
-    ui_ctx->mouse_pos = gfx_get_mouse_pos(ui_ctx->renderer->gfx);
+    ui_ctx->mouse_pos = gfx_get_mouse_pos();
 
     ui_ctx->ctx_menu_key        = ui_ctx->next_ctx_menu_key;
     ui_ctx->ctx_menu_anchor_key = ui_ctx->next_ctx_menu_anchor_key;
@@ -1116,7 +1128,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     B32 left_mouse_released = false;
     B32 left_mouse_pressed  = false;
     B32 escape_key_pressed  = false;
-    B32 return_pressed = false;
+    B32 return_pressed      = false;
     for (Gfx_Event *node = event_list->first; node != 0; node = node->next)
     {
         switch (node->kind)
@@ -1129,13 +1141,16 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
                     case Gfx_Key_MouseLeftDouble:
                     {
                         left_mouse_released = true;
-                    } break;
+                    }
+                    break;
 
                     default:
                     {
-                    } break;
+                    }
+                    break;
                 }
-            } break;
+            }
+            break;
 
             case Gfx_EventKind_KeyPress:
             {
@@ -1152,11 +1167,13 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
                 {
                     left_mouse_pressed = true;
                 }
-            } break;
+            }
+            break;
 
             default:
             {
-            } break;
+            }
+            break;
         }
     }
 
@@ -1213,16 +1230,16 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     // NOTE(hampus): Setup default styling
 
     UI_TextStyle *text_style = ui_push_text_style();
-    text_style->color = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
-    text_style->font = str8_lit("data/fonts/NotoSansMono-Medium.ttf");
-    text_style->font_size = 15;
+    text_style->color        = v4f32(0.9f, 0.9f, 0.9f, 1.0f);
+    text_style->font         = str8_lit("data/fonts/NotoSansMono-Medium.ttf");
+    text_style->font_size    = 15;
 
     text_style->padding.v[Axis2_X] = (F32) ui_top_font_line_height();
 
-    UI_LayoutStyle *layout_style = ui_push_layout_style();
+    UI_LayoutStyle *layout_style    = ui_push_layout_style();
     layout_style->child_layout_axis = Axis2_Y;
 
-    UI_RectStyle *rect_style = ui_push_rect_style();
+    UI_RectStyle *rect_style              = ui_push_rect_style();
     rect_style->color[Corner_TopLeft]     = color;
     rect_style->color[Corner_TopRight]    = color;
     rect_style->color[Corner_BottomLeft]  = color;
@@ -1233,7 +1250,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     rect_style->radies                    = v4f32(radius, radius, radius, radius);
     rect_style->softness                  = 1;
 
-    Vec2U32 client_area = gfx_get_window_client_area(renderer->gfx);
+    Vec2U32 client_area = gfx_get_window_client_area();
     Vec2F32 max_clip;
     max_clip.x = (F32) client_area.x;
     max_clip.y = (F32) client_area.y;
@@ -1246,7 +1263,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
 
     ui_push_parent(ui_ctx->root);
 
-    ui_next_relative_pos(Axis2_X, ui_ctx->mouse_pos.x+10);
+    ui_next_relative_pos(Axis2_X, ui_ctx->mouse_pos.x + 10);
     ui_next_relative_pos(Axis2_Y, ui_ctx->mouse_pos.y);
     ui_ctx->tooltip_root = ui_box_make(UI_BoxFlag_FixedPos, str8_lit("TooltipRoot"));
 
@@ -1262,7 +1279,7 @@ ui_begin(UI_Context *ctx, Gfx_EventList *event_list, Render_Context *renderer, F
     {
         if (left_mouse_pressed)
         {
-            UI_Box *ctx_menu_root = ui_ctx->ctx_menu_root;
+            UI_Box *ctx_menu_root           = ui_ctx->ctx_menu_root;
             B32 clicked_inside_context_menu = rectf32_contains_v2f32(ctx_menu_root->fixed_rect, ui_ctx->mouse_pos);
 
             if (!clicked_inside_context_menu)
@@ -1324,19 +1341,19 @@ ui_end(Void)
     if (!ui_key_is_null(ui_ctx->hot_key))
     {
         UI_Box *hot_box = ui_box_from_key(ui_ctx->hot_key);
-        gfx_set_cursor(ui_ctx->renderer->gfx, hot_box->rect_style.hover_cursor);
+        gfx_set_cursor(hot_box->rect_style.hover_cursor);
     }
     else
     {
-        gfx_set_cursor(ui_ctx->renderer->gfx, Gfx_Cursor_Arrow);
+        gfx_set_cursor(Gfx_Cursor_Arrow);
     }
 
     ui_layout(ui_ctx->root);
     ui_draw(ui_ctx->root);
 
     ui_ctx->prev_mouse_pos = ui_ctx->mouse_pos;
-    ui_ctx->parent_stack = 0;
-    ui_ctx->seed_stack   = 0;
+    ui_ctx->parent_stack   = 0;
+    ui_ctx->seed_stack     = 0;
     arena_pop_to(ui_frame_arena(), 0);
     ui_ctx->rect_style_stack.first   = 0;
     ui_ctx->text_style_stack.first   = 0;
@@ -1354,13 +1371,13 @@ internal Void
 ui_layout(UI_Box *root)
 {
     profile_begin_function();
-        for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
-        {
-            ui_solve_independent_sizes(root, axis);
-            ui_solve_upward_dependent_sizes(root, axis);
-            ui_solve_downward_dependent_sizes(root, axis);
-            ui_solve_size_violations(root, axis);
-            ui_calculate_final_rect(root, axis, 0);
+    for (Axis2 axis = Axis2_X; axis < Axis2_COUNT; ++axis)
+    {
+        ui_solve_independent_sizes(root, axis);
+        ui_solve_upward_dependent_sizes(root, axis);
+        ui_solve_downward_dependent_sizes(root, axis);
+        ui_solve_size_violations(root, axis);
+        ui_calculate_final_rect(root, axis, 0);
     }
 
     profile_end_function();
@@ -1374,7 +1391,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
     if (root->layout_style.size[axis].kind == UI_SizeKind_Null)
     {
-        root->layout_style.size[axis].kind = UI_SizeKind_TextContent;
+        root->layout_style.size[axis].kind       = UI_SizeKind_TextContent;
         root->layout_style.size[axis].strictness = 1;
     }
     UI_Size size = root->layout_style.size[axis];
@@ -1384,12 +1401,13 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
         case UI_SizeKind_Pixels:
         {
             root->fixed_size.v[axis] = f32_floor(size.value);
-        } break;
+        }
+        break;
 
         case UI_SizeKind_TextContent:
         {
             Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(&root->text_style));
-            Vec2F32 text_dim = {0};
+            Vec2F32 text_dim  = {0};
             if (root->text_style.icon)
             {
                 text_dim = render_measure_character(font, root->text_style.icon);
@@ -1399,9 +1417,11 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
                 text_dim = render_measure_text(font, root->string);
             }
             root->fixed_size.v[axis] = f32_floor(text_dim.v[axis] + root->text_style.padding.v[axis]);
-        } break;
+        }
+        break;
 
-        default: break;
+        default:
+            break;
     }
 
     for (UI_Box *child = root->first; !ui_box_is_nil(child); child = child->next)
@@ -1423,7 +1443,7 @@ ui_solve_upward_dependent_sizes(UI_Box *root, Axis2 axis)
 
         assert(root->parent->layout_style.size[axis].kind != UI_SizeKind_ChildrenSum && "Cyclic sizing behaviour");
 
-        F32 parent_size = root->parent->fixed_size.v[axis];
+        F32 parent_size          = root->parent->fixed_size.v[axis];
         root->fixed_size.v[axis] = f32_floor(parent_size * size.value);
     }
 
@@ -1476,7 +1496,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
     profile_begin_function();
     F32 available_space = root->fixed_size.v[axis];
 
-    F32 taken_space = 0;
+    F32 taken_space        = 0;
     F32 total_fixup_budget = 0;
     if (!(ui_box_has_flag(root, (UI_BoxFlags) (UI_BoxFlag_AllowOverflowX << axis))))
     {
@@ -1508,7 +1528,7 @@ ui_solve_size_violations(UI_Box *root, Axis2 axis)
                 if (!(ui_box_has_flag(child, (UI_BoxFlags) (UI_BoxFlag_FixedX << axis))))
                 {
                     F32 fixup_budget_this_child = child->fixed_size.v[axis] * (1 - child->layout_style.size[axis].strictness);
-                    F32 fixup_size_this_child = 0;
+                    F32 fixup_size_this_child   = 0;
                     if (axis == root->layout_style.child_layout_axis)
                     {
                         fixup_size_this_child = fixup_budget_this_child * (violation / total_fixup_budget);
@@ -1651,27 +1671,30 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
         case UI_TextAlign_Center:
         {
             result = v2f32_div_f32(v2f32_sub_v2f32(rect_dim, text_dim), 2.0f);
-        } break;
+        }
+        break;
 
         case UI_TextAlign_Right:
         {
             result.y = (rect_dim.y - text_dim.y) / 2;
             result.x = rect_dim.x - text_dim.x - padding.width / 2;
-        } break;
+        }
+        break;
 
         case UI_TextAlign_Left:
         {
             result.y = (rect_dim.y - text_dim.y) / 2;
             result.x = padding.width / 2;
-        } break;
+        }
+        break;
 
-        invalid_case;
+            invalid_case;
     }
 
     result = v2f32_add_v2f32(result, rect.min);
 
     profile_end_function();
-    return(result);
+    return (result);
 }
 
 internal Vec2F32
@@ -1688,27 +1711,30 @@ ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_Te
         case UI_TextAlign_Center:
         {
             result = v2f32_div_f32(v2f32_sub_v2f32(rect_dim, text_dim), 2.0f);
-        } break;
+        }
+        break;
 
         case UI_TextAlign_Right:
         {
             result.y = (rect_dim.y - text_dim.y) / 2;
             result.x = rect_dim.x - text_dim.x;
-        } break;
+        }
+        break;
 
         case UI_TextAlign_Left:
         {
             result.y = (rect_dim.y - text_dim.y) / 2;
             result.x = 0;
-        } break;
+        }
+        break;
 
-        invalid_case;
+            invalid_case;
     }
 
     result = v2f32_add_v2f32(result, rect.min);
 
     profile_end_function();
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -1734,7 +1760,7 @@ ui_draw(UI_Box *root)
     }
     else
     {
-        F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+        F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f * -ui_animation_speed() * ui_ctx->dt));
         if (ui_box_is_active(root))
         {
             root->active_t += (1.0f - root->active_t) * animation_delta;
@@ -1761,15 +1787,15 @@ ui_draw(UI_Box *root)
 
         if (ui_box_has_flag(root, UI_BoxFlag_DrawDropShadow))
         {
-            Vec2F32 dpi = gfx_get_dpi(ui_renderer()->gfx);
-            Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x/6, dpi.x/6));
-            Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x/5, dpi.x/5));
+            Vec2F32 dpi = gfx_get_dpi();
+            Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x / 6, dpi.x / 6));
+            Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x / 5, dpi.x / 5));
             // TODO(hampus): Make softness em dependent
             Render_RectInstance *instance = render_rect(
-                                                        ui_ctx->renderer, min, max,
-                                                        .softness = dpi.x * 0.2f,
-                                                        .color = v4f32(0, 0, 0, 1)
-                                                        );
+                ui_ctx->renderer, min, max,
+                .softness = dpi.x * 0.2f,
+                .color    = v4f32(0, 0, 0, 1)
+            );
             memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
         }
 
@@ -1793,11 +1819,11 @@ ui_draw(UI_Box *root)
             rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
             instance = render_rect(
-                                   ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-                                   .softness = rect_style->softness,
-                                   .slice = rect_style->slice,
-                                   .use_nearest = rect_style->texture_filter
-                                   );
+                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+                .softness    = rect_style->softness,
+                .slice       = rect_style->slice,
+                .use_nearest = rect_style->texture_filter
+            );
 
             memory_copy_array(instance->colors, rect_style->color);
             memory_copy_array(instance->radies, rect_style->radies.v);
@@ -1821,11 +1847,11 @@ ui_draw(UI_Box *root)
             }
 
             Render_RectInstance *instance = render_rect(
-                                                        ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-                                                        .border_thickness = rect_style->border_thickness,
-                                                        .color = rect_style->border_color,
-                                                        .softness = rect_style->softness
-                                                        );
+                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+                .border_thickness = rect_style->border_thickness,
+                .color            = rect_style->border_color,
+                .softness         = rect_style->softness
+            );
             memory_copy(instance->radies, rect_style->radies.v, sizeof(Vec4F32));
         }
 
@@ -1844,7 +1870,6 @@ ui_draw(UI_Box *root)
                 render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
             }
         }
-
     }
 
     if (ui_ctx->show_debug_lines)
@@ -1876,29 +1901,29 @@ internal F32
 ui_top_font_line_height(Void)
 {
     UI_TextStyle *text_style = ui_top_text_style();
-    Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
-    F32 result = 0;
+    Render_Font *font        = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(ui_top_text_style()));
+    F32 result               = 0;
     if (render_font_is_loaded(font))
     {
         result = font->line_height;
     }
-    return(result);
+    return (result);
 }
 
 internal Render_FontKey
 ui_font_key_from_text_style(UI_TextStyle *text_style)
 {
     Render_FontKey result = {0};
-    result.path = text_style->font;
-    result.font_size = text_style->font_size;
-    return(result);
+    result.path           = text_style->font;
+    result.font_size      = text_style->font_size;
+    return (result);
 }
 
 internal Render_FontKey
 ui_top_font_key(Void)
 {
     Render_FontKey result = ui_font_key_from_text_style(ui_top_text_style());
-    return(result);
+    return (result);
 }
 
 ////////////////////////////////
@@ -1912,17 +1937,17 @@ ui_top_parent(Void)
     {
         result = ui_ctx->parent_stack->box;
     }
-    return(result);
+    return (result);
 }
 
 internal UI_Box *
 ui_push_parent(UI_Box *box)
 {
     UI_ParentStackNode *node = push_struct(ui_frame_arena(), UI_ParentStackNode);
-    node->box = box;
+    node->box                = box;
     stack_push(ui_ctx->parent_stack, node);
     ui_stats_inc_val(parent_push_count);
-    return(ui_top_parent());
+    return (ui_top_parent());
 }
 
 internal UI_Box *
@@ -1930,32 +1955,32 @@ ui_pop_parent(Void)
 {
     UI_Box *parent = ui_top_parent();
     stack_pop(ui_ctx->parent_stack);
-    return(parent);
+    return (parent);
 }
 
 internal UI_Key
 ui_top_seed(Void)
 {
     UI_Key result = ui_key_null();
-    result = ui_ctx->seed_stack->key;
-    return(result);
+    result        = ui_ctx->seed_stack->key;
+    return (result);
 }
 
 internal UI_Key
 ui_push_seed(UI_Key key)
 {
     UI_KeyStackNode *node = push_struct(ui_frame_arena(), UI_KeyStackNode);
-    node->key = key;
+    node->key             = key;
     stack_push(ui_ctx->seed_stack, node);
     ui_stats_inc_val(seed_push_count);
-    return(ui_top_seed());
+    return (ui_top_seed());
 }
 
 internal UI_Key
 ui_pop_seed(Void)
 {
     stack_pop(ui_ctx->seed_stack);
-    return(ui_top_seed());
+    return (ui_top_seed());
 }
 
 internal Void
@@ -1974,24 +1999,24 @@ internal UI_RectStyle *
 ui_top_rect_style(Void)
 {
     UI_RectStyle *result = ui_ctx->rect_style_stack.first;
-    return(result);
+    return (result);
 }
 
 internal UI_RectStyle *
 ui_push_rect_style(Void)
 {
     UI_RectStyle *rect_style = push_struct(ui_frame_arena(), UI_RectStyle);
-    UI_RectStyle *first = ui_top_rect_style();
+    UI_RectStyle *first      = ui_top_rect_style();
     if (first)
     {
         memory_copy_struct(rect_style, first);
     }
-    rect_style->stack_next = first;
+    rect_style->stack_next         = first;
     ui_ctx->rect_style_stack.first = rect_style;
 
     ui_stats_inc_val(rect_style_push_count);
 
-    return(rect_style);
+    return (rect_style);
 }
 
 internal Void
@@ -2006,40 +2031,40 @@ ui_get_auto_pop_rect_style(Void)
     UI_RectStyle *rect_style = ui_top_rect_style();
     if (!ui_ctx->rect_style_stack.auto_pop)
     {
-        rect_style = ui_push_rect_style();
+        rect_style                        = ui_push_rect_style();
         ui_ctx->rect_style_stack.auto_pop = true;
     }
-    return(rect_style);
+    return (rect_style);
 }
 
 internal UI_TextStyle *
 ui_top_text_style(Void)
 {
     UI_TextStyle *result = ui_ctx->text_style_stack.first;
-    return(result);
+    return (result);
 }
 
 internal UI_TextStyle *
 ui_push_text_style(Void)
 {
     UI_TextStyle *text_style = push_struct(ui_frame_arena(), UI_TextStyle);
-    UI_TextStyle *first = ui_top_text_style();
+    UI_TextStyle *first      = ui_top_text_style();
     if (first)
     {
         memory_copy_struct(text_style, first);
     }
-    text_style->stack_next = first;
+    text_style->stack_next         = first;
     ui_ctx->text_style_stack.first = text_style;
 
     ui_stats_inc_val(text_style_push_count);
-    return(text_style);
+    return (text_style);
 }
 
 internal UI_TextStyle *
 ui_pop_text_style(Void)
 {
     ui_ctx->text_style_stack.first = ui_ctx->text_style_stack.first->stack_next;
-    return(ui_ctx->text_style_stack.first);
+    return (ui_ctx->text_style_stack.first);
 }
 
 internal UI_TextStyle *
@@ -2048,16 +2073,16 @@ ui_get_auto_pop_text_style(Void)
     UI_TextStyle *text_style = ui_top_text_style();
     if (!ui_ctx->text_style_stack.auto_pop)
     {
-        text_style = ui_push_text_style();
+        text_style                        = ui_push_text_style();
         ui_ctx->text_style_stack.auto_pop = true;
     }
-    return(text_style);
+    return (text_style);
 }
 
 internal UI_LayoutStyle *
 ui_top_layout_style(Void)
 {
-    return(ui_ctx->layout_style_stack.first);
+    return (ui_ctx->layout_style_stack.first);
 }
 
 internal UI_LayoutStyle *
@@ -2068,12 +2093,12 @@ ui_push_layout_style(Void)
     {
         memory_copy_struct(layout, ui_ctx->layout_style_stack.first);
     }
-    layout->stack_next = ui_ctx->layout_style_stack.first;
+    layout->stack_next               = ui_ctx->layout_style_stack.first;
     ui_ctx->layout_style_stack.first = layout;
 
     ui_stats_inc_val(layout_style_push_count);
 
-    return(layout);
+    return (layout);
 }
 
 internal Void
@@ -2088,8 +2113,8 @@ ui_get_auto_pop_layout_style(Void)
     UI_LayoutStyle *layout = ui_top_layout_style();
     if (!ui_ctx->layout_style_stack.auto_pop)
     {
-        layout = ui_push_layout_style();
+        layout                              = ui_push_layout_style();
         ui_ctx->layout_style_stack.auto_pop = true;
     }
-    return(layout);
+    return (layout);
 }

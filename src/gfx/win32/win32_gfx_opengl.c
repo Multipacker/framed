@@ -5,22 +5,16 @@ void glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 void glClear(GLbitfield mask);
 void glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 
-global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = 0;
+global PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB       = 0;
 global PFNWGLCREATECONTEXTATTRIBSARBPROC wglCreateContextAttribsARB = 0;
-global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT = 0;
+global PFNWGLSWAPINTERVALEXTPROC wglSwapIntervalEXT                 = 0;
 
 internal Void
 win32_get_wgl_functions(Void)
 {
     Arena_Temporary scratch = get_scratch(0, 0);
 
-    HWND dummy = CreateWindowEx(0,
-                                (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")),
-                                (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")),
-                                WS_OVERLAPPED,
-                                CW_USEDEFAULT, CW_USEDEFAULT,
-                                CW_USEDEFAULT, CW_USEDEFAULT,
-                                NULL, NULL, NULL, NULL);
+    HWND dummy = CreateWindowEx(0, (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("STATIC")), (LPCWSTR) cstr16_from_str8(scratch.arena, str8_lit("DummyWindow")), WS_OVERLAPPED, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, NULL, NULL, NULL, NULL);
 
     assert(dummy && "Failed to create dummy window");
 
@@ -28,13 +22,13 @@ win32_get_wgl_functions(Void)
     assert(dc && "Failed to get device context for dummy window");
 
     PIXELFORMATDESCRIPTOR desc =
-    {
-        .nSize = sizeof(desc),
-        .nVersion = 1,
-        .dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
-        .iPixelType = PFD_TYPE_RGBA,
-        .cColorBits = 24,
-    };
+        {
+            .nSize      = sizeof(desc),
+            .nVersion   = 1,
+            .dwFlags    = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,
+            .iPixelType = PFD_TYPE_RGBA,
+            .cColorBits = 24,
+        };
 
     S32 format = ChoosePixelFormat(dc, &desc);
     if (!format)
@@ -56,7 +50,7 @@ win32_get_wgl_functions(Void)
     ok = wglMakeCurrent(dc, rc);
     assert(ok && "Failed to make current OpenGL context for dummy window");
 
-    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (Void *)wglGetProcAddress("wglGetExtensionsStringARB");
+    PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB = (Void *) wglGetProcAddress("wglGetExtensionsStringARB");
     if (!wglGetExtensionsStringARB)
     {
         assert(!"OpenGL does not support WGL_ARB_extensions_string extension!");
@@ -68,8 +62,8 @@ win32_get_wgl_functions(Void)
     Str8List extension_list = str8_split_by_codepoints(scratch.arena, extensions, str8_lit(" "));
 
     for (Str8Node *node = extension_list.first;
-             node != 0;
-             node = node->next)
+         node != 0;
+         node = node->next)
     {
         Str8 string = node->string;
 
@@ -101,22 +95,30 @@ win32_get_wgl_functions(Void)
 }
 
 internal Void
-win32_init_opengl(Gfx_Context *gfx)
+win32_init_opengl(Void)
 {
     win32_get_wgl_functions();
     {
         S32 attrib[] =
-        {
-            WGL_DRAW_TO_WINDOW_ARB, GL_TRUE,
-            WGL_SUPPORT_OPENGL_ARB, GL_TRUE,
-            WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
-            WGL_PIXEL_TYPE_ARB, WGL_TYPE_RGBA_ARB,
-            WGL_COLOR_BITS_ARB, 24,
-            WGL_DEPTH_BITS_ARB, 24,
-            WGL_STENCIL_BITS_ARB, 8,
-            WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB, GL_TRUE,
-            0,
-        };
+            {
+                WGL_DRAW_TO_WINDOW_ARB,
+                GL_TRUE,
+                WGL_SUPPORT_OPENGL_ARB,
+                GL_TRUE,
+                WGL_DOUBLE_BUFFER_ARB,
+                GL_TRUE,
+                WGL_PIXEL_TYPE_ARB,
+                WGL_TYPE_RGBA_ARB,
+                WGL_COLOR_BITS_ARB,
+                24,
+                WGL_DEPTH_BITS_ARB,
+                24,
+                WGL_STENCIL_BITS_ARB,
+                8,
+                WGL_FRAMEBUFFER_SRGB_CAPABLE_ARB,
+                GL_TRUE,
+                0,
+            };
 
         S32 format;
         UINT formats;
@@ -125,8 +127,8 @@ win32_init_opengl(Gfx_Context *gfx)
             assert(!"OpenGL does not support required pixel format!");
         }
 
-        PIXELFORMATDESCRIPTOR desc = { .nSize = sizeof(desc) };
-        S32 ok = DescribePixelFormat(gfx->hdc, format, sizeof(desc), &desc);
+        PIXELFORMATDESCRIPTOR desc = {.nSize = sizeof(desc)};
+        S32 ok                     = DescribePixelFormat(gfx->hdc, format, sizeof(desc), &desc);
         assert(ok && "Failed to describe OpenGL pixel format");
 
         if (!SetPixelFormat(gfx->hdc, format, &desc))
@@ -137,15 +139,19 @@ win32_init_opengl(Gfx_Context *gfx)
 
     {
         S32 attrib[] =
-        {
-            WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-            WGL_CONTEXT_MINOR_VERSION_ARB, 5,
-            WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+            {
+                WGL_CONTEXT_MAJOR_VERSION_ARB,
+                4,
+                WGL_CONTEXT_MINOR_VERSION_ARB,
+                5,
+                WGL_CONTEXT_PROFILE_MASK_ARB,
+                WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
 #if !BUILD_MODE_RELEASE
-            WGL_CONTEXT_FLAGS_ARB, WGL_CONTEXT_DEBUG_BIT_ARB,
+                WGL_CONTEXT_FLAGS_ARB,
+                WGL_CONTEXT_DEBUG_BIT_ARB,
 #endif
-            0,
-        };
+                0,
+            };
 
         HGLRC rc = wglCreateContextAttribsARB(gfx->hdc, NULL, attrib);
         if (!rc)
@@ -156,15 +162,16 @@ win32_init_opengl(Gfx_Context *gfx)
         BOOL ok = wglMakeCurrent(gfx->hdc, rc);
         assert(ok && "Failed to make current OpenGL context");
 
-#define X(type, name) name = (type)wglGetProcAddress(#name); assert(name);
+#define X(type, name)                       \
+    name = (type) wglGetProcAddress(#name); \
+    assert(name);
         GL_FUNCTIONS(X)
 #undef X
-
     }
 }
 
 internal Void
-gfx_swap_buffers(Gfx_Context *gfx)
+gfx_swap_buffers(Void)
 {
     SwapBuffers(gfx->hdc);
 }

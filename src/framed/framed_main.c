@@ -47,6 +47,7 @@ FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
         ui_next_height(ui_fill());
         ui_next_color(v4f32(0, 0, 0, 0.5f));
         UI_Box *parent_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_FixedPos | UI_BoxFlag_Clickable, str8_lit("ParentPopup"));
+        UI_Box *parent_box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_FixedPos | UI_BoxFlag_Clickable, str8_lit("ParentPopup"));
         ui_parent(parent_box)
         {
             ui_spacer(ui_fill());
@@ -58,6 +59,7 @@ FRAMED_POP_MESSAGE_PROC(framed_pop_up_message)
                 ui_next_width(ui_em(20, 1));
                 ui_next_height(ui_em(10, 1));
                 ui_next_border_color(framed_ui_color_from_theme(FramedUI_Color_PanelBorderActive));
+                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_DrawDropShadow | UI_BoxFlag_AnimateDim, str8_lit("PopupMessageBackground"));
                 UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_DrawDropShadow | UI_BoxFlag_AnimateDim, str8_lit("PopupMessageBackground"));
                 ui_parent(box)
                 {
@@ -115,6 +117,8 @@ framed_parse_zones(Void)
     {
         Net_AcceptResult accept_result    = {0};
         accept_result                     = net_socket_accept(profiling_state->listen_socket);
+        Net_AcceptResult accept_result    = {0};
+        accept_result                     = net_socket_accept(profiling_state->listen_socket);
         profiling_state->found_connection = accept_result.succeeded;
         if (profiling_state->found_connection)
         {
@@ -131,8 +135,13 @@ framed_parse_zones(Void)
     B32 terminate_connection      = false;
     U16 buffer_size               = 0;
     Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
+    B32 terminate_connection      = false;
+    U16 buffer_size               = 0;
+    Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
     while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
     {
+        Arena_Temporary scratch          = get_scratch(0, 0);
+        U8 *buffer                       = push_array(scratch.arena, U8, buffer_size);
         Arena_Temporary scratch          = get_scratch(0, 0);
         U8 *buffer                       = push_array(scratch.arena, U8, buffer_size);
         Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
@@ -583,30 +592,30 @@ framed_load_user_settings_from_memory(Str8 data_string)
             B32 found;
         };
 
-#    define SETTING_THEME_COLOR(i)                     \
-        {                                              \
-            framed_ui_string_color_table[i],           \
-            SettingValKind_Color,                      \
-            &framed_ui_state->settings.theme_colors[i] \
-        }
-#    if 0
+#define SETTING_THEME_COLOR(i) \
+{ \
+framed_ui_string_color_table[i], \
+SettingValKind_Color, \
+&framed_ui_state->settings.theme_colors[i] \
+}
+
         SettingEntry setting_entries_table[] =
             {
                 {str8_lit("Font size"), SettingValKind_U32, &framed_ui_state->settings.font_size},
 
-                SETTING_THEME_COLOR(FramedUI_Color_PanelBackground),
-                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderActive),
-                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
-                SETTING_THEME_COLOR(FramedUI_Color_PanelOverlayInactive),
-                SETTING_THEME_COLOR(FramedUI_Color_TabBarBackground),
-                SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundActive),
-                SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundInactive),
-                SETTING_THEME_COLOR(FramedUI_Color_TabForeground),
-                SETTING_THEME_COLOR(FramedUI_Color_TabBorder),
-                SETTING_THEME_COLOR(FramedUI_Color_TabBarButtonsBackground),
-                SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
-            };
-#    endif
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderActive),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelOverlayInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBarBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundActive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBackgroundInactive),
+            SETTING_THEME_COLOR(FramedUI_Color_TabForeground),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBorder),
+            SETTING_THEME_COLOR(FramedUI_Color_TabBarButtonsBackground),
+            SETTING_THEME_COLOR(FramedUI_Color_PanelBorderInactive),
+        };
+
         Str8List lines = framed_lines_from_user_settings(scratch.arena, data_string);
 
         for (Str8Node *node = lines.first; node != 0; node = node->next)
@@ -737,11 +746,12 @@ os_main(Str8List arguments)
         log_init(log_file, megabytes(40));
     }
 
-    Gfx_Context gfx          = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
+
+    Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     Render_Context *renderer = render_init(&gfx);
-    Arena *frame_arenas[2]   = {0};
-    frame_arenas[0]          = arena_create("MainFrame0");
-    frame_arenas[1]          = arena_create("MainFrame1");
+    Arena *frame_arenas[2];
+    frame_arenas[0] = arena_create("MainFrame0");
+    frame_arenas[1] = arena_create("MainFrame1");
 
     ////////////////////////////////
     //- hampus: Initialize Framed state
@@ -794,7 +804,7 @@ os_main(Str8List arguments)
 
 #if 0
     Arena *framed_ui_perm_arena = arena_create("FramedUIPerm");
-    framed_ui_state = push_struct(framed_ui_perm_arena, FramedUI_State);
+    framed_ui_state             = push_struct(framed_ui_perm_arena, FramedUI_State);
     framed_ui_state->perm_arena = framed_ui_perm_arena;
 
     framed_ui_state->settings.font_size = 12;
@@ -873,8 +883,38 @@ os_main(Str8List arguments)
 
     release_scratch(scratch);
 
-    gfx_set_window_maximized(&gfx);
-    gfx_show_window(&gfx);
+    UI_Context *ui = ui_init();
+
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Zones]    = framed_ui_tab_view_zones;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
+    framed_ui_state->tab_view_function_table[FramedUI_TabView_About]    = framed_ui_tab_view_about;
+
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Zones]    = str8_lit("Zones");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
+    framed_ui_state->tab_view_string_table[FramedUI_TabView_About]    = str8_lit("About");
+
+    Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
+    Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
+    FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
+    framed_ui_window_push_to_front(master_window);
+
+    for (U64 i = 0; i < FramedUI_TabView_COUNT; ++i)
+    {
+        framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
+        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
+    }
+
+#if BUILD_MODE_DEBUG
+    framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
+#endif
+
+    framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Zones]);
+
+    framed_ui_state->master_window = master_window;
+    framed_ui_state->next_focused_panel = master_window->root_panel;
+
+    gfx_set_window_maximized();
+    gfx_show_window();
 
     ////////////////////////////////
     //- hampus: Main loop
@@ -897,7 +937,7 @@ os_main(Str8List arguments)
 
         //- hampus: Gather events
 
-        Gfx_EventList events = gfx_get_events(current_arena, &gfx);
+        Gfx_EventList events = gfx_get_events(current_arena);
         for (Gfx_Event *event = events.first; event != 0; event = event->next)
         {
             if (event->kind == Gfx_EventKind_Quit)
@@ -908,7 +948,7 @@ os_main(Str8List arguments)
             {
                 if (event->key == Gfx_Key_F11)
                 {
-                    gfx_toggle_fullscreen(&gfx);
+                    gfx_toggle_fullscreen();
                 }
                 else if (event->key == Gfx_Key_F1)
                 {
