@@ -1037,7 +1037,7 @@ os_main(Str8List arguments)
 
         //- hampus: Update panels
 
-        framed_ui_update(renderer, &events);
+        framed_ui_update(&events);
 
         //- hampus: Status bar
 

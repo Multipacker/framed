@@ -1694,7 +1694,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_default)
 //~ hampus: Main update
 
 internal Void
-framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list)
+framed_ui_update(Gfx_EventList *event_list)
 {
     profile_begin_function();
 

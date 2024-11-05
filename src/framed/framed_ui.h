@@ -371,6 +371,6 @@ internal Void *framed_ui_get_or_push_view_data_(FramedUI_TabViewInfo *view_info,
 ////////////////////////////////
 //~ hampus: Main update
 
-internal Void framed_ui_update(Render_Context *renderer, Gfx_EventList *event_list);
+internal Void framed_ui_update(Gfx_EventList *event_list);
 
 #endif
