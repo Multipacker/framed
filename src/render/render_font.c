@@ -504,8 +504,7 @@ render_glyph(Render_Context *renderer, Vec2F32 min, U32 index, Render_Font *font
     F32 width  = (F32) glyph->size_in_pixels.x;
     F32 height = (F32) glyph->size_in_pixels.y;
 
-    render_rect(
-        renderer,
+    draw_rect(
         v2f32(xpos, ypos),
         v2f32(xpos + width, ypos + height),
         .slice            = glyph->slice,
@@ -635,8 +634,7 @@ render_character_internal(Render_Context *renderer, Vec2F32 min, U32 codepoint, 
         F32 width  = (F32) glyph->size_in_pixels.x;
         F32 height = (F32) glyph->size_in_pixels.y;
 
-        render_rect(
-            renderer,
+        draw_rect(
             v2f32(xpos, ypos),
             v2f32(xpos + width, ypos + height),
             .slice            = glyph->slice,

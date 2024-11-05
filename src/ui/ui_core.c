@@ -1791,8 +1791,8 @@ ui_draw(UI_Box *root)
             Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x / 6, dpi.x / 6));
             Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x / 5, dpi.x / 5));
             // TODO(hampus): Make softness em dependent
-            Render_RectInstance *instance = render_rect(
-                ui_ctx->renderer, min, max,
+            Render_RectInstance *instance = draw_rect(
+                min, max,
                 .softness = dpi.x * 0.2f,
                 .color    = v4f32(0, 0, 0, 1)
             );
@@ -1818,8 +1818,8 @@ ui_draw(UI_Box *root)
             rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
             rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
-            instance = render_rect(
-                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+            instance = draw_rect(
+                root->fixed_rect.min, root->fixed_rect.max,
                 .softness    = rect_style->softness,
                 .slice       = rect_style->slice,
                 .use_nearest = rect_style->texture_filter
@@ -1846,8 +1846,8 @@ ui_draw(UI_Box *root)
                 }
             }
 
-            Render_RectInstance *instance = render_rect(
-                ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
+            Render_RectInstance *instance = draw_rect(
+                root->fixed_rect.min, root->fixed_rect.max,
                 .border_thickness = rect_style->border_thickness,
                 .color            = rect_style->border_color,
                 .softness         = rect_style->softness
@@ -1874,12 +1874,12 @@ ui_draw(UI_Box *root)
 
     if (ui_ctx->show_debug_lines)
     {
-        render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+        draw_rect(root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
     }
 
     if (ui_box_has_flag(root, UI_BoxFlag_Clip))
     {
-        render_push_clip(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max, true);
+        draw_push_clip(root->fixed_rect.min, root->fixed_rect.max);
     }
 
     for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
@@ -1889,7 +1889,7 @@ ui_draw(UI_Box *root)
 
     if (ui_box_has_flag(root, UI_BoxFlag_Clip))
     {
-        render_pop_clip(ui_ctx->renderer);
+        draw_pop_clip();
     }
     profile_end_function();
 }

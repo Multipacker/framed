@@ -5,7 +5,7 @@ internal Void
 display_zone_min_exc(ZoneNode *root)
 {
     TimeInterval time = time_interval_from_ms(root->ms_min_elapsed_exc);
-    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
+    ui_textf("%'.2f%" PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -19,7 +19,7 @@ internal Void
 display_zone_max_exc(ZoneNode *root)
 {
     TimeInterval time = time_interval_from_ms(root->ms_max_elapsed_exc);
-    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
+    ui_textf("%'.2f%" PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -32,7 +32,8 @@ display_zone_max_exc(ZoneNode *root)
 internal Void
 display_zone_hit_count(ZoneNode *root)
 {
-    ui_textf("%'"PRIU64, root->hit_count);if (!(root->flags & ZoneNodeFlag_Collapsed))
+    ui_textf("%'" PRIU64, root->hit_count);
+    if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
         {
@@ -45,7 +46,7 @@ internal Void
 display_zone_exc_avg(ZoneNode *root)
 {
     TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc / (F64) root->hit_count);
-    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
+    ui_textf("%'.2f%" PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -59,7 +60,7 @@ internal Void
 display_zone_inc(ZoneNode *root)
 {
     TimeInterval time = time_interval_from_ms(root->ms_elapsed_inc);
-    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
+    ui_textf("%'.2f%" PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -73,7 +74,7 @@ internal Void
 display_zone_exc(ZoneNode *root)
 {
     TimeInterval time = time_interval_from_ms(root->ms_elapsed_exc);
-    ui_textf("%'.2f%"PRISTR8, time.amount, str8_expand(time.unit));
+    ui_textf("%'.2f%" PRISTR8, time.amount, str8_expand(time.unit));
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -86,8 +87,8 @@ display_zone_exc(ZoneNode *root)
 internal Void
 display_zone_exc_pct(ZoneNode *root, F64 total_ms)
 {
-    F64 pct = (root->ms_elapsed_exc/total_ms);
-    ui_textf("%.2f%%", pct*100.0f);
+    F64 pct = (root->ms_elapsed_exc / total_ms);
+    ui_textf("%.2f%%", pct * 100.0f);
     if (!(root->flags & ZoneNodeFlag_Collapsed))
     {
         for (ZoneNode *node = root->first; node != 0; node = node->next)
@@ -102,7 +103,7 @@ display_zone_exc_pct(ZoneNode *root, F64 total_ms)
 
 UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
 {
-    F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f*-ui_animation_speed() * ui_ctx->dt));
+    F32 animation_delta = (F32) (1.0 - f64_pow(2.0, 3.0f * -ui_animation_speed() * ui_ctx->dt));
     if (ui_box_is_active(root))
     {
         root->active_t += (1.0f - root->active_t) * animation_delta;
@@ -146,28 +147,24 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
         rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
         rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
-        instance = render_rect(ui_ctx->renderer, root->fixed_rect.min, root->fixed_rect.max,
-                               .softness = rect_style->softness,
-                               .slice = rect_style->slice,
-                               .use_nearest = rect_style->texture_filter);
+        instance = draw_rect(root->fixed_rect.min, root->fixed_rect.max, .softness = rect_style->softness, .slice = rect_style->slice, .use_nearest = rect_style->texture_filter);
         memory_copy_array(instance->colors, rect_style->color);
         memory_copy_array(instance->radies, rect_style->radies.v);
     }
 
     UI_Box *box_to_clip_to = root->data;
 
-    render_push_clip(ui_ctx->renderer, box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max, false);
+    // NOTE(simon): This used to not clip to parent, and now it does, I think it is fine like this
+    draw_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max);
 
     Render_Font *font = render_font_from_key(ui_ctx->renderer, ui_font_key_from_text_style(text_style));
-    Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
+    Vec2F32 text_pos  = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 
-    render_rect(ui_ctx->renderer,
-                v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y-1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y),
-                .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
+    draw_rect(v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y - 1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y), .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
 
-    render_pop_clip(ui_ctx->renderer);
+    draw_pop_clip();
 
-            render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
+    render_text_internal(ui_ctx->renderer, text_pos, root->string, font, text_style->color);
 }
 
 internal Void
@@ -179,7 +176,7 @@ display_zone_name(ZoneNode *root, UI_Box *container)
         ui_next_extra_box_flags(UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation);
         ui_next_hover_cursor(Gfx_Cursor_Hand);
         ui_next_width(ui_pct(1, 0));
-        UI_Box *row = ui_named_row_beginf("%"PRIU64, root->id);
+        UI_Box *row  = ui_named_row_beginf("%" PRIU64, root->id);
         UI_Comm comm = ui_comm_from_box(row);
         if (comm.hovering)
         {
@@ -200,7 +197,7 @@ display_zone_name(ZoneNode *root, UI_Box *container)
             ui_next_icon(RENDER_ICON_DOWN_OPEN);
         }
         ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
-        ui_next_text_padding(Axis2_X, ui_top_font_line_height()*0.2f);
+        ui_next_text_padding(Axis2_X, ui_top_font_line_height() * 0.2f);
         box = ui_box_make(UI_BoxFlag_DrawText, str8_lit(""));
         ui_named_row_end();
     }
@@ -243,16 +240,16 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
     B32 data_initialized = view_info->data != 0;
 
     local Str8 column_names[] =
-    {
-        str8_comp("Name"),
-        str8_comp("Exc."),
-        str8_comp("Exc. (%)"),
-        str8_comp("Inc."),
-        str8_comp("Hit count"),
-        str8_comp("Avg. Exc."),
-        str8_comp("Min exc."),
-        str8_comp("Max exc."),
-    };
+        {
+            str8_comp("Name"),
+            str8_comp("Exc."),
+            str8_comp("Exc. (%)"),
+            str8_comp("Inc."),
+            str8_comp("Hit count"),
+            str8_comp("Avg. Exc."),
+            str8_comp("Min exc."),
+            str8_comp("Max exc."),
+        };
 
     typedef struct TabViewData TabViewData;
     struct TabViewData
@@ -284,11 +281,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         }
 
         view_data->port_text_buffer_size = 5;
-        view_data->port_text_buffer = push_array(view_info->arena, U8, view_data->port_text_buffer_size);
+        view_data->port_text_buffer      = push_array(view_info->arena, U8, view_data->port_text_buffer_size);
         arena_scratch(0, 0)
         {
-            Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU16, profiling_state->port);
-            U64 initial_string_length = u64_min(text_buffer_initial_string.size, view_data->port_text_buffer_size);
+            Str8 text_buffer_initial_string = str8_pushf(scratch, "%" PRIU16, profiling_state->port);
+            U64 initial_string_length       = u64_min(text_buffer_initial_string.size, view_data->port_text_buffer_size);
             memory_copy_typed(view_data->port_text_buffer, text_buffer_initial_string.data, initial_string_length);
             view_data->port_string_length = initial_string_length;
         }
@@ -296,7 +293,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     //- hampus: Gather frame
 
-    Frame *frame = 0;
+    Frame *frame            = 0;
     B32 profiling_per_frame = profiling_state->frame_index != 0;
     if (profiling_per_frame)
     {
@@ -318,7 +315,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
     U64 parse_end_time_ns = os_now_nanoseconds();
 
-    profiling_state->parsed_time_accumulator += (F64)(parse_end_time_ns - parse_start_time_ns) / (F64)billion(1);
+    profiling_state->parsed_time_accumulator += (F64) (parse_end_time_ns - parse_start_time_ns) / (F64) billion(1);
 
     //- hampus: Flatten hierarchy
 
@@ -343,33 +340,65 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         frame->tsc_frequency = 1;
     }
 
-    F64 total_ms = 0;
+    F64 total_ms      = 0;
     F64 frame_time_ms = 0;
     if (profiling_per_frame)
     {
-        total_ms = (F64)(frame->end_tsc - frame->start_tsc) / (F64)frame->tsc_frequency * 1000.0;
+        total_ms      = (F64) (frame->end_tsc - frame->start_tsc) / (F64) frame->tsc_frequency * 1000.0;
         frame_time_ms = total_ms;
     }
     else
     {
-        total_ms = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0;
+        total_ms = (F64) (profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64) frame->tsc_frequency * 1000.0;
     }
 
     //- hampus: Sort column
 
-        CompareFunc *compare_func = 0;
-        switch (view_data->column_sort_index)
+    CompareFunc *compare_func = 0;
+    switch (view_data->column_sort_index)
+    {
+        case 0:
         {
-        case 0: { compare_func = zone_node_compare_name; } break;
-            case 1: { compare_func = zone_node_compare_ms_elapsed_exc; } break;
-            case 2: { compare_func = zone_node_compare_ms_elapsed_exc_pct; } break;
-            case 3: { compare_func = zone_node_compare_ms_elapsed_inc; } break;
-            case 4: { compare_func = zone_node_compare_hit_count; } break;
-            case 5: { compare_func = zone_node_compare_avg_exc; } break;
-            case 6: { compare_func = zone_node_compare_min_exc; } break;
-            case 7: { compare_func = zone_node_compare_max_exc; } break;
+            compare_func = zone_node_compare_name;
         }
-        sort_children(root, view_data->ascending_sort, compare_func);
+        break;
+        case 1:
+        {
+            compare_func = zone_node_compare_ms_elapsed_exc;
+        }
+        break;
+        case 2:
+        {
+            compare_func = zone_node_compare_ms_elapsed_exc_pct;
+        }
+        break;
+        case 3:
+        {
+            compare_func = zone_node_compare_ms_elapsed_inc;
+        }
+        break;
+        case 4:
+        {
+            compare_func = zone_node_compare_hit_count;
+        }
+        break;
+        case 5:
+        {
+            compare_func = zone_node_compare_avg_exc;
+        }
+        break;
+        case 6:
+        {
+            compare_func = zone_node_compare_min_exc;
+        }
+        break;
+        case 7:
+        {
+            compare_func = zone_node_compare_max_exc;
+        }
+        break;
+    }
+    sort_children(root, view_data->ascending_sort, compare_func);
 
     //- hampus: Values display
 
@@ -390,17 +419,12 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_next_width(ui_pct(view_data->column_sizes_in_pct[i], 0));
                 ui_next_extra_box_flags(UI_BoxFlag_Clip);
-                ui_named_column_beginf("ZoneColumn%"PRIU64, i);
+                ui_named_column_beginf("ZoneColumn%" PRIU64, i);
 
                 ui_next_width(ui_pct(1, 1));
                 ui_next_height(ui_em(1, 1));
                 ui_next_child_layout_axis(Axis2_X);
-                UI_Box *title_box = ui_box_makef(UI_BoxFlag_DrawText |
-                                                 UI_BoxFlag_DrawBackground |
-                                                 UI_BoxFlag_Clickable |
-                                                 UI_BoxFlag_HotAnimation |
-                                                 UI_BoxFlag_ActiveAnimation,
-                                                 "ZoneTitleRow%"PRIU64, i);
+                UI_Box *title_box = ui_box_makef(UI_BoxFlag_DrawText | UI_BoxFlag_DrawBackground | UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation, "ZoneTitleRow%" PRIU64, i);
                 ui_box_equip_display_string(title_box, column_names[i]);
 
                 ui_parent(title_box)
@@ -419,8 +443,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     {
                         ui_next_icon(RENDER_ICON_DOWN);
                     }
-                    ui_box_make(UI_BoxFlag_DrawText * (view_data->column_sort_index == i),
-                                str8_lit(""));
+                    ui_box_make(UI_BoxFlag_DrawText * (view_data->column_sort_index == i), str8_lit(""));
                 }
 
                 UI_Comm title_box_comm = ui_comm_from_box(title_box);
@@ -454,7 +477,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                         {
                             display_zone_name(node, row_parent);
                         }
-                    } break;
+                    }
+                    break;
                     case 1:
                     {
                         ui_text_align(UI_TextAlign_Right)
@@ -465,7 +489,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_exc(node);
                             }
                         }
-                    } break;
+                    }
+                    break;
 
                     case 2:
                     {
@@ -477,7 +502,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_exc_pct(node, total_ms);
                             }
                         }
-                    } break;
+                    }
+                    break;
                     case 3:
                     {
                         ui_text_align(UI_TextAlign_Right)
@@ -488,7 +514,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_inc(node);
                             }
                         }
-                    } break;
+                    }
+                    break;
                     case 4:
                     {
 
@@ -500,7 +527,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_hit_count(node);
                             }
                         }
-                    } break;
+                    }
+                    break;
                     case 5:
                     {
                         ui_text_align(UI_TextAlign_Right)
@@ -511,7 +539,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_exc_avg(node);
                             }
                         }
-                    } break;
+                    }
+                    break;
                     case 6:
                     {
                         ui_text_align(UI_TextAlign_Right)
@@ -522,7 +551,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_min_exc(node);
                             }
                         }
-                    } break;
+                    }
+                    break;
                     case 7:
                     {
                         ui_text_align(UI_TextAlign_Right)
@@ -533,8 +563,9 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                                 display_zone_max_exc(node);
                             }
                         }
-                    } break;
-                    invalid_case;
+                    }
+                    break;
+                        invalid_case;
                 }
 
                 ui_named_column_end();
@@ -546,22 +577,20 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                 ui_next_hover_cursor(Gfx_Cursor_SizeWE);
                 ui_next_child_layout_axis(Axis2_X);
                 ui_next_color(v4f32(0.5f, 0.5f, 0.5f, 1.0f));
-                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable |
-                                                             UI_BoxFlag_DrawBackground,
-                                                             "ColumnSplit%"PRIU64, i);
+                UI_Box *column_divider_hitbox = ui_box_makef(UI_BoxFlag_Clickable | UI_BoxFlag_DrawBackground, "ColumnSplit%" PRIU64, i);
 
                 //- hampus: Divider dragging
 
                 UI_Comm column_comm = ui_comm_from_box(column_divider_hitbox);
-                F32 drag_delta = column_comm.drag_delta.x;
-                if (column_comm.dragging && i != (array_count(column_names)-1))
+                F32 drag_delta      = column_comm.drag_delta.x;
+                if (column_comm.dragging && i != (array_count(column_names) - 1))
                 {
-                    F32 pct_delta = drag_delta / row_parent->fixed_size.x;
+                    F32 pct_delta             = drag_delta / row_parent->fixed_size.x;
                     F32 column0_max_pct_delta = new_column_pcts[i] - 0.01f;
-                    F32 column1_max_pct_delta = -(new_column_pcts[i+1] - 0.01f);
-                    pct_delta = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
+                    F32 column1_max_pct_delta = -(new_column_pcts[i + 1] - 0.01f);
+                    pct_delta                 = f32_clamp(column1_max_pct_delta, pct_delta, column0_max_pct_delta);
                     new_column_pcts[i] -= pct_delta;
-                    new_column_pcts[i+1] += pct_delta;
+                    new_column_pcts[i + 1] += pct_delta;
                 }
             }
         }
@@ -572,30 +601,23 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
         U16 next_port = profiling_state->port;
         ui_column()
         {
-            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
-                         UI_BoxFlag_DrawText,
-                         "Frames captured: %"PRIU64,
-                         profiling_state->frame_index);
+            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame | UI_BoxFlag_DrawText, "Frames captured: %" PRIU64, profiling_state->frame_index);
 
             ui_spacer(ui_em(0.25f, 1));
 
             TimeInterval frame_time_interval = time_interval_from_ms(frame_time_ms);
-            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame |
-                         UI_BoxFlag_DrawText,
-                         "Frame time: %.2f%"PRISTR8" (%"PRIU64" fps)",
-                         frame_time_interval.amount, str8_expand(frame_time_interval.unit), (U64)((1.0 / (frame_time_ms/1000.0)) + 0.5));
-
+            ui_box_makef(UI_BoxFlag_Disabled * !profiling_per_frame | UI_BoxFlag_DrawText, "Frame time: %.2f%" PRISTR8 " (%" PRIU64 " fps)", frame_time_interval.amount, str8_expand(frame_time_interval.unit), (U64) ((1.0 / (frame_time_ms / 1000.0)) + 0.5));
 
             ui_spacer(ui_em(0.25f, 1));
 
-            ui_textf("Zone count: %'"PRIU64, frame->zone_blocks_count);
+            ui_textf("Zone count: %'" PRIU64, frame->zone_blocks_count);
 
             ui_spacer(ui_em(0.25f, 1));
 
-            F64 profiling_time = (F64)(profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64)frame->tsc_frequency * 1000.0f;
+            F64 profiling_time = (F64) (profiling_state->profile_end_tsc - profiling_state->profile_start_tsc) / (F64) frame->tsc_frequency * 1000.0f;
 
             TimeInterval profiling_time_interval = time_interval_from_ms(profiling_time);
-            ui_textf("Profiling time elapsed: %.2f%"PRISTR8, profiling_time_interval.amount, str8_expand(profiling_time_interval.unit));
+            ui_textf("Profiling time elapsed: %.2f%" PRISTR8, profiling_time_interval.amount, str8_expand(profiling_time_interval.unit));
 
             ui_spacer(ui_em(0.25f, 1));
 
@@ -612,11 +634,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
                 ui_text(str8_lit("Listen port:"));
 
-                UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state,
-                                            view_data->port_text_buffer,
-                                            view_data->port_text_buffer_size,
-                                            &view_data->port_string_length,
-                                            str8_lit("CaptureFrequencyLineEdit"));
+                UI_Comm comm = ui_line_edit(&view_data->port_text_edit_state, view_data->port_text_buffer, view_data->port_text_buffer_size, &view_data->port_string_length, str8_lit("CaptureFrequencyLineEdit"));
                 if (connection_alive)
                 {
                     ui_pop_extra_box_flags();
@@ -628,8 +646,8 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
                     u16_from_str8(str8(view_data->port_text_buffer, view_data->port_string_length), &u16);
                     // NOTE(hampus): Ports lower than 1024 are reserved by the system and ports over 50000
                     // are used when dynamically assigning ports
-                    next_port = u16_clamp(1024, u16, 50000);
-                    Str8 text_buffer_str8 = str8_pushf(scratch.arena, "%"PRIU32, next_port);
+                    next_port                     = u16_clamp(1024, u16, 50000);
+                    Str8 text_buffer_str8         = str8_pushf(scratch.arena, "%" PRIU32, next_port);
                     view_data->port_string_length = u64_min(text_buffer_str8.size, view_data->port_text_buffer_size);
                     memory_copy_typed(view_data->port_text_buffer, text_buffer_str8.data, view_data->port_string_length);
                 }
@@ -640,17 +658,17 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
             ui_spacer(ui_em(0.25f, 1));
 
             MemorySize zone_parsing_throughput = memory_size_from_bytes(profiling_state->parsed_average_rate);
-            ui_textf("Zone parsing throughput: %.2f%"PRISTR8"/s", zone_parsing_throughput.amount, str8_expand(zone_parsing_throughput.unit));
+            ui_textf("Zone parsing throughput: %.2f%" PRISTR8 "/s", zone_parsing_throughput.amount, str8_expand(zone_parsing_throughput.unit));
 
             ui_spacer(ui_em(0.25f, 1));
 
             MemorySize zone_gathering_troughput = memory_size_from_bytes(profiling_state->gather_average_rate);
-            ui_textf("Zone gathering throughput: %.2f%"PRISTR8"/s", zone_gathering_troughput.amount, str8_expand(zone_gathering_troughput.unit));
+            ui_textf("Zone gathering throughput: %.2f%" PRISTR8 "/s", zone_gathering_troughput.amount, str8_expand(zone_gathering_troughput.unit));
 
             ui_spacer(ui_em(0.25f, 1));
 
             MemorySize network_transfer_bandwidth = memory_size_from_bytes(profiling_state->bandwidth_average_rate);
-            ui_textf("Network transfer bandwidth: %.2f%"PRISTR8"/s", network_transfer_bandwidth.amount, str8_expand(network_transfer_bandwidth.unit));
+            ui_textf("Network transfer bandwidth: %.2f%" PRISTR8 "/s", network_transfer_bandwidth.amount, str8_expand(network_transfer_bandwidth.unit));
 
             ui_spacer(ui_em(0.25f, 1));
         }
@@ -663,16 +681,17 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_zones)
 
             profiling_state->listen_socket = net_socket_alloc(Net_Protocol_TCP, Net_AddressFamily_INET);
             Net_Address address =
-            {
-                .ip.u8[0] = 127,
-                .ip.u8[1] = 0,
-                .ip.u8[2] = 0,
-                .ip.u8[3] = 1,
-                .port = next_port,
-            };
+                {
+                    .ip.u8[0] = 127,
+                    .ip.u8[1] = 0,
+                    .ip.u8[2] = 0,
+                    .ip.u8[3] = 1,
+                    .port     = next_port,
+                };
 
-            net_socket_bind(profiling_state->listen_socket , address);;
-            net_socket_set_blocking_mode(profiling_state->listen_socket , false);
+            net_socket_bind(profiling_state->listen_socket, address);
+            ;
+            net_socket_set_blocking_mode(profiling_state->listen_socket, false);
 
             profiling_state->port = next_port;
         }
@@ -740,11 +759,11 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
     if (!data_initialized)
     {
         data->font_size_text_buffer_size = 3;
-        data->font_size_text_buffer = push_array(view_info->arena, U8, data->font_size_text_buffer_size);
+        data->font_size_text_buffer      = push_array(view_info->arena, U8, data->font_size_text_buffer_size);
         arena_scratch(0, 0)
         {
-            Str8 text_buffer_initial_string = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
-            U64 initial_string_length = u64_min(text_buffer_initial_string.size, data->font_size_text_buffer_size);
+            Str8 text_buffer_initial_string = str8_pushf(scratch, "%" PRIU32, framed_ui_state->settings.font_size);
+            U64 initial_string_length       = u64_min(text_buffer_initial_string.size, data->font_size_text_buffer_size);
             memory_copy_typed(data->font_size_text_buffer, text_buffer_initial_string.data, initial_string_length);
             data->font_size_string_length = initial_string_length;
         }
@@ -777,7 +796,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
                     framed_ui_state->settings.font_size = u32_clamp(1, u32, 30);
                     arena_scratch(0, 0)
                     {
-                        Str8 text_buffer_str8 = str8_pushf(scratch, "%"PRIU32, framed_ui_state->settings.font_size);
+                        Str8 text_buffer_str8         = str8_pushf(scratch, "%" PRIU32, framed_ui_state->settings.font_size);
                         data->font_size_string_length = u64_min(text_buffer_str8.size, data->font_size_text_buffer_size);
                         memory_copy_typed(data->font_size_text_buffer, text_buffer_str8.data, data->font_size_string_length);
                     }
@@ -818,12 +837,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_settings)
                 ui_next_corner_radius(5);
                 ui_next_width(ui_em(1, 1));
                 ui_next_height(ui_em(1, 1));
-                UI_Box *box = ui_box_make(UI_BoxFlag_DrawBackground |
-                                          UI_BoxFlag_DrawBorder |
-                                          UI_BoxFlag_Clickable |
-                                          UI_BoxFlag_HotAnimation |
-                                          UI_BoxFlag_ActiveAnimation,
-                                          string);
+                UI_Box *box  = ui_box_make(UI_BoxFlag_DrawBackground | UI_BoxFlag_DrawBorder | UI_BoxFlag_Clickable | UI_BoxFlag_HotAnimation | UI_BoxFlag_ActiveAnimation, string);
                 UI_Comm comm = ui_comm_from_box(box);
                 if (comm.clicked)
                 {
@@ -848,7 +862,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_logger)
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
     B32 view_info_data_initialized = view_info->data != 0;
-    LogUI_State *log_ui = framed_ui_get_view_data(view_info, LogUI_State);
+    LogUI_State *log_ui            = framed_ui_get_view_data(view_info, LogUI_State);
     if (!view_info_data_initialized)
     {
         log_ui->perm_arena = arena_create("LogUIPerm");
@@ -878,7 +892,7 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_debug)
 {
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
-    B32 view_info_data_initialized = view_info->data != 0;
+    B32 view_info_data_initialized        = view_info->data != 0;
     UI_ColorPickerData *color_picker_data = framed_ui_get_view_data(view_info, UI_ColorPickerData);
     ui_debug(color_picker_data);
 }

@@ -7,6 +7,7 @@
 #include "meta/embed_inc.h"
 #include "gfx/gfx_inc.h"
 #include "render/render_inc.h"
+#include "draw/draw_inc.h"
 #include "image/image_inc.h"
 #include "ui/ui_inc.h"
 #include "net/net_inc.h"
@@ -21,6 +22,7 @@
 #include "meta/embed_inc.c"
 #include "gfx/gfx_inc.c"
 #include "render/render_inc.c"
+#include "draw/draw_inc.c"
 #include "image/image_inc.c"
 #include "ui/ui_inc.c"
 #include "net/net_inc.c"
@@ -735,6 +737,7 @@ os_main(Str8List arguments)
 
     gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     Render_Context *renderer = render_init();
+    draw_init(renderer);
     Arena *frame_arenas[2];
     frame_arenas[0] = arena_create("MainFrame0");
     frame_arenas[1] = arena_create("MainFrame1");
@@ -940,6 +943,7 @@ os_main(Str8List arguments)
         //- hampus: UI pass
 
         render_begin(renderer);
+        draw_begin_frame();
 
         ui_begin(ui, &events, renderer, dt);
         ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
@@ -1059,6 +1063,7 @@ os_main(Str8List arguments)
 
         ui_end();
 
+        draw_submit();
         render_end(renderer);
 
         ui_debug_keep_alive((U32) framed_frame_counter);

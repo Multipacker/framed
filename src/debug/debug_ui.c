@@ -4,29 +4,29 @@
 typedef struct Debug_Statistics Debug_Statistics;
 struct Debug_Statistics
 {
-    CStr    file[DEBUG_STAT_LOCATIONS];
-    U32     line[DEBUG_STAT_LOCATIONS];
-    Str8    name[DEBUG_STAT_LOCATIONS];
+    CStr file[DEBUG_STAT_LOCATIONS];
+    U32 line[DEBUG_STAT_LOCATIONS];
+    Str8 name[DEBUG_STAT_LOCATIONS];
     Vec4F32 colors[DEBUG_STAT_LOCATIONS];
-    U32     total_time_ns[DEBUG_STAT_FRAMES][DEBUG_STAT_LOCATIONS];
-    U32     hit_count[DEBUG_STAT_FRAMES][DEBUG_STAT_LOCATIONS];
-    U64     latest_frame_index;
-    U32     count;
+    U32 total_time_ns[DEBUG_STAT_FRAMES][DEBUG_STAT_LOCATIONS];
+    U32 hit_count[DEBUG_STAT_FRAMES][DEBUG_STAT_LOCATIONS];
+    U64 latest_frame_index;
+    U32 count;
 };
 
 typedef struct DebugMemoryStatistics DebugMemoryStatistics;
 struct DebugMemoryStatistics
 {
     Arena *arena;
-    U64    max;
-    U64    current;
-    U64    change_count;
+    U64 max;
+    U64 current;
+    U64 change_count;
 };
 
 global DebugMemoryStatistics debug_arenas[100];
-global U32                   debug_arena_count;
+global U32 debug_arena_count;
 global Debug_Statistics ui_debug_stats;
-global B32              ui_debug_freeze;
+global B32 ui_debug_freeze;
 global Debug_MemoryBuffer *ui_debug_memory;
 
 typedef struct LogUI_Thread LogUI_Thread;
@@ -38,7 +38,8 @@ struct LogUI_Thread
 };
 
 typedef struct LogUI_State LogUI_State;
-struct LogUI_State {
+struct LogUI_State
+{
     Arena *perm_arena;
     LogUI_Thread *threads;
 
@@ -85,7 +86,7 @@ ui_logger_entry_passes_filter(LogUI_State *state, Log_QueueEntry *entry)
         show &= state->level_filters[entry->level];
     }
 
-    return(show);
+    return (show);
 }
 
 internal Void
@@ -123,8 +124,8 @@ ui_logger_update_entries(LogUI_State *state)
         if (is_new_thread)
         {
             LogUI_Thread *thread = push_struct(state->perm_arena, LogUI_Thread);
-            thread->name = thread_name;
-            thread->show = false;
+            thread->name         = thread_name;
+            thread->show         = false;
             stack_push(state->threads, thread);
         }
     }
@@ -135,7 +136,8 @@ ui_logger_update_entries(LogUI_State *state)
 }
 
 internal Void
-ui_logger_checkbox(Str8 name, B32 *value) {
+ui_logger_checkbox(Str8 name, B32 *value)
+{
     ui_row()
     {
         ui_spacer(ui_em(0.4f, 1));
@@ -148,12 +150,12 @@ ui_logger_checkbox(Str8 name, B32 *value) {
 internal Str8
 ui_logger_format_entry(LogUI_State *state, Log_QueueEntry *entry)
 {
-    Str8 message = { 0 };
+    Str8 message = {0};
 
     if (state->compact_display)
     {
         Str8 path_display = str8_cstr(entry->file);
-        U64 slash_index = 0;
+        U64 slash_index   = 0;
         if (str8_last_index_of(path_display, PATH_SEPARATOR, &slash_index))
         {
             ++slash_index;
@@ -162,7 +164,7 @@ ui_logger_format_entry(LogUI_State *state, Log_QueueEntry *entry)
 
         message = str8_pushf(
             ui_frame_arena(),
-            "%.2u:%.2u:%.2u.%03u %s %"PRISTR8":%u: %s",
+            "%.2u:%.2u:%.2u.%03u %s %" PRISTR8 ":%u: %s",
             entry->time.hour, entry->time.minute, entry->time.second, entry->time.millisecond,
             entry->thread_name,
             str8_expand(path_display), entry->line,
@@ -175,7 +177,7 @@ ui_logger_format_entry(LogUI_State *state, Log_QueueEntry *entry)
         message = str8_chop(log_format_entry(ui_frame_arena(), entry), 1);
     }
 
-    return(message);
+    return (message);
 }
 
 internal Void
@@ -267,9 +269,9 @@ ui_logger(LogUI_State *state)
             ui_next_text_color(level_colors[entry->level]);
             UI_Box *log_entry = ui_box_make(
                 UI_BoxFlag_DrawText |
-                UI_BoxFlag_HotAnimation |
-                UI_BoxFlag_ActiveAnimation |
-                UI_BoxFlag_Clickable,
+                    UI_BoxFlag_HotAnimation |
+                    UI_BoxFlag_ActiveAnimation |
+                    UI_BoxFlag_Clickable,
                 str8_pushf(ui_frame_arena(), "LogEntry%p", entry)
             );
             ui_box_equip_display_string(log_entry, message);
@@ -283,9 +285,9 @@ ui_logger(LogUI_State *state)
             {
                 arena_scratch(0, 0)
                 {
-                    Str8List arguments = { 0 };
+                    Str8List arguments = {0};
                     str8_list_push(scratch, &arguments, str8_cstr(entry->file));
-                    str8_list_push(scratch, &arguments, str8_pushf(scratch, "%"PRIU32, entry->line));
+                    str8_list_push(scratch, &arguments, str8_pushf(scratch, "%" PRIU32, entry->line));
 
 #if OS_WINDOWS
                     os_run(str8_lit("./script/log_open.bat"), arguments);
@@ -306,7 +308,7 @@ ui_debug_keep_alive(U32 frame_index)
 {
     frame_index %= DEBUG_STAT_FRAMES;
     Debug_TimeBuffer *buffer = debug_get_times();
-    ui_debug_memory = debug_get_memory();
+    ui_debug_memory          = debug_get_memory();
 
     if (ui_debug_freeze)
     {
@@ -341,7 +343,7 @@ ui_debug_keep_alive(U32 frame_index)
                 ui_debug_stats.line[stat_index] = entry->line;
                 ui_debug_stats.name[stat_index] = str8_cstr(entry->name);
 
-                U64 hash = hash_str8(ui_debug_stats.name[stat_index]);
+                U64 hash                              = hash_str8(ui_debug_stats.name[stat_index]);
                 ui_debug_stats.colors[stat_index].rgb = rgb_from_hsv(v3f32((F32) hash / (F32) U16_MAX, 1, 1));
                 ui_debug_stats.colors[stat_index].a   = 1.0f;
 
@@ -364,7 +366,7 @@ ui_debug_keep_alive(U32 frame_index)
     for (U32 i = 0; ui_debug_memory && i < ui_debug_memory->count; ++i)
     {
         Debug_MemoryEntry *entry = &ui_debug_memory->buffer[i];
-        U32 stat_index = 0;
+        U32 stat_index           = 0;
         for (; stat_index < debug_arena_count; ++stat_index)
         {
             if (debug_arenas[stat_index].arena == entry->arena)
@@ -409,7 +411,7 @@ framed_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box 
         {
             ui_next_width(ui_pct(splits[i], 0));
             ui_next_extra_box_flags(UI_BoxFlag_Clip);
-            columns[i] = ui_named_column_beginf("column%"PRIU32, i);
+            columns[i] = ui_named_column_beginf("column%" PRIU32, i);
             ui_push_seed(columns[i]->key);
 
             ui_next_width(ui_pct(1, 1));
@@ -418,15 +420,15 @@ framed_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box 
 
             UI_Box *header = ui_box_make(
                 UI_BoxFlag_Clickable |
-                UI_BoxFlag_HotAnimation |
-                UI_BoxFlag_ActiveAnimation,
+                    UI_BoxFlag_HotAnimation |
+                    UI_BoxFlag_ActiveAnimation,
                 str8_lit("Header")
             );
 
             UI_Comm header_comm = ui_comm_from_box(header);
             if (header_comm.clicked)
             {
-                *reverse = (i == *sort_column ? !*reverse : false);
+                *reverse     = (i == *sort_column ? !*reverse : false);
                 *sort_column = i;
             }
 
@@ -467,8 +469,8 @@ framed_ui_setup_percentage_sort_columns(Str8 *column_names, F32 *splits, UI_Box 
                 ui_next_hover_cursor(Gfx_Cursor_SizeWE);
                 UI_Box *draggable_box = ui_box_make(
                     UI_BoxFlag_Clickable |
-                    UI_BoxFlag_DrawBackground,
-                    str8_pushf(ui_frame_arena(), "dragger%"PRIU32, i)
+                        UI_BoxFlag_DrawBackground,
+                    str8_pushf(ui_frame_arena(), "dragger%" PRIU32, i)
                 );
 
                 UI_Comm draggin_comm = ui_comm_from_box(draggable_box);
@@ -497,10 +499,10 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
         Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
         Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
         // TODO(hampus): Make softness em dependent
-        Render_RectInstance *instance = render_rect(
-            renderer, min, max,
+        Render_RectInstance *instance = draw_rect(
+            min, max,
             .softness = 15,
-            .color = v4f32(0, 0, 0, 1)
+            .color    = v4f32(0, 0, 0, 1)
         );
         memory_copy(instance->radies, &rect_style->radies, sizeof(Vec4F32));
     }
@@ -509,11 +511,11 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
     {
         F32 total = 16e6f;
 
-        RectF32 rect = root->fixed_rect;
-        F32 rect_width = rect.max.x - rect.min.x;
+        RectF32 rect    = root->fixed_rect;
+        F32 rect_width  = rect.max.x - rect.min.x;
         F32 rect_height = rect.max.y - rect.min.y;
-        F32 x = rect.min.x;
-        F32 width = rect_width / (F32) DEBUG_STAT_FRAMES;
+        F32 x           = rect.min.x;
+        F32 width       = rect_width / (F32) DEBUG_STAT_FRAMES;
         for (U32 frame_index = 0; frame_index < DEBUG_STAT_FRAMES; ++frame_index)
         {
             F32 y = rect.max.y;
@@ -523,8 +525,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
                 F32 height = rect_height * (F32) ui_debug_stats.total_time_ns[frame_index][i] / (F32) total;
 
                 Vec4F32 color = ui_debug_stats.colors[i];
-                render_rect(
-                    renderer,
+                draw_rect(
                     v2f32(f32_floor(x), f32_floor(y - height)),
                     v2f32(f32_floor(x + width), f32_floor(y)),
                     .color = color
@@ -539,10 +540,10 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
     {
-        Render_RectInstance *instance = render_rect(
-            renderer, root->fixed_rect.min, root->fixed_rect.max,
+        Render_RectInstance *instance = draw_rect(
+            root->fixed_rect.min, root->fixed_rect.max,
             .border_thickness = rect_style->border_thickness,
-            .color = rect_style->border_color
+            .color            = rect_style->border_color
         );
     }
 }
@@ -557,9 +558,9 @@ ui_debug(Void *data)
     ui_scrollable_region_axis(str8_lit("DebugScroll"), Axis2_Y)
     {
         ui_spacer(ui_em(0.5f, 1));
-        local U8 text_buffer[256] = { 0 };
-        local UI_TextEditState edit_state = { 0 };
-        local U64 string_length = 0;
+        local U8 text_buffer[256]         = {0};
+        local UI_TextEditState edit_state = {0};
+        local U64 string_length           = 0;
         ui_next_width(ui_em(30, 1));
         ui_line_edit(&edit_state, text_buffer, array_count(text_buffer), &string_length, str8_lit("LineEditTest"));
 
@@ -579,16 +580,16 @@ ui_debug(Void *data)
         ui_named_row(str8_lit("DebugTimes"))
         {
             Str8 headers[] =
-            {
-                str8_lit("Name"),
-                str8_lit("Total time"),
-                str8_lit("Avg. time / hit"),
-                str8_lit("Hit count"),
-            };
+                {
+                    str8_lit("Name"),
+                    str8_lit("Total time"),
+                    str8_lit("Avg. time / hit"),
+                    str8_lit("Hit count"),
+                };
 
-            local F32 splits[] = { 0.25f, 0.25f, 0.25f, 0.25f };
-            UI_Box *columns[4] = { 0 };
-            local B32 reverse = true;
+            local F32 splits[]    = {0.25f, 0.25f, 0.25f, 0.25f};
+            UI_Box *columns[4]    = {0};
+            local B32 reverse     = true;
             local U32 sort_column = 1;
             framed_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
@@ -694,10 +695,10 @@ ui_debug(Void *data)
                             ui_next_height(ui_em(0.8f, 1));
                             UI_Box *box = ui_box_make(
                                 UI_BoxFlag_DrawBackground |
-                                UI_BoxFlag_DrawBorder |
-                                UI_BoxFlag_Clickable |
-                                UI_BoxFlag_HotAnimation |
-                                UI_BoxFlag_ActiveAnimation,
+                                    UI_BoxFlag_DrawBorder |
+                                    UI_BoxFlag_Clickable |
+                                    UI_BoxFlag_HotAnimation |
+                                    UI_BoxFlag_ActiveAnimation,
                                 ui_debug_stats.name[time_index[i]]
                             );
                             UI_Comm comm = ui_comm_from_box(box);
@@ -722,7 +723,7 @@ ui_debug(Void *data)
                     for (U32 i = 0; i < ui_debug_stats.count; ++i)
                     {
                         TimeInterval total_time = time_interval_from_ns((F64) ui_debug_stats.total_time_ns[frame_index][time_index[i]]);
-                        ui_textf("%.2f%"PRISTR8, total_time.amount, str8_expand(total_time.unit));
+                        ui_textf("%.2f%" PRISTR8, total_time.amount, str8_expand(total_time.unit));
                     }
                 }
             }
@@ -733,10 +734,10 @@ ui_debug(Void *data)
                 {
                     for (U32 i = 0; i < ui_debug_stats.count; ++i)
                     {
-                        U32 total_time_ns = ui_debug_stats.total_time_ns[frame_index][time_index[i]];
-                        U32 hit_count = ui_debug_stats.hit_count[frame_index][time_index[i]];
+                        U32 total_time_ns         = ui_debug_stats.total_time_ns[frame_index][time_index[i]];
+                        U32 hit_count             = ui_debug_stats.hit_count[frame_index][time_index[i]];
                         TimeInterval average_time = time_interval_from_ns((F64) total_time_ns / (F64) hit_count);
-                        ui_textf("%.2f%"PRISTR8, average_time.amount, str8_expand(average_time.unit));
+                        ui_textf("%.2f%" PRISTR8, average_time.amount, str8_expand(average_time.unit));
                     }
                 }
             }
@@ -747,7 +748,7 @@ ui_debug(Void *data)
                 {
                     for (U32 i = 0; i < ui_debug_stats.count; ++i)
                     {
-                        ui_textf("%"PRIU32, ui_debug_stats.hit_count[frame_index][time_index[i]]);
+                        ui_textf("%" PRIU32, ui_debug_stats.hit_count[frame_index][time_index[i]]);
                     }
                 }
             }
@@ -770,7 +771,7 @@ ui_debug(Void *data)
             total_allocated += debug_arenas[i].current;
         }
         MemorySize total_size = memory_size_from_bytes(total_allocated);
-        ui_textf("Total allocated: %.2f%"PRISTR8, total_size.amount, str8_expand(total_size.unit));
+        ui_textf("Total allocated: %.2f%" PRISTR8, total_size.amount, str8_expand(total_size.unit));
 
         ui_spacer(ui_em(0.5f, 1));
 
@@ -785,9 +786,9 @@ ui_debug(Void *data)
                 str8_lit("Changes / frame"),
             };
 
-            local F32 splits[] = { 0.25f, 0.25f, 0.25f, 0.25f };
-            UI_Box *columns[4] = { 0 };
-            local B32 reverse = true;
+            local F32 splits[]    = {0.25f, 0.25f, 0.25f, 0.25f};
+            UI_Box *columns[4]    = {0};
+            local B32 reverse     = true;
             local U32 sort_column = 1;
             framed_ui_setup_percentage_sort_columns(headers, splits, columns, 4, &sort_column, &reverse);
 
@@ -872,8 +873,8 @@ ui_debug(Void *data)
                     for (U32 i = 0; i < debug_arena_count; ++i)
                     {
                         DebugMemoryStatistics *entry = &debug_arenas[i];
-                        MemorySize max = memory_size_from_bytes(debug_arenas[i].max);
-                        ui_textf("%.2f%"PRISTR8, max.amount, str8_expand(max.unit));
+                        MemorySize max               = memory_size_from_bytes(debug_arenas[i].max);
+                        ui_textf("%.2f%" PRISTR8, max.amount, str8_expand(max.unit));
                     }
                 }
             }
@@ -886,8 +887,8 @@ ui_debug(Void *data)
                     for (U32 i = 0; i < debug_arena_count; ++i)
                     {
                         DebugMemoryStatistics *entry = &debug_arenas[i];
-                        MemorySize current = memory_size_from_bytes(debug_arenas[i].current);
-                        ui_textf("%.2f%"PRISTR8, current.amount, str8_expand(current.unit));
+                        MemorySize current           = memory_size_from_bytes(debug_arenas[i].current);
+                        ui_textf("%.2f%" PRISTR8, current.amount, str8_expand(current.unit));
                     }
                 }
             }
@@ -900,7 +901,7 @@ ui_debug(Void *data)
                     for (U32 i = 0; i < debug_arena_count; ++i)
                     {
                         DebugMemoryStatistics *entry = &debug_arenas[i];
-                        ui_textf("%"PRIU64, entry->change_count);
+                        ui_textf("%" PRIU64, entry->change_count);
                     }
                 }
             }
@@ -910,20 +911,20 @@ ui_debug(Void *data)
         ui_spacer(ui_em(0.5f, 1));
         ui_text(str8_lit("UI Stats"));
         ui_spacer(ui_em(0.5f, 1));
-        ui_textf("Permanent arena: %"PRIU64"kB", ui_permanent_arena()->pos/1024);
-        ui_textf("Frame arena: %"PRIU64"kB", ui_frame_arena()->pos/1024);
+        ui_textf("Permanent arena: %" PRIU64 "kB", ui_permanent_arena()->pos / 1024);
+        ui_textf("Frame arena: %" PRIU64 "kB", ui_frame_arena()->pos / 1024);
 
 #if UI_GATHER_STATS
         UI_Stats *ui_stats = ui_get_prev_stats();
-        ui_textf("Num hashed boxes: %"PRIU64, ui_stats->num_hashed_boxes);
-        ui_textf("Num transient boxes: %"PRIU64, ui_stats->num_transient_boxes);
-        ui_textf("Rect style push count: %"PRIU64, ui_stats->rect_style_push_count);
-        ui_textf("Layout style push count: %"PRIU64, ui_stats->layout_style_push_count);
-        ui_textf("Text style push count: %"PRIU64, ui_stats->text_style_push_count);
-        ui_textf("Parent push count: %"PRIU64, ui_stats->parent_push_count);
-        ui_textf("Seed push count: %"PRIU64, ui_stats->seed_push_count);
-        ui_textf("Total chain count: %"PRIU64, ui_stats->box_chain_count);
-        ui_textf("Max box chain count: %"PRIU64, ui_stats->max_box_chain_count);
+        ui_textf("Num hashed boxes: %" PRIU64, ui_stats->num_hashed_boxes);
+        ui_textf("Num transient boxes: %" PRIU64, ui_stats->num_transient_boxes);
+        ui_textf("Rect style push count: %" PRIU64, ui_stats->rect_style_push_count);
+        ui_textf("Layout style push count: %" PRIU64, ui_stats->layout_style_push_count);
+        ui_textf("Text style push count: %" PRIU64, ui_stats->text_style_push_count);
+        ui_textf("Parent push count: %" PRIU64, ui_stats->parent_push_count);
+        ui_textf("Seed push count: %" PRIU64, ui_stats->seed_push_count);
+        ui_textf("Total chain count: %" PRIU64, ui_stats->box_chain_count);
+        ui_textf("Max box chain count: %" PRIU64, ui_stats->max_box_chain_count);
 #endif
     }
 }
@@ -943,15 +944,15 @@ ui_texture_view(Render_TextureSlice atlas)
         ui_next_color(v4f32(0.5, 0.5, 0.5, 1));
         UI_Box *atlas_parent = ui_box_make(
             UI_BoxFlag_DrawBackground |
-            UI_BoxFlag_Clip |
-            UI_BoxFlag_Clickable |
-            UI_BoxFlag_ViewScroll,
+                UI_BoxFlag_Clip |
+                UI_BoxFlag_Clickable |
+                UI_BoxFlag_ViewScroll,
             str8_lit("TextureViewer")
         );
         ui_parent(atlas_parent)
         {
-            local Vec2F32 offset = { 0 };
-            local F32 scale = 1;
+            local Vec2F32 offset = {0};
+            local F32 scale      = 1;
 
             ui_next_relative_pos(Axis2_X, offset.x);
             ui_next_relative_pos(Axis2_Y, offset.y);
@@ -965,8 +966,8 @@ ui_texture_view(Render_TextureSlice atlas)
             ui_next_corner_radius(0);
             UI_Box *atlas_box = ui_box_make(
                 UI_BoxFlag_FixedX |
-                UI_BoxFlag_FixedY |
-                UI_BoxFlag_DrawBackground,
+                    UI_BoxFlag_FixedY |
+                    UI_BoxFlag_DrawBackground,
                 str8_lit("Texture")
             );
 
@@ -977,16 +978,16 @@ ui_texture_view(Render_TextureSlice atlas)
 
             // TODO(simon): Slightly broken math, but mostly works.
             Vec2F32 scale_offset = v2f32_mul_f32(v2f32_sub_v2f32(atlas_comm.rel_mouse, offset), scale / old_scale - 1.0f);
-            offset = v2f32_add_v2f32(v2f32_sub_v2f32(offset, atlas_comm.drag_delta), scale_offset);
+            offset               = v2f32_add_v2f32(v2f32_sub_v2f32(offset, atlas_comm.drag_delta), scale_offset);
         }
 
         ui_column()
         {
             Str8 names[Render_TextureFilter_COUNT] =
-            {
-                [Render_TextureFilter_Bilinear] = str8_lit("Bilinear"),
-                [Render_TextureFilter_Nearest]  = str8_lit("Nearest"),
-            };
+                {
+                    [Render_TextureFilter_Bilinear] = str8_lit("Bilinear"),
+                    [Render_TextureFilter_Nearest]  = str8_lit("Nearest"),
+                };
 
             ui_combo_box(str8_lit("Filtering:"), &texture_view_ui_filtering_mode, names, array_count(names));
         }

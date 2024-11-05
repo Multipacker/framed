@@ -23,8 +23,8 @@ struct Draw_RectParams
 
 internal Render_RectInstance *draw_rect_(Vec2F32 min, Vec2F32 max, Draw_RectParams *parameters);
 
-#define render_rect(renderer, min, max, ...)    render_rect_(renderer, min, max, &(Render_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
-#define render_circle(renderer, center, r, ...) render_rect_(renderer, v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Render_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
+#define draw_rect(min, max, ...)    draw_rect_(min, max, &(Draw_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
+#define draw_circle(center, r, ...) draw_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Draw_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
 internal Void draw_push_clip(Vec2F32 min, Vec2F32 max);
 internal Void draw_pop_clip(Void);
