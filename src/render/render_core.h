@@ -70,8 +70,6 @@ struct Render_Context
   Arena *permanent_arena;
   Arena *frame_arena;
   Render_RenderStats render_stats[2]; // [0] is current frame, [1] is previous frame
-
-  U64 frame_index;
 };
 
 typedef struct Render_FontLoaderThreadData Render_FontLoaderThreadData;
