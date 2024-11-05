@@ -483,7 +483,7 @@ render_pop_clip(Render_Context *renderer)
 }
 
 internal Render_Texture
-render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space)
+render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_ColorSpace color_space)
 {
     Render_Texture result = {0};
 
@@ -533,7 +533,7 @@ render_destroy_texture(Render_Context *renderer, Render_Texture handle)
 }
 
 internal Void
-render_update_texture(Render_Context *renderer, Render_Texture handle, Void *memory, U32 width, U32 height, U32 offset)
+render_update_texture(Render_Texture handle, Void *memory, U32 width, U32 height, U32 offset)
 {
     GLuint texture = opengl_texture_id_from_handle(handle);
     if (texture)

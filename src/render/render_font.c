@@ -80,7 +80,7 @@ render_make_font_atlas(Render_Context *renderer, Vec2U32 dim)
     first_free_region->region.max                 = v2u32(dim.x, dim.x);
     result->memory                                = push_array(renderer->permanent_arena, U8, dim.x * dim.y * 4);
     render_push_free_region_to_atlas(result, first_free_region);
-    result->texture = render_create_texture_from_bitmap(renderer, result->memory, result->dim.x, result->dim.y, Render_ColorSpace_Linear);
+    result->texture = render_create_texture_from_bitmap(result->memory, result->dim.x, result->dim.y, Render_ColorSpace_Linear);
     return (result);
 }
 
@@ -362,7 +362,6 @@ render_font_stream_thread(Void *data)
                 memory_fence();
 
                 render_update_texture(
-                    renderer,
                     renderer->font_atlas->texture,
                     renderer->font_atlas->memory,
                     renderer->font_atlas->dim.width,

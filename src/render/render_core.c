@@ -18,10 +18,10 @@ render_slice_from_texture_region(Render_Texture texture, RectU32 region)
 }
 
 internal Render_TextureSlice
-render_create_texture_slice(Render_Context *renderer, Str8 path)
+render_create_texture_slice(Str8 path)
 {
     Render_TextureSlice result;
-    result.texture    = render_create_texture(renderer, path);
+    result.texture    = render_create_texture(path);
     result.region.min = v2f32(0, 0);
     result.region.max = v2f32(1, 1);
     return (result);
@@ -140,7 +140,7 @@ render_end(Render_Context *renderer)
 }
 
 internal Render_Texture
-render_create_texture(Render_Context *renderer, Str8 path)
+render_create_texture(Str8 path)
 {
     Render_Texture result = {0};
     Str8 contents         = {0};
@@ -152,7 +152,7 @@ render_create_texture(Render_Context *renderer, Str8 path)
         Image image = {0};
         if (image_load(scratch.arena, contents, &image))
         {
-            result = render_create_texture_from_bitmap(renderer, image.pixels, image.width, image.height, image.color_space);
+            result = render_create_texture_from_bitmap(image.pixels, image.width, image.height, image.color_space);
         }
         else
         {

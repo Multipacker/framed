@@ -684,7 +684,7 @@ struct Render_D3D11_Texture
 };
 
 internal Render_Texture
-render_create_texture_from_bitmap(Render_Context *renderer, Void *memory, U32 width, U32 height, Render_ColorSpace color_space)
+render_create_texture_from_bitmap(Void *memory, U32 width, U32 height, Render_ColorSpace color_space)
 {
     Render_Texture result    = {0};
     DXGI_FORMAT d3d11_format = {0};
@@ -738,7 +738,7 @@ render_destroy_texture(Render_Context *renderer, Render_Texture texture)
 }
 
 internal Void
-render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
+render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
     U32 queue_index = u32_atomic_add(&d3d11_state.texture_update_write_index, 1);
     while (queue_index - d3d11_state.texture_update_read_index >= D3D11_TEXTURE_UPDATE_QUEUE_SIZE)

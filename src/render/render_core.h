@@ -109,10 +109,10 @@ internal Render_RectInstance *render_rect_(Render_Context *renderer, Vec2F32 min
 
 internal Render_TextureSlice render_slice_from_texture(Render_Texture texture, RectF32 uv);
 internal Render_TextureSlice render_slice_from_texture_region(Render_Texture texture, RectU32 region);
-internal Render_TextureSlice render_create_texture_slice(Render_Context *renderer, Str8 path);
-internal Render_Texture      render_create_texture(Render_Context *renderer, Str8 path);
-internal Render_Texture      render_create_texture_from_bitmap(Render_Context *renderer, Void *data, U32 width, U32 height, Render_ColorSpace color_space);
-internal Void                render_update_texture(Render_Context *renderer, Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
+internal Render_TextureSlice render_create_texture_slice(Str8 path);
+internal Render_Texture      render_create_texture(Str8 path);
+internal Render_Texture      render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_ColorSpace color_space);
+internal Void                render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
 
 internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
