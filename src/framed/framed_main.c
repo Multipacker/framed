@@ -117,8 +117,6 @@ framed_parse_zones(Void)
     {
         Net_AcceptResult accept_result    = {0};
         accept_result                     = net_socket_accept(profiling_state->listen_socket);
-        Net_AcceptResult accept_result    = {0};
-        accept_result                     = net_socket_accept(profiling_state->listen_socket);
         profiling_state->found_connection = accept_result.succeeded;
         if (profiling_state->found_connection)
         {
@@ -135,13 +133,8 @@ framed_parse_zones(Void)
     B32 terminate_connection      = false;
     U16 buffer_size               = 0;
     Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
-    B32 terminate_connection      = false;
-    U16 buffer_size               = 0;
-    Net_RecieveResult size_result = net_socket_peek(profiling_state->client_socket, (U8 *) &buffer_size, sizeof(buffer_size));
     while (size_result.bytes_recieved == sizeof(buffer_size) && !terminate_connection)
     {
-        Arena_Temporary scratch          = get_scratch(0, 0);
-        U8 *buffer                       = push_array(scratch.arena, U8, buffer_size);
         Arena_Temporary scratch          = get_scratch(0, 0);
         U8 *buffer                       = push_array(scratch.arena, U8, buffer_size);
         Net_RecieveResult recieve_result = net_socket_receive(profiling_state->client_socket, buffer, buffer_size);
@@ -747,8 +740,8 @@ os_main(Str8List arguments)
     }
 
 
-    Gfx_Context gfx = gfx_init(0, 0, 720, 480, str8_lit("Framed"));
-    Render_Context *renderer = render_init(&gfx);
+    gfx_init(0, 0, 720, 480, str8_lit("Framed"));
+    Render_Context *renderer = render_init();
     Arena *frame_arenas[2];
     frame_arenas[0] = arena_create("MainFrame0");
     frame_arenas[1] = arena_create("MainFrame1");
@@ -883,36 +876,6 @@ os_main(Str8List arguments)
 
     release_scratch(scratch);
 
-    UI_Context *ui = ui_init();
-
-    framed_ui_state->tab_view_function_table[FramedUI_TabView_Zones]    = framed_ui_tab_view_zones;
-    framed_ui_state->tab_view_function_table[FramedUI_TabView_Settings] = framed_ui_tab_view_settings;
-    framed_ui_state->tab_view_function_table[FramedUI_TabView_About]    = framed_ui_tab_view_about;
-
-    framed_ui_state->tab_view_string_table[FramedUI_TabView_Zones]    = str8_lit("Zones");
-    framed_ui_state->tab_view_string_table[FramedUI_TabView_Settings] = str8_lit("Settings");
-    framed_ui_state->tab_view_string_table[FramedUI_TabView_About]    = str8_lit("About");
-
-    Gfx_Monitor monitor = gfx_monitor_from_window(&gfx);
-    Vec2F32 monitor_dim = gfx_dim_from_monitor(monitor);
-    FramedUI_Window *master_window = framed_ui_window_make(v2f32(0, 0), monitor_dim);
-    framed_ui_window_push_to_front(master_window);
-
-    for (U64 i = 0; i < FramedUI_TabView_COUNT; ++i)
-    {
-        framed_ui_state->tab_view_table[i] = framed_ui_tab_make(framed_ui_state->tab_view_function_table[i], 0, framed_ui_state->tab_view_string_table[i]);
-        framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_state->tab_view_table[i]);
-    }
-
-#if BUILD_MODE_DEBUG
-    framed_ui_panel_insert_tab(master_window->root_panel, framed_ui_tab_make(0, 0, str8_lit("Test")));
-#endif
-
-    framed_ui_panel_set_active_tab(master_window->root_panel, framed_ui_state->tab_view_table[FramedUI_TabView_Zones]);
-
-    framed_ui_state->master_window = master_window;
-    framed_ui_state->next_focused_panel = master_window->root_panel;
-
     gfx_set_window_maximized();
     gfx_show_window();
 
@@ -929,7 +892,7 @@ os_main(Str8List arguments)
 
         profile_begin_block("Main loop");
 
-        Vec2F32 mouse_pos     = gfx_get_mouse_pos(&gfx);
+        Vec2F32 mouse_pos     = gfx_get_mouse_pos();
         Arena *current_arena  = frame_arenas[0];
         Arena *previous_arena = frame_arenas[1];
 
@@ -1075,7 +1038,7 @@ os_main(Str8List arguments)
             ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
 
 
-            Vec2U32 window_client_area_px = gfx_get_window_client_area(&gfx);
+            Vec2U32 window_client_area_px = gfx_get_window_client_area();
 
             RectF32 nav_bar_rect_px     = {0};
             nav_bar_rect_px.y1          = ui_em(1, 1).value;
