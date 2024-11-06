@@ -1071,7 +1071,7 @@ framed_ui_panel_update(FramedUI_Panel *root)
                     {
                         for (FramedUI_Tab *tab = root->tab_group.first; !framed_ui_tab_is_nil(tab); tab = tab->next)
                         {
-                            Vec2F32 dim   = draw_measure_text(r_font_from_key(ui_top_font_key()), tab->display_string);
+                            Vec2F32 dim   = d_measure_text(r_font_from_key(ui_top_font_key()), tab->display_string);
                             largest_dim.x = f32_max(largest_dim.x, dim.x);
                             largest_dim.y = f32_max(largest_dim.y, dim.y);
                         }

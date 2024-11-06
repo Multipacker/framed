@@ -1402,11 +1402,11 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
             Vec2F32 text_dim  = {0};
             if (root->text_style.icon)
             {
-                text_dim = draw_measure_character(font, root->text_style.icon);
+                text_dim = d_measure_character(font, root->text_style.icon);
             }
             else
             {
-                text_dim = draw_measure_text(font, root->string);
+                text_dim = d_measure_text(font, root->string);
             }
             root->fixed_size.v[axis] = f32_floor(text_dim.v[axis] + root->text_style.padding.v[axis]);
         }
@@ -1656,7 +1656,7 @@ ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign alig
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-    Vec2F32 text_dim = draw_measure_text(font, string);
+    Vec2F32 text_dim = d_measure_text(font, string);
 
     switch (align)
     {
@@ -1696,7 +1696,7 @@ ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAli
     Vec2F32 result = {0};
 
     Vec2F32 rect_dim = v2f32_sub_v2f32(rect.max, rect.min);
-    Vec2F32 text_dim = draw_measure_character(font, codepoint);
+    Vec2F32 text_dim = d_measure_character(font, codepoint);
 
     switch (align)
     {
@@ -1783,7 +1783,7 @@ ui_draw(UI_Box *root)
             Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x / 6, dpi.x / 6));
             Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x / 5, dpi.x / 5));
             // TODO(hampus): Make softness em dependent
-            R_RectInstance *instance = draw_rect(
+            R_RectInstance *instance = d_rect(
                 min, max,
                 .softness = dpi.x * 0.2f,
                 .color    = v4f32(0, 0, 0, 1)
@@ -1810,7 +1810,7 @@ ui_draw(UI_Box *root)
             rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
             rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
-            instance = draw_rect(
+            instance = d_rect(
                 root->fixed_rect.min, root->fixed_rect.max,
                 .softness    = rect_style->softness,
                 .slice       = rect_style->slice,
@@ -1838,7 +1838,7 @@ ui_draw(UI_Box *root)
                 }
             }
 
-            R_RectInstance *instance = draw_rect(
+            R_RectInstance *instance = d_rect(
                 root->fixed_rect.min, root->fixed_rect.max,
                 .border_thickness = rect_style->border_thickness,
                 .color            = rect_style->border_color,
@@ -1854,24 +1854,24 @@ ui_draw(UI_Box *root)
             if (text_style->icon)
             {
                 Vec2F32 text_pos = ui_align_character_in_rect(font, text_style->icon, root->fixed_rect, text_style->align);
-                draw_character_internal(text_pos, text_style->icon, font, text_style->color);
+                d_character_internal(text_pos, text_style->icon, font, text_style->color);
             }
             else
             {
                 Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
-                draw_text_internal(text_pos, root->string, font, text_style->color);
+                d_text_internal(text_pos, root->string, font, text_style->color);
             }
         }
     }
 
     if (ui_ctx->show_debug_lines)
     {
-        draw_rect(root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
+        d_rect(root->fixed_rect.min, root->fixed_rect.max, .border_thickness = 1, .color = v4f32(1, 0, 1, 1));
     }
 
     if (ui_box_has_flag(root, UI_BoxFlag_Clip))
     {
-        draw_push_clip(root->fixed_rect.min, root->fixed_rect.max);
+        d_push_clip(root->fixed_rect.min, root->fixed_rect.max);
     }
 
     for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)
@@ -1881,7 +1881,7 @@ ui_draw(UI_Box *root)
 
     if (ui_box_has_flag(root, UI_BoxFlag_Clip))
     {
-        draw_pop_clip();
+        d_pop_clip();
     }
     profile_end_function();
 }

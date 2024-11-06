@@ -147,7 +147,7 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
         rect_style->color[Corner_TopLeft]  = v4f32_add_v4f32(rect_style->color[Corner_TopLeft], v4f32(d, d, d, 0));
         rect_style->color[Corner_TopRight] = v4f32_add_v4f32(rect_style->color[Corner_TopRight], v4f32(d, d, d, 0));
 
-        instance = draw_rect(root->fixed_rect.min, root->fixed_rect.max, .softness = rect_style->softness, .slice = rect_style->slice, .use_nearest = rect_style->texture_filter);
+        instance = d_rect(root->fixed_rect.min, root->fixed_rect.max, .softness = rect_style->softness, .slice = rect_style->slice, .use_nearest = rect_style->texture_filter);
         memory_copy_array(instance->colors, rect_style->color);
         memory_copy_array(instance->radies, rect_style->radies.v);
     }
@@ -155,16 +155,16 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
     UI_Box *box_to_clip_to = root->data;
 
     // NOTE(simon): This used to not clip to parent, and now it does, I think it is fine like this
-    draw_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max);
+    d_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max);
 
     R_Font *font = r_font_from_key(ui_font_key_from_text_style(text_style));
     Vec2F32 text_pos  = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 
-    draw_rect(v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y - 1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y), .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
+    d_rect(v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y - 1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y), .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
 
-    draw_pop_clip();
+    d_pop_clip();
 
-    draw_text_internal(text_pos, root->string, font, text_style->color);
+    d_text_internal(text_pos, root->string, font, text_style->color);
 }
 
 internal Void

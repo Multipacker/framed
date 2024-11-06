@@ -497,7 +497,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
         Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
         Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
         // TODO(hampus): Make softness em dependent
-        R_RectInstance *instance = draw_rect(
+        R_RectInstance *instance = d_rect(
             min, max,
             .softness = 15,
             .color    = v4f32(0, 0, 0, 1)
@@ -523,7 +523,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
                 F32 height = rect_height * (F32) ui_debug_stats.total_time_ns[frame_index][i] / (F32) total;
 
                 Vec4F32 color = ui_debug_stats.colors[i];
-                draw_rect(
+                d_rect(
                     v2f32(f32_floor(x), f32_floor(y - height)),
                     v2f32(f32_floor(x + width), f32_floor(y)),
                     .color = color
@@ -538,7 +538,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
     {
-        R_RectInstance *instance = draw_rect(
+        R_RectInstance *instance = d_rect(
             root->fixed_rect.min, root->fixed_rect.max,
             .border_thickness = rect_style->border_thickness,
             .color            = rect_style->border_color

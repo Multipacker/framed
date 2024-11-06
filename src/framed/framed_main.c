@@ -738,7 +738,7 @@ os_main(Str8List arguments)
     gfx_init(0, 0, 720, 480, str8_lit("Framed"));
     r_init();
     r_font_init();
-    draw_init();
+    d_init();
     Arena *frame_arenas[2];
     frame_arenas[0] = arena_create("MainFrame0");
     frame_arenas[1] = arena_create("MainFrame1");
@@ -944,7 +944,7 @@ os_main(Str8List arguments)
         //- hampus: UI pass
 
         r_begin();
-        draw_begin_frame();
+        d_begin_frame();
 
         ui_begin(ui, &events, dt);
         ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
@@ -1064,7 +1064,7 @@ os_main(Str8List arguments)
 
         ui_end();
 
-        draw_submit();
+        d_submit();
         r_font_end_frame();
         r_end();
 

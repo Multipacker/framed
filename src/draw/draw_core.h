@@ -2,15 +2,15 @@
 #define DRAW_CORE_H
 
 // NOTE(simon): Initialization
-internal Void draw_init(Void);
+internal Void d_init(Void);
 
 // NOTE(simon): Frame markers
-internal Void draw_begin_frame(Void);
-internal Void draw_submit(Void);
+internal Void d_begin_frame(Void);
+internal Void d_submit(Void);
 
 // NOTE(simon): Draw commands
-typedef struct Draw_RectParams Draw_RectParams;
-struct Draw_RectParams
+typedef struct D_RectParams D_RectParams;
+struct D_RectParams
 {
     Vec4F32 color;
     F32 radius;
@@ -21,19 +21,19 @@ struct Draw_RectParams
     B32 use_nearest;
 };
 
-internal R_RectInstance *draw_rect_(Vec2F32 min, Vec2F32 max, Draw_RectParams *parameters);
+internal R_RectInstance *d_rect_(Vec2F32 min, Vec2F32 max, D_RectParams *parameters);
 
-#define draw_rect(min, max, ...)    draw_rect_(min, max, &(Draw_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
-#define draw_circle(center, r, ...) draw_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(Draw_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
+#define d_rect(min, max, ...)    d_rect_(min, max, &(D_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
+#define d_circle(center, r, ...) d_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(D_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
-internal Void draw_push_clip(Vec2F32 min, Vec2F32 max);
-internal Void draw_pop_clip(Void);
+internal Void d_push_clip(Vec2F32 min, Vec2F32 max);
+internal Void d_pop_clip(Void);
 
-internal Void draw_character_internal(Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color);
-internal Void draw_text_internal(Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color);
+internal Void d_character_internal(Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color);
+internal Void d_text_internal(Vec2F32 min, Str8 text, R_Font *font, Vec4F32 color);
 
-internal Vec2F32 draw_measure_character(R_Font *font, U32 codepoint);
-internal Vec2F32 draw_measure_text(R_Font *font, Str8 text);
-internal Vec2F32 draw_measure_text_length(R_Font *font, Str8 text, U64 length);
+internal Vec2F32 d_measure_character(R_Font *font, U32 codepoint);
+internal Vec2F32 d_measure_text(R_Font *font, Str8 text);
+internal Vec2F32 d_measure_text_length(R_Font *font, Str8 text, U64 length);
 
 #endif // DRAW_CORE_H

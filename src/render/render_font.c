@@ -538,7 +538,7 @@ r_glyph(Vec2F32 min, U32 index, R_Font *font, Vec4F32 color)
     F32 width  = (F32) glyph->size_in_pixels.x;
     F32 height = (F32) glyph->size_in_pixels.y;
 
-    draw_rect(
+    d_rect(
         v2f32(xpos, ypos),
         v2f32(xpos + width, ypos + height),
         .slice            = glyph->slice,
@@ -668,7 +668,7 @@ r_character_internal(Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color)
         F32 width  = (F32) glyph->size_in_pixels.x;
         F32 height = (F32) glyph->size_in_pixels.y;
 
-        draw_rect(
+        d_rect(
             v2f32(xpos, ypos),
             v2f32(xpos + width, ypos + height),
             .slice            = glyph->slice,
