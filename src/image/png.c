@@ -1191,7 +1191,7 @@ png_load(Arena *arena, Str8 contents, Image *result)
     result->width  = state.width;
     result->height = state.height;
     result->pixels = output;
-    result->color_space = Render_ColorSpace_sRGB;
+    result->color_space = R_ColorSpace_sRGB;
 
     release_scratch(scratch);
     return(true);

@@ -1398,7 +1398,7 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
         case UI_SizeKind_TextContent:
         {
-            Render_Font *font = render_font_from_key(ui_font_key_from_text_style(&root->text_style));
+            R_Font *font = r_font_from_key(ui_font_key_from_text_style(&root->text_style));
             Vec2F32 text_dim  = {0};
             if (root->text_style.icon)
             {
@@ -1650,7 +1650,7 @@ ui_calculate_final_rect(UI_Box *root, Axis2 axis, F32 offset)
 }
 
 internal Vec2F32
-ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
+ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding)
 {
     profile_begin_function();
     Vec2F32 result = {0};
@@ -1690,7 +1690,7 @@ ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign
 }
 
 internal Vec2F32
-ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
+ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align)
 {
     profile_begin_function();
     Vec2F32 result = {0};
@@ -1783,7 +1783,7 @@ ui_draw(UI_Box *root)
             Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(dpi.x / 6, dpi.x / 6));
             Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(dpi.x / 5, dpi.x / 5));
             // TODO(hampus): Make softness em dependent
-            Render_RectInstance *instance = draw_rect(
+            R_RectInstance *instance = draw_rect(
                 min, max,
                 .softness = dpi.x * 0.2f,
                 .color    = v4f32(0, 0, 0, 1)
@@ -1794,7 +1794,7 @@ ui_draw(UI_Box *root)
         if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
         {
             // TODO(hampus): Correct darkening/lightening
-            Render_RectInstance *instance = 0;
+            R_RectInstance *instance = 0;
 
             F32 d = 0;
             if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
@@ -1838,7 +1838,7 @@ ui_draw(UI_Box *root)
                 }
             }
 
-            Render_RectInstance *instance = draw_rect(
+            R_RectInstance *instance = draw_rect(
                 root->fixed_rect.min, root->fixed_rect.max,
                 .border_thickness = rect_style->border_thickness,
                 .color            = rect_style->border_color,
@@ -1849,7 +1849,7 @@ ui_draw(UI_Box *root)
 
         if (ui_box_has_flag(root, UI_BoxFlag_DrawText))
         {
-            Render_Font *font = render_font_from_key(ui_font_key_from_text_style(text_style));
+            R_Font *font = r_font_from_key(ui_font_key_from_text_style(text_style));
 
             if (text_style->icon)
             {
@@ -1893,28 +1893,28 @@ internal F32
 ui_top_font_line_height(Void)
 {
     UI_TextStyle *text_style = ui_top_text_style();
-    Render_Font *font        = render_font_from_key(ui_font_key_from_text_style(ui_top_text_style()));
+    R_Font *font             = r_font_from_key(ui_font_key_from_text_style(ui_top_text_style()));
     F32 result               = 0;
-    if (render_font_is_loaded(font))
+    if (r_font_is_loaded(font))
     {
         result = font->line_height;
     }
     return (result);
 }
 
-internal Render_FontKey
+internal R_FontKey
 ui_font_key_from_text_style(UI_TextStyle *text_style)
 {
-    Render_FontKey result = {0};
-    result.path           = text_style->font;
-    result.font_size      = text_style->font_size;
+    R_FontKey result = {0};
+    result.path      = text_style->font;
+    result.font_size = text_style->font_size;
     return (result);
 }
 
-internal Render_FontKey
+internal R_FontKey
 ui_top_font_key(Void)
 {
-    Render_FontKey result = ui_font_key_from_text_style(ui_top_text_style());
+    R_FontKey result = ui_font_key_from_text_style(ui_top_text_style());
     return (result);
 }
 

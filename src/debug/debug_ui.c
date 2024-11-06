@@ -497,7 +497,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
         Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
         Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
         // TODO(hampus): Make softness em dependent
-        Render_RectInstance *instance = draw_rect(
+        R_RectInstance *instance = draw_rect(
             min, max,
             .softness = 15,
             .color    = v4f32(0, 0, 0, 1)
@@ -538,7 +538,7 @@ UI_CUSTOM_DRAW_PROC(time_graph_custom_draw)
 
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
     {
-        Render_RectInstance *instance = draw_rect(
+        R_RectInstance *instance = draw_rect(
             root->fixed_rect.min, root->fixed_rect.max,
             .border_thickness = rect_style->border_thickness,
             .color            = rect_style->border_color
@@ -927,10 +927,10 @@ ui_debug(Void *data)
     }
 }
 
-global B32 texture_view_ui_filtering_mode = Render_TextureFilter_Nearest;
+global B32 texture_view_ui_filtering_mode = R_TextureFilter_Nearest;
 
 internal Void
-ui_texture_view(Render_TextureSlice atlas)
+ui_texture_view(R_TextureSlice atlas)
 {
     ui_next_child_layout_axis(Axis2_X);
     UI_Box *texture_viewer = ui_box_make(0, str8_lit(""));
@@ -981,10 +981,10 @@ ui_texture_view(Render_TextureSlice atlas)
 
         ui_column()
         {
-            Str8 names[Render_TextureFilter_COUNT] =
+            Str8 names[R_TextureFilter_COUNT] =
                 {
-                    [Render_TextureFilter_Bilinear] = str8_lit("Bilinear"),
-                    [Render_TextureFilter_Nearest]  = str8_lit("Nearest"),
+                    [R_TextureFilter_Bilinear] = str8_lit("Bilinear"),
+                    [R_TextureFilter_Nearest]  = str8_lit("Nearest"),
                 };
 
             ui_combo_box(str8_lit("Filtering:"), &texture_view_ui_filtering_mode, names, array_count(names));

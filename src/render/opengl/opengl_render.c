@@ -7,7 +7,7 @@ struct OpenGL_State
     Arena *permanent_arena;
     Arena *frame_arena;
 
-    Render_RenderStats stats;
+    R_RenderStats stats;
 
     OpenGL_BatchList batches;
     Vec2U32 client_area;
@@ -117,14 +117,14 @@ opengl_debug_output(GLenum source, GLenum type, U32 id, GLenum severity, GLsizei
 }
 
 internal GLuint
-opengl_texture_id_from_handle(Render_Texture handle)
+opengl_texture_id_from_handle(R_Texture handle)
 {
     GLuint result = (GLuint) handle.u64[0];
     return result;
 }
 
 internal Vec2U32
-opengl_texture_size_from_handle(Render_Texture handle)
+opengl_texture_size_from_handle(R_Texture handle)
 {
     Vec2U32 result = v2u32(
         (U32) handle.u64[1],
@@ -221,7 +221,7 @@ opengl_vertex_array_instance_attribute(GLuint vaobj, GLuint attribindex, GLint s
 }
 
 internal Void
-render_init(Void)
+r_init(Void)
 {
 #if !BUILD_MODE_RELEASE
     glDebugMessageCallback(&opengl_debug_output, NULL);
@@ -234,26 +234,26 @@ render_init(Void)
     opengl_state.texture_update_queue = push_array_zero(opengl_state.permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 
     glCreateBuffers(1, &opengl_state.vbo);
-    glNamedBufferData(opengl_state.vbo, OPENGL_BATCH_SIZE * sizeof(Render_RectInstance), 0, GL_DYNAMIC_DRAW);
+    glNamedBufferData(opengl_state.vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
 
     glCreateVertexArrays(1, &opengl_state.vao);
 
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, min), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, max), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 2, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(Render_RectInstance, colors[0]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 3, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(Render_RectInstance, colors[1]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 4, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(Render_RectInstance, colors[2]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 5, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(Render_RectInstance, colors[3]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, radies), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, softness), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, border_thickness), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, omit_texture), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, is_subpixel_text), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 11, 1, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, use_nearest), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, min_uv), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 13, 2, GL_FLOAT, GL_FALSE, member_offset(Render_RectInstance, max_uv), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 2, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[0]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 3, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[1]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 4, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[2]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 5, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[3]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 11, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, use_nearest), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 13, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
 
-    glVertexArrayVertexBuffer(opengl_state.vao, 0, opengl_state.vbo, 0, sizeof(Render_RectInstance));
+    glVertexArrayVertexBuffer(opengl_state.vao, 0, opengl_state.vbo, 0, sizeof(R_RectInstance));
 
     arena_scratch(0, 0)
     {
@@ -280,7 +280,7 @@ render_init(Void)
 }
 
 internal Void
-render_begin(Void)
+r_begin(Void)
 {
     opengl_state.client_area = gfx_get_window_client_area();
 
@@ -291,11 +291,11 @@ render_begin(Void)
 
     // NOTE(simon): Push a clip rect for the entire screen so that there is
     // always at least on clip rect in the stack.
-    render_push_clip(v2f32(0.0f, 0.0f), v2f32((F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height), false);
+    r_push_clip(v2f32(0.0f, 0.0f), v2f32((F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height), false);
 }
 
 internal Void
-render_end(Void)
+r_end(Void)
 {
     profile_begin_function();
 
@@ -331,7 +331,7 @@ render_end(Void)
 
     for (OpenGL_Batch *batch = opengl_state.batches.first; batch; batch = batch->next)
     {
-        glNamedBufferSubData(opengl_state.vbo, 0, batch->size * sizeof(Render_RectInstance), batch->rects);
+        glNamedBufferSubData(opengl_state.vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
         RectF32 clip_rect = batch->clip_node->rect;
 
         // NOTE(simon): OpenGL has its origin in the lower left corner, not the
@@ -377,7 +377,7 @@ opengl_create_batch(Void)
 
     result->size      = 0;
     result->clip_node = opengl_state.clip_stack;
-    result->texture   = (Render_Texture){0};
+    result->texture   = (R_Texture){0};
     dll_push_back(opengl_state.batches.first, opengl_state.batches.last, result);
     ++opengl_state.batches.batch_count;
 
@@ -386,12 +386,12 @@ opengl_create_batch(Void)
 
 // TODO(simon): Test performance without pruning batches and rectangles once we
 // are rendering more complicated scenes.
-internal Render_RectInstance *
-render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
+internal R_RectInstance *
+r_rect_(Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
     assert(opengl_state.clip_stack);
 
-    Render_RectInstance *result = &render_rect_instance_null;
+    R_RectInstance *result = &r_rect_instance_null;
 
     // NOTE(simon): Account for softness.
     RectF32 expanded_area = rectf32(
@@ -465,7 +465,7 @@ render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 }
 
 internal Void
-render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+r_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     OpenGL_ClipNode *node = push_struct(opengl_state.frame_arena, OpenGL_ClipNode);
 
@@ -488,15 +488,15 @@ render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 }
 
 internal Void
-render_pop_clip(Void)
+r_pop_clip(Void)
 {
     stack_pop(opengl_state.clip_stack);
 }
 
-internal Render_Texture
-render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_ColorSpace color_space)
+internal R_Texture
+r_create_texture_from_bitmap(Void *data, U32 width, U32 height, R_ColorSpace color_space)
 {
-    Render_Texture result = {0};
+    R_Texture result = {0};
 
     GLuint texture = 0;
     glCreateTextures(GL_TEXTURE_2D, 1, &texture);
@@ -504,10 +504,10 @@ render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_Colo
     GLenum internalformat = 0;
     switch (color_space)
     {
-        case Render_ColorSpace_sRGB:
+        case R_ColorSpace_sRGB:
             internalformat = GL_RGBA8;
             break;
-        case Render_ColorSpace_Linear:
+        case R_ColorSpace_Linear:
             internalformat = GL_SRGB8_ALPHA8;
             break;
             invalid_case;
@@ -534,7 +534,7 @@ render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_Colo
 }
 
 internal Void
-render_destroy_texture(Render_Texture handle)
+r_destroy_texture(R_Texture handle)
 {
     GLuint texture = opengl_texture_id_from_handle(handle);
     if (texture)
@@ -544,7 +544,7 @@ render_destroy_texture(Render_Texture handle)
 }
 
 internal Void
-render_update_texture(Render_Texture handle, Void *memory, U32 width, U32 height, U32 offset)
+r_update_texture(R_Texture handle, Void *memory, U32 width, U32 height, U32 offset)
 {
     GLuint texture = opengl_texture_id_from_handle(handle);
     if (texture)
@@ -573,8 +573,8 @@ render_update_texture(Render_Texture handle, Void *memory, U32 width, U32 height
     }
 }
 
-internal Render_RenderStats
-render_get_stats(Void)
+internal R_RenderStats
+r_get_stats(Void)
 {
     return opengl_state.stats;
 }

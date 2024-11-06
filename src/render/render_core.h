@@ -1,21 +1,21 @@
 #ifndef RENDER_CORE_H
 #define RENDER_CORE_H
 
-typedef struct Render_Texture Render_Texture;
-struct Render_Texture
+typedef struct R_Texture R_Texture;
+struct R_Texture
 {
     U64 u64[4];
 };
 
-typedef struct Render_TextureSlice Render_TextureSlice;
-struct Render_TextureSlice
+typedef struct R_TextureSlice R_TextureSlice;
+struct R_TextureSlice
 {
     RectF32 region;
-    Render_Texture texture;
+    R_Texture texture;
 };
 
-typedef struct Render_RectInstance Render_RectInstance;
-struct Render_RectInstance
+typedef struct R_RectInstance R_RectInstance;
+struct R_RectInstance
 {
     Vec2F32 min;
     Vec2F32 max;
@@ -31,8 +31,8 @@ struct Render_RectInstance
     F32 use_nearest;
 };
 
-typedef struct Render_RenderStats Render_RenderStats;
-struct Render_RenderStats
+typedef struct R_RenderStats R_RenderStats;
+struct R_RenderStats
 {
     U64 draw_time;
     U64 scissor_count;
@@ -42,60 +42,60 @@ struct Render_RenderStats
     U64 frame_gpu_memory;
 };
 
-typedef enum Render_ColorSpace Render_ColorSpace;
-enum Render_ColorSpace
+typedef enum R_ColorSpace R_ColorSpace;
+enum R_ColorSpace
 {
-    Render_ColorSpace_sRGB,
-    Render_ColorSpace_Linear,
+    R_ColorSpace_sRGB,
+    R_ColorSpace_Linear,
 
-    Render_ColorSpace_COUNT,
+    R_ColorSpace_COUNT,
 };
 
-typedef enum Render_TextureFilter Render_TextureFilter;
-enum Render_TextureFilter
+typedef enum R_TextureFilter R_TextureFilter;
+enum R_TextureFilter
 {
-    Render_TextureFilter_Bilinear,
-    Render_TextureFilter_Nearest,
+    R_TextureFilter_Bilinear,
+    R_TextureFilter_Nearest,
 
-    Render_TextureFilter_COUNT
+    R_TextureFilter_COUNT
 };
 
-typedef struct Render_RectParams Render_RectParams;
-struct Render_RectParams
+typedef struct R_RectParams R_RectParams;
+struct R_RectParams
 {
     Vec4F32 color;
     F32 radius;
     F32 softness;
     F32 border_thickness;
-    Render_TextureSlice slice;
+    R_TextureSlice slice;
     B32 is_subpixel_text;
     B32 use_nearest;
 };
 
 // NOTE(simon): This might not always be fully cleared to 0.
-global Render_RectInstance render_rect_instance_null;
+global R_RectInstance r_rect_instance_null;
 
-internal Render_RectInstance *render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params);
+internal R_RectInstance *r_rect_(Vec2F32 min, Vec2F32 max, R_RectParams *params);
 
-internal Render_TextureSlice render_slice_from_texture(Render_Texture texture, RectF32 uv);
-internal Render_TextureSlice render_slice_from_texture_region(Render_Texture texture, RectU32 region);
-internal Render_TextureSlice render_create_texture_slice(Str8 path);
-internal Render_Texture      render_create_texture(Str8 path);
-internal Render_Texture      render_create_texture_from_bitmap(Void *data, U32 width, U32 height, Render_ColorSpace color_space);
-internal Void                render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
+internal R_TextureSlice r_slice_from_texture(R_Texture texture, RectF32 uv);
+internal R_TextureSlice r_slice_from_texture_region(R_Texture texture, RectU32 region);
+internal R_TextureSlice r_create_texture_slice(Str8 path);
+internal R_Texture      r_create_texture(Str8 path);
+internal R_Texture      r_create_texture_from_bitmap(Void *data, U32 width, U32 height, R_ColorSpace color_space);
+internal Void           r_update_texture(R_Texture texture, Void *memory, U32 width, U32 height, U32 offset);
 
 internal F32     f32_srgb_to_linear(F32 value);
 internal Vec4F32 vec4f32_srgb_to_linear(Vec4F32 srgb);
 internal F32     f32_linear_to_srgb(F32 value);
 internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 
-internal Render_RenderStats render_get_stats(Void);
+internal R_RenderStats r_get_stats(Void);
 
-internal Void render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void render_pop_clip(Void);
+internal Void r_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
+internal Void r_pop_clip(Void);
 
-internal Void render_init(Void);
-internal Void render_begin(Void);
-internal Void render_end(Void);
+internal Void r_init(Void);
+internal Void r_begin(Void);
+internal Void r_end(Void);
 
 #endif // RENDER_CORE_H

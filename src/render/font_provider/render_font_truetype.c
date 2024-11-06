@@ -40,7 +40,7 @@
 #include "data/fonts/fontello.ttf.embed"
 
 internal Void
-render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_index, U32 glyph_array_index, U32 codepoint, Render_FontRenderMode render_mode, F32 scale)
+r_make_glyph(R_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_index, U32 glyph_array_index, U32 codepoint, R_FontRenderMode r_mode, F32 scale)
 {
     Arena_Temporary scratch = get_scratch(0, 0);
 
@@ -54,7 +54,7 @@ render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_inde
     font->codepoint_map[index].codepoint   = codepoint;
     font->codepoint_map[index].glyph_index = glyph_array_index;
 
-    Render_Glyph *glyph = font->glyphs + glyph_array_index;
+    R_Glyph *glyph = font->glyphs + glyph_array_index;
 
     U32 horizontal_filter_padding = 1;
 
@@ -113,18 +113,18 @@ render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_inde
 
         //- hampus: Move subpixel RGB to RGBA in our font atlas
 
-        Render_FontAtlasRegion *atlas_region = 0;
-        os_mutex(&render_font_context.font_atlas_mutex)
+        R_FontAtlasRegion *atlas_region = 0;
+        os_mutex(&r_font_context.font_atlas_mutex)
         {
             atlas_region  = &font->font_atlas_regions[font->num_font_atlas_regions++];
-            *atlas_region = render_alloc_font_atlas_region(render_font_context.font_atlas, v2u32((U32) padded_glyph_dim.x + 2, (U32) padded_glyph_dim.y + 2));
+            *atlas_region = r_alloc_font_atlas_region(r_font_context.font_atlas, v2u32((U32) padded_glyph_dim.x + 2, (U32) padded_glyph_dim.y + 2));
         }
 
         RectU32 rect_region = atlas_region->region;
         rect_region.min.x += 1;
         rect_region.min.y += 1;
 
-        U8 *texture_data = (U8 *) render_font_context.font_atlas->memory + (rect_region.min.x + rect_region.min.y * render_font_context.font_atlas->dim.x) * 4;
+        U8 *texture_data = (U8 *) r_font_context.font_atlas->memory + (rect_region.min.x + rect_region.min.y * r_font_context.font_atlas->dim.x) * 4;
         U8 *dst          = texture_data;
         U8 *src          = subpx_bitmap;
         for (S32 y = 0; y < padded_glyph_dim.y; ++y)
@@ -142,7 +142,7 @@ render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_inde
                 *dst_row++ = 0xff;
             }
 
-            dst += render_font_context.font_atlas->dim.x * 4;
+            dst += r_font_context.font_atlas->dim.x * 4;
             src += padded_glyph_dim.x * 3;
         }
 
@@ -158,13 +158,13 @@ render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_inde
 
         RectF32 uv =
             {
-                .x0 = adjusted_rect_region_f32.x0 / (F32) render_font_context.font_atlas->dim.x,
-                .x1 = adjusted_rect_region_f32.x1 / (F32) render_font_context.font_atlas->dim.x,
-                .y0 = adjusted_rect_region_f32.y0 / (F32) render_font_context.font_atlas->dim.y,
-                .y1 = adjusted_rect_region_f32.y1 / (F32) render_font_context.font_atlas->dim.y,
+                .x0 = adjusted_rect_region_f32.x0 / (F32) r_font_context.font_atlas->dim.x,
+                .x1 = adjusted_rect_region_f32.x1 / (F32) r_font_context.font_atlas->dim.x,
+                .y0 = adjusted_rect_region_f32.y0 / (F32) r_font_context.font_atlas->dim.y,
+                .y1 = adjusted_rect_region_f32.y1 / (F32) r_font_context.font_atlas->dim.y,
             };
 
-        glyph->slice          = render_slice_from_texture(render_font_context.font_atlas->texture, uv);
+        glyph->slice          = r_slice_from_texture(r_font_context.font_atlas->texture, uv);
         glyph->size_in_pixels = v2f32((F32) padded_glyph_dim.x, (F32) padded_glyph_dim.y);
     }
 
@@ -175,7 +175,7 @@ render_make_glyph(Render_Font *font, stbtt_fontinfo stb_font, U32 stb_glyph_inde
 }
 
 internal B32
-render_load_font_truetype(Render_Font *font, Render_FontLoadParams params)
+r_load_font_truetype(R_Font *font, R_FontLoadParams params)
 {
     assert(font);
     Arena_Temporary scratch = get_scratch(0, 0);
@@ -236,10 +236,10 @@ render_load_font_truetype(Render_Font *font, Render_FontLoadParams params)
         }
 
         font->num_glyphs         = (U32) num_glyphs_to_load;
-        font->font_atlas_regions = push_array(font->arena, Render_FontAtlasRegion, num_glyphs_to_load);
-        font->glyphs             = push_array(font->arena, Render_Glyph, num_glyphs_to_load);
+        font->font_atlas_regions = push_array(font->arena, R_FontAtlasRegion, num_glyphs_to_load);
+        font->glyphs             = push_array(font->arena, R_Glyph, num_glyphs_to_load);
         font->codepoint_map_size = u32_ceil_to_power_of_2(((U32) num_glyphs_to_load * 4 + 2) / 3);
-        font->codepoint_map      = push_array(font->arena, Render_CodepointMap, font->codepoint_map_size);
+        font->codepoint_map      = push_array(font->arena, R_CodepointMap, font->codepoint_map_size);
         for (U32 i = 0; i < font->codepoint_map_size; ++i)
         {
             font->codepoint_map[i].codepoint   = U32_MAX;
@@ -250,7 +250,7 @@ render_load_font_truetype(Render_Font *font, Render_FontLoadParams params)
 
         for (U32 i = 0; i < glyph_count; ++i)
         {
-            render_make_glyph(font, stb_font, glyph_indicies[i], i, codepoints[i], params.render_mode, scale);
+            r_make_glyph(font, stb_font, glyph_indicies[i], i, codepoints[i], params.render_mode, scale);
         }
 
         // NOTE(simon): Count the number of kerning pairs.
@@ -271,7 +271,7 @@ render_load_font_truetype(Render_Font *font, Render_FontLoadParams params)
         {
             // NOTE(simon): Open addressed hash table with at least 75% fill.
             font->kern_map_size = u64_ceil_to_power_of_2((kerning_pairs * 4 + 3) / 3);
-            font->kern_pairs    = push_array_zero(font->arena, Render_KerningPair, font->kern_map_size);
+            font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
 
             for (U32 i = 0; i < glyph_count; ++i)
             {
@@ -299,7 +299,7 @@ render_load_font_truetype(Render_Font *font, Render_FontLoadParams params)
         {
             // NOTE(simon): We need a map of size 1 in order to be able to do lookups into it.
             font->kern_map_size = 1;
-            font->kern_pairs    = push_array_zero(font->arena, Render_KerningPair, font->kern_map_size);
+            font->kern_pairs    = push_array_zero(font->arena, R_KerningPair, font->kern_map_size);
         }
     }
 

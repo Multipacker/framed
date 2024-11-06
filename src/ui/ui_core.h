@@ -17,7 +17,7 @@ struct UI_Config
 {
     B32 animations;
     F32 animation_speed;
-    Render_FontKey icon_font;
+    R_FontKey icon_font;
 };
 
 typedef enum UI_BoxFlags UI_BoxFlags;
@@ -123,8 +123,8 @@ struct UI_RectStyle
     Vec4F32    radies;
     F32        softness;
     Gfx_Cursor hover_cursor;
-    Render_TextureSlice  slice;
-    Render_TextureFilter texture_filter;
+    R_TextureSlice  slice;
+    R_TextureFilter texture_filter;
 };
 
 typedef struct UI_TextStyle UI_TextStyle;
@@ -492,16 +492,16 @@ internal Void ui_solve_size_violations(UI_Box *root, Axis2 axis);
 ////////////////////////////////
 // hampus: Draw pass
 
-internal Vec2F32 ui_align_text_in_rect(Render_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding);
-internal Vec2F32 ui_align_character_in_rect(Render_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align);
+internal Vec2F32 ui_align_text_in_rect(R_Font *font, Str8 string, RectF32 rect, UI_TextAlign align, Vec2F32 padding);
+internal Vec2F32 ui_align_character_in_rect(R_Font *font, U32 codepoint, RectF32 rect, UI_TextAlign align);
 internal Void    ui_draw(UI_Box *root);
 
 ////////////////////////////////
 // hampus: Stack helpers
 
-internal F32            ui_top_font_line_height(Void);
-internal Render_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
-internal Render_FontKey ui_top_font_key(Void);
+internal F32       ui_top_font_line_height(Void);
+internal R_FontKey ui_font_key_from_text_style(UI_TextStyle *text_style);
+internal R_FontKey ui_top_font_key(Void);
 
 ////////////////////////////////
 // hampus: Stack managing

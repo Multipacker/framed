@@ -131,7 +131,7 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
     {
         // TODO(hampus): Correct darkening/lightening
-        Render_RectInstance *instance = 0;
+        R_RectInstance *instance = 0;
 
         F32 d = 0;
         if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))
@@ -157,7 +157,7 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
     // NOTE(simon): This used to not clip to parent, and now it does, I think it is fine like this
     draw_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max);
 
-    Render_Font *font = render_font_from_key(ui_font_key_from_text_style(text_style));
+    R_Font *font = r_font_from_key(ui_font_key_from_text_style(text_style));
     Vec2F32 text_pos  = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 
     draw_rect(v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y - 1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y), .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
@@ -877,10 +877,10 @@ FRAMED_UI_TAB_VIEW(framed_ui_tab_view_texture_viewer)
 {
     ui_next_width(ui_fill());
     ui_next_height(ui_fill());
-    Render_TextureSlice texture = {0};
+    R_TextureSlice texture = {0};
     if (view_info->data)
     {
-        texture = *(Render_TextureSlice *) view_info->data;
+        texture = *(R_TextureSlice *) view_info->data;
     }
     ui_texture_view(texture);
 }

@@ -1,27 +1,27 @@
-internal Render_TextureSlice
-render_slice_from_texture(Render_Texture texture, RectF32 uv)
+internal R_TextureSlice
+r_slice_from_texture(R_Texture texture, RectF32 uv)
 {
-    Render_TextureSlice result = {uv, texture};
+    R_TextureSlice result = {uv, texture};
     return (result);
 }
 
-internal Render_TextureSlice
-render_slice_from_texture_region(Render_Texture texture, RectU32 region)
+internal R_TextureSlice
+r_slice_from_texture_region(R_Texture texture, RectU32 region)
 {
 #if 0
     RectF32 uv = rectf32_from_rectu32(region);
-    Render_TextureSlice result = { region, texture };
+    R_TextureSlice result = { region, texture };
     return(result);
 #endif
-    Render_TextureSlice result = {0};
+    R_TextureSlice result = {0};
     return (result);
 }
 
-internal Render_TextureSlice
-render_create_texture_slice(Str8 path)
+internal R_TextureSlice
+r_create_texture_slice(Str8 path)
 {
-    Render_TextureSlice result;
-    result.texture    = render_create_texture(path);
+    R_TextureSlice result;
+    result.texture    = r_create_texture(path);
     result.region.min = v2f32(0, 0);
     result.region.max = v2f32(1, 1);
     return (result);
@@ -81,10 +81,10 @@ vec4f32_linear_to_srgb(Vec4F32 linear)
     return (result);
 }
 
-internal Render_Texture
-render_create_texture(Str8 path)
+internal R_Texture
+r_create_texture(Str8 path)
 {
-    Render_Texture result = {0};
+    R_Texture result = {0};
     Str8 contents         = {0};
 
     Arena_Temporary scratch = get_scratch(0, 0);
@@ -94,7 +94,7 @@ render_create_texture(Str8 path)
         Image image = {0};
         if (image_load(scratch.arena, contents, &image))
         {
-            result = render_create_texture_from_bitmap(image.pixels, image.width, image.height, image.color_space);
+            result = r_create_texture_from_bitmap(image.pixels, image.width, image.height, image.color_space);
         }
         else
         {

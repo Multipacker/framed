@@ -12,13 +12,13 @@ struct D3D11_State
     Arena *permanent_arena;
     Arena *frame_arena;
 
-    Render_RenderStats stats[2];
+    R_RenderStats stats[2];
 
     D3D11_BatchList batch_list;
 
     D3D11_ClipRectStack clip_rect_stack;
 
-    Render_Texture white_texture;
+    R_Texture white_texture;
 
     ID3D11Device *device;
     ID3D11DeviceContext *context;
@@ -55,7 +55,7 @@ d3d11_top_clip(Void)
     return d3d11_state.clip_rect_stack.first;
 }
 
-internal Render_RenderStats *
+internal R_RenderStats *
 d3d11_get_current_stats(Void)
 {
     return &d3d11_state.stats[0];
@@ -68,46 +68,46 @@ d3d11_load_shaders(Void)
     D3D11_INPUT_ELEMENT_DESC desc[] =
         {
             {"MIN", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-             member_offset(Render_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, min), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"MAX", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-             member_offset(Render_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, max), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"MIN_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-             member_offset(Render_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, min_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"MAX_UV", 0, DXGI_FORMAT_R32G32_FLOAT, 0,
-             member_offset(Render_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, max_uv), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-             member_offset(Render_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, colors), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"COLOR", 1, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-             member_offset(Render_RectInstance, colors) + sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, colors) + sizeof(Vec4F32), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"COLOR", 2, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-             member_offset(Render_RectInstance, colors) + sizeof(Vec4F32) * 2, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, colors) + sizeof(Vec4F32) * 2, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"COLOR", 3, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-             member_offset(Render_RectInstance, colors) + sizeof(Vec4F32) * 3, D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, colors) + sizeof(Vec4F32) * 3, D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"CORNER_RADIUS", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,
-             member_offset(Render_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, radies), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"SOFTNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-             member_offset(Render_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, softness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"BORDER_THICKNESS", 0, DXGI_FORMAT_R32_FLOAT, 0,
-             member_offset(Render_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, border_thickness), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"OMIT_TEXTURE", 0, DXGI_FORMAT_R32_FLOAT, 0,
-             member_offset(Render_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, omit_texture), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"IS_SUBPIXEL_TEXT", 0, DXGI_FORMAT_R32_FLOAT, 0,
-             member_offset(Render_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, is_subpixel_text), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
             {"USE_NEAREST", 0, DXGI_FORMAT_R32_FLOAT, 0,
-             member_offset(Render_RectInstance, use_nearest), D3D11_INPUT_PER_INSTANCE_DATA, 1},
+             member_offset(R_RectInstance, use_nearest), D3D11_INPUT_PER_INSTANCE_DATA, 1},
 
         };
 
@@ -122,7 +122,7 @@ d3d11_load_shaders(Void)
 #pragma optimize("", on)
 
 internal Void
-render_init(Void)
+r_init(Void)
 {
     d3d11_state.permanent_arena = arena_create("D3D11Perm");
     d3d11_state.frame_arena     = arena_create("D3D11Frame");
@@ -206,7 +206,7 @@ render_init(Void)
     {
         D3D11_BUFFER_DESC desc =
             {
-                .ByteWidth      = D3D11_BATCH_SIZE * sizeof(Render_RectInstance),
+                .ByteWidth      = D3D11_BATCH_SIZE * sizeof(R_RectInstance),
                 .Usage          = D3D11_USAGE_DYNAMIC,
                 .BindFlags      = D3D11_BIND_VERTEX_BUFFER,
                 .CPUAccessFlags = D3D11_CPU_ACCESS_WRITE
@@ -339,24 +339,24 @@ internal D3D11_Batch *
 d3d11_push_batch(Void)
 {
     D3D11_Batch *result = push_struct_zero(d3d11_state.frame_arena, D3D11_Batch);
-    result->instances   = push_array(d3d11_state.frame_arena, Render_RectInstance, D3D11_BATCH_SIZE);
+    result->instances   = push_array(d3d11_state.frame_arena, R_RectInstance, D3D11_BATCH_SIZE);
     dll_push_back(d3d11_state.batch_list.first, d3d11_state.batch_list.last, result);
     result->params.clip_rect = d3d11_top_clip();
     d3d11_state.batch_list.batch_count++;
-    Render_RenderStats *stats = d3d11_get_current_stats();
+    R_RenderStats *stats = d3d11_get_current_stats();
     stats->batch_count++;
     return (result);
 }
 
 internal Void
-render_begin(Void)
+r_begin(Void)
 {
     // NOTE(hampus): Push clip rect
     Vec2U32 client_area = gfx_get_window_client_area();
     Vec2F32 max_clip;
     max_clip.x = (F32) client_area.x;
     max_clip.y = (F32) client_area.y;
-    render_push_clip(v2f32(0, 0), max_clip, false);
+    r_push_clip(v2f32(0, 0), max_clip, false);
 
     // NOTE(hampus): First batch
     D3D11_Batch *first_batch    = d3d11_push_batch();
@@ -364,7 +364,7 @@ render_begin(Void)
 }
 
 internal Void
-render_end(Void)
+r_end(Void)
 {
     profile_begin_function();
 
@@ -471,7 +471,7 @@ render_end(Void)
                 .MaxDepth = 1,
             };
 
-        Render_RenderStats *stats = d3d11_get_current_stats();
+        R_RenderStats *stats = d3d11_get_current_stats();
         Vec4F32 clear_color       = vec4f32_srgb_to_linear(v4f32(0, 0, 0, 1.f));
 
         FLOAT color[] = {clear_color.r, clear_color.g, clear_color.b, clear_color.a};
@@ -498,14 +498,14 @@ render_end(Void)
                 D3D11_MAPPED_SUBRESOURCE mapped = {0};
 
                 ID3D11DeviceContext_Map(d3d11_state.context, (ID3D11Resource *) d3d11_state.vertex_buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped);
-                memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(Render_RectInstance) * batch->instance_count);
+                memory_copy_typed((U8 *) mapped.pData, (U8 *) batch->instances, sizeof(R_RectInstance) * batch->instance_count);
                 ID3D11DeviceContext_Unmap(d3d11_state.context, (ID3D11Resource *) d3d11_state.vertex_buffer, 0);
             }
 
             // NOTE(hampus): Input Assembler
             ID3D11DeviceContext_IASetInputLayout(d3d11_state.context, d3d11_state.input_layout);
             ID3D11DeviceContext_IASetPrimitiveTopology(d3d11_state.context, D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
-            UINT stride = sizeof(Render_RectInstance);
+            UINT stride = sizeof(R_RectInstance);
             UINT offset = 0;
             ID3D11DeviceContext_IASetVertexBuffers(d3d11_state.context, 0, 1, &d3d11_state.vertex_buffer, &stride, &offset);
 
@@ -558,7 +558,7 @@ render_end(Void)
     }
 
     // NOTE(hampus): Reset state
-    render_pop_clip();
+    r_pop_clip();
     d3d11_state.stats[1] = d3d11_state.stats[0];
     memory_zero_struct(&d3d11_state.stats[0]);
     d3d11_state.batch_list.first       = 0;
@@ -568,8 +568,8 @@ render_end(Void)
     profile_end_function();
 }
 
-internal Render_RectInstance *
-render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
+internal R_RectInstance *
+r_rect_(Vec2F32 min, Vec2F32 max, R_RectParams *params)
 {
     if (params->slice.texture.u64[0] == 0)
     {
@@ -578,7 +578,7 @@ render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
     D3D11_BatchList *batch_list = &d3d11_state.batch_list;
     D3D11_Batch *batch          = batch_list->last;
 
-    Render_RectInstance *instance = &render_rect_instance_null;
+    R_RectInstance *instance = &r_rect_instance_null;
 
     // NOTE(simon): Account for softness.
     RectF32 expanded_area = rectf32(
@@ -657,14 +657,14 @@ render_rect_(Vec2F32 min, Vec2F32 max, Render_RectParams *params)
 
     batch->instance_count++;
 
-    Render_RenderStats *stats = d3d11_get_current_stats();
+    R_RenderStats *stats = d3d11_get_current_stats();
     stats->rect_count++;
 
     return (instance);
 }
 
 internal Void
-render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+r_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     RectF32 rect = {min, max};
     if (clip_to_parent)
@@ -681,13 +681,13 @@ render_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 }
 
 internal Void
-render_pop_clip(Void)
+r_pop_clip(Void)
 {
     stack_pop(d3d11_state.clip_rect_stack.first);
 }
 
-typedef struct Render_D3D11_Texture Render_D3D11_Texture;
-struct Render_D3D11_Texture
+typedef struct R_D3D11_Texture R_D3D11_Texture;
+struct R_D3D11_Texture
 {
     ID3D11ShaderResourceView *texture_view;
     U64 width;
@@ -695,17 +695,17 @@ struct Render_D3D11_Texture
     ID3D11Texture2D *texture;
 };
 
-internal Render_Texture
-render_create_texture_from_bitmap(Void *memory, U32 width, U32 height, Render_ColorSpace color_space)
+internal R_Texture
+r_create_texture_from_bitmap(Void *memory, U32 width, U32 height, R_ColorSpace color_space)
 {
-    Render_Texture result    = {0};
+    R_Texture result    = {0};
     DXGI_FORMAT d3d11_format = {0};
     switch (color_space)
     {
-        case Render_ColorSpace_sRGB:
+        case R_ColorSpace_sRGB:
             d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM;
             break;
-        case Render_ColorSpace_Linear:
+        case R_ColorSpace_Linear:
             d3d11_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
             break;
             invalid_case;
@@ -743,14 +743,14 @@ render_create_texture_from_bitmap(Void *memory, U32 width, U32 height, Render_Co
 }
 
 internal Void
-render_destroy_texture(Render_Texture texture)
+r_destroy_texture(R_Texture texture)
 {
-    Render_D3D11_Texture *d3d11_texture = (Render_D3D11_Texture *) texture.u64;
+    R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *) texture.u64;
     // TODO(hampus): How to release texture view?
 }
 
 internal Void
-render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
+r_update_texture(R_Texture texture, Void *memory, U32 width, U32 height, U32 offset)
 {
     U32 queue_index = u32_atomic_add(&d3d11_state.texture_update_write_index, 1);
     while (queue_index - d3d11_state.texture_update_read_index >= D3D11_TEXTURE_UPDATE_QUEUE_SIZE)
@@ -761,7 +761,7 @@ render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 heigh
 
     D3D11_TextureUpdate *update = &d3d11_state.texture_update_queue[queue_index & D3D11_TEXTURE_UPDATE_QUEUE_MASK];
 
-    Render_D3D11_Texture *d3d11_texture = (Render_D3D11_Texture *) texture.u64;
+    R_D3D11_Texture *d3d11_texture = (R_D3D11_Texture *) texture.u64;
     ID3D11Resource *resource            = (ID3D11Resource *) d3d11_texture->texture;
 
     update->resource = resource;
@@ -776,8 +776,8 @@ render_update_texture(Render_Texture texture, Void *memory, U32 width, U32 heigh
     update->is_valid = true;
 }
 
-internal Render_RenderStats
-render_get_stats(Void)
+internal R_RenderStats
+r_get_stats(Void)
 {
     return d3d11_state.stats[1];
 }

@@ -22,10 +22,10 @@ struct OpenGL_Batch
     OpenGL_Batch *prev;
 
     OpenGL_ClipNode *clip_node;
-    Render_Texture texture;
+    R_Texture texture;
 
     U32 size;
-    Render_RectInstance rects[OPENGL_BATCH_SIZE];
+    R_RectInstance rects[OPENGL_BATCH_SIZE];
 };
 
 typedef struct OpenGL_BatchList OpenGL_BatchList;
@@ -52,6 +52,6 @@ struct OpenGL_TextureUpdate
     Void *data;
 };
 
-internal Void render_backend_init(Void);
+internal Void r_backend_init(Void);
 
 #endif // OPENGL_RENDER_H
