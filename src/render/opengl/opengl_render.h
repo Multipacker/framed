@@ -8,35 +8,6 @@
 #define OPENGL_TEXTURE_UPDATE_QUEUE_SIZE (1 << 6)
 #define OPENGL_TEXTURE_UPDATE_QUEUE_MASK (OPENGL_TEXTURE_UPDATE_QUEUE_SIZE - 1)
 
-typedef struct OpenGL_ClipNode OpenGL_ClipNode;
-struct OpenGL_ClipNode
-{
-    OpenGL_ClipNode *next;
-    RectF32 rect;
-};
-
-typedef struct OpenGL_Batch OpenGL_Batch;
-struct OpenGL_Batch
-{
-    OpenGL_Batch *next;
-    OpenGL_Batch *prev;
-
-    OpenGL_ClipNode *clip_node;
-    R_Texture texture;
-
-    U32 size;
-    R_RectInstance rects[OPENGL_BATCH_SIZE];
-};
-
-typedef struct OpenGL_BatchList OpenGL_BatchList;
-struct OpenGL_BatchList
-{
-    OpenGL_Batch *first;
-    OpenGL_Batch *last;
-    U64 rect_count;
-    U64 batch_count;
-};
-
 typedef struct OpenGL_TextureUpdate OpenGL_TextureUpdate;
 struct OpenGL_TextureUpdate
 {

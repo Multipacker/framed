@@ -9,8 +9,8 @@ internal Void d_begin_frame(Void);
 internal Void d_submit(Void);
 
 // NOTE(simon): Draw commands
-typedef struct D_RectParams D_RectParams;
-struct D_RectParams
+typedef struct D_ShapeParams D_ShapeParams;
+struct D_ShapeParams
 {
     Vec4F32 color;
     F32 radius;
@@ -21,10 +21,10 @@ struct D_RectParams
     B32 use_nearest;
 };
 
-internal R_RectInstance *d_rect_(Vec2F32 min, Vec2F32 max, D_RectParams *parameters);
+internal R_Shape *d_rect_(Vec2F32 min, Vec2F32 max, D_ShapeParams *parameters);
 
-#define d_rect(min, max, ...)    d_rect_(min, max, &(D_RectParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
-#define d_circle(center, r, ...) d_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(D_RectParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
+#define d_rect(min, max, ...)    d_rect_(min, max, &(D_ShapeParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
+#define d_circle(center, r, ...) d_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(D_ShapeParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
 internal Void d_push_clip(Vec2F32 min, Vec2F32 max);
 internal Void d_pop_clip(Void);

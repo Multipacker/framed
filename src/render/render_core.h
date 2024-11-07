@@ -14,23 +14,6 @@ struct R_TextureSlice
     R_Texture texture;
 };
 
-typedef struct R_RectInstance R_RectInstance;
-struct R_RectInstance
-{
-    Vec2F32 min;
-    Vec2F32 max;
-    Vec2F32 min_uv;
-    Vec2F32 max_uv;
-    // NOTE(hampus): [c00, c10, c11, c01]
-    Vec4F32 colors[4];
-    F32 radies[4];
-    F32 softness;
-    F32 border_thickness;
-    F32 omit_texture;
-    F32 is_subpixel_text;
-    F32 use_nearest;
-};
-
 typedef struct R_RenderStats R_RenderStats;
 struct R_RenderStats
 {
@@ -60,23 +43,59 @@ enum R_TextureFilter
     R_TextureFilter_COUNT
 };
 
-typedef struct R_RectParams R_RectParams;
-struct R_RectParams
+typedef struct R_Shape R_Shape;
+struct R_Shape
 {
-    Vec4F32 color;
-    F32 radius;
+    Vec2F32 min;
+    Vec2F32 max;
+    Vec2F32 min_uv;
+    Vec2F32 max_uv;
+    Vec4F32 colors[4];
+    F32 radies[4];
     F32 softness;
     F32 border_thickness;
-    R_TextureSlice slice;
-    B32 is_subpixel_text;
-    B32 use_nearest;
+    F32 omit_texture;
+    F32 is_subpixel_text;
+    F32 use_nearest;
 };
 
-// NOTE(simon): This might not always be fully cleared to 0.
-global R_RectInstance r_rect_instance_null;
+typedef struct R_ShapeChunk R_ShapeChunk;
+struct R_ShapeChunk
+{
+    R_ShapeChunk *next;
+    R_Shape *shapes;
+    U64 count;
+    U64 capacity;
+};
 
-internal R_RectInstance *r_rect_(Vec2F32 min, Vec2F32 max, R_RectParams *params);
+typedef struct R_ShapeList R_ShapeList;
+struct R_ShapeList
+{
+    R_ShapeChunk *first;
+    R_ShapeChunk *last;
+    U64 shape_count;
+    U64 chunk_count;
+};
 
+typedef struct R_Batch R_Batch;
+struct R_Batch
+{
+    R_Batch *next;
+    RectF32 clip_rect;
+    R_Texture texture;
+    R_ShapeList shapes;
+};
+
+typedef struct R_BatchList R_BatchList;
+struct R_BatchList
+{
+    R_Batch *first;
+    R_Batch *last;
+    U64 count;
+};
+
+internal R_Texture      r_texture_zero(Void);
+internal B32            r_texture_equal(R_Texture a, R_Texture b);
 internal R_TextureSlice r_slice_from_texture(R_Texture texture, RectF32 uv);
 internal R_TextureSlice r_slice_from_texture_region(R_Texture texture, RectU32 region);
 internal R_TextureSlice r_create_texture_slice(Str8 path);
@@ -91,11 +110,9 @@ internal Vec4F32 vec4f32_linear_to_srgb(Vec4F32 linear);
 
 internal R_RenderStats r_get_stats(Void);
 
-internal Void r_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
-internal Void r_pop_clip(Void);
-
 internal Void r_init(Void);
 internal Void r_begin(Void);
+internal Void r_submit(R_BatchList batches);
 internal Void r_end(Void);
 
 #endif // RENDER_CORE_H

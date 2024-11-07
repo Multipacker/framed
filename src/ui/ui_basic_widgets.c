@@ -600,7 +600,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
         Vec2F32 min = v2f32_sub_v2f32(root->fixed_rect.min, v2f32(10, 10));
         Vec2F32 max = v2f32_add_v2f32(root->fixed_rect.max, v2f32(15, 15));
         // TODO(hampus): Make softness em dependent
-        R_RectInstance *instance = d_rect(
+        R_Shape *instance = d_rect(
             min, max,
             .softness = 15,
             .color    = v4f32(0, 0, 0, 1)
@@ -625,7 +625,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
             Vec4F32 rgba1            = v4f32(rgb1.x, rgb1.y, rgb1.z, 1);
             Vec2F32 min              = root->fixed_rect.min;
             Vec2F32 max              = root->fixed_rect.min;
-            R_RectInstance *instance = d_rect(
+            R_Shape *instance = d_rect(
                 rect.min, rect.max,
                 .slice       = rect_style->slice,
                 .use_nearest = rect_style->texture_filter
@@ -641,7 +641,7 @@ UI_CUSTOM_DRAW_PROC(hue_picker_custom_draw)
 
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBorder))
     {
-        R_RectInstance *instance = d_rect(
+        R_Shape *instance = d_rect(
             root->fixed_rect.min, root->fixed_rect.max,
             .border_thickness = rect_style->border_thickness,
             .color            = rect_style->border_color

@@ -131,7 +131,7 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
     if (ui_box_has_flag(root, UI_BoxFlag_DrawBackground))
     {
         // TODO(hampus): Correct darkening/lightening
-        R_RectInstance *instance = 0;
+        R_Shape *instance = 0;
 
         F32 d = 0;
         if (ui_box_has_flag(root, UI_BoxFlag_ActiveAnimation))

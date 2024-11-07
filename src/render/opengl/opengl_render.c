@@ -5,20 +5,15 @@ typedef struct OpenGL_State OpenGL_State;
 struct OpenGL_State
 {
     Arena *permanent_arena;
-    Arena *frame_arena;
 
     R_RenderStats stats;
 
-    OpenGL_BatchList batches;
     Vec2U32 client_area;
 
     GLuint program;
-    GLuint vbo;
     GLuint vao;
     GLint uniform_projection_location;
     GLint uniform_sampler_location;
-
-    OpenGL_ClipNode *clip_stack;
 
     OpenGL_TextureUpdate *texture_update_queue;
     U32 volatile texture_update_write_index;
@@ -116,6 +111,13 @@ opengl_debug_output(GLenum source, GLenum type, U32 id, GLenum severity, GLsizei
     }
 }
 
+internal R_Texture
+r_texture_zero(Void)
+{
+    R_Texture result = { 0 };
+    return result;
+}
+
 internal GLuint
 opengl_texture_id_from_handle(R_Texture handle)
 {
@@ -130,6 +132,15 @@ opengl_texture_size_from_handle(R_Texture handle)
         (U32) handle.u64[1],
         (U32) handle.u64[2]
     );
+    return result;
+}
+
+internal B32
+r_texture_equal(R_Texture a, R_Texture b)
+{
+    GLuint a_texture = opengl_texture_id_from_handle(a);
+    GLuint b_texture = opengl_texture_id_from_handle(b);
+    B32 result = a_texture == b_texture;
     return result;
 }
 
@@ -229,31 +240,25 @@ r_init(Void)
 #endif
 
     opengl_state.permanent_arena = arena_create("OpenGLPerm");
-    opengl_state.frame_arena     = arena_create("OpenGLFrame");
 
     opengl_state.texture_update_queue = push_array_zero(opengl_state.permanent_arena, OpenGL_TextureUpdate, OPENGL_TEXTURE_UPDATE_QUEUE_SIZE);
 
-    glCreateBuffers(1, &opengl_state.vbo);
-    glNamedBufferData(opengl_state.vbo, OPENGL_BATCH_SIZE * sizeof(R_RectInstance), 0, GL_DYNAMIC_DRAW);
-
     glCreateVertexArrays(1, &opengl_state.vao);
 
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 2, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[0]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 3, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[1]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 4, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[2]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 5, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_RectInstance, colors[3]), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, radies), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, softness), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, border_thickness), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, omit_texture), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, is_subpixel_text), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 11, 1, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, use_nearest), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, min_uv), 0);
-    opengl_vertex_array_instance_attribute(opengl_state.vao, 13, 2, GL_FLOAT, GL_FALSE, member_offset(R_RectInstance, max_uv), 0);
-
-    glVertexArrayVertexBuffer(opengl_state.vao, 0, opengl_state.vbo, 0, sizeof(R_RectInstance));
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 0, 2, GL_FLOAT, GL_FALSE, member_offset(R_Shape, min), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 1, 2, GL_FLOAT, GL_FALSE, member_offset(R_Shape, max), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 2, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_Shape, colors[0]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 3, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_Shape, colors[1]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 4, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_Shape, colors[2]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 5, 4, GL_FLOAT, GL_FALSE, (GLuint) member_offset(R_Shape, colors[3]), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 6, 4, GL_FLOAT, GL_FALSE, member_offset(R_Shape, radies), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 7, 1, GL_FLOAT, GL_FALSE, member_offset(R_Shape, softness), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 8, 1, GL_FLOAT, GL_FALSE, member_offset(R_Shape, border_thickness), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 9, 1, GL_FLOAT, GL_FALSE, member_offset(R_Shape, omit_texture), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 10, 1, GL_FLOAT, GL_FALSE, member_offset(R_Shape, is_subpixel_text), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 11, 1, GL_FLOAT, GL_FALSE, member_offset(R_Shape, use_nearest), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 12, 2, GL_FLOAT, GL_FALSE, member_offset(R_Shape, min_uv), 0);
+    opengl_vertex_array_instance_attribute(opengl_state.vao, 13, 2, GL_FLOAT, GL_FALSE, member_offset(R_Shape, max_uv), 0);
 
     arena_scratch(0, 0)
     {
@@ -288,15 +293,10 @@ r_begin(Void)
 
     Mat4F32 projection = m4f32_ortho(0.0f, (F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height, 0.0f, 1.0f, -1.0f);
     glProgramUniformMatrix4fv(opengl_state.program, opengl_state.uniform_projection_location, 1, GL_FALSE, &projection.m[0][0]);
-
-    // NOTE(simon): Push a clip rect for the entire screen so that there is
-    // always at least on clip rect in the stack.
-    r_push_clip(v2f32(0.0f, 0.0f), v2f32((F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height), false);
 }
 
 internal Void
-r_end(Void)
-{
+r_submit(R_BatchList batches) {
     profile_begin_function();
 
     // NOTE(simon): Perform texture updates.
@@ -329,168 +329,65 @@ r_end(Void)
 
     glProgramUniform1i(opengl_state.program, opengl_state.uniform_sampler_location, 0);
 
-    for (OpenGL_Batch *batch = opengl_state.batches.first; batch; batch = batch->next)
+    for (R_Batch *batch = batches.first; batch; batch = batch->next)
     {
-        glNamedBufferSubData(opengl_state.vbo, 0, batch->size * sizeof(R_RectInstance), batch->rects);
-        RectF32 clip_rect = batch->clip_node->rect;
-
-        // NOTE(simon): OpenGL has its origin in the lower left corner, not the
-        // top left like we have, hence the weirdness with the y-coordinate.
-        glScissor(
-            (GLint) clip_rect.min.x,
-            (GLint) ((F32) opengl_state.client_area.height - clip_rect.max.y),
-            (GLsizei) (clip_rect.max.x - clip_rect.min.x),
-            (GLsizei) (clip_rect.max.y - clip_rect.min.y)
-        );
-
-        GLuint texture = opengl_texture_id_from_handle(batch->texture);
-        if (texture)
+        GLsizei width  = (GLsizei) (batch->clip_rect.max.x - batch->clip_rect.min.x);
+        GLsizei height = (GLsizei) (batch->clip_rect.max.y - batch->clip_rect.min.y);
+        if (width > 0 && height > 0)
         {
+            U64 byte_size = batch->shapes.shape_count * sizeof(R_Shape);
+
+            // NOTE(simon): Create buffer for geometry.
+            GLuint vbo = 0;
+            glCreateBuffers(1, &vbo);
+            glNamedBufferData(vbo, (GLsizeiptr) byte_size, 0, GL_STREAM_DRAW);
+
+            // NOTE(simon): Fill with shape data.
+            {
+                U8 *mapped_buffer = glMapNamedBuffer(vbo, GL_WRITE_ONLY);
+                U8 *ptr = mapped_buffer;
+                for (R_ShapeChunk *chunk = batch->shapes.first; chunk; chunk = chunk->next)
+                {
+                    memory_copy(ptr, chunk->shapes, chunk->count * sizeof(*chunk->shapes));
+                    ptr += chunk->count * sizeof(*chunk->shapes);
+                }
+                glUnmapNamedBuffer(vbo);
+            }
+
+            // NOTE(simon): Connect buffer to the VAO.
+            glVertexArrayVertexBuffer(opengl_state.vao, 0, vbo, 0, sizeof(R_Shape));
+
+            // NOTE(simon): OpenGL has its origin in the lower left corner, not the
+            // top left like we have, hence the weirdness with the y-coordinate.
+            glScissor(
+                (GLint) batch->clip_rect.min.x,
+                (GLint) ((F32) opengl_state.client_area.height - batch->clip_rect.max.y),
+                width,
+                height
+            );
+
+            // NOTE(simon): Set active texture or deactivate it if we have none.
+            GLuint texture = opengl_texture_id_from_handle(batch->texture);
             glBindTextureUnit(0, texture);
+
+            glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->shapes.shape_count);
+
+            // NOTE(simon): Cleanup.
+            glDeleteBuffers(1, &vbo);
         }
-
-        glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 4, (GLsizei) batch->size);
     }
-
-    // NOTE(simon): Update stats
-    opengl_state.stats.rect_count  = opengl_state.batches.rect_count;
-    opengl_state.stats.batch_count = opengl_state.batches.batch_count;
-
-    opengl_state.batches.first       = 0;
-    opengl_state.batches.last        = 0;
-    opengl_state.batches.rect_count  = 0;
-    opengl_state.batches.batch_count = 0;
-    opengl_state.clip_stack          = 0;
-
-    arena_pop_to(opengl_state.frame_arena, 0);
-    gfx_swap_buffers();
 
     profile_end_function();
 }
 
-internal OpenGL_Batch *
-opengl_create_batch(Void)
-{
-    // NOTE(simon): No need to clear everything to zero, manually set the
-    // parameters we care about.
-    OpenGL_Batch *result = push_struct(opengl_state.frame_arena, OpenGL_Batch);
-
-    result->size      = 0;
-    result->clip_node = opengl_state.clip_stack;
-    result->texture   = (R_Texture){0};
-    dll_push_back(opengl_state.batches.first, opengl_state.batches.last, result);
-    ++opengl_state.batches.batch_count;
-
-    return (result);
-}
-
-// TODO(simon): Test performance without pruning batches and rectangles once we
-// are rendering more complicated scenes.
-internal R_RectInstance *
-r_rect_(Vec2F32 min, Vec2F32 max, R_RectParams *params)
-{
-    assert(opengl_state.clip_stack);
-
-    R_RectInstance *result = &r_rect_instance_null;
-
-    // NOTE(simon): Account for softness.
-    RectF32 expanded_area = rectf32(
-        v2f32_sub_f32(min, params->softness),
-        v2f32_add_f32(max, params->softness)
-    );
-
-    // NOTE(simon): Is the rectangle completly outside of the current clip rect?
-    if (!rectf32_overlaps(expanded_area, opengl_state.clip_stack->rect))
-    {
-        return (result);
-    }
-
-    OpenGL_Batch *batch = opengl_state.batches.last;
-
-    if (!batch || batch->size >= OPENGL_BATCH_SIZE)
-    {
-        batch = opengl_create_batch();
-    }
-
-    B32 is_different_clip   = (batch->clip_node != opengl_state.clip_stack);
-    B32 inside_current_clip = rectf32_contains_rectf32(opengl_state.clip_stack->rect, expanded_area);
-    B32 inside_batch_clip   = rectf32_contains_rectf32(batch->clip_node->rect, expanded_area);
-    if (is_different_clip && !(inside_current_clip && inside_batch_clip))
-    {
-        batch = opengl_create_batch();
-    }
-
-    if (
-        batch->texture.u64[0] &&
-        params->slice.texture.u64[0] &&
-        batch->texture.u64[0] != params->slice.texture.u64[0]
-    )
-    {
-        batch = opengl_create_batch();
-    }
-
-    // NOTE(simon): The batch either has the same texture, or none at all.
-    if (params->slice.texture.u64[0])
-    {
-        batch->texture = params->slice.texture;
-    }
-
-    min.x = f32_round(min.x);
-    min.y = f32_round(min.y);
-    max.x = f32_round(max.x);
-    max.y = f32_round(max.y);
-
-    result                   = &batch->rects[batch->size++];
-    result->min              = min;
-    result->max              = max;
-    result->min_uv           = params->slice.region.min;
-    result->max_uv           = params->slice.region.max;
-    result->colors[0]        = params->color;
-    result->colors[1]        = params->color;
-    result->colors[2]        = params->color;
-    result->colors[3]        = params->color;
-    result->radies[0]        = params->radius;
-    result->radies[1]        = params->radius;
-    result->radies[2]        = params->radius;
-    result->radies[3]        = params->radius;
-    result->softness         = params->softness;
-    result->border_thickness = params->border_thickness;
-    result->omit_texture     = (F32) (params->slice.texture.u64[0] == 0);
-    result->is_subpixel_text = (F32) params->is_subpixel_text;
-    result->use_nearest      = (F32) params->use_nearest;
-
-    ++opengl_state.batches.rect_count;
-
-    return (result);
-}
-
 internal Void
-r_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
+r_end(Void)
 {
-    OpenGL_ClipNode *node = push_struct(opengl_state.frame_arena, OpenGL_ClipNode);
+    profile_begin_function();
 
-    if (clip_to_parent)
-    {
-        assert(opengl_state.clip_stack);
-        RectF32 parent = opengl_state.clip_stack->rect;
+    gfx_swap_buffers();
 
-        node->rect.min.x = f32_clamp(parent.min.x, min.x, parent.max.x);
-        node->rect.min.y = f32_clamp(parent.min.y, min.y, parent.max.y);
-        node->rect.max.x = f32_clamp(parent.min.x, max.x, parent.max.x);
-        node->rect.max.y = f32_clamp(parent.min.y, max.y, parent.max.y);
-    }
-    else
-    {
-        node->rect = rectf32(min, max);
-    }
-
-    stack_push(opengl_state.clip_stack, node);
-}
-
-internal Void
-r_pop_clip(Void)
-{
-    stack_pop(opengl_state.clip_stack);
+    profile_end_function();
 }
 
 internal R_Texture
