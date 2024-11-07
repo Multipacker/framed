@@ -154,11 +154,10 @@ UI_CUSTOM_DRAW_PROC(ui_column_draw_custom_draw)
 
     UI_Box *box_to_clip_to = root->data;
 
-    // NOTE(simon): This used to not clip to parent, and now it does, I think it is fine like this
-    d_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max);
+    d_push_clip(box_to_clip_to->fixed_rect.min, box_to_clip_to->fixed_rect.max, false);
 
-    R_Font *font = r_font_from_key(ui_font_key_from_text_style(text_style));
-    Vec2F32 text_pos  = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
+    R_Font *font     = r_font_from_key(ui_font_key_from_text_style(text_style));
+    Vec2F32 text_pos = ui_align_text_in_rect(font, root->string, root->fixed_rect, text_style->align, text_style->padding);
 
     d_rect(v2f32(box_to_clip_to->fixed_rect.min.x, root->fixed_rect.max.y - 1), v2f32(box_to_clip_to->fixed_rect.max.x, root->fixed_rect.max.y), .color = v4f32(0.5f, 0.5f, 0.5f, 1.0f));
 

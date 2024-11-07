@@ -26,7 +26,7 @@ internal R_Shape *d_rect_(Vec2F32 min, Vec2F32 max, D_ShapeParams *parameters);
 #define d_rect(min, max, ...)    d_rect_(min, max, &(D_ShapeParams){.color = v4f32(1, 1, 1, 1), __VA_ARGS__})
 #define d_circle(center, r, ...) d_rect_(v2f32_sub_f32(center, r), v2f32_add_f32(center, r), &(D_ShapeParams){.color = v4f32(1, 1, 1, 1), .radius = r, __VA_ARGS__})
 
-internal Void d_push_clip(Vec2F32 min, Vec2F32 max);
+internal Void d_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent);
 internal Void d_pop_clip(Void);
 
 internal Void d_character_internal(Vec2F32 min, U32 codepoint, R_Font *font, Vec4F32 color);

@@ -37,7 +37,7 @@ If:
   PathMatch: src/ui/.*
 
 CompileFlags:
-  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h]
+  Add: [-include=src/os/os_inc.h, -include=src/render/render_inc.h, -include=src/font/font_inc.h, -include=src/ui/ui_inc.h, -include=src/draw/draw_inc.h]
 
 ---
 If:

@@ -1398,8 +1398,8 @@ ui_solve_independent_sizes(UI_Box *root, Axis2 axis)
 
         case UI_SizeKind_TextContent:
         {
-            R_Font *font = r_font_from_key(ui_font_key_from_text_style(&root->text_style));
-            Vec2F32 text_dim  = {0};
+            R_Font *font     = r_font_from_key(ui_font_key_from_text_style(&root->text_style));
+            Vec2F32 text_dim = {0};
             if (root->text_style.icon)
             {
                 text_dim = d_measure_character(font, root->text_style.icon);
@@ -1871,7 +1871,7 @@ ui_draw(UI_Box *root)
 
     if (ui_box_has_flag(root, UI_BoxFlag_Clip))
     {
-        d_push_clip(root->fixed_rect.min, root->fixed_rect.max);
+        d_push_clip(root->fixed_rect.min, root->fixed_rect.max, true);
     }
 
     for (UI_Box *child = root->last; !ui_box_is_nil(child); child = child->prev)

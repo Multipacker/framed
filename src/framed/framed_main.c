@@ -946,7 +946,7 @@ os_main(Str8List arguments)
         Vec2U32 client_size = gfx_get_window_client_area();
         r_begin();
         d_begin_frame();
-        d_push_clip(v2f32(0, 0), v2f32((F32) client_size.width, (F32) client_size.height));
+        d_push_clip(v2f32(0, 0), v2f32((F32) client_size.width, (F32) client_size.height), false);
         ui_begin(ui, &events, dt);
         ui_push_font(str8_lit("data/fonts/NotoSansMono-Medium.ttf"));
         ui_push_font_size(framed_ui_state->settings.font_size);

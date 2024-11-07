@@ -89,7 +89,7 @@ d_rect_(Vec2F32 min, Vec2F32 max, D_ShapeParams *parameters)
     // compatible with the batch.
     if (!r_texture_equal(parameters->slice.texture, r_texture_zero()) && !r_texture_equal(batch->texture, parameters->slice.texture))
     {
-        batch = d_create_batch();
+        batch          = d_create_batch();
         batch->texture = parameters->slice.texture;
     }
 
@@ -133,7 +133,7 @@ d_rect_(Vec2F32 min, Vec2F32 max, D_ShapeParams *parameters)
 }
 
 internal Void
-d_push_clip(Vec2F32 min, Vec2F32 max)
+d_push_clip(Vec2F32 min, Vec2F32 max, B32 clip_to_parent)
 {
     D_ClipNode *node = draw_state.clip_freelist;
     if (node)
@@ -147,9 +147,16 @@ d_push_clip(Vec2F32 min, Vec2F32 max)
 
     memory_zero_struct(node);
 
-    // TODO(simon): Clipping against previous nodes
-    node->clip_rect.min = min;
-    node->clip_rect.max = max;
+    if (clip_to_parent && draw_state.clip_stack)
+    {
+        D_ClipNode *parent = draw_state.clip_stack;
+        node->clip_rect    = rectf32_intersect_rectf32(rectf32(min, max), parent->clip_rect);
+    }
+    else
+    {
+        node->clip_rect.min = min;
+        node->clip_rect.max = max;
+    }
 
     stack_push(draw_state.clip_stack, node);
     ++draw_state.current_generation;
