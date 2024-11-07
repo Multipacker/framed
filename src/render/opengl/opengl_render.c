@@ -293,6 +293,12 @@ r_begin(Void)
 
     Mat4F32 projection = m4f32_ortho(0.0f, (F32) opengl_state.client_area.width, (F32) opengl_state.client_area.height, 0.0f, 1.0f, -1.0f);
     glProgramUniformMatrix4fv(opengl_state.program, opengl_state.uniform_projection_location, 1, GL_FALSE, &projection.m[0][0]);
+
+    glDisable(GL_SCISSOR_TEST);
+    glClear(GL_COLOR_BUFFER_BIT);
+    glEnable(GL_SCISSOR_TEST);
+
+    glProgramUniform1i(opengl_state.program, opengl_state.uniform_sampler_location, 0);
 }
 
 internal Void
@@ -322,12 +328,6 @@ r_submit(R_BatchList batches) {
             update.data
         );
     }
-
-    glDisable(GL_SCISSOR_TEST);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glEnable(GL_SCISSOR_TEST);
-
-    glProgramUniform1i(opengl_state.program, opengl_state.uniform_sampler_location, 0);
 
     for (R_Batch *batch = batches.first; batch; batch = batch->next)
     {
